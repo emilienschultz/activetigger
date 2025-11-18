@@ -1,11 +1,11 @@
 import { FC, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
-import { CodebookManagement } from '../components/CodeBookManagement';
 import { LabelsManagement } from '../components/LabelsManagement';
 import { ProjectPageLayout } from '../components/layout/ProjectPageLayout';
 import { useAppContext } from '../core/context';
 
+import { CodebookDisplay } from '../components/CodeBookDisplay';
 import { SchemesManagement } from '../components/SchemesManagement';
 import { reorderLabels } from '../core/utils';
 
@@ -54,40 +54,41 @@ export const ProjectPage: FC = () => {
     if (currentScheme && fromProjectPage && availableLabels.length > 1) {
       navigate(`/projects/${projectSlug}/tag`);
       setFromProjectPage(false);
-      console.log('fromProjectPage', fromProjectPage, availableLabels, currentScheme);
     }
   }, [fromProjectPage, availableLabels, navigate, projectSlug, currentScheme]);
 
-  if (!projectSlug || !project) return;
+  console.log('Interface type', displayConfig.interfaceType);
 
-  console.log();
+  if (!projectSlug || !project) return;
 
   return (
     <ProjectPageLayout projectName={projectSlug}>
       <div className="container-fluid d-flex justify-content-center">
         <SchemesManagement
           projectSlug={projectSlug}
-          deactivateModifications={displayConfig.interfaceType === 'annotator'}
+          canEdit={displayConfig.interfaceType !== 'annotator'}
         />
       </div>
 
+      <CodebookDisplay
+        projectSlug={projectSlug}
+        currentScheme={currentScheme || null}
+        canEdit={displayConfig.interfaceType !== 'annotator'}
+      />
+
       {availableLabels.length === 0 && (
         <div className="alert alert-info col-12 mt-2">
-          No labels available for this scheme. Please add labels to use this scheme, or create a new
-          scheme.
+          No labels available for this scheme. Add labels to start annotation.
         </div>
       )}
-      <details className="custom-details p-1">
-        <summary>Guidelines</summary>
-        <CodebookManagement projectName={projectSlug} currentScheme={currentScheme || null} />
-      </details>
+
       <LabelsManagement
         projectSlug={projectSlug}
         currentScheme={currentScheme || null}
         availableLabels={availableLabelsSorted}
         kindScheme={kindScheme as string}
         setAppContext={setAppContext}
-        deactivateModifications={displayConfig.interfaceType === 'annotator'}
+        canEdit={displayConfig.interfaceType !== 'annotator'}
       />
     </ProjectPageLayout>
   );

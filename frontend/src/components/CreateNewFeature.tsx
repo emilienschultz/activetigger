@@ -1,4 +1,4 @@
-import { FC, useState } from 'react';
+import { FC } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { useParams } from 'react-router-dom';
 
@@ -19,9 +19,14 @@ interface CreateNewFeatureProps {
   projectName?: string;
   columns: string[];
   featuresOption: FeaturesOptions;
+  callback?: (state: boolean) => void;
 }
 
-export const CreateNewFeature: FC<CreateNewFeatureProps> = ({ featuresOption, columns }) => {
+export const CreateNewFeature: FC<CreateNewFeatureProps> = ({
+  featuresOption,
+  columns,
+  callback,
+}) => {
   const { projectName } = useParams();
 
   // API calls
@@ -35,6 +40,7 @@ export const CreateNewFeature: FC<CreateNewFeatureProps> = ({ featuresOption, co
         dfm_min_term_freq: 5,
         dfm_ngrams: 1,
         model: 'generic',
+        max_length_tokens: 1024,
       },
       type: 'sbert',
     },
@@ -44,9 +50,6 @@ export const CreateNewFeature: FC<CreateNewFeatureProps> = ({ featuresOption, co
 
   // state for the type of feature to create
   const selectedFeatureToCreate = watch('type');
-
-  // show the menu
-  const [showMenu, setShowMenu] = useState(false);
 
   // action to create the new feature
   const createNewFeature: SubmitHandler<FeatureModelExtended> = async (formData) => {
@@ -61,7 +64,7 @@ export const CreateNewFeature: FC<CreateNewFeatureProps> = ({ featuresOption, co
       notify({ type: 'error', message: error + '' });
     }
     reset();
-    setShowMenu(!showMenu);
+    if (callback) callback(false);
   };
 
   return (
@@ -93,6 +96,13 @@ export const CreateNewFeature: FC<CreateNewFeatureProps> = ({ featuresOption, co
                 </option>
               ))}
             </select>
+            <label htmlFor="length">Max length tokens</label>
+            <input
+              type="number"
+              className="form-control"
+              placeholder="Max length tokens"
+              {...register('parameters.max_length_tokens')}
+            />
           </details>
         )}
 

@@ -74,6 +74,8 @@ export type FeaturesProjectStateModel = components['schemas']['FeaturesProjectSt
 
 export type ProjectionOutModel = components['schemas']['ProjectionOutModel'];
 
+export type FeatureDescriptionModelOut = components['schemas']['FeatureDescriptionModelOut'];
+
 export interface FeatureDfmParameters {
   dfm_tfidf: string;
   ngrams: number;
@@ -99,6 +101,7 @@ export interface FeatureFasttextParameters {
 
 export interface FeatureSbertParameters {
   model?: string;
+  max_length_tokens?: number;
 }
 
 export interface FeatureModelExtended {
@@ -157,6 +160,7 @@ export interface newBertModel {
   class_min_freq?: number;
   test_size?: number;
   exclude_labels?: string[];
+  max_length?: number;
 }
 
 export interface EvalSetModel {

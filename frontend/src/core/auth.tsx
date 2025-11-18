@@ -69,6 +69,7 @@ const _useAuth = (): AuthContext => {
               } else {
                 appContext.displayConfig.interfaceType = 'default';
               }
+              console.log(appContext);
               setAppContext(appContext);
 
               return authUser;

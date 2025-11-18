@@ -18,6 +18,7 @@ from torch import nn
 from transformers import (  # type: ignore[import]  # type: ignore[import]
     AutoModelForSequenceClassification,
     AutoTokenizer,
+    AutoConfig,
     Trainer,
     TrainerCallback,
     TrainerControl,
@@ -138,6 +139,7 @@ class TrainBert(BaseTask):
         event: Optional[multiprocessing.synchronize.Event] = None,
         unique_id: Optional[str] = None,
         loss: Optional[str] = "cross_entropy",
+        max_length: int = 512,
         **kwargs,
     ):
         self.path = path
@@ -153,6 +155,21 @@ class TrainBert(BaseTask):
         self.event = event
         self.unique_id = unique_id
         self.loss = loss
+        self.max_length = max_length
+
+    def retrieve_model_max_length(self) -> int:
+        try: 
+            model_max_length = (AutoConfig.
+                from_pretrained(self.base_model, trust_remote_code=True)
+                .max_position_embeddings
+            )
+        except Exception:
+            model_max_length = np.nan
+            raise ValueError((
+                f"Could not retrieve model's max length. Max length "
+                f"{self.max_length} is used."
+            ))
+        return model_max_length
 
     def __call__(self) -> None:
         """
@@ -204,6 +221,9 @@ class TrainBert(BaseTask):
         self.df["text"] = self.df[self.col_text]
         self.df = datasets.Dataset.from_pandas(self.df[["text", "labels"]])
 
+        # cap max_length
+        self.max_length = min(self.max_length,self.retrieve_model_max_length())
+
         # Tokenizer
         tokenizer = AutoTokenizer.from_pretrained(self.base_model, trust_remote_code=True)
         if self.params.adapt:
@@ -212,8 +232,8 @@ class TrainBert(BaseTask):
                     e["text"],
                     truncation=True,
                     padding=True,
-                    max_length=512,
                     return_tensors="pt",
+                    max_length=int(self.max_length),
                 ),
                 batched=True,
             )
@@ -223,8 +243,8 @@ class TrainBert(BaseTask):
                     e["text"],
                     truncation=True,
                     padding="max_length",
-                    max_length=512,
                     return_tensors="pt",
+                    max_length=self.max_length,
                 ),
                 batched=True,
             )
@@ -339,6 +359,7 @@ class TrainBert(BaseTask):
             params_to_save["test_size"] = self.test_size
             params_to_save["base_model"] = self.base_model
             params_to_save["n_train"] = len(self.df["train"])
+            params_to_save["max_length"] = self.max_length
 
             with open(current_path.joinpath("parameters.json"), "w") as f:
                 json.dump(params_to_save, f)

@@ -50,7 +50,6 @@ export const ActiveLearningManagement: FC<ActiveLearningManagementProps> = ({
     ) {
       setUpdatedQuickModel(true);
       retrainQuickModel(activeSimepleModel);
-      console.log('RETRAIN');
     }
     if (updatedQuickModel && freqRefreshQuickModel && history.length % freqRefreshQuickModel != 0) {
       setUpdatedQuickModel(false);

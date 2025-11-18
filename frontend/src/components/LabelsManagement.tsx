@@ -5,6 +5,7 @@ import { FaEdit } from 'react-icons/fa';
 import { useAddLabel, useDeleteLabel, useRenameLabel, useStatistics } from '../core/api';
 import { useNotifications } from '../core/notifications';
 
+import { Modal } from 'react-bootstrap';
 import { FaCheck } from 'react-icons/fa';
 import { ReactSortable } from 'react-sortablejs';
 import { AppContextValue } from '../core/context';
@@ -19,7 +20,7 @@ interface LabelsManagementProps {
   availableLabels: string[];
   kindScheme: string;
   setAppContext: React.Dispatch<React.SetStateAction<AppContextValue>>;
-  deactivateModifications?: boolean;
+  canEdit?: boolean;
 }
 
 interface LabelCardProps {
@@ -29,7 +30,7 @@ interface LabelCardProps {
   countTest?: number;
   removeLabel: (label: string) => void;
   renameLabel: (formerLabel: string, newLabel: string) => void;
-  deactivateModifications?: boolean;
+  canEdit?: boolean;
 }
 
 interface LabelType {
@@ -44,9 +45,10 @@ export const LabelCard: FC<LabelCardProps> = ({
   countTest,
   removeLabel,
   renameLabel,
-  deactivateModifications,
+  canEdit,
 }) => {
   const [showRename, setShowRename] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
   const [newLabel, setNewLabel] = useState(label);
   return (
     <tr key={label}>
@@ -54,12 +56,12 @@ export const LabelCard: FC<LabelCardProps> = ({
       <td className="px-4 py-3 text-center">{countTrain ? countTrain : 0}</td>
       <td className="px-4 py-3 text-center">{countValid ? countValid : 0}</td>
       <td className="px-4 py-3 text-center">{countTest ? countTest : 0}</td>
-      {!deactivateModifications && (
+      {canEdit && (
         <>
           <td className="flex justify-center gap-4">
             <div
               title="Delete"
-              onClick={() => removeLabel(label)}
+              onClick={() => setShowDelete(true)}
               className="cursor-pointer trash-wrapper"
             >
               <FaRegTrashAlt />
@@ -97,6 +99,25 @@ export const LabelCard: FC<LabelCardProps> = ({
           </div>
         </td>
       )}
+      <Modal show={showDelete} id="deletescheme" onHide={() => setShowDelete(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Delete a label</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>
+            Are you sure you want to delete the label <b>{label}</b>?
+          </p>
+          <button
+            className="btn btn-danger"
+            onClick={() => {
+              removeLabel(label);
+              setShowDelete(false);
+            }}
+          >
+            Delete
+          </button>
+        </Modal.Body>
+      </Modal>
     </tr>
   );
 };
@@ -111,7 +132,7 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
   availableLabels,
   kindScheme,
   setAppContext,
-  deactivateModifications,
+  canEdit,
 }) => {
   const { notify } = useNotifications();
 
@@ -214,7 +235,7 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
                     ? Number(statistics['test_annotated_distribution'][label.label])
                     : 0
                 }
-                deactivateModifications={deactivateModifications}
+                canEdit={canEdit}
               />
             ))}
           </ReactSortable>
@@ -252,18 +273,20 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
           <tr>
             <th>
               <div className="d-flex align-items-center">
-                <input
-                  type="text"
-                  id="new-label"
-                  value={createLabelValue}
-                  onChange={handleCreateLabelChange}
-                  placeholder="Enter new label"
-                  className="form-control"
-                />{' '}
-                {!deactivateModifications && (
-                  <button onClick={createLabel} className="btn btn">
-                    <FaPlusCircle size={20} />
-                  </button>
+                {canEdit && (
+                  <>
+                    <input
+                      type="text"
+                      id="new-label"
+                      value={createLabelValue}
+                      onChange={handleCreateLabelChange}
+                      placeholder="Enter new label"
+                      className="form-control"
+                    />{' '}
+                    <button onClick={createLabel} className="btn btn">
+                      <FaPlusCircle size={20} />
+                    </button>
+                  </>
                 )}
               </div>
             </th>

@@ -1,16 +1,18 @@
+import cx from 'classnames';
 import { FC, useEffect, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { FaPlusCircle } from 'react-icons/fa';
-import { MdOutlineDeleteOutline } from 'react-icons/md';
+import { FaGear } from 'react-icons/fa6';
 import Select from 'react-select';
+import PulseLoader from 'react-spinners/PulseLoader';
 import { useDeleteQuickModel, useGetQuickModel, useTrainQuickModel } from '../core/api';
 import { useNotifications } from '../core/notifications';
+import { getRandomName } from '../core/utils';
 import { MLStatisticsModel, ModelDescriptionModel, QuickModelInModel } from '../types';
 import { CreateNewFeature } from './CreateNewFeature';
 import { DisplayScores } from './DisplayScores';
 import { ModelsPillDisplay } from './ModelsPillDisplay';
-
 // TODO: default values + avoid generic parameters
 
 interface Options {
@@ -33,6 +35,7 @@ interface QuickModelManagementProps {
   currentModel?: Record<string, never>;
   featuresOption: FeaturesOptions;
   columns: string[];
+  isComputing: boolean;
 }
 
 export default function ModelsTable(
@@ -81,6 +84,7 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
   currentModel,
   featuresOption,
   columns,
+  isComputing,
 }) => {
   const { notify } = useNotifications();
 
@@ -103,14 +107,10 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
   // delete quickmodel
   const { deleteQuickModel } = useDeleteQuickModel(projectName);
 
-  function getRandomName() {
-    return `Quickmodel-${currentScheme}-${Math.random().toString(36).substring(2, 8)}`;
-  }
-
   // create form
   const { register, handleSubmit, control, watch, setValue } = useForm<QuickModelInModel>({
     defaultValues: {
-      name: getRandomName(),
+      name: getRandomName('QuickModel'),
       model: 'liblinear',
       scheme: currentScheme || undefined,
       params: {
@@ -184,6 +184,10 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
   const [displayNewFeature, setDisplayNewFeature] = useState<boolean>(false);
   const [displayNewModel, setDisplayNewModel] = useState<boolean>(false);
 
+  const [showParameters, setShowParameters] = useState(false);
+
+  console.log(currentQuickModelName);
+
   return (
     <div className="w-100">
       <ModelsPillDisplay
@@ -192,30 +196,32 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
         setCurrentModelName={setCurrentQuickModelName}
         deleteModelFunction={deleteQuickModel}
       >
-        <button onClick={() => setDisplayNewModel(true)} className="model-pill" id="create-new">
-          Create new model
+        <button
+          onClick={() => setDisplayNewModel(true)}
+          className={cx('model-pill ', isComputing ? 'disabled' : '')}
+          id="create-new"
+        >
+          <FaPlusCircle size={20} /> Create new model
         </button>
       </ModelsPillDisplay>
-      <div>
-        <table className="table table-striped table-hover w-100 mt-2">
-          <tbody>
-            {Object.entries(currentModelInformations?.params || {}).map(([key, value], i) => (
-              <tr key={i}>
-                <td>{key}</td>
-                <td>
-                  {Array.isArray(value)
-                    ? (value as string[]).join(', ') // or use bullets if you prefer
-                    : typeof value === 'object' && value !== null
-                      ? JSON.stringify(value, null, 2)
-                      : String(value)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {currentModelInformations && (
+      <hr className="mt-2" />
+
+      {isComputing && (
+        <div className="btn btn-primary mt-3 d-flex align-items-center">
+          <PulseLoader color={'white'} /> Computing
+        </div>
+      )}
+      {currentModelInformations && currentQuickModelName && (
         <div>
+          <div className="d-flex my-2">
+            <button
+              className="btn btn-outline-secondary btn-sm me-2 d-flex align-items-center"
+              onClick={() => setShowParameters(true)}
+            >
+              <FaGear size={18} className="me-1" />
+              Parameters
+            </button>
+          </div>
           <DisplayScores
             title={'Validation scores from the training data (internal validation)'}
             scores={currentModelInformations.statistics_test as MLStatisticsModel}
@@ -404,6 +410,29 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
             featuresOption={featuresOption}
             columns={columns}
           />
+        </Modal.Body>
+      </Modal>
+      <Modal show={showParameters} id="parameters-modal" onHide={() => setShowParameters(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Parameters of {currentQuickModelName}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <table className="table table-striped table-hover w-100 mt-2">
+            <tbody>
+              {Object.entries(currentModelInformations?.params || {}).map(([key, value], i) => (
+                <tr key={i}>
+                  <td>{key}</td>
+                  <td>
+                    {Array.isArray(value)
+                      ? (value as string[]).join(', ') // or use bullets if you prefer
+                      : typeof value === 'object' && value !== null
+                        ? JSON.stringify(value, null, 2)
+                        : String(value)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </Modal.Body>
       </Modal>
     </div>

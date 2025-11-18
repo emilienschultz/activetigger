@@ -4,8 +4,8 @@ import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import Select from 'react-select';
 import { Tooltip } from 'react-tooltip';
 import { useTrainBertModel } from '../../core/api';
+import { getRandomName } from '../../core/utils';
 import { newBertModel, ProjectStateModel } from '../../types';
-
 interface ModelCreationFormProps {
   projectSlug: string | null;
   currentScheme: string | null;
@@ -66,10 +66,12 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
     control,
   } = useForm<newBertModel>({
     defaultValues: {
+      name: getRandomName('bertmodel'),
       class_balance: false,
       loss: 'cross_entropy',
       class_min_freq: 1,
       test_size: 0.2,
+      max_length: 512,
       parameters: {
         batchsize: 4,
         gradacc: 4.0,
@@ -196,6 +198,18 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
         <summary>Advanced parameters for the model</summary>
         <div>
           <label>
+            Max context window (tokens){' '}
+            <a className="max_length">
+              <HiOutlineQuestionMarkCircle />
+            </a>
+            <Tooltip anchorSelect=".max_length" place="top">
+              Number of token before truncating (depend of the model)
+            </Tooltip>
+          </label>
+          <input type="number" step="1" {...registerNewModel('max_length')} />
+        </div>
+        <div>
+          <label>
             Batch Size{' '}
             <a className="batchsize">
               <HiOutlineQuestionMarkCircle />
@@ -255,6 +269,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
           </label>
           <input type="number" step="1" {...registerNewModel('class_min_freq')} />
         </div>
+
         <div className="form-group d-flex align-items-center">
           <label>
             Balance classes

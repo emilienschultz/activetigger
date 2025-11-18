@@ -177,6 +177,7 @@ class LanguageModels:
         num_min_annotations: int = 10,
         num_min_annotations_per_label: int = 5,
         loss: str = "cross_entropy",
+        max_length: int = 512,
     ) -> None:
         """
         Manage the training of a model from the API
@@ -225,6 +226,7 @@ class LanguageModels:
                 params=params,
                 test_size=test_size,
                 loss=loss,
+                max_length=max_length,
             ),
             queue="gpu",
         )

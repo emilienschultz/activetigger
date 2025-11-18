@@ -307,6 +307,7 @@ class BertModelModel(BaseModel):
     class_balance: bool = False
     loss: str = "cross_entropy"
     exclude_labels: list[str] = []
+    max_length: int = 512
 
 
 class UmapModel(BaseModel):
@@ -832,7 +833,7 @@ class ReconciliationModel(BaseModel):
     list of elements to reconciliate
     """
 
-    table: list[dict[str, str | dict[str, str]]]
+    table: list[dict[str, str | dict[str, str | None]]]
     users: list[str]
 
 
@@ -917,6 +918,14 @@ class FeatureDescriptionModel(BaseModel):
     time: str
     kind: str
     cols: list[str]
+
+
+class FeatureDescriptionModelOut(BaseModel):
+    name: str
+    parameters: dict[str, Any]
+    user: str
+    time: str
+    kind: str
 
 
 class TrainMLResults(BaseModel):

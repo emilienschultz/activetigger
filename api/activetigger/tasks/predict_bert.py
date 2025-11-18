@@ -113,6 +113,7 @@ class PredictBert(BaseTask):
         print("load model")
         with open(self.path / "parameters.json", "r") as jsonfile:
             data = json.load(jsonfile)
+            max_length = int(data.get("max_length", 512))
             if "base_model" in data:
                 modeltype = data["base_model"]
             else:
@@ -144,8 +145,8 @@ class PredictBert(BaseTask):
                     list(chunk),
                     padding=True,
                     truncation=True,
-                    max_length=512,
                     return_tensors="pt",
+                    max_length=max_length,
                 )
                 if gpu:
                     chunk = chunk.to("cuda")

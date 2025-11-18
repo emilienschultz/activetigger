@@ -7,19 +7,19 @@ export const AccountPage: FC = () => {
   const { authenticatedUser } = useAuth();
 
   return (
-    <PageLayout currentPage="login">
-      <div className="container-fluid">
+    <PageLayout currentPage="account">
+      <div className="container">
         {authenticatedUser?.username && (
           <div className="row">
-            <div className="col-1"></div>
-
-            <div className="col-11 col-lg-6 ">
+            <div className="col-0 col-sm-2 col-md-3" />
+            <div className="col-12 col-sm-8 col-md-6 ">
               <div className="user-info">
                 You're logged in as <span>{authenticatedUser.username}</span> ( status :{' '}
                 {authenticatedUser.status})
               </div>
               <ChangePassword />
             </div>
+            <div className="col-0 col-sm-2 col-md-3" />
           </div>
         )}
       </div>

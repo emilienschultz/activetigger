@@ -1,11 +1,18 @@
+import cx from 'classnames';
 import { FC, useMemo, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
+import { GrValidate } from 'react-icons/gr';
 import { useParams } from 'react-router-dom';
-import Select from 'react-select';
 import { DisplayScoresMenu } from '../components/DisplayScoresMenu';
 import { DisplayTrainingProcesses } from '../components/DisplayTrainingProcesses';
 import { ProjectPageLayout } from '../components/layout/ProjectPageLayout';
-import { useComputeModelPrediction, useModelInformations } from '../core/api';
+import { ModelsPillDisplay } from '../components/ModelsPillDisplay';
+import {
+  useComputeModelPrediction,
+  useDeleteBertModel,
+  useDeleteQuickModel,
+  useModelInformations,
+} from '../core/api';
 import { useAppContext } from '../core/context';
 import { MLStatisticsModel, ModelDescriptionModel } from '../types';
 
@@ -18,32 +25,32 @@ interface validateButtonsProps {
   modelName: string | null;
   kind: string | null;
   currentScheme: string | null;
-  isComputing: boolean;
-  setCurrentModel: (val: null | string) => void;
+  setCurrentModel?: (val: null | string) => void;
+  className?: string;
+  id?: string;
 }
 
 export const ValidateButtons: FC<validateButtonsProps> = ({
   modelName,
   kind,
-  isComputing,
   currentScheme,
   projectSlug,
   setCurrentModel,
+  className,
+  id,
 }) => {
   const { computeModelPrediction } = useComputeModelPrediction(projectSlug || null, 16);
   return (
-    <div>
-      <button
-        className="btn btn-primary my-2"
-        onClick={() => {
-          computeModelPrediction(modelName || '', 'annotable', currentScheme, kind);
-          setCurrentModel(null);
-        }}
-        disabled={isComputing}
-      >
-        Compute statistics on annotations
-      </button>
-    </div>
+    <button
+      className={cx(className ? className : 'btn btn-primary m-4')}
+      onClick={() => {
+        computeModelPrediction(modelName || '', 'annotable', currentScheme, kind);
+        if (setCurrentModel) setCurrentModel(null);
+      }}
+      id={id}
+    >
+      <GrValidate size={20} /> Compute statistics on annotations
+    </button>
   );
 };
 
@@ -59,6 +66,9 @@ export const ProjectValidatePage: FC = () => {
   // model selected
   const [currentQuickModelName, setCurrentQuickModelName] = useState<string | null>(null);
   const [currentBertModelName, setCurrentBertModelName] = useState<string | null>(null);
+  // delete quickmodel
+  const { deleteQuickModel } = useDeleteQuickModel(projectName as string);
+  const { deleteBertModel } = useDeleteBertModel(projectName as string);
 
   const { model: bertModelInformations } = useModelInformations(
     projectName || null,
@@ -101,76 +111,52 @@ export const ProjectValidatePage: FC = () => {
                 <div className="explanations">
                   Compute statistics on annotations for machine learning models
                 </div>
-                <div>
-                  <label htmlFor="selected-model">Existing models</label>
-                  <Select
-                    options={Object.values(availableQuickModels || {}).map((e) => ({
-                      value: e.name,
-                      label: e.name,
-                    }))}
-                    value={
-                      currentQuickModelName
-                        ? { value: currentQuickModelName, label: currentQuickModelName }
-                        : null
-                    }
-                    onChange={(selectedOption) => {
-                      setCurrentQuickModelName(selectedOption ? selectedOption.value : null);
-                    }}
-                    isSearchable
-                    className="w-50 mt-1"
-                  />
-                </div>
-                <ValidateButtons
-                  modelName={currentQuickModelName}
-                  kind="quick"
-                  currentScheme={currentScheme || null}
-                  projectSlug={projectName || null}
-                  isComputing={isComputing}
-                  setCurrentModel={setCurrentQuickModelName}
-                />
+                {availableQuickModels && (
+                  <ModelsPillDisplay
+                    modelNames={(availableQuickModels || {})?.map((model) => model.name)}
+                    currentModelName={currentQuickModelName}
+                    setCurrentModelName={setCurrentQuickModelName}
+                    deleteModelFunction={deleteQuickModel}
+                  ></ModelsPillDisplay>
+                )}
 
                 {quickModelInformations && (
-                  <DisplayScoresMenu
-                    scores={
-                      quickModelInformations.scores as unknown as Record<string, MLStatisticsModel>
-                    }
-                    modelName={currentQuickModelName || ''}
-                    skip={['internalvalid_scores']}
-                  />
+                  <>
+                    <ValidateButtons
+                      modelName={currentQuickModelName}
+                      kind="quick"
+                      currentScheme={currentScheme || null}
+                      projectSlug={projectName || null}
+                      id="compute-validate"
+                    />
+
+                    <DisplayScoresMenu
+                      scores={
+                        quickModelInformations.scores as unknown as Record<
+                          string,
+                          MLStatisticsModel
+                        >
+                      }
+                      modelName={currentQuickModelName || ''}
+                      skip={['internalvalid_scores']}
+                    />
+                  </>
                 )}
               </Tab>
               <Tab eventKey="bert" title="BERT">
                 <div className="explanations">
                   Compute statistics on annotations for BERT models
                 </div>
+                {availableQuickModels && (
+                  <ModelsPillDisplay
+                    modelNames={Object.keys(availableBertModels || {})?.map((model) => model)}
+                    currentModelName={currentBertModelName}
+                    setCurrentModelName={setCurrentBertModelName}
+                    deleteModelFunction={deleteBertModel}
+                  ></ModelsPillDisplay>
+                )}
                 <div>
-                  <label htmlFor="selected-model">Existing models</label>
-                  <Select
-                    options={Object.keys(availableBertModels || {}).map((e) => ({
-                      value: e,
-                      label: e,
-                    }))}
-                    value={
-                      currentBertModelName
-                        ? { value: currentBertModelName, label: currentBertModelName }
-                        : null
-                    }
-                    onChange={(selectedOption) => {
-                      setCurrentBertModelName(selectedOption ? selectedOption.value : null);
-                    }}
-                    isSearchable
-                    className="w-50 mt-1"
-                  />
-                </div>
-                <ValidateButtons
-                  modelName={currentBertModelName}
-                  kind="bert"
-                  currentScheme={currentScheme || null}
-                  projectSlug={projectName || null}
-                  isComputing={isComputing}
-                  setCurrentModel={setCurrentBertModelName}
-                />
-                <div>
+                  {/* AM: Necessary ? Confused... */}
                   <DisplayTrainingProcesses
                     projectSlug={projectName || null}
                     processes={project?.languagemodels.training}
@@ -188,37 +174,26 @@ export const ProjectValidatePage: FC = () => {
                   )}
 
                   {bertModelInformations && (
-                    <DisplayScoresMenu
-                      scores={
-                        bertModelInformations.scores as unknown as Record<string, MLStatisticsModel>
-                      }
-                      modelName={currentQuickModelName || ''}
-                      skip={['internalvalid_scores']}
-                    />
+                    <>
+                      <ValidateButtons
+                        modelName={currentBertModelName}
+                        kind="bert"
+                        currentScheme={currentScheme || null}
+                        projectSlug={projectName || null}
+                        id="compute-validate"
+                      />
+                      <DisplayScoresMenu
+                        scores={
+                          bertModelInformations.scores as unknown as Record<
+                            string,
+                            MLStatisticsModel
+                          >
+                        }
+                        modelName={currentQuickModelName || ''}
+                        skip={['internalvalid_scores']}
+                      />
+                    </>
                   )}
-
-                  {/* {bertModelInformation && (
-                    <DisplayScores
-                      scores={
-                        bertModelInformation.scores.valid_scores as unknown as Record<
-                          string,
-                          number
-                        >
-                      }
-                      modelName={currentBertModelName || ''}
-                      title="Validation scores"
-                    />
-                  )}
-
-                  {bertModelInformation && (
-                    <DisplayScores
-                      scores={
-                        bertModelInformation.scores.test_scores as unknown as Record<string, number>
-                      }
-                      modelName={currentBertModelName || ''}
-                      title="Test scores"
-                    />
-                  )} */}
                 </div>
               </Tab>
             </Tabs>

@@ -2,6 +2,7 @@ import { FC, useEffect, useMemo, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { FaPlusCircle, FaRegTrashAlt } from 'react-icons/fa';
 
+import { Modal } from 'react-bootstrap';
 import { IoDuplicate } from 'react-icons/io5';
 import { MdDriveFileRenameOutline } from 'react-icons/md';
 import Select from 'react-select';
@@ -9,15 +10,15 @@ import { Tooltip } from 'react-tooltip';
 import { useAddScheme, useDeleteScheme, useDuplicateScheme, useRenameScheme } from '../core/api';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
+import { getRandomName } from '../core/utils';
 import { SchemeModel } from '../types';
-
 /*
  * Select current scheme
  */
 
 interface SchemeManagementProps {
   projectSlug: string;
-  deactivateModifications?: boolean;
+  canEdit?: boolean;
 }
 
 export const SelectCurrentScheme: FC = () => {
@@ -98,10 +99,7 @@ export const SelectCurrentScheme: FC = () => {
  * Select ; Delete ; Add
  */
 
-export const SchemesManagement: FC<SchemeManagementProps> = ({
-  projectSlug,
-  deactivateModifications,
-}) => {
+export const SchemesManagement: FC<SchemeManagementProps> = ({ projectSlug, canEdit }) => {
   // get element from the context
   const {
     appContext: { currentProject, currentScheme, reFetchCurrentProject },
@@ -111,7 +109,12 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
   const availableSchemes = currentProject ? Object.keys(currentProject.schemes.available) : [];
 
   // hooks to use the objets
-  const { register, handleSubmit } = useForm<SchemeModel>({});
+  const { register, handleSubmit } = useForm<SchemeModel>({
+    defaultValues: {
+      name: getRandomName('Scheme'),
+    },
+  });
+
   const { notify } = useNotifications();
 
   // hook to get the api call
@@ -123,6 +126,7 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
   // state for displaying the new scheme menu
   const [showCreateNewScheme, setShowCreateNewScheme] = useState(false);
   const [showRename, setShowRename] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
   const [newSchemeName, setNewSchemeName] = useState('New name');
 
   // action to create the new scheme
@@ -134,7 +138,7 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
     } catch (error) {
       notify({ type: 'error', message: error + '' });
     }
-    setShowCreateNewScheme(!showCreateNewScheme);
+    setShowCreateNewScheme(false);
   };
 
   // action to delete scheme
@@ -157,7 +161,7 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
     <div>
       <div className="mt-3 col-12 d-flex">
         <SelectCurrentScheme />
-        {!deactivateModifications && (
+        {canEdit && (
           <div className="mx-2">
             <button
               onClick={() => setShowCreateNewScheme(!showCreateNewScheme)}
@@ -183,7 +187,10 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
                 Duplicate current scheme
               </Tooltip>
             </button>
-            <button onClick={deleteSelectedScheme} className="btn btn-sm p-1 deletescheme">
+            <button
+              onClick={() => setShowDelete(!showDelete)}
+              className="btn btn-sm p-1 deletescheme"
+            >
               <FaRegTrashAlt size={20} />
               <Tooltip anchorSelect=".deletescheme" place="top">
                 Delete current scheme
@@ -192,62 +199,80 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
           </div>
         )}
       </div>
-      <div>
-        {
-          // only display if click on the add button
-          showCreateNewScheme && (
-            <div className="alert alert-primary">
-              <form onSubmit={handleSubmit(createNewScheme)}>
-                <input
-                  className="form-control"
-                  id="scheme_name"
-                  type="text"
-                  {...register('name')}
-                  placeholder="Enter new scheme name"
-                />
-                <label
-                  htmlFor="scheme-selected"
-                  style={{ whiteSpace: 'nowrap', marginRight: '10px' }}
-                >
-                  Type
-                </label>
-                <select id="scheme_kind" className="form-select" {...register('kind')}>
-                  <option value="multiclass">Multiclass</option>
-                  <option value="multilabel">
-                    Multilabel (experimental - only some features implemented)
-                  </option>
-                  <option value="span">Span (experimental - only annotation)</option>
-                </select>
-                <button className="btn btn-primary btn-validation">Create</button>
-              </form>
-            </div>
-          )
-        }
-        {
-          // only display if click on the rename button
-          showRename && (
-            <div className="d-flex alert alert-primary">
-              <input
-                className="form-control me-2"
-                id="scheme_rename"
-                type="text"
-                placeholder="Enter new scheme name"
-                value={newSchemeName}
-                onChange={(e) => setNewSchemeName(e.target.value)}
-              />
-              <button
-                className="btn btn-primary"
-                onClick={() => {
-                  renameScheme(newSchemeName);
-                  setShowRename(false);
-                }}
-              >
-                Rename
-              </button>
-            </div>
-          )
-        }
-      </div>
+      <Modal
+        show={showCreateNewScheme}
+        id="addschememodal"
+        onHide={() => setShowCreateNewScheme(false)}
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Add a new scheme</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <form onSubmit={handleSubmit(createNewScheme)}>
+            <input
+              className="form-control"
+              id="scheme_name"
+              type="text"
+              {...register('name')}
+              placeholder="Enter new scheme name"
+            />
+            <label htmlFor="scheme-selected" style={{ whiteSpace: 'nowrap', marginRight: '10px' }}>
+              Type
+            </label>
+            <select id="scheme_kind" className="form-select" {...register('kind')}>
+              <option value="multiclass">Multiclass</option>
+              <option value="multilabel">
+                Multilabel (experimental - only some features implemented)
+              </option>
+              <option value="span">Span (experimental - only annotation)</option>
+            </select>
+            <button className="btn btn-primary btn-validation">Create</button>
+          </form>
+        </Modal.Body>
+      </Modal>
+      <Modal show={showRename} id="renamescheme" onHide={() => setShowRename(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Rename the current scheme</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <input
+            className="form-control my-2"
+            id="scheme_rename"
+            type="text"
+            placeholder="Enter new scheme name"
+            value={newSchemeName}
+            onChange={(e) => setNewSchemeName(e.target.value)}
+          />
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              renameScheme(newSchemeName);
+              setShowRename(false);
+            }}
+          >
+            Rename
+          </button>
+        </Modal.Body>
+      </Modal>
+      <Modal show={showDelete} id="deletescheme" onHide={() => setShowDelete(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Delete the current scheme</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>
+            Are you sure you want to delete the scheme <b>{currentScheme}</b>?
+          </p>
+          <button
+            className="btn btn-danger"
+            onClick={() => {
+              deleteSelectedScheme();
+              setShowDelete(false);
+            }}
+          >
+            Delete
+          </button>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };

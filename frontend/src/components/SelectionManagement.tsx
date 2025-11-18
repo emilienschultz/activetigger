@@ -1,12 +1,20 @@
-import { ChangeEvent, FC, useEffect, useState } from 'react';
+import { ChangeEvent, Dispatch, FC, SetStateAction, useEffect, useState } from 'react';
 import { FaLock } from 'react-icons/fa';
-import { Tooltip } from 'react-tooltip';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
+import { Tooltip } from 'react-tooltip';
 import { useGetQuickModel } from '../core/api';
 import { useAppContext } from '../core/context';
 
+interface SelectionManagementProps {
+  settingChanged: boolean;
+  setSettingChanged: Dispatch<SetStateAction<boolean>>;
+}
+
 // define the component to configure selection mode
-export const SelectionManagement: FC = () => {
+export const SelectionManagement: FC<SelectionManagementProps> = ({
+  settingChanged,
+  setSettingChanged,
+}) => {
   const {
     appContext: {
       currentScheme,
@@ -78,8 +86,6 @@ export const SelectionManagement: FC = () => {
   const isValid = project?.params.valid;
   const isTest = project?.params.test;
 
-  console.log(project);
-
   return (
     <div className="w-100">
       <div id="tag-parameters-div">
@@ -88,6 +94,7 @@ export const SelectionManagement: FC = () => {
           <select
             className="form-select"
             onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+              if (!settingChanged) setSettingChanged(true);
               setAppContext((prev) => ({
                 ...prev,
                 selectionConfig: { ...selectionConfig, mode: e.target.value },
@@ -106,6 +113,7 @@ export const SelectionManagement: FC = () => {
                 Maxprob on
                 <select
                   onChange={(e) => {
+                    if (!settingChanged) setSettingChanged(true);
                     setAppContext((prev) => ({
                       ...prev,
                       selectionConfig: { ...selectionConfig, label_maxprob: e.target.value },
@@ -124,7 +132,14 @@ export const SelectionManagement: FC = () => {
         </div>
         <div className="parameter-div">
           <label className="form-label label-small-gray">Dataset</label>
-          <select className="form-select" value={phase} onChange={changeDataSet}>
+          <select
+            className="form-select"
+            value={phase}
+            onChange={(e) => {
+              if (!settingChanged) setSettingChanged(true);
+              changeDataSet(e);
+            }}
+          >
             <option value="train">train</option>
             {isValid && <option value="valid">validation</option>}
             {isTest && <option value="test">test</option>}
@@ -132,7 +147,14 @@ export const SelectionManagement: FC = () => {
         </div>
         <div className="parameter-div">
           <label className="form-label label-small-gray">Tagged</label>
-          <select className="form-select" onChange={changeSample} value={selectionConfig.sample}>
+          <select
+            className="form-select"
+            onChange={(e) => {
+              if (!settingChanged) setSettingChanged(true);
+              changeSample(e);
+            }}
+            value={selectionConfig.sample}
+          >
             {availableSamples.map((e, i) => (
               <option key={i}>{e}</option>
             ))}{' '}
@@ -147,6 +169,7 @@ export const SelectionManagement: FC = () => {
                   On label
                   <select
                     onChange={(e) => {
+                      if (!settingChanged) setSettingChanged(true);
                       setAppContext((prev) => ({
                         ...prev,
                         selectionConfig: { ...selectionConfig, label: e.target.value },
@@ -169,6 +192,7 @@ export const SelectionManagement: FC = () => {
                     className="form-select"
                     id="select_user"
                     onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+                      if (!settingChanged) setSettingChanged(true);
                       setAppContext((prev) => ({
                         ...prev,
                         selectionConfig: { ...selectionConfig, user: e.target.value },
@@ -204,6 +228,7 @@ export const SelectionManagement: FC = () => {
             placeholder="Enter a regex"
             value={selectionConfig.filter}
             onChange={(e) => {
+              if (!settingChanged) setSettingChanged(true);
               setAppContext((prev) => ({
                 ...prev,
                 selectionConfig: { ...selectionConfig, filter: e.target.value },

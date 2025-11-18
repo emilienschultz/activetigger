@@ -1,10 +1,47 @@
+import cx from 'classnames';
 import { FC, useState } from 'react';
-import { MdOutlineDeleteOutline } from 'react-icons/md';
 import { useParams } from 'react-router-dom';
 
+import { Modal } from 'react-bootstrap';
+import { FaPlusCircle } from 'react-icons/fa';
 import { useDeleteFeature, useGetFeatureInfo } from '../core/api';
 import { useAppContext } from '../core/context';
+import { FeatureDescriptionModelOut } from '../types';
 import { CreateNewFeature } from './CreateNewFeature';
+import { ModelsPillDisplay } from './ModelsPillDisplay';
+
+export default function SimpleTable(data: FeatureDescriptionModelOut) {
+  return (
+    <div>
+      <table className="table-auto border-collapse border border-gray-300 w-full">
+        <tbody>
+          <tr>
+            <td className="border border-gray-300 px-4 py-2 font-medium">Name</td>
+            <td className="border border-gray-300 px-4 py-2">{data.name}</td>
+          </tr>
+          <tr>
+            <td className="border border-gray-300 px-4 py-2 font-medium">User</td>
+            <td className="border border-gray-300 px-4 py-2">{data.user}</td>
+          </tr>
+          <tr>
+            <td className="border border-gray-300 px-4 py-2 font-medium">Time</td>
+            <td className="border border-gray-300 px-4 py-2">{data.time}</td>
+          </tr>
+          <tr>
+            <td className="border border-gray-300 px-4 py-2 font-medium">Kind</td>
+            <td className="border border-gray-300 px-4 py-2">{data.kind}</td>
+          </tr>
+          <tr>
+            <td className="border border-gray-300 px-4 py-2 font-medium">Parameters</td>
+            <td className="border border-gray-300 px-4 py-2">
+              {JSON.stringify(data.parameters, null, 2)}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 export const FeaturesManagement: FC = () => {
   const { projectName } = useParams();
@@ -19,38 +56,36 @@ export const FeaturesManagement: FC = () => {
   const deleteFeature = useDeleteFeature(projectName || null);
 
   // show the menu
-  const [showMenu, setShowMenu] = useState(false);
+  const [showAddFeature, setShowAddFeature] = useState(false);
+  const [selectedFeature, setSelectedFeature] = useState<string | null>(null);
 
   const deleteSelectedFeature = async (element: string) => {
     await deleteFeature(element);
+    setSelectedFeature(null);
   };
+
+  console.log(featuresInfo);
 
   if (!project) {
     return <div>No project selected</div>;
   }
-
   return (
     <div className="container">
       <div className="row">
-        {featuresInfo &&
-          Object.entries(featuresInfo).map(([key, value]) => (
-            <div className="card text-bg-light mt-3" key={key}>
-              <div className="d-flex m-2 align-items-center">
-                <button
-                  className="btn btn p-0 mx-4"
-                  onClick={() => {
-                    deleteSelectedFeature(key);
-                  }}
-                >
-                  <MdOutlineDeleteOutline size={20} />
-                </button>
-                <span className="w-25">{key}</span>
-                <span className="mx-2">{value?.time}</span>
-                <span className="mx-2">by {value?.user}</span>
-                {value?.kind === 'regex' && <span>N={value.parameters['count'] as string}</span>}
-              </div>
-            </div>
-          ))}{' '}
+        <ModelsPillDisplay
+          modelNames={Object.keys(featuresInfo || {}).map((feature) => feature)}
+          currentModelName={selectedFeature}
+          setCurrentModelName={setSelectedFeature}
+          deleteModelFunction={deleteSelectedFeature}
+        >
+          <button
+            onClick={() => setShowAddFeature(true)}
+            className={cx('model-pill ', isComputing ? 'disabled' : '')}
+            id="create-new"
+          >
+            <FaPlusCircle size={20} /> Create new feature
+          </button>
+        </ModelsPillDisplay>
         {/* Display computing features */}
         {Object.entries(project?.features.training).map(([key, element]) => (
           <div className="card text-bg-light mt-3 bg-warning" key={key}>
@@ -62,20 +97,22 @@ export const FeaturesManagement: FC = () => {
             </div>
           </div>
         ))}
-        {/* // create new feature */}
-        <button
-          onClick={() => setShowMenu(!showMenu)}
-          className="btn btn-primary w-25 mt-3"
-          disabled={isComputing}
-        >
-          Create a new feature
-        </button>
-        {showMenu && (
-          <CreateNewFeature
-            columns={project?.params.all_columns || []}
-            featuresOption={project.features.options || {}}
-          />
-        )}
+        {featuresInfo &&
+          selectedFeature &&
+          SimpleTable(featuresInfo[selectedFeature] as FeatureDescriptionModelOut)}
+
+        <Modal show={showAddFeature} onHide={() => setShowAddFeature(false)} id="addfeature-modal">
+          <Modal.Header closeButton>
+            <Modal.Title>Add a new feature</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <CreateNewFeature
+              columns={project?.params.all_columns || []}
+              featuresOption={project.features.options || {}}
+              callback={setShowAddFeature}
+            />
+          </Modal.Body>
+        </Modal>
       </div>
     </div>
   );

@@ -41,7 +41,6 @@ export const APIMiddlewares: FC<PropsWithChildren> = ({ children }) => {
 
         // if session is expired or invalid we catch the 401 and redirect to login page
         if ([401, 403].includes(response.status)) {
-          console.log(response);
           redirectToLogin('Invalid user session: redirecting you to login page...');
         } else {
           if (response.status !== 200) {

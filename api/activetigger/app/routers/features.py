@@ -15,7 +15,7 @@ from activetigger.app.dependencies import (
     verified_user,
 )
 from activetigger.datamodels import (
-    FeatureDescriptionModel,
+    FeatureDescriptionModelOut,
     FeatureModel,
     UserInDBModel,
 )
@@ -59,8 +59,6 @@ async def post_embeddings(
             series_list.append(project.data.test["text"])
         df = pd.concat(series_list)
 
-        print("Data to compute features on", df.shape, project.data.valid, project.data.test)
-
         # compute features
         project.features.compute(
             df, feature.name, feature.type, feature.parameters, current_user.username
@@ -93,7 +91,7 @@ async def delete_feature(
 @router.get("/features/available", dependencies=[Depends(verified_user)])
 async def get_feature_info(
     project: Annotated[Project, Depends(get_project)],
-) -> dict[str, FeatureDescriptionModel]:
+) -> dict[str, FeatureDescriptionModelOut]:
     """
     Get feature info
     """

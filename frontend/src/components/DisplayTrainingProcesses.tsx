@@ -1,6 +1,6 @@
 import { FC } from 'react';
 import PulseLoader from 'react-spinners/PulseLoader';
-import { useStopTrainBertModel } from '../core/api';
+import { useStopProcesses } from '../core/api';
 import { LossChart } from './vizualisation/lossChart';
 
 export interface DisplayTrainingProcessesProps {
@@ -32,12 +32,11 @@ interface LossData {
 }
 
 export const DisplayTrainingProcesses: FC<DisplayTrainingProcessesProps> = ({
-  projectSlug,
   processes,
   processStatus,
   displayStopButton = false,
 }) => {
-  const { stopTraining } = useStopTrainBertModel(projectSlug || null);
+  const { stopProcesses } = useStopProcesses();
 
   const displayAdvancement = (val: number | string | null) => {
     if (!val) return 'process in the queue waiting to start';
@@ -61,9 +60,9 @@ export const DisplayTrainingProcesses: FC<DisplayTrainingProcessesProps> = ({
           <button
             key="stop"
             className="btn btn-primary mt-3 d-flex align-items-center"
-            onClick={stopTraining}
+            onClick={() => stopProcesses('bert')}
           >
-            <PulseLoader color={'white'} /> Stop current process
+            <PulseLoader color={'white'} /> Stop process
           </button>
         </div>
       )}

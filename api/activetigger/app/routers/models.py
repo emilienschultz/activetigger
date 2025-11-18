@@ -271,27 +271,6 @@ async def post_bert(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/models/bert/stop", dependencies=[Depends(verified_user)])
-async def stop_bert(
-    project: Annotated[Project, Depends(get_project)],
-    current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    specific_user: str | None = None,
-) -> None:
-    """
-    Stop user process
-    """
-    test_rights(ProjectAction.ADD, current_user.username, project.name)
-    try:
-        if specific_user is not None:
-            user = specific_user
-        else:
-            user = current_user.username
-
-        orchestrator.stop_user_processes(kind=["train_bert", "predict_bert"], username=user)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 @router.post("/models/bert/delete", dependencies=[Depends(verified_user)])
 async def delete_bert(
     project: Annotated[Project, Depends(get_project)],

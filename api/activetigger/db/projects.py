@@ -6,7 +6,7 @@ from sqlalchemy import and_, delete, func, select, update
 from sqlalchemy.orm import Session as SessionType
 from sqlalchemy.orm import sessionmaker
 
-from activetigger.datamodels import FeatureDescriptionModel
+from activetigger.datamodels import FeatureDescriptionModelOut
 from activetigger.db import DBException
 from activetigger.db.models import Annotations, Auths, Features, Models, Projects, Schemes, Tokens
 
@@ -82,11 +82,17 @@ class ProjectsService:
             )
 
     def add_scheme(
-        self, project_slug: str, name: str, labels: list[str], kind: str, user_name: str
+        self,
+        project_slug: str,
+        name: str,
+        labels: list[str],
+        kind: str,
+        user_name: str,
+        codebook: str = "# Guidelines\nWrite down your guidelines here.",
     ):
         if not labels:
             labels = []
-        params = {"labels": labels, "codebook": "", "kind": kind}
+        params = {"labels": labels, "codebook": codebook, "kind": kind}
         with self.Session.begin() as session:
             scheme = Schemes(
                 project_slug=project_slug,
@@ -589,16 +595,15 @@ class ProjectsService:
         session.close()
         return feature
 
-    def get_project_features(self, project_slug: str) -> dict[str, FeatureDescriptionModel]:
+    def get_project_features(self, project_slug: str) -> dict[str, FeatureDescriptionModelOut]:
         with self.Session() as session:
             features = session.scalars(select(Features).filter_by(project_slug=project_slug)).all()
             return {
-                i.name: FeatureDescriptionModel(
+                i.name: FeatureDescriptionModelOut(
                     time=i.time.strftime("%Y-%m-%d %H:%M:%S"),
                     kind=i.kind,
                     parameters=i.parameters,
                     user=str(i.user_name),  # check
-                    cols=list(i.data),
                     name=i.name,
                 )
                 for i in features

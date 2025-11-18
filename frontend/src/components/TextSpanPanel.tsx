@@ -44,8 +44,6 @@ export const TextSpanPanel: FC<SpanInputProps> = ({
     color: COLORS[label],
   }));
 
-  console.log(value);
-
   return (
     <div>
       <div className="my-3 w-50 mx-auto d-flex align-items-center">

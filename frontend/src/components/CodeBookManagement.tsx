@@ -1,24 +1,29 @@
 import MDEditor from '@uiw/react-md-editor';
-import { marked } from 'marked';
 import { FC, useEffect, useState } from 'react';
 import rehypeSanitize from 'rehype-sanitize';
-import { useGetSchemeCodebook, usePostSchemeCodebook } from '../core/api';
+import { usePostSchemeCodebook } from '../core/api';
 
 interface CodebookManagementProps {
   projectName: string | null;
   currentScheme: string | null;
+  codebook: string | null;
+  time: string | null;
+  reFetchCodebook: () => void;
 }
 
 /**
  * TODO : there is a need to manage the multiuser
  */
 
-export const CodebookManagement: FC<CodebookManagementProps> = ({ projectName, currentScheme }) => {
+export const CodebookManagement: FC<CodebookManagementProps> = ({
+  projectName,
+  currentScheme,
+  codebook,
+  time,
+  reFetchCodebook,
+}) => {
   const { postCodebook } = usePostSchemeCodebook(projectName || null, currentScheme || null);
-  const { codebook, time, reFetchCodebook } = useGetSchemeCodebook(
-    projectName || null,
-    currentScheme || null,
-  );
+
   const [modifiedCodebook, setModifiedCodebook] = useState<string | undefined>(undefined);
   //  const [lastModified, setLastModified] = useState<string | undefined | null>(undefined);
 
@@ -26,46 +31,12 @@ export const CodebookManagement: FC<CodebookManagementProps> = ({ projectName, c
   useEffect(() => {
     if (codebook && modifiedCodebook === undefined) {
       setModifiedCodebook(codebook);
-      //      setLastModified(time);
     }
   }, [codebook, modifiedCodebook, time]);
 
   const saveCodebook = async () => {
     postCodebook(modifiedCodebook || '', time || '');
     reFetchCodebook();
-  };
-
-  // Downoad
-  const downloadMarkdown = () => {
-    const blob = new Blob([modifiedCodebook || ''], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'codebook.md';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const openAsHTML = () => {
-    const htmlContent = `
-    <html>
-      <head>
-        <title>Codebook</title>
-        <meta charset="UTF-8" />
-        <style>
-          body { font-family: sans-serif; padding: 2em; }
-        </style>
-      </head>
-      <body>
-        <div>${marked.parse(modifiedCodebook || '')}</div>
-      </body>
-    </html>
-  `;
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
   };
 
   return (
@@ -79,12 +50,6 @@ export const CodebookManagement: FC<CodebookManagementProps> = ({ projectName, c
       />
       <button className="btn btn-secondary btn-sm mt-3" onClick={saveCodebook}>
         Save
-      </button>
-      <button className="btn btn-primary btn-sm mt-3 ms-2" onClick={openAsHTML}>
-        Open in another window
-      </button>
-      <button className="btn btn-primary btn-sm mt-3 ms-2" onClick={downloadMarkdown}>
-        Download
       </button>
     </div>
   );

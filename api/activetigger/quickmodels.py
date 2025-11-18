@@ -257,7 +257,7 @@ class QuickModels:
         """
         Currently under training
         """
-        return {e.user: list(e.scheme) for e in self.computing if e.kind == "quickmodel"}
+        return {e.user: list(e.scheme) for e in self.computing if e.kind == "train_quickmodel"}
 
     def exists(self, name: str) -> bool:
         """

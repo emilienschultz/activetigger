@@ -2,6 +2,7 @@ import { FC, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 
+import { Modal } from 'react-bootstrap';
 import { FaPlusCircle } from 'react-icons/fa';
 import Select from 'react-select';
 import { PageLayout } from '../components/layout/PageLayout';
@@ -69,25 +70,45 @@ export const UsersPage: FC = () => {
 
   return (
     <PageLayout currentPage="users">
-      <div className="container-fluid">
+      <div className="container">
         <div className="row">
-          <div className="col-1"></div>
-          <div className="col-8">
+          <div className="col-0 col-sm-1 col-md-2" />
+          <div className="col-12 col-sm-10 col-md-8">
             <div className="explanations">Manage users and rights</div>
 
             <span className="explanations">User</span>
             <div className="d-flex align-items-center">
               {accessToList ? (
-                <Select
-                  id="select-user"
-                  className="form-select"
-                  options={userOptions}
-                  onChange={(selectedOption) => {
-                    setCurrentUser(selectedOption ? selectedOption.value : null);
-                  }}
-                  isClearable
-                  placeholder="Select a user"
-                />
+                <>
+                  <Select
+                    id="select-user"
+                    className="flex-grow-1"
+                    options={userOptions}
+                    onChange={(selectedOption) => {
+                      setCurrentUser(selectedOption ? selectedOption.value : null);
+                    }}
+                    isClearable
+                    placeholder="Select a user"
+                  />
+                  <button
+                    className="btn btn p-0 m-2"
+                    onClick={() => {
+                      setShowCreateUser(!showCreateUser);
+                      reFetchUsers();
+                    }}
+                  >
+                    <FaPlusCircle size={25} />
+                  </button>
+                  <button
+                    className="btn btn p-0"
+                    onClick={() => {
+                      deleteUser(currentUser);
+                      reFetchUsers();
+                    }}
+                  >
+                    <MdOutlineDeleteOutline size={30} />
+                  </button>
+                </>
               ) : (
                 <input
                   className="form-control"
@@ -98,28 +119,17 @@ export const UsersPage: FC = () => {
                   placeholder="Write a user handle"
                 />
               )}
-              <button
-                className="btn btn p-0 m-2"
-                onClick={() => {
-                  setShowCreateUser(!showCreateUser);
-                  reFetchUsers();
-                }}
-              >
-                <FaPlusCircle size={25} />
-              </button>
-              <button
-                className="btn btn p-0"
-                onClick={() => {
-                  deleteUser(currentUser);
-                  reFetchUsers();
-                }}
-              >
-                <MdOutlineDeleteOutline size={30} />
-              </button>
             </div>
-            {authenticatedUser?.username === 'root' && showCreateUser && (
-              <div className="alert alert-light">
-                <span className="explanations">Create a new user</span>
+            <Modal
+              show={showCreateUser}
+              onHide={() => setShowCreateUser(false)}
+              size="xl"
+              id="users-modal"
+            >
+              <Modal.Header closeButton>
+                <Modal.Title>Create a new user</Modal.Title>
+              </Modal.Header>
+              <Modal.Body>
                 <form onSubmit={handleSubmit(onSubmit)}>
                   <input
                     className="form-control me-2 mt-2"
@@ -145,13 +155,12 @@ export const UsersPage: FC = () => {
                   </select>
                   <button className="btn btn-primary me-2 mt-2">Add user</button>
                 </form>
-              </div>
-            )}
+              </Modal.Body>
+            </Modal>
             <div className="mt-3">
               <span className="explanations">Project</span>
               <Select
                 id="select-project"
-                className="form-select"
                 options={projectOptions}
                 onChange={(selectedOption) => {
                   setCurrentProjectSlug(selectedOption ? selectedOption.value : null);
@@ -173,7 +182,7 @@ export const UsersPage: FC = () => {
                     <tbody>
                       <tr>
                         <th>User</th>
-                        <th>Auth</th>
+                        <th>Role</th>
                         <th>Delete</th>
                       </tr>
                       {Object.entries(authUsers).map(([user, auth]) => (
@@ -200,22 +209,24 @@ export const UsersPage: FC = () => {
               </div>
             </div>
 
-            <div className="alert alert-light d-flex align-items-center m-3">
-              <span className="w-25">
-                Add for user <b>{currentUser}</b> rights :
+            <div className="alert alert-light d-flex justify-content-between align-items-center mt-3 gap-2">
+              <span>
+                Add user <b>{currentUser}</b> to project as:
               </span>
-              <select
-                id="select-auth"
-                className="form-select w-25"
-                onChange={(e) => {
-                  setCurrentAuth(e.target.value);
-                }}
-                defaultValue={'manager'}
-              >
-                <option key={'manager'}>manager</option>
-                <option key={'contributor'}>contributor</option>
-                <option key={'annotator'}>annotator</option>
-              </select>
+              <div className="position-relative flex-grow-1">
+                <select
+                  id="select-auth"
+                  className="form-select"
+                  onChange={(e) => {
+                    setCurrentAuth(e.target.value);
+                  }}
+                  defaultValue={'manager'}
+                >
+                  <option key={'manager'}>manager</option>
+                  <option key={'contributor'}>contributor</option>
+                  <option key={'annotator'}>annotator</option>
+                </select>
+              </div>
               <button
                 onClick={() => {
                   if (currentUser && currentAuth) {
@@ -233,6 +244,7 @@ export const UsersPage: FC = () => {
               </button>
             </div>
           </div>
+          <div className="col-0 col-sm-1 col-md-2" />
         </div>
       </div>
     </PageLayout>

@@ -33,8 +33,6 @@ export const DisplayScoresMenu: FC<DisplayScoresMenuPropos> = ({
     return <div>No scores available</div>;
   }
 
-  console.log(currentScore);
-
   return (
     <div>
       <label htmlFor="statistics">

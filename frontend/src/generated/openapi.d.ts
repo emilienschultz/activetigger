@@ -1235,26 +1235,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/models/bert/stop": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Stop Bert
-         * @description Stop user process
-         */
-        post: operations["stop_bert_models_bert_stop_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/models/bert/delete": {
         parameters: {
             query?: never;
@@ -1374,26 +1354,6 @@ export interface paths {
          * @description Launch a call to generate from a prompt
          */
         post: operations["postgenerate_generate_start_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/generate/stop": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Stop Generation
-         * @description Stop current generation
-         */
-        post: operations["stop_generation_generate_stop_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1968,6 +1928,11 @@ export interface components {
              * @default []
              */
             exclude_labels: string[];
+            /**
+             * Max Length
+             * @default 512
+             */
+            max_length: number;
         };
         /** BertopicOutModelParameters */
         BertopicOutModelParameters: {
@@ -2014,10 +1979,7 @@ export interface components {
             grant_type?: string | null;
             /** Username */
             username: string;
-            /**
-             * Password
-             * Format: password
-             */
+            /** Password */
             password: string;
             /**
              * Scope
@@ -2026,10 +1988,7 @@ export interface components {
             scope: string;
             /** Client Id */
             client_id?: string | null;
-            /**
-             * Client Secret
-             * Format: password
-             */
+            /** Client Secret */
             client_secret?: string | null;
         };
         /** Body_upload_file_files_add_project_post */
@@ -2174,9 +2133,7 @@ export interface components {
             /** Text */
             text: string;
             /** Context */
-            context: {
-                [key: string]: unknown;
-            };
+            context: Record<string, never>;
             /** Selection */
             selection: string;
             /** Info */
@@ -2216,22 +2173,18 @@ export interface components {
              */
             filters: string[];
         };
-        /** FeatureDescriptionModel */
-        FeatureDescriptionModel: {
+        /** FeatureDescriptionModelOut */
+        FeatureDescriptionModelOut: {
             /** Name */
             name: string;
             /** Parameters */
-            parameters: {
-                [key: string]: unknown;
-            };
+            parameters: Record<string, never>;
             /** User */
             user: string;
             /** Time */
             time: string;
             /** Kind */
             kind: string;
-            /** Cols */
-            cols: string[];
         };
         /**
          * FeatureModel
@@ -2251,9 +2204,7 @@ export interface components {
         FeaturesProjectStateModel: {
             /** Options */
             options: {
-                [key: string]: {
-                    [key: string]: unknown;
-                } | undefined;
+                [key: string]: Record<string, never> | undefined;
             };
             /** Available */
             available: string[];
@@ -2395,9 +2346,7 @@ export interface components {
             progress?: number | null;
             /** Loss */
             loss?: {
-                [key: string]: {
-                    [key: string]: unknown;
-                } | undefined;
+                [key: string]: Record<string, never> | undefined;
             } | null;
             /** Epochs */
             epochs?: number | null;
@@ -2474,9 +2423,7 @@ export interface components {
         /** LanguageModelsProjectStateModel */
         LanguageModelsProjectStateModel: {
             /** Options */
-            options: {
-                [key: string]: unknown;
-            }[];
+            options: Record<string, never>[];
             /** Available */
             available: {
                 [key: string]: {
@@ -2520,13 +2467,9 @@ export interface components {
             /** Confusion Matrix */
             confusion_matrix?: number[][] | null;
             /** False Predictions */
-            false_predictions?: {
-                [key: string]: unknown;
-            } | unknown[] | null;
+            false_predictions?: Record<string, never> | unknown[] | null;
             /** Table */
-            table?: {
-                [key: string]: unknown;
-            } | null;
+            table?: Record<string, never> | null;
         };
         /** MessagesInModel */
         MessagesInModel: {
@@ -2561,46 +2504,30 @@ export interface components {
             /** Scheme */
             scheme: string;
             /** Parameters */
-            parameters: {
-                [key: string]: unknown;
-            };
+            parameters: Record<string, never>;
             /** Path */
             path: string;
         };
         /** ModelInformationsModel */
         ModelInformationsModel: {
             /** Params */
-            params?: {
-                [key: string]: unknown;
-            } | null;
+            params?: Record<string, never> | null;
             /** Loss */
-            loss?: {
-                [key: string]: unknown;
-            } | null;
+            loss?: Record<string, never> | null;
             scores: components["schemas"]["ModelScoresModel"];
         };
         /** ModelScoresModel */
         ModelScoresModel: {
             /** Internalvalid Scores */
-            internalvalid_scores?: {
-                [key: string]: unknown;
-            } | null;
+            internalvalid_scores?: Record<string, never> | null;
             /** Train Scores */
-            train_scores?: {
-                [key: string]: unknown;
-            } | null;
+            train_scores?: Record<string, never> | null;
             /** Valid Scores */
-            valid_scores?: {
-                [key: string]: unknown;
-            } | null;
+            valid_scores?: Record<string, never> | null;
             /** Test Scores */
-            test_scores?: {
-                [key: string]: unknown;
-            } | null;
+            test_scores?: Record<string, never> | null;
             /** Outofsample Scores */
-            outofsample_scores?: {
-                [key: string]: unknown;
-            } | null;
+            outofsample_scores?: Record<string, never> | null;
         };
         /**
          * NextInModel
@@ -2789,9 +2716,7 @@ export interface components {
             /** Train Annotated N */
             train_annotated_n: number;
             /** Train Annotated Distribution */
-            train_annotated_distribution: {
-                [key: string]: unknown;
-            };
+            train_annotated_distribution: Record<string, never>;
             /** Test Set N */
             test_set_n?: number | null;
             /** Valid Set N */
@@ -2801,13 +2726,9 @@ export interface components {
             /** Valid Annotated N */
             valid_annotated_n?: number | null;
             /** Test Annotated Distribution */
-            test_annotated_distribution?: {
-                [key: string]: unknown;
-            } | null;
+            test_annotated_distribution?: Record<string, never> | null;
             /** Valid Annotated Distribution */
-            valid_annotated_distribution?: {
-                [key: string]: unknown;
-            } | null;
+            valid_annotated_distribution?: Record<string, never> | null;
             /** Sm 10Cv */
             sm_10cv?: unknown | null;
         };
@@ -3021,9 +2942,7 @@ export interface components {
         ProjectionsProjectStateModel: {
             /** Options */
             options: {
-                [key: string]: {
-                    [key: string]: unknown;
-                } | undefined;
+                [key: string]: Record<string, never> | undefined;
             };
             /** Available */
             available: {
@@ -3048,9 +2967,7 @@ export interface components {
             /** Text */
             text: string;
             /** Parameters */
-            parameters: {
-                [key: string]: unknown;
-            };
+            parameters: Record<string, never>;
         };
         /**
          * QuickModelInModel
@@ -3111,9 +3028,7 @@ export interface components {
         /** QuickModelsProjectStateModel */
         QuickModelsProjectStateModel: {
             /** Options */
-            options: {
-                [key: string]: unknown;
-            };
+            options: Record<string, never>;
             /** Available */
             available: {
                 [key: string]: components["schemas"]["ModelDescriptionModel"][] | undefined;
@@ -3131,7 +3046,7 @@ export interface components {
             /** Table */
             table: {
                 [key: string]: (string | {
-                    [key: string]: string | undefined;
+                    [key: string]: (string | null) | undefined;
                 }) | undefined;
             }[];
             /** Users */
@@ -3180,17 +3095,11 @@ export interface components {
             };
             gpu: components["schemas"]["GpuInformationModel"];
             /** Cpu */
-            cpu: {
-                [key: string]: unknown;
-            };
+            cpu: Record<string, never>;
             /** Memory */
-            memory: {
-                [key: string]: unknown;
-            };
+            memory: Record<string, never>;
             /** Disk */
-            disk: {
-                [key: string]: unknown;
-            };
+            disk: Record<string, never>;
             /** Mail Available */
             mail_available: boolean;
             /** Messages */
@@ -4752,7 +4661,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        [key: string]: components["schemas"]["FeatureDescriptionModel"] | undefined;
+                        [key: string]: components["schemas"]["FeatureDescriptionModelOut"] | undefined;
                     };
                 };
             };
@@ -5334,38 +5243,6 @@ export interface operations {
             };
         };
     };
-    stop_bert_models_bert_stop_post: {
-        parameters: {
-            query: {
-                specific_user?: string | null;
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     delete_bert_models_bert_delete_post: {
         parameters: {
             query: {
@@ -5564,37 +5441,6 @@ export interface operations {
                 "application/json": components["schemas"]["GenerationRequest"];
             };
         };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    stop_generation_generate_stop_post: {
-        parameters: {
-            query: {
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -5984,9 +5830,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        [key: string]: (unknown[] | {
-                            [key: string]: unknown;
-                        }) | undefined;
+                        [key: string]: (unknown[] | Record<string, never>) | undefined;
                     };
                 };
             };

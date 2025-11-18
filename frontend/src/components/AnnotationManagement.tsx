@@ -1,5 +1,7 @@
+import cx from 'classnames';
 import { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { FaLock, FaPencilAlt } from 'react-icons/fa';
+import { FiRefreshCcw } from 'react-icons/fi';
 import { LuRefreshCw } from 'react-icons/lu';
 import { PiEraser } from 'react-icons/pi';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -19,6 +21,7 @@ import { ElementOutModel } from '../types';
 import { Modal } from 'react-bootstrap';
 import { FaMapMarkedAlt } from 'react-icons/fa';
 import { GiTigerHead } from 'react-icons/gi';
+import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { MdDisplaySettings } from 'react-icons/md';
 import { ActiveLearningManagement } from '../components/ActiveLearningManagement';
 import { MulticlassInput } from '../components/MulticlassInput';
@@ -58,6 +61,8 @@ export const AnnotationManagement: FC = () => {
   const [comment, setComment] = useState('');
   const [showDisplayConfig, setShowDisplayConfig] = useState<boolean>(false);
   const [showDisplayViz, setShowDisplayViz] = useState<boolean>(false);
+  const [settingChanged, setSettingChanged] = useState<boolean>(false);
+  const [selectFirstModelTrained, setSelectFirstModelTrained] = useState<boolean>(false);
   const handleCloseViz = () => setShowDisplayViz(false);
   const handleCloseConfig = () => setShowDisplayConfig(false);
   const handleCloseComment = () => setDisplayComment(false);
@@ -99,6 +104,10 @@ export const AnnotationManagement: FC = () => {
       : 'multiclass',
   );
 
+  // hook to clear history
+  const actionClearHistory = () => {
+    setAppContext((prev) => ({ ...prev, history: [] }));
+  };
   // get statistics to display (TODO : try a way to avoid another request ?)
   const { statistics, reFetchStatistics } = useStatistics(
     projectName || null,
@@ -248,7 +257,18 @@ export const AnnotationManagement: FC = () => {
     };
     trainQuickModel(formData);
     setActiveMenu(false);
+    setSelectFirstModelTrained(true);
   };
+
+  // fastrack active learning model
+  useEffect(() => {
+    if (selectFirstModelTrained && availableQuickModels.length > 0) {
+      setAppContext((prev) => ({
+        ...prev,
+        activeQuickModel: availableQuickModels[0].name,
+      }));
+    }
+  }, [availableQuickModels, selectFirstModelTrained, setAppContext]);
 
   if (!projectName || !currentScheme) return;
 
@@ -258,16 +278,32 @@ export const AnnotationManagement: FC = () => {
         {
           // annotation mode
           <div>
-            <SelectionManagement />
+            <SelectionManagement
+              settingChanged={settingChanged}
+              setSettingChanged={setSettingChanged}
+            />
             {/* <div
               className={`d-flex align-items-center mb-3 ${phase !== 'train' ? 'alert alert-warning' : ''}`}
             > */}
             <div className="text-center my-2">
+              <button
+                className={cx('getelement', settingChanged ? 'setting-changed' : '')}
+                onClick={() => {
+                  refetchElement();
+                  setSettingChanged(false);
+                }}
+                title="Get next element with the selection mode"
+              >
+                <LuRefreshCw size={20} /> Fetch
+                {/* <Tooltip anchorSelect=".getelement" place="top">
+                  Get next element with the selection mode
+                </Tooltip> */}
+              </button>
               {statistics ? (
-                <span className=" ms-2">
-                  <span className="d-none d-md-inline">Annotated : </span>
-                  {statisticsDataset(phase)} ;{' '}
-                  <span className="d-none d-md-inline">Selected : </span>
+                <span className="ms-2" style={{ fontSize: '12px', color: 'gray' }}>
+                  <span className="d-none d-md-inline">Annotated: </span>
+                  {statisticsDataset(phase)} -{' '}
+                  <span className="d-none d-md-inline">Selected: </span>
                   {nSample || ''}
                   {/* <Tooltip anchorSelect=".currentstatistics" place="top">
                         statistics for the current scheme
@@ -276,26 +312,23 @@ export const AnnotationManagement: FC = () => {
               ) : (
                 ''
               )}{' '}
-              <button className="btn btn-primary btn-sm getelement" onClick={refetchElement}>
-                <span>
-                  <LuRefreshCw size={20} /> Fetch
-                </span>
-                <Tooltip anchorSelect=".getelement" place="top">
-                  Get next element with the selection mode
-                </Tooltip>
-              </button>
-              <GiTigerHead
-                size={30}
-                onClick={() => setActiveMenu(!activeMenu)}
-                className="cursor-pointer mx-2 activelearning"
-                style={{ color: activeQuickModel ? 'green' : 'orange' }}
-              />
-              <Tooltip anchorSelect=".activelearning" place="top">
-                Active learning
-              </Tooltip>
-              <span className="badge rounded-pill bg-light text-dark opacity-50 small">
-                {activeQuickModel}
-              </span>
+              {phase === 'train' && (
+                <>
+                  <GiTigerHead
+                    size={30}
+                    onClick={() => setActiveMenu(!activeMenu)}
+                    className="cursor-pointer mx-2 activelearning"
+                    style={{ color: activeQuickModel ? 'green' : 'orange' }}
+                    title="Active learning"
+                  />
+                  <Tooltip anchorSelect=".activelearning" place="top">
+                    Active learning
+                  </Tooltip>
+                  <span className="badge rounded-pill bg-light text-dark opacity-50 small">
+                    {activeQuickModel}
+                  </span>
+                </>
+              )}
             </div>
           </div>
         }
@@ -377,11 +410,13 @@ export const AnnotationManagement: FC = () => {
                   onClick={() => {
                     postAnnotation(null, elementId);
                   }}
+                  title="Erase current tag
+"
                 >
                   <PiEraser />
-                  <Tooltip anchorSelect=".clearannotation" place="top">
+                  {/* <Tooltip anchorSelect=".clearannotation" place="top">
                     Erase current tag
-                  </Tooltip>
+                  </Tooltip> */}
                 </button>
               )
             }
@@ -396,35 +431,46 @@ export const AnnotationManagement: FC = () => {
         </div>
       )}
       <div className="d-flex flex-wrap gap-2 justify-content-center">
-        <button className="btn addcomment" onClick={() => setDisplayComment(!displayComment)}>
+        <button
+          className="btn addcomment"
+          onClick={() => setDisplayComment(!displayComment)}
+          title="Add a comment"
+        >
           <FaPencilAlt />
-          <Tooltip anchorSelect=".addcomment" place="top">
+          {/* <Tooltip anchorSelect=".addcomment" place="top">
             Add a comment
-          </Tooltip>
+          </Tooltip> */}
         </button>
-
         <button
           className="btn displayconfig"
           onClick={() => {
             setShowDisplayConfig(!showDisplayConfig);
           }}
+          title="Display config menu"
         >
           <MdDisplaySettings />
-          <Tooltip anchorSelect=".displayconfig" place="top">
+          {/* <Tooltip anchorSelect=".displayconfig" place="top">
             Display config menu
-          </Tooltip>
+          </Tooltip> */}
         </button>
         <button
           className="btn displayviz"
           onClick={() => {
             setShowDisplayViz(!showDisplayConfig);
           }}
+          title="Display the projection"
         >
           <FaMapMarkedAlt />
-          <Tooltip anchorSelect=".displayviz" place="top">
+          {/* <Tooltip anchorSelect=".displayviz" place="top">
             Display the projection
-          </Tooltip>
+          </Tooltip> */}
         </button>
+        <button className="btn clearhistory" onClick={actionClearHistory} title="Clear the history">
+          <FiRefreshCcw />
+        </button>
+        <Tooltip anchorSelect=".clearhistory" place="top">
+          Clear the history
+        </Tooltip>
       </div>
 
       <Modal show={displayComment} onHide={handleCloseComment} id="comment-modal">
@@ -475,7 +521,10 @@ export const AnnotationManagement: FC = () => {
                   <span className="lock">
                     <FaLock /> Lock on selection
                   </span>
-                  <Tooltip anchorSelect=".lock" place="top">
+                  <a className="lockhelp">
+                    <HiOutlineQuestionMarkCircle />
+                  </a>
+                  <Tooltip anchorSelect=".lockhelp" place="top">
                     Once a vizualisation computed, you can use the square tool to select an area (or
                     remove the square).<br></br> Then you can lock the selection, and only elements
                     in the selected area will be available for annoation.

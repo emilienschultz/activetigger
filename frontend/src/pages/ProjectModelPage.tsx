@@ -41,8 +41,6 @@ export const ProjectModelPage: FC = () => {
       : 'multiclass',
   );
 
-  console.log(availableBertModels);
-
   return (
     <ProjectPageLayout projectName={projectSlug} currentAction="model">
       <div className="container-fluid">
@@ -69,6 +67,7 @@ export const ProjectModelPage: FC = () => {
                   kindScheme={kindScheme}
                   featuresOption={project?.features.options || {}}
                   columns={project?.params.all_columns || []}
+                  isComputing={isComputing}
                 />
               </Tab>
               <Tab eventKey="models" title="BERT" onSelect={() => setActiveKey('models')}>

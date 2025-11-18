@@ -103,7 +103,9 @@ class Schemes:
         df["id"] = df.index
         return df
 
-    def get_reconciliation_table(self, scheme: str) -> tuple[DataFrame, list[str]]:
+    def get_reconciliation_table(
+        self, scheme: str, no_label: str = "-----"
+    ) -> tuple[DataFrame, list[str]]:
         """
         Get reconciliation table
         TODO : manage different dataset
@@ -129,7 +131,9 @@ class Schemes:
             lambda x: len(set([i for i in x if pd.notna(i)])) > 1, axis=1
         )  # filter for disagreement
         users = list(df.columns)
-        df = pd.DataFrame(df.apply(lambda x: x.to_dict(), axis=1), columns=["annotations"])
+        df = pd.DataFrame(
+            df.apply(lambda x: x.fillna(no_label).to_dict(), axis=1), columns=["annotations"]
+        )
         df = df.join(self.data.train[["text"]], how="left")  # add the text
 
         df["current_label"] = current_labels
@@ -302,8 +306,6 @@ class Schemes:
             .iloc[int(batch.min) : int(batch.max)]
             .fillna("")[["id", "timestamp", "labels", "text", "comment", "user"]]
         )
-
-        print(df.head())
 
         return TableOutModel(
             items=table.to_dict(orient="records"),
