@@ -3,14 +3,18 @@ import json
 import shutil
 from pathlib import Path
 from string import punctuation
+from jinja2 import Template
 
 import hdbscan  # type: ignore[import]
 import pandas as pd
+import numpy as np
 import stopwordsiso as stopwords  # type: ignore[import]
 from bertopic import BERTopic  # type: ignore[import]
+import plotly.graph_objects as go
 from simplemma import lemmatize
 from sklearn.feature_extraction.text import CountVectorizer  # type: ignore[import]
 from slugify import slugify
+from great_tables import GT, style, loc 
 
 from activetigger.datamodels import BertopicParamsModel
 from activetigger.tasks.base_task import BaseTask
@@ -39,6 +43,93 @@ Rational :
 # TODO : manage special case of embeddings of trainset
 # TODO : add the language specific stopwords removal
 
+def visualize_documents(
+        topics : list[int],
+        topic_info : pd.DataFrame,
+        embeddings : list[list[float]] | np.ndarray,
+        docs : list[str] | np.ndarray,
+        n_neighbors : int = 15,
+        min_dist: float = 0.0,
+        min_number_of_element : int = 50
+    )-> go.Figure:
+    ''''''
+    # Transform inputs in np.ndarray
+    embeddings = np.array(embeddings)
+    topics = np.array(topics)
+
+    # Reduce embeddings
+    umap_model = umap.UMAP(
+        n_neighbors = n_neighbors,
+        n_components = 2,
+        min_dist = min_dist,
+        metric = "cosine",
+        random_state=RANDOM_SEED
+    )
+    reduced_embeddings = umap_model.fit_transform(embeddings)
+    X,Y = reduced_embeddings[:,0], reduced_embeddings[:,1]
+
+    fig = go.Figure(
+        data=[
+            go.Scatter(
+                x = X, y = Y, mode = "markers",
+                hoverinfo = "skip",
+                marker={'color': "#bababa", "opacity": 0.3},
+                showlegend = False
+            )
+        ],
+        layout = {
+            "plot_bgcolor":"#FCFCFC", 
+            "margin": {"t": 20, "b": 40},
+            "xaxis": {
+                "zerolinecolor": "#ECECEC",
+                "gridcolor": "#ECECEC"
+            },
+            "yaxis": {
+                "zerolinecolor": "#ECECEC",
+                "gridcolor": "#ECECEC"
+            }
+        }
+    )
+
+    def adapt_length_to_width(text : str, width : int = 100, max_n_words : int = 10):
+        output = ""
+        len_line = 0
+        n_words = 0
+        for word in text.split(" "):
+            if len(word) + len_line > width:
+                output += "<br>" + word + " "
+                len_line = len(word) + 1
+            else: 
+                output += word + " "
+                len_line += len(word) + 1
+            
+            n_words += 1
+            if n_words > max_n_words : break 
+        return output
+
+    def hovertext_transform(docs : list[str], width : int = 100, max_n_words : int = 100):
+        """"""
+        return np.array([
+            adapt_length_to_width(doc, width, max_n_words)
+            for doc in docs
+        ])
+    
+    hovertext = hovertext_transform(docs)
+
+    for topic in np.unique(topics):
+        if topic == -1: continue 
+        indexes : np.ndarray = topics == topic
+        if sum(indexes) < min_number_of_element: continue
+        fig.add_trace(
+            go.Scatter(
+                x = X[indexes], y= Y[indexes], mode="markers",
+                hovertemplate = "%{text}",
+                text = hovertext[indexes],
+                marker = {'opacity': 0.75},
+                name = topic_info.loc[topic == topic_info.Topic, "Name"].item()
+            )
+        )
+    return fig
 
 class CustomLemmatizer:
     """An object to apply the lemmatize function."""
@@ -286,6 +377,15 @@ class ComputeBertopic(BaseTask):
             with open(self.path_run.joinpath("params.json"), "w") as f:
                 json.dump(parameters, f)
 
+            # Create a report
+            self.create_report(
+                topic_model = topic_model,
+                topics = topics,
+                topic_info = topics_df,
+                docs = df[self.col_text].to_list(),
+                embeddings = embeddings
+            )
+
             self.path_run.joinpath("progress").unlink(missing_ok=True)
             return None
         except Exception as e:
@@ -347,3 +447,127 @@ class ComputeBertopic(BaseTask):
         reduced_embeddings = reducer.fit_transform(embeddings)
         df_reduced = pd.DataFrame(reduced_embeddings, index=embeddings.index, columns=["x", "y"])
         df_reduced.to_parquet(path_projection)
+
+    def create_report(self, 
+        topic_model : BERTopic, 
+        topics : list[int], 
+        topic_info : pd.DataFrame,
+        docs : list[str], 
+        embeddings : list[list[float]]
+    ) -> None:
+        """Creates an HTML report downloadable by the user"""
+        # Creates a table for topic info with great tables
+        topic_info = topic_info.copy()
+        topic_info["Representation"] = (
+            topic_info["Representation"]
+            .apply(lambda l : " - ".join(l))
+        )
+        table_topics = (
+            GT(topic_info.drop(columns = ["Name", "Representative_Docs"]))
+            .cols_align("center", "Count")
+            .tab_header(title = "Topic info", subtitle = None)
+            .cols_width(
+                cases={
+                    "Topic": "10%",
+                    "Count": "10%",
+                    "Representation": "60%"
+                }
+            )
+            .tab_style(
+                style = [
+                    style.text(align="right"),
+                    style.borders(sides = "right", color="#d3d3d3")
+                ],
+                locations = loc.body(columns = "Topic")
+            )
+        )
+        
+        # Create a table for the topic model settings
+        settings = {
+            "language" : self.parameters.language,
+            "top_n_words" : self.parameters.top_n_words,
+            "n_gram_range" : self.parameters.n_gram_range,
+            "outlier_reduction" : self.parameters.outlier_reduction,
+            "hdbscan_min_cluster_size" : self.parameters.hdbscan_min_cluster_size,
+            "umap_n_neighbors" : self.parameters.umap_n_neighbors,
+            "umap_n_components" : self.parameters.umap_n_components,
+            "embedding_kind" : self.parameters.embedding_kind,
+            "embedding_model" : self.parameters.embedding_model,
+            "filter_text_length" : self.parameters.filter_text_length,
+        }
+        setting_df = pd.DataFrame({
+            "Parameter" : settings.keys(),
+            "Value" : settings.values()
+        })
+
+        table_settings = (
+            GT(setting_df)
+            .cols_align("right", "Parameter")
+            .cols_align("right", "Value")
+            .cols_width(
+                cases={
+                    "Parameter": "40%",
+                    "Value": "40%",
+                }
+            )
+        ) 
+        
+        # Create Plotly figure for 2D maps
+        fig_map = (
+            visualize_documents(
+                topics = topics,
+                topic_info = topic_info,
+                docs = docs, 
+                embeddings = embeddings,
+                n_neighbors = self.parameters.umap_n_neighbors,
+                min_dist = 0.0,
+                min_number_of_element=-1 # Need additional implementation
+            )
+            .update_layout(width = 900)
+        )
+
+        # Create plotly figure for hierarchical representation
+        fig_hierarchical = (
+            topic_model
+            .visualize_hierarchy()
+            .update_layout(
+                width = 900,
+                title = {"text":""},
+                margin = {"t": 20, "b" : 40},
+                plot_bgcolor = "#FCFCFC",
+            )
+        )
+        # Export results
+        saving_kwargs = {
+            "full_html" : False,
+            "include_plotlyjs" : 'cdn', 
+            "include_mathjax": 'cdn',
+            "config" : {
+                "responsive" : False,
+                "modeBarButtonsToRemove": ["zoomIn", "zoomOut", "autoScale", "select"],
+                "displaylogo": False,
+                "displayModeBar": False
+            }
+        }
+
+        jinja_data = {
+            "bertopic_name": self.name.replace("-", " "),
+            "topics" : table_topics.as_raw_html(),
+            "map" : fig_map.to_html(**saving_kwargs,), 
+            "hierarchical" : fig_hierarchical.to_html(**saving_kwargs,), 
+            "RepresentativeTopics": {
+                topic_repr : topic_docs
+                for topic_repr, topic_docs in zip(
+                    topic_info.Representation, 
+                    topic_info.Representative_Docs
+                )
+            },
+            "parameters" : table_settings.as_raw_html(),
+        }
+
+        input_template_path = "./activetigger/html/bertopic_report_template.html"
+        output_file_path = self.path_run.joinpath("report.html")
+        with open(output_file_path, "w", encoding="utf-8") as output_file:
+            with open(input_template_path) as template_file:
+                j2_template = Template(template_file.read())
+                output_file.write(j2_template.render(jinja_data))
