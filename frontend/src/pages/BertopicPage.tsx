@@ -12,6 +12,7 @@ import { BertopicVizSigma } from '../components/ProjectionVizSigma/BertopicVizSi
 import {
   useDeleteBertopic,
   useDownloadBertopicClusters,
+  useDownloadBertopicReport,
   useDownloadBertopicTopics,
   useExportTopicsToScheme,
   useGetBertopicProjection,
@@ -29,6 +30,7 @@ export const BertopicPage: FC = () => {
   const exportTopicsToScheme = useExportTopicsToScheme(projectName || null);
   const { downloadBertopicTopics } = useDownloadBertopicTopics(projectName || null);
   const { downloadBertopicClusters } = useDownloadBertopicClusters(projectName || null);
+  const { downloadBertopicReport } = useDownloadBertopicReport(projectName || null);
   const availableBertopic = currentProject ? currentProject.bertopic.available : [];
   const [currentBertopic, setCurrentBertopic] = useState<string | null>(null);
   const { getElementById } = useGetElementById(projectName || null, null, null);
@@ -271,6 +273,13 @@ export const BertopicPage: FC = () => {
                 onClick={() => (currentBertopic ? downloadBertopicClusters(currentBertopic) : null)}
               >
                 Export topic per text <FaCloudDownloadAlt size={20} />
+              </button>
+              <button
+                className="btn btn-primary mx-2"
+                id="download-clusters"
+                onClick={() => (currentBertopic ? downloadBertopicReport(currentBertopic) : null)}
+              >
+                Topic model report <FaCloudDownloadAlt size={20} />
               </button>
               {/* <Tooltip anchorSelect="#download-clusters" place="top">
                 Download a table linking each element to a cluster. The table contains 2
