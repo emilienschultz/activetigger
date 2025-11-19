@@ -8,7 +8,7 @@ transformers>=4.51.0
 accelerate
 numpy
 matplotlib
-plotly
+plotly==6.0.1
 pandas
 pyarrow
 scikit-learn
@@ -53,3 +53,4 @@ hdbscan
 einops
 simplemma
 nbformat
+great_tables

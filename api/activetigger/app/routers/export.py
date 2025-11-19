@@ -243,3 +243,18 @@ async def export_bertopics_clusters(
         return project.bertopic.export_clusters(name=name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/export/bertopic/report", dependencies=[Depends(verified_user)])
+async def export_bertopics_clusters(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    name: str = Query(...),
+) -> FileResponse:
+    """
+    Export annotations
+    """
+    test_rights(ProjectAction.EXPORT_DATA, current_user.username, project.name)
+    try:
+        return project.bertopic.export_report(name=name)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
