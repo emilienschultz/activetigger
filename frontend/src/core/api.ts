@@ -2583,6 +2583,38 @@ export function useDownloadBertopicClusters(projectSlug: string | null) {
 }
 
 /**
+ * Get bertopic report
+ */
+export function useDownloadBertopicReport(projectSlug: string | null) {
+  const { notify } = useNotifications();
+  const downloadBertopicReport = useCallback(
+    async (name: string) => {
+      if (projectSlug) {
+        const res = await api.GET('/export/bertopic/report', {
+          params: {
+            query: {
+              project_slug: projectSlug,
+              name: name,
+            },
+          },
+          parseAs: 'blob',
+        });
+
+        if (!res.error) {
+          notify({ type: 'success', message: 'Exporting bertopic report' });
+          saveAs(res.data, `bertopic_report_${projectSlug}_${name}`);
+        }
+        return true;
+      }
+      return null;
+    },
+    [projectSlug, notify],
+  );
+
+  return { downloadBertopicReport };
+}
+
+/**
  * Send reset mail
  */
 
