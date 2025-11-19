@@ -1,14 +1,13 @@
 import MDEditor from '@uiw/react-md-editor';
-import { FC, useEffect, useState } from 'react';
+import { Dispatch, FC, useEffect, SetStateAction } from 'react';
 import rehypeSanitize from 'rehype-sanitize';
-import { usePostSchemeCodebook } from '../core/api';
 
 interface CodebookManagementProps {
-  projectName: string | null;
-  currentScheme: string | null;
   codebook: string | null;
   time: string | null;
-  reFetchCodebook: () => void;
+  modifiedCodebook: string | undefined;
+  setModifiedCodebook: Dispatch<SetStateAction<string | undefined>>;
+  saveCodebook: () => Promise<void>;
 }
 
 /**
@@ -16,28 +15,18 @@ interface CodebookManagementProps {
  */
 
 export const CodebookManagement: FC<CodebookManagementProps> = ({
-  projectName,
-  currentScheme,
   codebook,
   time,
-  reFetchCodebook,
+  modifiedCodebook,
+  setModifiedCodebook,
+  saveCodebook,
 }) => {
-  const { postCodebook } = usePostSchemeCodebook(projectName || null, currentScheme || null);
-
-  const [modifiedCodebook, setModifiedCodebook] = useState<string | undefined>(undefined);
-  //  const [lastModified, setLastModified] = useState<string | undefined | null>(undefined);
-
   // update the text zone once (if undefined)
   useEffect(() => {
     if (codebook && modifiedCodebook === undefined) {
       setModifiedCodebook(codebook);
     }
   }, [codebook, modifiedCodebook, time]);
-
-  const saveCodebook = async () => {
-    postCodebook(modifiedCodebook || '', time || '');
-    reFetchCodebook();
-  };
 
   return (
     <div>
