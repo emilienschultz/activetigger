@@ -521,7 +521,7 @@ class ProjectsService:
             # Delete the old scheme
             session.delete(old_scheme)
 
-    def get_table_annotations_users(self, project_slug: str, scheme: str):
+    def get_table_annotations_users(self, project_slug: str, scheme: str, dataset: str):
         with self.Session() as session:
             subquery = (
                 select(
@@ -529,7 +529,7 @@ class ProjectsService:
                     Annotations.user_name,
                     func.max(Annotations.time).label("last_timestamp"),
                 )
-                .filter_by(project_slug=project_slug, scheme_name=scheme)
+                .filter_by(project_slug=project_slug, scheme_name=scheme, dataset=dataset)
                 .group_by(Annotations.element_id, Annotations.user_name)
                 .subquery()
             )
@@ -538,10 +538,14 @@ class ProjectsService:
                 Annotations.annotation,
                 Annotations.user_name,
                 Annotations.time,
+                Annotations.dataset,
             ).join(subquery, Annotations.id == subquery.c.id)
 
             results = session.execute(query).fetchall()
-            return [[row.element_id, row.annotation, row.user_name, row.time] for row in results]
+            return [
+                [row.element_id, row.annotation, row.user_name, row.time, row.dataset]
+                for row in results
+            ]
 
     # feature management
 

@@ -1796,6 +1796,7 @@ export function useTableDisagreement(project_slug?: string, scheme?: string) {
           query: {
             project_slug: project_slug,
             scheme: scheme,
+            dataset: 'train',
           },
         },
       });

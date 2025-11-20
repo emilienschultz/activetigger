@@ -4,7 +4,6 @@ import { CurrentProjectState } from '../components/CurrentProjectState';
 import { APIMiddlewares } from '../components/auth/APIMiddlewares';
 import { AccountPage } from '../pages/AccountPage';
 import { DocPage } from '../pages/DocPage';
-import { CuratePage } from '../pages/ProjectCurationPage';
 /*import { ExperimentalPage } from '../components/pages/ExperimentalPage';*/
 import { RoleSelector } from '../core/RoleSelector';
 import { HomePage } from '../pages/HomePage';
@@ -118,15 +117,7 @@ export function getRouter() {
             </>
           ),
         },
-        {
-          path: '/projects/:projectName/curate/',
-          element: (
-            <>
-              <RoleSelector allowedRoles={['manager', 'root']} />
-              <CuratePage />
-            </>
-          ),
-        },
+
         {
           path: '/projects/:projectName/generate/',
           element: (

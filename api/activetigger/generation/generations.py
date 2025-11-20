@@ -92,7 +92,7 @@ class Generations:
         result = self.generations_service.get_generated(
             project_slug=project_slug, user_name=user_name, n_elements=n_elements
         )
-        df = pd.DataFrame(result, columns=["time", "index", "prompt", "answer", "model name"])
+        df = pd.DataFrame(result, columns=["time", "index", "prompt", "answer", "model_name"])
         df["time"] = pd.to_datetime(df["time"])
         if df["time"].dt.tz is None:
             df["time"] = df["time"].dt.tz_localize("UTC")
