@@ -14,12 +14,7 @@ import { SubmitHandler, useForm } from 'react-hook-form';
 import { FaPlusCircle } from 'react-icons/fa';
 import { FaGear } from 'react-icons/fa6';
 import { MdDriveFileRenameOutline } from 'react-icons/md';
-import {
-  useDeleteBertModel,
-  useModelInformations,
-  useRenameBertModel,
-  useComputeModelPrediction,
-} from '../core/api';
+import { useDeleteBertModel, useModelInformations, useRenameBertModel } from '../core/api';
 import { useNotifications } from '../core/notifications';
 import { MLStatisticsModel } from '../types';
 
