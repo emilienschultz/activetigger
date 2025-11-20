@@ -80,6 +80,26 @@ async def delete_quickmodel(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/models/quick/rename", dependencies=[Depends(verified_user)])
+async def save_bert(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    former_name: str,
+    new_name: str,
+) -> None:
+    """
+    Rename quickmodel
+    """
+    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
+    try:
+        project.quickmodels.rename(former_name, new_name)
+        orchestrator.log_action(
+            current_user.username,
+            f"INFO RENAME QUICK MODEL: {former_name} -> {new_name}",
+            project.name,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/models/quickmodel", dependencies=[Depends(verified_user)])
 async def get_quickmodel(
