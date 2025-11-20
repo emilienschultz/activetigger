@@ -19,6 +19,7 @@ import { MLStatisticsModel, ModelDescriptionModel, QuickModelInModel } from '../
 import { CreateNewFeature } from './CreateNewFeature';
 import { DisplayScores } from './DisplayScores';
 import { ModelsPillDisplay } from './ModelsPillDisplay';
+import { ValidateButtons } from './validateButton';
 // TODO: default values + avoid generic parameters
 
 interface Options {
@@ -247,12 +248,20 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
               Parameters
             </button>
             <button
-              className="btn btn-outline-secondary btn-sm d-flex align-items-center"
+              className="btn btn-outline-secondary btn-sm me-2 d-flex align-items-center"
               onClick={() => setShowRename(true)}
             >
               <MdDriveFileRenameOutline size={18} className="me-1" />
               Rename
             </button>
+            <ValidateButtons
+              projectSlug={projectName}
+              modelName={currentQuickModelName}
+              kind="quick"
+              currentScheme={currentScheme}
+              id="compute-prediction"
+              buttonLabel="Compute predictions"
+            />
           </div>
           <DisplayScores
             title={'Validation scores from the training data (internal validation)'}

@@ -5,6 +5,7 @@ import { DisplayTrainingProcesses } from '../components/DisplayTrainingProcesses
 import { ModelCreationForm } from '../components/forms/ModelCreationForm';
 import { ModelParametersTab } from '../components/ModelParametersTab';
 import { LossChart } from '../components/vizualisation/lossChart';
+import { ValidateButtons } from './validateButton';
 import { ModelDescriptionModel, ProjectStateModel } from '../types';
 import { DisplayScores } from './DisplayScores';
 import { ModelsPillDisplay } from './ModelsPillDisplay';
@@ -13,7 +14,12 @@ import { SubmitHandler, useForm } from 'react-hook-form';
 import { FaPlusCircle } from 'react-icons/fa';
 import { FaGear } from 'react-icons/fa6';
 import { MdDriveFileRenameOutline } from 'react-icons/md';
-import { useDeleteBertModel, useModelInformations, useRenameBertModel } from '../core/api';
+import {
+  useDeleteBertModel,
+  useModelInformations,
+  useRenameBertModel,
+  useComputeModelPrediction,
+} from '../core/api';
 import { useNotifications } from '../core/notifications';
 import { MLStatisticsModel } from '../types';
 
@@ -117,13 +123,20 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
                 </button>
 
                 <button
-                  className="btn btn-outline-secondary btn-sm d-flex align-items-center"
+                  className="btn btn-outline-secondary btn-sm me-2 d-flex align-items-center"
                   onClick={() => setShowRename(true)}
                 >
                   <MdDriveFileRenameOutline size={18} className="me-1" />
                   Rename
                 </button>
-
+                <ValidateButtons
+                  projectSlug={projectSlug}
+                  modelName={currentBertModel}
+                  kind="bert"
+                  currentScheme={currentScheme}
+                  id="compute-prediction"
+                  buttonLabel="Compute predictions"
+                />
               </div>
 
               <DisplayScores
