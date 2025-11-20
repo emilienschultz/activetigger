@@ -34,6 +34,8 @@ interface Row {
   prompt: string;
   answer: string;
   endpoint: string;
+  model: string;
+  model_name: string;
 }
 
 // Define the table
@@ -48,7 +50,7 @@ const columns: readonly Column<Row>[] = [
     name: 'Id',
     key: 'index',
     resizable: true,
-    width: '15%',
+    width: '10%',
   },
   {
     name: 'Answer',
@@ -69,6 +71,7 @@ const columns: readonly Column<Row>[] = [
       </div>
     ),
   },
+
   {
     name: 'Prompt',
     key: 'prompt',
@@ -89,12 +92,23 @@ const columns: readonly Column<Row>[] = [
       </div>
     ),
   },
-
   {
     name: 'Model name',
-    key: 'model name',
+    key: 'model_name',
     resizable: true,
-    width: '10%',
+    width: '15%',
+    renderCell: ({ row }) => (
+      <div
+        style={{
+          width: '100%',
+          whiteSpace: 'nowrap',
+          overflowX: 'auto',
+          userSelect: 'none',
+        }}
+      >
+        {row.model_name}
+      </div>
+    ),
   },
 ];
 
