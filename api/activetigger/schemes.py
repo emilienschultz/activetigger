@@ -104,7 +104,7 @@ class Schemes:
         return df
 
     def get_reconciliation_table(
-        self, scheme: str, no_label: str = "-----"
+        self, scheme: str, dataset: str = "train", no_label: str = "-----"
     ) -> tuple[DataFrame, list[str]]:
         """
         Get reconciliation table
@@ -114,9 +114,13 @@ class Schemes:
         if scheme not in self.available():
             raise Exception("Scheme doesn't exist")
 
-        results = self.projects_service.get_table_annotations_users(self.project_slug, scheme)
+        results = self.projects_service.get_table_annotations_users(
+            self.project_slug, scheme, dataset
+        )
         # Shape the data
-        df = pd.DataFrame(results, columns=["id", "labels", "user", "time"])  # shape as a dataframe
+        df = pd.DataFrame(
+            results, columns=["id", "labels", "user", "time", "dataset"]
+        )  # shape as a dataframe
 
         # keep the real labels
         current_labels = df.loc[df.groupby("id")["time"].idxmax()].set_index("id")["labels"]

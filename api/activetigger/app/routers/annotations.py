@@ -216,13 +216,14 @@ async def get_reconciliation_table(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     scheme: str = Query(),
+    dataset: str = Query("train"),
 ) -> ReconciliationModel:
     """
     Get the reconciliation table
     """
     test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
-        df, users = project.schemes.get_reconciliation_table(scheme)
+        df, users = project.schemes.get_reconciliation_table(scheme, dataset)
         return ReconciliationModel(
             table=cast(
                 list[dict[str, str | dict[str, str | None]]],
