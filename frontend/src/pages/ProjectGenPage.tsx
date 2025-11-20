@@ -85,7 +85,6 @@ const columns: readonly Column<Row>[] = [
           whiteSpace: 'wrap',
           overflowY: 'auto',
           userSelect: 'none',
-          backgroundColor: '#f0f0f0',
         }}
       >
         {row.prompt}
