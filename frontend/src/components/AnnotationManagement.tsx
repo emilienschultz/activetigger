@@ -402,6 +402,16 @@ export const AnnotationManagement: FC = () => {
               />
             )}
 
+            <button
+              className="btn addcomment"
+              onClick={() => setDisplayComment(!displayComment)}
+              title="Add a comment"
+            >
+              <FaPencilAlt />
+              <Tooltip anchorSelect=".addcomment" place="top">
+                Add a comment
+              </Tooltip>
+            </button>
             {
               // erase button to remove last annotation
               lastTag && (
@@ -414,9 +424,9 @@ export const AnnotationManagement: FC = () => {
 "
                 >
                   <PiEraser />
-                  {/* <Tooltip anchorSelect=".clearannotation" place="top">
+                  <Tooltip anchorSelect=".clearannotation" place="top">
                     Erase current tag
-                  </Tooltip> */}
+                  </Tooltip>
                 </button>
               )
             }
@@ -432,16 +442,6 @@ export const AnnotationManagement: FC = () => {
       )}
       <div className="d-flex flex-wrap gap-2 justify-content-center">
         <button
-          className="btn addcomment"
-          onClick={() => setDisplayComment(!displayComment)}
-          title="Add a comment"
-        >
-          <FaPencilAlt />
-          {/* <Tooltip anchorSelect=".addcomment" place="top">
-            Add a comment
-          </Tooltip> */}
-        </button>
-        <button
           className="btn displayconfig"
           onClick={() => {
             setShowDisplayConfig(!showDisplayConfig);
@@ -449,9 +449,9 @@ export const AnnotationManagement: FC = () => {
           title="Display config menu"
         >
           <MdDisplaySettings />
-          {/* <Tooltip anchorSelect=".displayconfig" place="top">
+          <Tooltip anchorSelect=".displayconfig" place="top">
             Display config menu
-          </Tooltip> */}
+          </Tooltip>
         </button>
         <button
           className="btn displayviz"
@@ -461,9 +461,9 @@ export const AnnotationManagement: FC = () => {
           title="Display the projection"
         >
           <FaMapMarkedAlt />
-          {/* <Tooltip anchorSelect=".displayviz" place="top">
+          <Tooltip anchorSelect=".displayviz" place="top">
             Display the projection
-          </Tooltip> */}
+          </Tooltip>
         </button>
         <button className="btn clearhistory" onClick={actionClearHistory} title="Clear the history">
           <FiRefreshCcw />
