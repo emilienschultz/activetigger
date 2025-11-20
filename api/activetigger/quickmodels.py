@@ -429,3 +429,16 @@ class QuickModels:
                 train_scores=metrics.get("train", None),
             ),
         )
+
+    def rename(self, former_name: str, new_name: str) -> None:
+        """
+        Rename a model (copy it)
+        """
+        # get model
+        model = self.language_models_service.get_model(self.project_slug, former_name)
+        if model is None:
+            raise Exception("Model does not exist")
+        if (Path(model.path) / "status.log").exists():
+            raise Exception("Model is currently computing")
+        self.language_models_service.rename_model(self.project_slug, former_name, new_name)
+        os.rename(model.path, model.path.replace(former_name, new_name))

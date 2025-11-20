@@ -1,3 +1,4 @@
+import { sample } from 'lodash';
 import { parquetMetadataAsync, parquetRead } from 'hyparquet';
 import { fromPairs, zip } from 'lodash';
 import Papa from 'papaparse';
@@ -197,13 +198,200 @@ export const reorderLabels = (labels: string[], orderedList: string[] | null): s
 
 export function getRandomName(prefix: string) {
   const now = new Date();
+  let random_name: string = 'RDName';
+  const monthName: string[] = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  /*
+  Names for QuickModel, BERTopic and bertmodel are sampled from the baby names 
+  in england and Wales from 1996 to 2024 (25 boy names and 25 girl names)
+  https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/livebirths/datasets/babynamesinenglandandwalesfrom1996
+  */
+  if (prefix === 'BERTopic') {
+    const bertopic_names = [
+      'Todd',
+      'Thai',
+      'Tzvi',
+      'Tiago',
+      'Teo',
+      'Tayyib',
+      'Tommi',
+      'Taim',
+      'Tyson',
+      'Tyler',
+      'Tobiasz',
+      'Tyreese',
+      'Taran',
+      'Trevor',
+      'Thaddeus',
+      'Travis',
+      'Tyrone',
+      'Trent',
+      'Teddy-James',
+      'Taye',
+      'Tajus',
+      'Torben',
+      'Talha',
+      'Tawhid',
+      'Tamsyn',
+      'Tilly',
+      'Tiana',
+      'Tamzin',
+      'Tiyana',
+      'Tegen',
+      'Tasmin',
+      'Tiarna',
+      'Tatum',
+      'Tilda',
+      'Teya',
+      'Tanika',
+      'Tabitha',
+      'Tahiya',
+      'Talula',
+      'Tabatha',
+      'Tilly-Mae',
+      'Toni',
+      'Tia-Louise',
+      'Tahlia',
+      'Tiffany',
+      'Tess',
+      'Trixie',
+      'Tia',
+      'Tiegan',
+    ];
+    random_name = sample(bertopic_names) as string;
+  }
+  if (prefix === 'QuickModel') {
+    const quick_names = [
+      'Qasid',
+      'Qasim',
+      'Quhey',
+      'Qazi',
+      'Quincey',
+      'Quillan',
+      'Qaiser',
+      'Qaasim',
+      'Quinton',
+      'Quintus',
+      'Quaid',
+      'Quincy',
+      'Qusay',
+      'Qays',
+      'Qais',
+      'Quintin',
+      'Quentin',
+      'Qamar',
+      'Qasam',
+      'Qendrim',
+      'Qasem',
+      'Quinlan',
+      'Quinley',
+      'Qadir',
+      'Quade',
+      'Quinnie',
+      'Quianna',
+      'Qailah',
+      'Quin',
+      'Queen',
+      'Qadar',
+      'Quincy',
+      'Qaylah',
+      'Qiraat',
+      'Qian',
+      'Qudsia',
+      'Quynn',
+      'Qendresa',
+      'Quynh',
+      'Qurratul',
+      'Queenie',
+      'Qiao',
+      'Quinn',
+      'Qismat',
+      'Qing',
+      'Quorra',
+      'Qirat',
+      'Qiana',
+      'Qudsiyah',
+      'Quratulain',
+    ];
+    random_name = sample(quick_names) as string;
+  }
+  if (prefix === 'bertmodel') {
+    const bert_names = [
+      'Bleu',
+      'Baylee',
+      'Bryn',
+      'Buster',
+      'Bradleigh',
+      'Bobby',
+      'Bartlomiej',
+      'Bobby-Joe',
+      'Bailee',
+      'Boden',
+      'Bray',
+      'Blayne',
+      'Benson',
+      'Beniamin',
+      'Brendon',
+      'Bawan',
+      'Bobi',
+      'Braiden',
+      'Bilaal',
+      'Bruce',
+      'Bartholomew',
+      'Bashir',
+      'Billy',
+      'Brock',
+      'Benaiah',
+      'Bethel',
+      'Bianca',
+      'Bree',
+      'Brooke',
+      'Bodhi',
+      'Bluebelle',
+      'Bethaney',
+      'Bay',
+      'Bismah',
+      'Bracha',
+      'Bessie',
+      'Bayleigh',
+      'Betsie',
+      'Blimi',
+      'Bobbie',
+      'Brook',
+      'Briar',
+      'Baby',
+      'Beatriz',
+      'Belinda',
+      'Bayan',
+      'Bethan',
+      'Bailie',
+      'Beverly',
+      'Berfin',
+    ];
+    random_name = sample(bert_names) as string;
+  }
+  if (prefix === 'Scheme') {
+    random_name = 'New_Scheme';
+  }
+  if (prefix === 'Project') {
+    random_name = 'Project';
+  }
+  const month = monthName[now.getMonth()];
+  const day = String(now.getDate());
+  const hour = ('0' + String(now.getHours())).slice(-2);
+  const minute = ('0' + String(now.getMinutes())).slice(-2);
 
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0'); // 0-indexed
-  const day = String(now.getDate()).padStart(2, '0');
-  const hour = String(now.getHours()).padStart(2, '0');
-  const minute = String(now.getMinutes()).padStart(2, '0');
-  const seconds = String(now.getSeconds()).padStart(2, '0');
-
-  return `${prefix}-${year}${month}${day}-${hour}${minute}${seconds}`;
+  return `${day}_${month}-${random_name}-${hour}h${minute}`;
 }

@@ -1189,6 +1189,34 @@ export function useRenameBertModel(projectSlug: string | null) {
 }
 
 /**
+ * Rename quick model
+ */
+export function useRenameQuickModel(projectSlug: string | null) {
+  const { notify } = useNotifications();
+  const renameQuickModel = useCallback(
+    async (former_model_name: string, new_model_name: string) => {
+      if (projectSlug) {
+        const res = await api.POST('/models/quick/rename', {
+          params: {
+            query: {
+              project_slug: projectSlug,
+              former_name: former_model_name,
+              new_name: new_model_name,
+            },
+          },
+        });
+        if (!res.error) notify({ type: 'success', message: 'Model renamed' });
+        return true;
+      }
+      return null;
+    },
+    [projectSlug, notify],
+  );
+
+  return { renameQuickModel };
+}
+
+/**
  * Delete bert model
  */
 export function useDeleteBertModel(projectSlug: string | null) {

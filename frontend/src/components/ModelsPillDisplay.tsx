@@ -19,7 +19,7 @@ export const ModelsPillDisplay: FC<ModelsNameInput> = ({
   deleteModelFunction,
   children,
 }) => {
-  const [showDelete, setShowDelete] = useState(false);
+  const [showDelete, setShowDelete] = useState<boolean | string>(false);
   return (
     <div className="model-pill-selection">
       {(modelNames || []).map((name) => (
@@ -34,12 +34,16 @@ export const ModelsPillDisplay: FC<ModelsNameInput> = ({
           <button
             id="bin"
             onClick={() => {
-              setShowDelete(true);
+              setShowDelete(name);
             }}
           >
             <MdOutlineDeleteOutline size={20} />
           </button>
-          <Modal show={showDelete} id={`deletescheme-${name}`} onHide={() => setShowDelete(false)}>
+          <Modal
+            show={showDelete === name}
+            id={`deletescheme-${name}`}
+            onHide={() => setShowDelete(false)}
+          >
             <Modal.Header closeButton>
               <Modal.Title>Delete the current model</Modal.Title>
             </Modal.Header>

@@ -3,16 +3,23 @@ import { FC, useEffect, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { FaPlusCircle } from 'react-icons/fa';
+import { MdDriveFileRenameOutline } from 'react-icons/md';
 import { FaGear } from 'react-icons/fa6';
 import Select from 'react-select';
 import PulseLoader from 'react-spinners/PulseLoader';
-import { useDeleteQuickModel, useGetQuickModel, useTrainQuickModel } from '../core/api';
+import {
+  useDeleteQuickModel,
+  useGetQuickModel,
+  useTrainQuickModel,
+  useRenameQuickModel,
+} from '../core/api';
 import { useNotifications } from '../core/notifications';
 import { getRandomName } from '../core/utils';
 import { MLStatisticsModel, ModelDescriptionModel, QuickModelInModel } from '../types';
 import { CreateNewFeature } from './CreateNewFeature';
 import { DisplayScores } from './DisplayScores';
 import { ModelsPillDisplay } from './ModelsPillDisplay';
+import { ValidateButtons } from './validateButton';
 // TODO: default values + avoid generic parameters
 
 interface Options {
@@ -36,6 +43,10 @@ interface QuickModelManagementProps {
   featuresOption: FeaturesOptions;
   columns: string[];
   isComputing: boolean;
+}
+
+interface renameModel {
+  new_name: string;
 }
 
 export default function ModelsTable(
@@ -96,6 +107,21 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
 
   // current quickmodel
   const [currentQuickModelName, setCurrentQuickModelName] = useState<string | null>(null);
+  // Modal rename and form to rename
+  const [showRename, setShowRename] = useState(false);
+  const { renameQuickModel } = useRenameQuickModel(projectName || null);
+  const {
+    handleSubmit: handleSubmitRename,
+    register: registerRename,
+    reset: resetRename,
+  } = useForm<renameModel>();
+
+  const onSubmitRename: SubmitHandler<renameModel> = async (data) => {
+    if (currentQuickModelName) {
+      await renameQuickModel(currentQuickModelName, data.new_name);
+      resetRename();
+    } else notify({ type: 'error', message: 'New name is void' });
+  };
 
   // get information on the quickmodel
   const { currentModel: currentModelInformations } = useGetQuickModel(
@@ -221,6 +247,21 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
               <FaGear size={18} className="me-1" />
               Parameters
             </button>
+            <button
+              className="btn btn-outline-secondary btn-sm me-2 d-flex align-items-center"
+              onClick={() => setShowRename(true)}
+            >
+              <MdDriveFileRenameOutline size={18} className="me-1" />
+              Rename
+            </button>
+            <ValidateButtons
+              projectSlug={projectName}
+              modelName={currentQuickModelName}
+              kind="quick"
+              currentScheme={currentScheme}
+              id="compute-prediction"
+              buttonLabel="Compute predictions"
+            />
           </div>
           <DisplayScores
             title={'Validation scores from the training data (internal validation)'}
@@ -433,6 +474,23 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
               ))}
             </tbody>
           </table>
+        </Modal.Body>
+      </Modal>
+      <Modal show={showRename} id="rename-modal" onHide={() => setShowRename(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Rename {currentQuickModelName}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <form onSubmit={handleSubmitRename(onSubmitRename)}>
+            <input
+              id="new_name"
+              className="form-control me-2 mt-2"
+              type="text"
+              placeholder="New name of the model"
+              {...registerRename('new_name')}
+            />
+            <button className="btn btn-primary me-2 mt-2">Rename</button>
+          </form>
         </Modal.Body>
       </Modal>
     </div>

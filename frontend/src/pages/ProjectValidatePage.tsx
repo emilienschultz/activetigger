@@ -1,58 +1,14 @@
-import cx from 'classnames';
 import { FC, useMemo, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
-import { GrValidate } from 'react-icons/gr';
 import { useParams } from 'react-router-dom';
 import { DisplayScoresMenu } from '../components/DisplayScoresMenu';
 import { DisplayTrainingProcesses } from '../components/DisplayTrainingProcesses';
 import { ProjectPageLayout } from '../components/layout/ProjectPageLayout';
 import { ModelsPillDisplay } from '../components/ModelsPillDisplay';
-import {
-  useComputeModelPrediction,
-  useDeleteBertModel,
-  useDeleteQuickModel,
-  useModelInformations,
-} from '../core/api';
+import { ValidateButtons } from '../components/validateButton';
+import { useDeleteBertModel, useDeleteQuickModel, useModelInformations } from '../core/api';
 import { useAppContext } from '../core/context';
 import { MLStatisticsModel, ModelDescriptionModel } from '../types';
-
-/**
- * Buttons
- */
-
-interface validateButtonsProps {
-  projectSlug: string | null;
-  modelName: string | null;
-  kind: string | null;
-  currentScheme: string | null;
-  setCurrentModel?: (val: null | string) => void;
-  className?: string;
-  id?: string;
-}
-
-export const ValidateButtons: FC<validateButtonsProps> = ({
-  modelName,
-  kind,
-  currentScheme,
-  projectSlug,
-  setCurrentModel,
-  className,
-  id,
-}) => {
-  const { computeModelPrediction } = useComputeModelPrediction(projectSlug || null, 16);
-  return (
-    <button
-      className={cx(className ? className : 'btn btn-primary m-4')}
-      onClick={() => {
-        computeModelPrediction(modelName || '', 'annotable', currentScheme, kind);
-        if (setCurrentModel) setCurrentModel(null);
-      }}
-      id={id}
-    >
-      <GrValidate size={20} /> Compute statistics on annotations
-    </button>
-  );
-};
 
 /**
  * Component to display the export page
@@ -128,6 +84,7 @@ export const ProjectValidatePage: FC = () => {
                       currentScheme={currentScheme || null}
                       projectSlug={projectName || null}
                       id="compute-validate"
+                      style={{ margin: '8px 0px', color: 'white' }}
                     />
 
                     <DisplayScoresMenu
@@ -181,6 +138,7 @@ export const ProjectValidatePage: FC = () => {
                         currentScheme={currentScheme || null}
                         projectSlug={projectName || null}
                         id="compute-validate"
+                        style={{ margin: '8px 0px', color: 'white' }}
                       />
                       <DisplayScoresMenu
                         scores={

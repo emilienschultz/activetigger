@@ -5,6 +5,7 @@ import { DisplayTrainingProcesses } from '../components/DisplayTrainingProcesses
 import { ModelCreationForm } from '../components/forms/ModelCreationForm';
 import { ModelParametersTab } from '../components/ModelParametersTab';
 import { LossChart } from '../components/vizualisation/lossChart';
+import { ValidateButtons } from './validateButton';
 import { ModelDescriptionModel, ProjectStateModel } from '../types';
 import { DisplayScores } from './DisplayScores';
 import { ModelsPillDisplay } from './ModelsPillDisplay';
@@ -117,20 +118,20 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
                 </button>
 
                 <button
-                  className="btn btn-outline-secondary btn-sm d-flex align-items-center"
+                  className="btn btn-outline-secondary btn-sm me-2 d-flex align-items-center"
                   onClick={() => setShowRename(true)}
                 >
                   <MdDriveFileRenameOutline size={18} className="me-1" />
                   Rename
                 </button>
-
-                {isComputing && (
-                  <DisplayTrainingProcesses
-                    projectSlug={projectSlug || null}
-                    processes={project?.languagemodels.training}
-                    displayStopButton={isComputing}
-                  />
-                )}
+                <ValidateButtons
+                  projectSlug={projectSlug}
+                  modelName={currentBertModel}
+                  kind="bert"
+                  currentScheme={currentScheme}
+                  id="compute-prediction"
+                  buttonLabel="Compute predictions"
+                />
               </div>
 
               <DisplayScores

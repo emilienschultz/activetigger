@@ -1168,6 +1168,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/models/quick/rename": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Save Bert
+         * @description Rename quickmodel
+         */
+        post: operations["save_bert_models_quick_rename_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/models/quickmodel": {
         parameters: {
             query?: never;
@@ -5181,6 +5201,39 @@ export interface operations {
         parameters: {
             query: {
                 name: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_bert_models_quick_rename_post: {
+        parameters: {
+            query: {
+                former_name: string;
+                new_name: string;
                 project_slug: string;
             };
             header?: never;

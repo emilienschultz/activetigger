@@ -1,7 +1,7 @@
 import { FC, useState } from 'react';
 
 import { marked } from 'marked';
-import { useGetSchemeCodebook } from '../core/api';
+import { useGetSchemeCodebook, usePostSchemeCodebook } from '../core/api';
 
 import { CodebookManagement } from '../components/CodeBookManagement';
 
@@ -26,6 +26,13 @@ export const CodebookDisplay: FC<CodebookDisplayProps> = ({
     projectSlug || null,
     currentScheme || null,
   );
+  // hooks and states to modify the codebook
+  const { postCodebook } = usePostSchemeCodebook(projectSlug || null, currentScheme || null);
+  const [modifiedCodebook, setModifiedCodebook] = useState<string | undefined>(undefined);
+  const saveCodebook = async () => {
+    postCodebook(modifiedCodebook || '', time || '');
+    reFetchCodebook();
+  };
 
   // open codebook edition
   const [showCodebookModal, setShowCodebookModal] = useState(false);
@@ -128,7 +135,10 @@ export const CodebookDisplay: FC<CodebookDisplayProps> = ({
       </div>
       <Modal
         show={showCodebookModal}
-        onHide={() => setShowCodebookModal(false)}
+        onHide={() => {
+          setShowCodebookModal(false);
+          saveCodebook();
+        }}
         id="codebook-modal"
         size="xl"
       >
@@ -137,11 +147,11 @@ export const CodebookDisplay: FC<CodebookDisplayProps> = ({
         </Modal.Header>
         <Modal.Body>
           <CodebookManagement
-            projectName={projectSlug}
-            currentScheme={currentScheme || null}
             codebook={codebook}
             time={time}
-            reFetchCodebook={reFetchCodebook}
+            modifiedCodebook={modifiedCodebook}
+            setModifiedCodebook={setModifiedCodebook}
+            saveCodebook={saveCodebook}
           />
         </Modal.Body>
       </Modal>
