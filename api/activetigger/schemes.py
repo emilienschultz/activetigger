@@ -138,7 +138,17 @@ class Schemes:
         df = pd.DataFrame(
             df.apply(lambda x: x.fillna(no_label).to_dict(), axis=1), columns=["annotations"]
         )
-        df = df.join(self.data.train[["text"]], how="left")  # add the text
+        # add the text
+        if dataset == "train":
+            df = df.join(self.data.train[["text"]], how="left")  # add the text
+        elif dataset == "test":
+            if self.data.test is not None:
+                df = df.join(self.data.test[["text"]], how="left")  # add the text
+        elif dataset == "valid":
+            if self.data.valid is not None:
+                df = df.join(self.data.valid[["text"]], how="left")  # add the text
+        else:
+            raise Exception("Dataset not recognized")
 
         df["current_label"] = current_labels
         df = df[f_multi].reset_index()

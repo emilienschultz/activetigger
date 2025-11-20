@@ -1786,7 +1786,7 @@ export function useGetServer(projectState: ProjectStateModel | null) {
 /**
  * Get table of disagreements
  */
-export function useTableDisagreement(project_slug?: string, scheme?: string) {
+export function useTableDisagreement(project_slug?: string, scheme?: string, dataset?: string) {
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
 
   const getTable = useAsyncMemo(async () => {
@@ -1796,7 +1796,7 @@ export function useTableDisagreement(project_slug?: string, scheme?: string) {
           query: {
             project_slug: project_slug,
             scheme: scheme,
-            dataset: 'train',
+            dataset: dataset,
           },
         },
       });
@@ -1818,7 +1818,7 @@ export function useTableDisagreement(project_slug?: string, scheme?: string) {
 /**
  * Reconciliate annotations
  */
-export function useReconciliate(projectSlug: string, scheme: string | null) {
+export function useReconciliate(projectSlug: string, scheme: string | null, dataset: string) {
   const { notify } = useNotifications();
 
   const postReconciliate = useCallback(
@@ -1832,6 +1832,7 @@ export function useReconciliate(projectSlug: string, scheme: string | null) {
               scheme: scheme,
               element_id: element_id,
               label: label,
+              dataset: dataset,
             },
           },
         });
@@ -1841,7 +1842,7 @@ export function useReconciliate(projectSlug: string, scheme: string | null) {
       }
       return null;
     },
-    [projectSlug, scheme, notify],
+    [projectSlug, scheme, notify, dataset],
   );
 
   return { postReconciliate };
@@ -2097,7 +2098,12 @@ export function usePostSchemeCodebook(project_slug: string | null, scheme: strin
 /**
  * Get compare 2 schemes
  */
-export function useGetCompareSchemes(project_slug: string, schemeA: string, schemeB: string) {
+export function useGetCompareSchemes(
+  project_slug: string,
+  schemeA: string,
+  schemeB: string,
+  dataset?: string,
+) {
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
 
   const getCompareSchemes = useAsyncMemo(async () => {
@@ -2108,6 +2114,7 @@ export function useGetCompareSchemes(project_slug: string, schemeA: string, sche
             project_slug: project_slug,
             schemeA: schemeA,
             schemeB: schemeB,
+            dataset: dataset,
           },
         },
       });

@@ -30,6 +30,10 @@ export const ProjectTagPage: FC = () => {
 
   // nb users
   const nbUsers = project?.users ? Object.keys(project.users).length : 0;
+  const [dataset, setDataset] = useState('train');
+
+  const isValid = project?.params.valid;
+  const isTest = project?.params.test;
 
   if (!projectName) return;
 
@@ -45,12 +49,24 @@ export const ProjectTagPage: FC = () => {
 
           {nbUsers > 1 && (
             <Tab eventKey="curate" title="Curate">
+              <div className="parameter-div">
+                <label className="form-label label-small-gray">Dataset</label>
+                <select
+                  className="form-select"
+                  value={dataset}
+                  onChange={(e) => setDataset(e.target.value)}
+                >
+                  <option value="train">train</option>
+                  {isValid && <option value="valid">validation</option>}
+                  {isTest && <option value="test">test</option>}
+                </select>
+              </div>
               <Tabs id="panel" className="mt-3" defaultActiveKey="scheme">
                 <Tab eventKey="scheme" title="Current scheme">
-                  <AnnotationDisagreementManagement projectSlug={projectName} />
+                  <AnnotationDisagreementManagement projectSlug={projectName} dataset={dataset} />
                 </Tab>
                 <Tab eventKey="between" title="Between schemes">
-                  <SchemesComparisonManagement projectSlug={projectName} />
+                  <SchemesComparisonManagement projectSlug={projectName} dataset={dataset} />
                 </Tab>
               </Tabs>
             </Tab>
