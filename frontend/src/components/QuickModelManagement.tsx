@@ -460,6 +460,8 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
         <Modal.Body>
           <table className="table table-striped table-hover w-100 mt-2">
             <tbody>
+              Model <b>{currentModelInformations?.model}</b> trained on{' '}
+              <b>{currentModelInformations?.features}</b>
               {Object.entries(currentModelInformations?.params || {}).map(([key, value], i) => (
                 <tr key={i}>
                   <td>{key}</td>
