@@ -124,13 +124,6 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
                   Rename
                 </button>
 
-                {isComputing && (
-                  <DisplayTrainingProcesses
-                    projectSlug={projectSlug || null}
-                    processes={project?.languagemodels.training}
-                    displayStopButton={isComputing}
-                  />
-                )}
               </div>
 
               <DisplayScores
