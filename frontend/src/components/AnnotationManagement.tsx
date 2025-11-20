@@ -304,13 +304,13 @@ export const AnnotationManagement: FC = () => {
                   <span className="d-none d-md-inline">Annotated: </span>
                   {statisticsDataset(phase)} -{' '}
                   <span className="d-none d-md-inline">Selected: </span>
-                  {nSample || ''}
+                  {nSample || 'na'}
                   {/* <Tooltip anchorSelect=".currentstatistics" place="top">
                         statistics for the current scheme
                       </Tooltip> */}
                 </span>
               ) : (
-                ''
+                'na'
               )}{' '}
               {phase === 'train' && (
                 <>
@@ -318,7 +318,7 @@ export const AnnotationManagement: FC = () => {
                     size={30}
                     onClick={() => setActiveMenu(!activeMenu)}
                     className="cursor-pointer mx-2 activelearning"
-                    style={{ color: activeQuickModel ? 'green' : 'orange' }}
+                    style={{ color: activeQuickModel ? 'green' : 'grey' }}
                     title="Active learning"
                   />
                   <Tooltip anchorSelect=".activelearning" place="top">
