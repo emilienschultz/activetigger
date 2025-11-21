@@ -6,6 +6,7 @@ import { Coordinates } from 'sigma/types';
 import classNames from 'classnames';
 import { PiCursorFill, PiSelectionBold } from 'react-icons/pi';
 import { SigmaToolsType } from '.';
+import { SigmaCursorTypes } from './index';
 
 export interface MarqueBoundingBox {
   x: { min: number; max: number };
@@ -16,7 +17,8 @@ export const MarqueeController: FC<{
   setBbox: Dispatch<SetStateAction<MarqueBoundingBox | undefined>>;
   validateBoundingBox: (boundingBox?: MarqueBoundingBox) => void;
   setActiveTool: Dispatch<SetStateAction<SigmaToolsType>>;
-}> = ({ setBbox, validateBoundingBox, setActiveTool }) => {
+  setSigmaCursor: Dispatch<SetStateAction<SigmaCursorTypes>>;
+}> = ({ setBbox, validateBoundingBox, setActiveTool, setSigmaCursor }) => {
   // sigma hooks
   const sigma = useSigma();
   const registerEvents = useRegisterEvents();
@@ -122,6 +124,7 @@ export const MarqueeController: FC<{
               mouseCorner: mousePosition,
               //capturedNodes: [],
             });
+            setSigmaCursor('move');
             sigma.getCamera().disable();
           } else {
             closeMarkee();

@@ -34,7 +34,7 @@ interface Props {
 
 const sigmaStyle = { height: '100%', width: '100%' };
 
-export type SigmaCursorTypes = 'crosshair' | 'pointer' | 'grabbing' | undefined;
+export type SigmaCursorTypes = 'crosshair' | 'pointer' | 'grabbing' | 'move' | undefined;
 export type SigmaToolsType = 'panZoom' | 'marquee';
 interface NodeAttributesType {
   x: number;
@@ -179,6 +179,7 @@ export const ProjectionVizSigma: FC<Props> = ({
               setBbox={setBbox}
               validateBoundingBox={setFrameBbox}
               setActiveTool={setActiveTool}
+              setSigmaCursor={setSigmaCursor}
             />
           </div>
           <ZoomControl />
