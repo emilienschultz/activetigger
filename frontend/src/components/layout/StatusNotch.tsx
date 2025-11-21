@@ -50,15 +50,15 @@ export const StatusNotch: FC<{
 
   const whatComutation = (projectState: ProjectStateModel) => {
     if (currentUser in projectState.languagemodels.training) {
-      return 'Bert model training';
+      return 'BERT computing';
     } else if (currentUser in projectState.quickmodel.training) {
-      return 'Quick model training';
+      return 'Quick model computing';
     } else if (currentUser in projectState.projections.training) {
-      return 'Projection generation';
+      return 'Projection computing';
     } else if (Object.values(projectState.features.training).length > 0) {
-      return 'Feature generation';
+      return 'Feature computing';
     } else if (projectState.bertopic.training) {
-      return 'BERTopic fitting';
+      return 'BERTopic computing';
     }
     return '';
   };
