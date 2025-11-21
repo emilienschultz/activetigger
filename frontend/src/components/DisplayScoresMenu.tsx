@@ -7,6 +7,7 @@ interface Scores {
 }
 
 interface DisplayScoresMenuPropos {
+  projectSlug?: string | null;
   scores: Scores;
   modelName?: string;
   displayTitle?: boolean;
@@ -18,6 +19,7 @@ export const DisplayScoresMenu: FC<DisplayScoresMenuPropos> = ({
   modelName,
   displayTitle,
   skip,
+  projectSlug,
 }) => {
   const keys = Object.keys(scores);
   const [currentScore, setCurrentScore] = useState<string>(keys[0]);
@@ -57,6 +59,7 @@ export const DisplayScoresMenu: FC<DisplayScoresMenuPropos> = ({
           title={displayTitle ? currentScore : null}
           scores={scores[currentScore]}
           modelName={modelName}
+          projectSlug={projectSlug}
         />
       )}
     </div>

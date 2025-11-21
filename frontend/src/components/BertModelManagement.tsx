@@ -5,10 +5,10 @@ import { DisplayTrainingProcesses } from '../components/DisplayTrainingProcesses
 import { ModelCreationForm } from '../components/forms/ModelCreationForm';
 import { ModelParametersTab } from '../components/ModelParametersTab';
 import { LossChart } from '../components/vizualisation/lossChart';
-import { ValidateButtons } from './validateButton';
 import { ModelDescriptionModel, ProjectStateModel } from '../types';
 import { DisplayScores } from './DisplayScores';
 import { ModelsPillDisplay } from './ModelsPillDisplay';
+import { ValidateButtons } from './validateButton';
 
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { FaPlusCircle } from 'react-icons/fa';
@@ -138,6 +138,7 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
                 title={'Validation scores from the training data (internal validation)'}
                 scores={model.scores.internalvalid_scores as MLStatisticsModel}
                 modelName={currentBertModel}
+                projectSlug={projectSlug}
               />
 
               <div className="mt-2">

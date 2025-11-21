@@ -3,15 +3,15 @@ import { FC, useEffect, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { FaPlusCircle } from 'react-icons/fa';
-import { MdDriveFileRenameOutline } from 'react-icons/md';
 import { FaGear } from 'react-icons/fa6';
+import { MdDriveFileRenameOutline } from 'react-icons/md';
 import Select from 'react-select';
 import PulseLoader from 'react-spinners/PulseLoader';
 import {
   useDeleteQuickModel,
   useGetQuickModel,
-  useTrainQuickModel,
   useRenameQuickModel,
+  useTrainQuickModel,
 } from '../core/api';
 import { useNotifications } from '../core/notifications';
 import { getRandomName } from '../core/utils';
@@ -266,6 +266,7 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
           <DisplayScores
             title={'Validation scores from the training data (internal validation)'}
             scores={currentModelInformations.statistics_test as MLStatisticsModel}
+            projectSlug={projectName}
           />
           {currentModelInformations.statistics_cv10 && (
             <DisplayScores

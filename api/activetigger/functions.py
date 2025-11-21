@@ -195,6 +195,7 @@ def get_metrics(
     """
     Compute metrics for a prediction
     """
+
     labels = list(Y_true.unique())
     precision = [
         round(i, decimals)

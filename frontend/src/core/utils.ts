@@ -1,6 +1,5 @@
-import { sample } from 'lodash';
 import { parquetMetadataAsync, parquetRead } from 'hyparquet';
-import { fromPairs, zip } from 'lodash';
+import { fromPairs, sample, zip } from 'lodash';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 
@@ -392,6 +391,7 @@ export function getRandomName(prefix: string) {
   const day = String(now.getDate());
   const hour = ('0' + String(now.getHours())).slice(-2);
   const minute = ('0' + String(now.getMinutes())).slice(-2);
+  const year = String(now.getFullYear());
 
-  return `${day}_${month}-${random_name}-${hour}h${minute}`;
+  return `${random_name}_${year}-${month}-${day}-${hour}h${minute}`;
 }

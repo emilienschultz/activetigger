@@ -578,6 +578,7 @@ class Project:
             standardize=quickmodel.standardize or False,
             cv10=quickmodel.cv10 or False,
             retrain=retrain,
+            texts=self.data.train["text"] if self.data.train is not None else None,
         )
 
     def get_next(
