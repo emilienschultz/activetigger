@@ -49,9 +49,9 @@ export const ProjectActionsSidebar: FC<{
   }
 
   return (
-    <div className={`project-sidebar flex-shrink-0 bg-light`}>
+    <div className={`project-sidebar flex-shrink-0 bg-light sticky-top`}>
       {canEdit && (
-        <ul className="nav nav-pills mb-auto">
+        <ul className="nav nav-pills mb-auto ">
           <li className="nav-item  d-none d-md-inline w-100">
             <div className="nav-link d-inline-block rounded-pill px-3 py-1 bg-light w-100">
               <div className="fw-semibold text-dark text-truncate">{projectName}</div>

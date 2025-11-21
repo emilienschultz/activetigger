@@ -1,8 +1,12 @@
 // project sidebar
 .project-sidebar {
-  //height: calc(100vh - $navbar-brand-height - $navbar-brand-padding-y);
+  height: fit-content;
+  @include media-breakpoint-up(md) {
+    top: calc(var(--bs-gutter-x) * 0.5);
+  }
+
   border-radius: 10px;
-  margin: 5px 0;
+  margin: calc(var(--bs-gutter-x) * 0.5) 0;
   padding: 5px;
 
   .nav {
@@ -278,40 +282,39 @@ table {
   }
 }
 
-#DisplayTableStatistics{
+#DisplayTableStatistics {
   width: 1000px;
   padding: 10px;
   margin: 10px 0px;
-  border: rgb(200,200,200) 1px solid;
-  
+  border: rgb(200, 200, 200) 1px solid;
+
   // Center content
   display: flex;
   justify-content: center;
   align-items: center;
 
-  table{
-    tbody{
-      td.label-col{
+  table {
+    tbody {
+      td.label-col {
         font-weight: bold;
       }
-      td.cell{
+      td.cell {
         width: 50px;
         text-align: center;
         text-overflow: clip;
       }
-      td.total-cell{
-        color: rgb(160,160,160);
+      td.total-cell {
+        color: rgb(160, 160, 160);
         text-decoration: underline;
         font-style: italic;
       }
-      td.diag-cell{
-        color:green;
+      td.diag-cell {
+        color: green;
         background: $tertiary;
       }
-      td.rowspan-cell{
+      td.rowspan-cell {
         border-right: $secondary 1px solid;
       }
-
     }
   }
 }
