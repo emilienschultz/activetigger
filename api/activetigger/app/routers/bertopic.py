@@ -80,7 +80,9 @@ async def get_bertopic_projection(
     Get projection from the BERTopic model for the project.
     """
     try:
-        return project.bertopic.get_projection(name=name)
+        r = project.bertopic.get_projection(name=name)
+        print(r)
+        return r
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
