@@ -4270,6 +4270,7 @@ export interface operations {
         parameters: {
             query: {
                 scheme: string;
+                dataset?: string;
                 project_slug: string;
             };
             header?: never;
@@ -4305,6 +4306,7 @@ export interface operations {
                 element_id: string;
                 label: string;
                 scheme: string;
+                dataset?: string;
                 project_slug: string;
             };
             header?: never;
