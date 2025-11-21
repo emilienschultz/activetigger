@@ -286,19 +286,6 @@ export const AnnotationManagement: FC = () => {
               className={`d-flex align-items-center mb-3 ${phase !== 'train' ? 'alert alert-warning' : ''}`}
             > */}
             <div className="text-center my-2">
-              <button
-                className={cx('getelement', settingChanged ? 'setting-changed' : '')}
-                onClick={() => {
-                  refetchElement();
-                  setSettingChanged(false);
-                }}
-                title="Get next element with the selection mode"
-              >
-                <LuRefreshCw size={20} /> Fetch
-                {/* <Tooltip anchorSelect=".getelement" place="top">
-                  Get next element with the selection mode
-                </Tooltip> */}
-              </button>
               {statistics ? (
                 <span className="ms-2" style={{ fontSize: '12px', color: 'gray' }}>
                   <span className="d-none d-md-inline">Annotated: </span>
@@ -312,12 +299,25 @@ export const AnnotationManagement: FC = () => {
               ) : (
                 'na'
               )}{' '}
+              <button
+                className={cx('getelement', settingChanged ? 'setting-changed' : '')}
+                onClick={() => {
+                  refetchElement();
+                  setSettingChanged(false);
+                }}
+                title="Get next element with the selection mode"
+              >
+                <LuRefreshCw size={20} /> Get
+                {/* <Tooltip anchorSelect=".getelement" place="top">
+                  Get next element with the selection mode
+                </Tooltip> */}
+              </button>
               {phase === 'train' && (
                 <>
                   <GiTigerHead
                     size={30}
                     onClick={() => setActiveMenu(!activeMenu)}
-                    className="cursor-pointer mx-2 activelearning"
+                    className="cursor-pointer ms-2 activelearning"
                     style={{ color: activeQuickModel ? 'green' : 'grey' }}
                     title="Active learning"
                   />
@@ -325,7 +325,7 @@ export const AnnotationManagement: FC = () => {
                     Active learning
                   </Tooltip>
                   <span className="badge rounded-pill bg-light text-dark opacity-50 small">
-                    {activeQuickModel}
+                    {activeQuickModel ? activeQuickModel : 'inactive'}
                   </span>
                 </>
               )}
