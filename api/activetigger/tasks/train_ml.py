@@ -86,9 +86,9 @@ class TrainML(BaseTask):
         proba["prediction"] = proba.drop(columns="entropy").idxmax(axis=1)
 
         # compute training metrics and write
-        metrics_train = get_metrics(Y_train, Y_pred_train)
+        metrics_train = get_metrics(Y_train, Y_pred_train, labels = self.labels)
         metrics_train.false_predictions = None
-        metrics_test = get_metrics(Y_test, Y_pred_test)
+        metrics_test = get_metrics(Y_test, Y_pred_test, labels = self.labels)
         metrics_test.false_predictions = None
         if self.cv10:
             num_folds = 10
