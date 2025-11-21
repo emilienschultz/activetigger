@@ -93,6 +93,7 @@ export const BertopicPage: FC = () => {
             currentModelName={currentBertopic}
             setCurrentModelName={setCurrentBertopic}
             deleteModelFunction={deleteBertopic}
+            id="bertopic-models"
           >
             <button
               onClick={() => setShowComputeNewBertopic(true)}

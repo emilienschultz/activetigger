@@ -31,14 +31,14 @@ export const ModelsPillDisplay: FC<ModelsNameInput> = ({
           key={name}
         >
           {name}
-          <button
+          <span
             id="bin"
             onClick={() => {
               setShowDelete(name);
             }}
           >
             <MdOutlineDeleteOutline size={20} />
-          </button>
+          </span>
           <Modal
             show={showDelete === name}
             id={`deletescheme-${name}`}
