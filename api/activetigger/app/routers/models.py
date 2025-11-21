@@ -113,7 +113,8 @@ async def get_quickmodel(
     try:
         sm = project.quickmodels.get(name)
         return QuickModelOutModel(
-            model=sm.name,
+            name=sm.name,
+            model=sm.model_type,
             params=sm.model_params,
             features=sm.features,
             statistics_train=sm.statistics_train,

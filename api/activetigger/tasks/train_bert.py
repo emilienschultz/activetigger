@@ -366,9 +366,17 @@ class TrainBert(BaseTask):
 
             # compute metrics and write
             metrics_train = get_metrics(
-                train["true_label"], train["predicted_label"], train["text"]
+                Y_true = train["true_label"], 
+                Y_pred = train["predicted_label"], 
+                texts = train["text"], 
+                labels = labels
             )
-            metrics_test = get_metrics(test["true_label"], test["predicted_label"], test["text"])
+            metrics_test = get_metrics(
+                Y_true = test["true_label"], 
+                Y_pred = test["predicted_label"], 
+                texts = test["text"], 
+                labels = labels
+            )
             with open(str(current_path.joinpath("metrics_training.json")), "w") as f:
                 json.dump(
                     {

@@ -617,6 +617,7 @@ class QuickModelOutModel(BaseModel):
     Trained quickmodel
     """
 
+    name: str
     features: list
     model: str
     params: (

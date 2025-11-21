@@ -3091,6 +3091,8 @@ export interface components {
          * @description Trained quickmodel
          */
         QuickModelOutModel: {
+            /** Name */
+            name: string;
             /** Features */
             features: unknown[];
             /** Model */

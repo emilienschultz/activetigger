@@ -206,13 +206,19 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
   const predictions = filterFeatures(features);
   const defaultFeatures = [predictions[predictions.length - 1]];
 
+  const [formSelectedFeatures, setFormSelectedFeatures] = useState<string[]>(
+    defaultFeatures.map((e) => (e ? e.value : [])),
+  );
+
   // state for new feature
   const [displayNewFeature, setDisplayNewFeature] = useState<boolean>(false);
   const [displayNewModel, setDisplayNewModel] = useState<boolean>(false);
 
   const [showParameters, setShowParameters] = useState(false);
 
-  console.log(currentQuickModelName);
+  const selectedFeaturesContainsBERTFeatures = () => {
+    return formSelectedFeatures.map((feature) => feature.slice(0, 8) === 'predict_').includes(true);
+  };
 
   return (
     <div className="w-100">
@@ -325,11 +331,20 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
                             onChange(
                               selectedOptions ? selectedOptions.map((option) => option.value) : [],
                             );
+                            setFormSelectedFeatures(
+                              selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                            );
                           }}
                         />
                       </>
                     )}
                   />
+                  {selectedFeaturesContainsBERTFeatures() && (
+                    <a className="explanations">
+                      ⚠️ Warning: using BERT predictions as features results in strongly
+                      upward-biased quality metrics on the train set.
+                    </a>
+                  )}
                 </div>
               </div>
               <details className="custom-details">
@@ -461,6 +476,8 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
         <Modal.Body>
           <table className="table table-striped table-hover w-100 mt-2">
             <tbody>
+              Model <b>{currentModelInformations?.model}</b> trained on{' '}
+              <b>{currentModelInformations?.features}</b>
               {Object.entries(currentModelInformations?.params || {}).map(([key, value], i) => (
                 <tr key={i}>
                   <td>{key}</td>

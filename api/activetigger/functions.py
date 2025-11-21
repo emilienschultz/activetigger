@@ -190,13 +190,18 @@ def decrypt(text: str | None, secret_key: str | None) -> str:
 
 
 def get_metrics(
-    Y_true: Series, Y_pred: Series, texts: Series | None = None, decimals: int = 3
+    Y_true: Series, 
+    Y_pred: Series, 
+    labels: list[str] | None = None, 
+    texts: Series | None = None, 
+    decimals: int = 3,
 ) -> MLStatisticsModel:
     """
     Compute metrics for a prediction
     """
-
-    labels = list(Y_true.unique())
+    if labels is None : 
+        labels = list(Y_true.unique())
+        
     precision = [
         round(i, decimals)
         for i in precision_score(

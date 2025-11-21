@@ -277,3 +277,41 @@ table {
     border: 3px rgba(255, 255, 255, 0.7) solid;
   }
 }
+
+#DisplayTableStatistics{
+  width: 1000px;
+  padding: 10px;
+  margin: 10px 0px;
+  border: rgb(200,200,200) 1px solid;
+  
+  // Center content
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  table{
+    tbody{
+      td.label-col{
+        font-weight: bold;
+      }
+      td.cell{
+        width: 50px;
+        text-align: center;
+        text-overflow: clip;
+      }
+      td.total-cell{
+        color: rgb(160,160,160);
+        text-decoration: underline;
+        font-style: italic;
+      }
+      td.diag-cell{
+        color:green;
+        background: $tertiary;
+      }
+      td.rowspan-cell{
+        border-right: $secondary 1px solid;
+      }
+
+    }
+  }
+}
