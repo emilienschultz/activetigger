@@ -1,9 +1,9 @@
 import datetime
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session, sessionmaker
 
-from activetigger.datamodels import UserModel
+from activetigger.datamodels import AnnotationModel, UserModel
 from activetigger.db import DBException
 from activetigger.db.models import Annotations, Auths, Logs, Projects, Users
 
@@ -130,3 +130,34 @@ class UsersService:
             if user is None:
                 raise DBException(f"User with mail {mail} not found")
             return user.user_name
+
+    def get_project_users_last_annotation(self, project_slug: str) -> dict[str, AnnotationModel]:
+        """
+        get last annotation date for all users in a project
+        """
+        with self.SessionMaker() as session:
+            sub = (
+                select(
+                    Annotations,
+                    func.row_number()
+                    .over(partition_by=Annotations.user_name, order_by=Annotations.time.desc())
+                    .label("rnk"),
+                )
+                .where(Annotations.project_slug == project_slug)
+                .subquery()
+            )
+
+            rows = session.execute(select(sub).where(sub.c.rnk == 1)).all()
+
+        return {
+            r.user_name: AnnotationModel(
+                project_slug=project_slug,
+                scheme=r.scheme_name,
+                element_id=r.element_id,
+                label=r.annotation,
+                dataset=r.dataset,
+                comment=r.comment,
+                selection="last annotation",
+            )
+            for r in rows
+        }

@@ -7,6 +7,7 @@ import { useAppContext } from '../core/context';
 
 import { CodebookDisplay } from '../components/CodeBookDisplay';
 import { SchemesManagement } from '../components/SchemesManagement';
+import { useAuth } from '../core/auth';
 import { reorderLabels } from '../core/utils';
 
 /**
@@ -19,7 +20,7 @@ export const ProjectPage: FC = () => {
     appContext: { currentScheme, currentProject: project, displayConfig },
     setAppContext,
   } = useAppContext();
-
+  const { authenticatedUser } = useAuth();
   // define variables
   const kindScheme =
     currentScheme && project && project.schemes.available[currentScheme]
@@ -67,6 +68,7 @@ export const ProjectPage: FC = () => {
         <SchemesManagement
           projectSlug={projectSlug}
           canEdit={displayConfig.interfaceType !== 'annotator'}
+          username={authenticatedUser?.username || null}
         />
       </div>
 

@@ -8,7 +8,7 @@ from fastapi import (
     Query,
     Response,
 )
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse
 from fastapi.responses import Response as FastAPIResponse
 
 from activetigger.app.dependencies import ProjectAction, get_project, test_rights, verified_user
@@ -244,8 +244,9 @@ async def export_bertopics_clusters(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.get("/export/bertopic/report", dependencies=[Depends(verified_user)])
-async def export_bertopics_clusters(
+async def export_bertopics_report(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     name: str = Query(...),

@@ -973,8 +973,6 @@ class Project:
         Send state of the project
         Collecting states for submodules
         """
-        users = self.users.db_manager.users_service.get_project_users(self.params.project_slug)
-
         return ProjectStateModel(
             params=self.params,
             next=NextProjectStateModel(
@@ -994,7 +992,7 @@ class Project:
             last_activity=self.db_manager.logs_service.get_last_activity_project(
                 self.params.project_slug
             ),
-            users=users,
+            users=self.users.state(self.params.project_slug),
         )
 
     def export_features(self, features: list, format: str = "parquet") -> FileResponse:

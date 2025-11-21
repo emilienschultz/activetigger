@@ -31,7 +31,7 @@ export const SelectionManagement: FC<SelectionManagementProps> = ({
 
   const availableSamples = project?.next.sample ? project?.next.sample : [];
 
-  const availableUsers = project?.users ? project?.users : [];
+  const availableUsers = project?.users?.users ? project?.users?.users : [];
 
   // API call to get the current model & refetch
   // TODO : MODEL SELECTION TO CHANGE

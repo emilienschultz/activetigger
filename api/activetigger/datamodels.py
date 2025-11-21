@@ -763,6 +763,11 @@ class ErrorsProjectStateModel(BaseModel):
     errors: list[list]
 
 
+class UsersStateModel(BaseModel):
+    users: list[str]
+    last_schemes: dict[str, str]
+
+
 class ProjectStateModel(BaseModel):
     """
     Response for server state
@@ -777,10 +782,10 @@ class ProjectStateModel(BaseModel):
     projections: ProjectionsProjectStateModel
     generations: GenerationsProjectStateModel
     bertopic: BertopicProjectStateModel
+    users: UsersStateModel
     errors: list[list]
     memory: float | None = None
     last_activity: str | None = None
-    users: list[str]
 
 
 class ProjectDescriptionModel(BaseModel):

@@ -19,9 +19,10 @@ import { SchemeModel } from '../types';
 interface SchemeManagementProps {
   projectSlug: string;
   canEdit?: boolean;
+  username?: string | null;
 }
 
-export const SelectCurrentScheme: FC = () => {
+export const SelectCurrentScheme: FC<{ username?: string | null }> = ({ username }) => {
   const { notify } = useNotifications();
 
   // get element from the context
@@ -39,13 +40,24 @@ export const SelectCurrentScheme: FC = () => {
     // case of there is no selected scheme and schemes are available
     const nonDefaultSchemes = availableSchemes.filter((element) => element !== 'default');
     if (!currentScheme && nonDefaultSchemes.length > 0) {
-      setAppContext((state) => ({
-        ...state,
-        currentScheme: nonDefaultSchemes[0],
-      }));
+      // if there is a previous scheme in the user history select it
+      if (
+        username &&
+        currentProject?.users.last_schemes[username] &&
+        nonDefaultSchemes.includes(currentProject.users.last_schemes[username])
+      )
+        setAppContext((state) => ({
+          ...state,
+          currentScheme: currentProject.users.last_schemes[username],
+        }));
+      else
+        setAppContext((state) => ({
+          ...state,
+          currentScheme: nonDefaultSchemes[0],
+        }));
       notify({
         type: 'success',
-        message: `Scheme ${nonDefaultSchemes[0]} selected`,
+        message: `Scheme selected`,
       });
     }
     // case of the scheme have been deleted
@@ -55,7 +67,7 @@ export const SelectCurrentScheme: FC = () => {
         currentScheme: availableSchemes[0],
       }));
     }
-  }, [currentScheme, availableSchemes, setAppContext, notify]);
+  }, [currentScheme, availableSchemes, setAppContext, notify, currentProject, username]);
 
   // put the current scheme in the context on change
   const handleSelectScheme = (selectedOption: { value: string; label: string } | null) => {
@@ -69,13 +81,11 @@ export const SelectCurrentScheme: FC = () => {
     });
   };
 
-  console.log('currentScheme', currentScheme);
-
   return (
     <div className="row">
-      <div className="input-group mb-3" style={{ maxWidth: '400px' }}>
+      <div className="input-group mb-3">
         <span className="input-group-text d-none d-md-inline bg-primary" style={{ color: 'white' }}>
-          Active Scheme
+          Current Scheme
         </span>
         <Select
           id="scheme-selected"
@@ -99,7 +109,11 @@ export const SelectCurrentScheme: FC = () => {
  * Select ; Delete ; Add
  */
 
-export const SchemesManagement: FC<SchemeManagementProps> = ({ projectSlug, canEdit }) => {
+export const SchemesManagement: FC<SchemeManagementProps> = ({
+  projectSlug,
+  canEdit,
+  username,
+}) => {
   // get element from the context
   const {
     appContext: { currentProject, currentScheme, reFetchCurrentProject },
@@ -160,7 +174,7 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({ projectSlug, canE
   return (
     <div>
       <div className="mt-3 col-12 d-flex">
-        <SelectCurrentScheme />
+        <SelectCurrentScheme username={username} />
         {canEdit && (
           <div className="mx-2">
             <button

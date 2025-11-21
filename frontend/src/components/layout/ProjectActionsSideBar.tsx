@@ -32,7 +32,6 @@ export const ProjectActionsSidebar: FC<{
   const projectSlug = projectState ? projectState.params.project_slug : null;
   const projectName = projectState ? projectState.params.project_name : null;
   const { authenticatedUser } = useAuth();
-  // const nbUsers = projectState ? projectState.users.length : 0;
 
   // 2 types of menu
   const canEdit = authenticatedUser?.status !== 'annotator';
