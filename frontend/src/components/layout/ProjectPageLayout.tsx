@@ -41,7 +41,7 @@ export const ProjectPageLayout: FC<ProjectPageLayoutProps> = ({
 
   return (
     <PageLayout currentPage="projects" projectName={projectName || null}>
-      <div className="container-fluid" style={{ paddingBottom: '30px' }}>
+      <div className="container-fluid p-relative" style={{ paddingBottom: '30px' }}>
         <div className="d-flex flex-column flex-md-row gap-1 gap-md-3 gap-lg-5">
           <ProjectActionsSidebar
             projectState={project || null}
