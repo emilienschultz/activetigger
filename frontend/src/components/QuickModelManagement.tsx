@@ -137,7 +137,7 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
   const { register, handleSubmit, control, watch, setValue } = useForm<QuickModelInModel>({
     defaultValues: {
       name: getRandomName('QuickModel'),
-      model: 'liblinear',
+      model: 'logistic',
       scheme: currentScheme || undefined,
       params: {
         cost: 1,
@@ -368,8 +368,8 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
                 )}
                 {
                   //generate_config(selectedQuickModel)
-                  (selectedModel == 'liblinear' && (
-                    <div key="liblinear">
+                  (selectedModel == 'logistic' && (
+                    <div key="logistic">
                       <label htmlFor="cost">Cost</label>
                       <input
                         type="number"

@@ -372,7 +372,7 @@ class FeatureModel(BaseModel):
     parameters: dict[str, str | float]
 
 
-class LiblinearParams(BaseModel):
+class LogisticParams(BaseModel):
     cost: float
 
 

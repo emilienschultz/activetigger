@@ -10,7 +10,7 @@ from typing import Any
 import pandas as pd  # type: ignore[import]
 from pandas import DataFrame
 from sklearn.ensemble import RandomForestClassifier  # type: ignore[import]
-from sklearn.linear_model import LogisticRegression  # type: ignore[import]
+from sklearn.linear_model import LogisticRegression, Lasso  # type: ignore[import]
 from sklearn.naive_bayes import MultinomialNB  # type: ignore[import]
 from sklearn.neighbors import KNeighborsClassifier  # type: ignore[import]
 from sklearn.preprocessing import StandardScaler  # type: ignore[import]
@@ -18,7 +18,7 @@ from sklearn.preprocessing import StandardScaler  # type: ignore[import]
 from activetigger.datamodels import (
     KnnParams,
     LassoParams,
-    LiblinearParams,
+    LogisticParams,
     ModelDescriptionModel,
     ModelInformationsModel,
     ModelScoresModel,
@@ -72,7 +72,7 @@ class QuickModels:
 
         # Models and default parameters
         self.available_models = {
-            "liblinear": LiblinearParams(cost=1),
+            "logistic": LogisticParams(cost=1),
             "knn": KnnParams(n_neighbors=3),
             "randomforest": RandomforestParams(n_estimators=500, max_features=None),
             "lasso": LassoParams(C=32),
@@ -117,15 +117,15 @@ class QuickModels:
 
         if model_type == "lasso":
             params_lasso = LassoParams(**model_params)
-            model = LogisticRegression(
-                penalty="l1", solver="liblinear", C=params_lasso.C, n_jobs=-1
-            )
+            model = LogisticRegression(penalty="l1", solver="saga", 
+                C=params_lasso.C, n_jobs=-1, random_state=42)
             model_params = params_lasso.model_dump()
 
-        if model_type == "liblinear":
+        if model_type == "logistic":
             # Liblinear : method = 1 : multimodal logistic regression l2
-            params_lib = LiblinearParams(**model_params)
-            model = LogisticRegression(penalty="l2", solver="lbfgs", C=params_lib.cost, n_jobs=-1)
+            params_lib = LogisticParams(**model_params)
+            model = LogisticRegression(penalty="l2", solver="lbfgs", 
+                C=params_lib.cost, n_jobs=-1)
             model_params = params_lib.model_dump()
 
         if model_type == "randomforest":
