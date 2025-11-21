@@ -1,5 +1,6 @@
-import { Dispatch, FC, SetStateAction, useEffect, useState } from 'react';
+import { Dispatch, FC, SetStateAction, useState } from 'react';
 
+import { IoIosRefresh } from 'react-icons/io';
 import { PiEmptyBold } from 'react-icons/pi';
 import Select from 'react-select';
 import { useRetrainQuickModel } from '../core/api';
@@ -11,23 +12,21 @@ import { ModelDescriptionModel } from '../types';
  */
 
 interface ActiveLearningManagementProps {
-  projectSlug: string | null;
-  currentScheme: string | null;
-  history: string[];
   availableQuickModels: ModelDescriptionModel[];
   activeSimepleModel?: string | null;
   freqRefreshQuickModel?: number;
+  projectName: string;
+  currentScheme: string;
   setAppContext: Dispatch<SetStateAction<AppContextValue>>;
 }
 
 export const ActiveLearningManagement: FC<ActiveLearningManagementProps> = ({
-  projectSlug,
-  currentScheme,
   availableQuickModels,
   activeSimepleModel,
   freqRefreshQuickModel,
-  history,
   setAppContext,
+  projectName,
+  currentScheme,
 }) => {
   const [currentQuickModel, setCurrentQuickModel] = useState<string | null>(null);
   // function to change refresh frequency
@@ -37,32 +36,9 @@ export const ActiveLearningManagement: FC<ActiveLearningManagementProps> = ({
   const setActiveQuickModel = (newValue: string | null) => {
     setAppContext((prev) => ({ ...prev, activeQuickModel: newValue }));
   };
-  const { retrainQuickModel } = useRetrainQuickModel(projectSlug, currentScheme);
 
   // manage retrain of the model
-  const [updatedQuickModel, setUpdatedQuickModel] = useState(false);
-  useEffect(() => {
-    if (
-      !updatedQuickModel &&
-      freqRefreshQuickModel &&
-      activeSimepleModel &&
-      history.length > 0 &&
-      history.length % freqRefreshQuickModel == 0
-    ) {
-      setUpdatedQuickModel(true);
-      retrainQuickModel(activeSimepleModel);
-    }
-    if (updatedQuickModel && freqRefreshQuickModel && history.length % freqRefreshQuickModel != 0) {
-      setUpdatedQuickModel(false);
-    }
-  }, [
-    freqRefreshQuickModel,
-    setUpdatedQuickModel,
-    activeSimepleModel,
-    updatedQuickModel,
-    retrainQuickModel,
-    history,
-  ]);
+  const { retrainQuickModel } = useRetrainQuickModel(projectName || null, currentScheme || null);
 
   return (
     <div>
@@ -77,6 +53,14 @@ export const ActiveLearningManagement: FC<ActiveLearningManagementProps> = ({
                 size={20}
                 style={{ color: 'red', cursor: 'pointer' }}
                 onClick={() => setActiveQuickModel(null)}
+              />
+              <IoIosRefresh
+                size={20}
+                style={{ color: 'green', cursor: 'pointer' }}
+                onClick={() => {
+                  retrainQuickModel(activeSimepleModel || '');
+                  console.log('retrain');
+                }}
               />
             </span>
           ) : (
@@ -119,7 +103,7 @@ export const ActiveLearningManagement: FC<ActiveLearningManagementProps> = ({
           onChange={(e) => {
             refreshFreq(Number(e.currentTarget.value));
           }}
-          step="1"
+          step="5"
           className="mx-2"
         />
         annotations (0 for no refreshing)

@@ -12,6 +12,7 @@ import {
   useAddAnnotation,
   useGetElementById,
   useGetNextElementId,
+  useRetrainQuickModel,
   useStatistics,
   useTrainQuickModel,
 } from '../core/api';
@@ -37,22 +38,21 @@ import { MarqueBoundingBox } from './ProjectionVizSigma/MarqueeController';
 export const AnnotationManagement: FC = () => {
   const { notify } = useNotifications();
   const { projectName, elementId } = useParams();
+  const { appContext, setAppContext } = useAppContext();
+
   const {
-    appContext: {
-      currentScheme,
-      currentProject: project,
-      selectionConfig,
-      displayConfig,
-      freqRefreshQuickModel,
-      activeQuickModel,
-      history,
-      selectionHistory,
-      phase,
-      currentProjection,
-      labelColorMapping,
-    },
-    setAppContext,
-  } = useAppContext();
+    currentScheme,
+    currentProject: project,
+    selectionConfig,
+    displayConfig,
+    freqRefreshQuickModel,
+    activeQuickModel,
+    history,
+    selectionHistory,
+    phase,
+    currentProjection,
+    labelColorMapping,
+  } = appContext;
 
   const navigate = useNavigate();
   const [element, setElement] = useState<ElementOutModel | null>(null); //state for the current element
@@ -269,6 +269,33 @@ export const AnnotationManagement: FC = () => {
       }));
     }
   }, [availableQuickModels, selectFirstModelTrained, setAppContext]);
+
+  // retrain quick model
+  const { retrainQuickModel } = useRetrainQuickModel(projectName || null, currentScheme || null);
+  const [updatedQuickModel, setUpdatedQuickModel] = useState(false);
+  useEffect(() => {
+    console.log('updating quick model', freqRefreshQuickModel, history.length);
+    if (
+      !updatedQuickModel &&
+      freqRefreshQuickModel &&
+      activeQuickModel &&
+      history.length > 0 &&
+      history.length % freqRefreshQuickModel == 0
+    ) {
+      setUpdatedQuickModel(true);
+      retrainQuickModel(activeQuickModel);
+    }
+    if (updatedQuickModel && freqRefreshQuickModel && history.length % freqRefreshQuickModel != 0) {
+      setUpdatedQuickModel(false);
+    }
+  }, [
+    freqRefreshQuickModel,
+    setUpdatedQuickModel,
+    activeQuickModel,
+    updatedQuickModel,
+    retrainQuickModel,
+    history.length,
+  ]);
 
   if (!projectName || !currentScheme) return;
 
@@ -569,13 +596,12 @@ export const AnnotationManagement: FC = () => {
         <Modal.Body>
           {availableQuickModels.length > 0 ? (
             <ActiveLearningManagement
-              projectSlug={projectName}
-              history={history}
-              currentScheme={currentScheme}
               availableQuickModels={availableQuickModels}
               setAppContext={setAppContext}
               freqRefreshQuickModel={freqRefreshQuickModel}
               activeSimepleModel={activeQuickModel}
+              projectName={projectName}
+              currentScheme={currentScheme}
             />
           ) : (
             <div className="text-center">
