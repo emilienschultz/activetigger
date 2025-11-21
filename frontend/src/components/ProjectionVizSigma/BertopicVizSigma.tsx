@@ -67,11 +67,27 @@ export const BertopicVizSigma: FC<Props> = ({
     if (data) {
       //TODO: refine those quick heuristics
       const size = getPointSize(data.x.length);
-      data.x.forEach((value, index) => {
+
+      data.x.forEach((_, index) => {
+        const x = Number(data.x[index]);
+        const y = Number(data.y[index]);
+        if (Number.isNaN(x) || Number.isNaN(y)) {
+          console.warn('Invalid coordinates for index', index, {
+            id: data.id[index],
+            x: data.x[index],
+            y: data.y[index],
+          });
+        }
+
+        if (!Number.isFinite(x) || !Number.isFinite(y)) {
+          console.warn(`Skipping invalid coordinates for node ${data.id[index]}`);
+          return;
+        }
+
         graph.addNode(data.id[index], {
-          x: value as number,
-          y: data.y[index] as number,
-          label: data['cluster']?.[index] as string,
+          x: x,
+          y: y,
+          label: data.cluster?.[index] as string,
           size,
         });
       });
