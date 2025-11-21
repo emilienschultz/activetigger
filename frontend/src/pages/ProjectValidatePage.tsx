@@ -96,6 +96,7 @@ export const ProjectValidatePage: FC = () => {
                       }
                       modelName={currentQuickModelName || ''}
                       skip={['internalvalid_scores']}
+                      projectSlug={projectName || null}
                     />
                   </>
                 )}
@@ -149,6 +150,7 @@ export const ProjectValidatePage: FC = () => {
                         }
                         modelName={currentQuickModelName || ''}
                         skip={['internalvalid_scores']}
+                        projectSlug={projectName || null}
                       />
                     </>
                   )}

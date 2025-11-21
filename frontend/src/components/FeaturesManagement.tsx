@@ -70,50 +70,48 @@ export const FeaturesManagement: FC = () => {
     return <div>No project selected</div>;
   }
   return (
-    <div className="container">
-      <div className="row">
-        <ModelsPillDisplay
-          modelNames={Object.keys(featuresInfo || {}).map((feature) => feature)}
-          currentModelName={selectedFeature}
-          setCurrentModelName={setSelectedFeature}
-          deleteModelFunction={deleteSelectedFeature}
+    <div className="row">
+      <ModelsPillDisplay
+        modelNames={Object.keys(featuresInfo || {}).map((feature) => feature)}
+        currentModelName={selectedFeature}
+        setCurrentModelName={setSelectedFeature}
+        deleteModelFunction={deleteSelectedFeature}
+      >
+        <button
+          onClick={() => setShowAddFeature(true)}
+          className={cx('model-pill ', isComputing ? 'disabled' : '')}
+          id="create-new"
         >
-          <button
-            onClick={() => setShowAddFeature(true)}
-            className={cx('model-pill ', isComputing ? 'disabled' : '')}
-            id="create-new"
-          >
-            <FaPlusCircle size={20} /> Create new feature
-          </button>
-        </ModelsPillDisplay>
-        {/* Display computing features */}
-        {Object.entries(project?.features.training).map(([key, element]) => (
-          <div className="card text-bg-light mt-3 bg-warning" key={key}>
-            <div className="d-flex m-2 align-items-center">
-              <span className="w-25">
-                Currently computing {element ? element.name : ''}
-                {element?.progress ? ` (${element.progress}%)` : ''}
-              </span>
-            </div>
+          <FaPlusCircle size={20} /> Create new feature
+        </button>
+      </ModelsPillDisplay>
+      {/* Display computing features */}
+      {Object.entries(project?.features.training).map(([key, element]) => (
+        <div className="card text-bg-light mt-3 bg-warning" key={key}>
+          <div className="d-flex m-2 align-items-center">
+            <span className="w-25">
+              Currently computing {element ? element.name : ''}
+              {element?.progress ? ` (${element.progress}%)` : ''}
+            </span>
           </div>
-        ))}
-        {featuresInfo &&
-          selectedFeature &&
-          SimpleTable(featuresInfo[selectedFeature] as FeatureDescriptionModelOut)}
+        </div>
+      ))}
+      {featuresInfo &&
+        selectedFeature &&
+        SimpleTable(featuresInfo[selectedFeature] as FeatureDescriptionModelOut)}
 
-        <Modal show={showAddFeature} onHide={() => setShowAddFeature(false)} id="addfeature-modal">
-          <Modal.Header closeButton>
-            <Modal.Title>Add a new feature</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <CreateNewFeature
-              columns={project?.params.all_columns || []}
-              featuresOption={project.features.options || {}}
-              callback={setShowAddFeature}
-            />
-          </Modal.Body>
-        </Modal>
-      </div>
+      <Modal show={showAddFeature} onHide={() => setShowAddFeature(false)} id="addfeature-modal">
+        <Modal.Header closeButton>
+          <Modal.Title>Add a new feature</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <CreateNewFeature
+            columns={project?.params.all_columns || []}
+            featuresOption={project.features.options || {}}
+            callback={setShowAddFeature}
+          />
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };

@@ -96,6 +96,7 @@ class QuickModels:
         model_params: dict | None = None,
         cv10: bool = False,
         retrain: bool = False,
+        texts: pd.Series | None = None,
     ) -> None:
         """
         Add a new quickmodel for a user and a scheme
@@ -175,6 +176,7 @@ class QuickModels:
             "standardize": standardize,
             "features": features,
             "model_params": model_params,
+            "texts": texts,
         }
         unique_id = self.queue.add_task("quickmodel", project_slug, TrainML(**args))
         del args

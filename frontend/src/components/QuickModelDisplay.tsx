@@ -2,10 +2,11 @@ import { FC } from 'react';
 import { DisplayScores } from './DisplayScores';
 
 interface QuickModelDisplayProps {
+  projectSlug: string;
   currentModel?: Record<string, never>;
 }
 
-export const QuickModelDisplay: FC<QuickModelDisplayProps> = ({ currentModel }) => {
+export const QuickModelDisplay: FC<QuickModelDisplayProps> = ({ currentModel, projectSlug }) => {
   // if no model, return nothing
   if (!currentModel) return null;
 
@@ -36,11 +37,13 @@ export const QuickModelDisplay: FC<QuickModelDisplayProps> = ({ currentModel }) 
         <DisplayScores
           title=""
           scores={currentModel.statistics_test as unknown as Record<string, number>}
+          projectSlug={projectSlug}
         />
         {currentModel.statistics_cv10 && (
           <DisplayScores
             title="Cross validation CV10"
             scores={currentModel.statistics_cv10 as unknown as Record<string, number>}
+            projectSlug={projectSlug}
           />
         )}
       </div>

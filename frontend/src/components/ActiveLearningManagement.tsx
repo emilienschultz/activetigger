@@ -1,5 +1,6 @@
 import { Dispatch, FC, SetStateAction, useEffect, useState } from 'react';
 
+import { PiEmptyBold } from 'react-icons/pi';
 import Select from 'react-select';
 import { useRetrainQuickModel } from '../core/api';
 import { AppContextValue } from '../core/context';
@@ -67,7 +68,21 @@ export const ActiveLearningManagement: FC<ActiveLearningManagementProps> = ({
     <div>
       <div>
         Current active learning model :{' '}
-        <b>{activeSimepleModel ? activeSimepleModel : 'no model selected'}</b>
+        <b>
+          {activeSimepleModel ? (
+            <span>
+              {activeSimepleModel}
+              <PiEmptyBold
+                className="mx-2"
+                size={20}
+                style={{ color: 'red', cursor: 'pointer' }}
+                onClick={() => setActiveQuickModel(null)}
+              />
+            </span>
+          ) : (
+            'no model selected'
+          )}
+        </b>
       </div>
       <div>
         <div className="d-flex align-items-center my-2">

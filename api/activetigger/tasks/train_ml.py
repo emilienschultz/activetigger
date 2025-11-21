@@ -42,6 +42,7 @@ class TrainML(BaseTask):
         standardize: bool = False,
         cv10: bool = False,
         retrain: bool = False,
+        texts: pd.Series | None = None,
         **kwargs,
     ):
         super().__init__()
@@ -60,6 +61,7 @@ class TrainML(BaseTask):
         self.labels = labels
         self.model_type = model_type
         self.standardize = standardize
+        self.texts = texts
 
     def __call__(self) -> None:
         """
@@ -76,8 +78,8 @@ class TrainML(BaseTask):
         self.model.fit(X_train, Y_train)
 
         # predict on test data
-        Y_pred_train = self.model.predict(X_train)
-        Y_pred_test = self.model.predict(X_test)
+        Y_pred_train = pd.Series(self.model.predict(X_train), index=X_train.index)
+        Y_pred_test = pd.Series(self.model.predict(X_test), index=X_test.index)
 
         # compute probabilities for all data
         proba = self.model.predict_proba(self.X)
@@ -86,10 +88,19 @@ class TrainML(BaseTask):
         proba["prediction"] = proba.drop(columns="entropy").idxmax(axis=1)
 
         # compute training metrics and write
-        metrics_train = get_metrics(Y_train, Y_pred_train, labels = self.labels)
-        metrics_train.false_predictions = None
-        metrics_test = get_metrics(Y_test, Y_pred_test, labels = self.labels)
-        metrics_test.false_predictions = None
+        if self.texts is not None:
+            texts_train = self.texts.loc[Y_train.index]
+            texts_test = self.texts.loc[Y_test.index]
+            print(type(Y_train), type(Y_pred_train), type(texts_train))
+            metrics_train = get_metrics(Y_train, Y_pred_train, texts=texts_train)
+            metrics_test = get_metrics(Y_test, Y_pred_test, texts=texts_test)
+        else:
+            metrics_train = get_metrics(Y_train, Y_pred_train)
+            metrics_test = get_metrics(Y_test, Y_pred_test)
+            metrics_train.false_predictions = None
+            metrics_test.false_predictions = None
+
+        # compute 10-CV metrics
         if self.cv10:
             num_folds = 10
             kf = KFold(n_splits=num_folds, shuffle=True, random_state=42)

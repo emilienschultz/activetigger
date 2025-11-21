@@ -1,4 +1,4 @@
-import { FC, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 
 import { useReconciliate, useTableDisagreement } from '../core/api';
 
@@ -9,9 +9,15 @@ import { useAppContext } from '../core/context';
  * Manage disagreement in annotations
  */
 
-export const AnnotationDisagreementManagement: FC<{
+interface AnnotationDisagreementManagementProps {
   projectSlug: string;
-}> = ({ projectSlug }) => {
+  dataset: string;
+}
+
+export const AnnotationDisagreementManagement: FC<AnnotationDisagreementManagementProps> = ({
+  projectSlug,
+  dataset,
+}) => {
   const {
     appContext: { currentScheme, currentProject: project },
   } = useAppContext();
@@ -28,8 +34,14 @@ export const AnnotationDisagreementManagement: FC<{
   const { tableDisagreement, users, reFetchTable } = useTableDisagreement(
     projectSlug,
     currentScheme,
+    dataset,
   );
-  const { postReconciliate } = useReconciliate(projectSlug, currentScheme || null);
+
+  useEffect(() => {
+    reFetchTable();
+  }, [reFetchTable, dataset]);
+
+  const { postReconciliate } = useReconciliate(projectSlug, currentScheme || null, dataset);
 
   // state elements to validate
   const [changes, setChanges] = useState<{ [key: string]: string }>({});

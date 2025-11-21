@@ -53,7 +53,7 @@ class ComputeFasttext(BaseTask):
         os.chdir(self.path_models)
 
         # if no model is specified, try to dl the language model
-        if self.model is None or self.model == "":
+        if self.model is None or self.model == "" or self.model == "generic":
             model_name = download_model(self.language, if_exists="ignore")
         else:
             model_name = self.model

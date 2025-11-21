@@ -216,13 +216,14 @@ async def get_reconciliation_table(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     scheme: str = Query(),
+    dataset: str = Query("train"),
 ) -> ReconciliationModel:
     """
     Get the reconciliation table
     """
     test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
-        df, users = project.schemes.get_reconciliation_table(scheme)
+        df, users = project.schemes.get_reconciliation_table(scheme, dataset)
         return ReconciliationModel(
             table=cast(
                 list[dict[str, str | dict[str, str | None]]],
@@ -242,24 +243,28 @@ async def post_reconciliation(
     element_id: str = Query(),
     label: str = Query(),
     scheme: str = Query(),
+    dataset: str = Query("train"),
 ) -> None:
     """
     Post a label for all user in a list
     """
     test_rights(ProjectAction.UPDATE, current_user.username, project.name)
     try:
-        # for each user
+        # add a tag for each user
         for u in users:
-            project.schemes.push_annotation(element_id, label, scheme, u, "train", "reconciliation")
+            project.schemes.push_annotation(
+                element_id, label, scheme, u, dataset, "reconciliation", "disagreement"
+            )
 
         # add a new tag for the reconciliator
         project.schemes.push_annotation(
-            element_id,
-            label,
-            scheme,
-            current_user.username,
-            "reconciliation",
-            "reconciliation",
+            element_id=element_id,
+            label=label,
+            scheme=scheme,
+            user=current_user.username,
+            mode=dataset,
+            comment="reconciliation",
+            selection="disagreement",
         )
 
         # log

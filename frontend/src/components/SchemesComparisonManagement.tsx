@@ -1,4 +1,4 @@
-import { FC, useMemo, useState } from 'react';
+import { FC, useEffect, useMemo, useState } from 'react';
 import Select from 'react-select';
 
 import { useGetCompareSchemes } from '../core/api';
@@ -8,20 +8,35 @@ import { useAppContext } from '../core/context';
  * Manage disagreement in annotations
  */
 
-export const SchemesComparisonManagement: FC<{
+interface AnnotationDisagreementManagementProps {
   projectSlug: string;
-}> = ({ projectSlug }) => {
+  dataset: string;
+}
+
+export const SchemesComparisonManagement: FC<AnnotationDisagreementManagementProps> = ({
+  projectSlug,
+  dataset,
+}) => {
   const {
     appContext: { currentScheme, currentProject: project },
   } = useAppContext();
 
   const [schemeA, setSchemeA] = useState<string | null>(currentScheme ? currentScheme : null);
   const [schemeB, setSchemeB] = useState<string | null>(null);
-  const { compare } = useGetCompareSchemes(projectSlug, schemeA || '', schemeB || '');
+  const { compare, reFetchCompare } = useGetCompareSchemes(
+    projectSlug,
+    schemeA || '',
+    schemeB || '',
+    dataset,
+  );
 
   const availableSchemes = useMemo(() => {
     return project ? Object.keys(project.schemes.available) : [];
   }, [project]);
+
+  useEffect(() => {
+    reFetchCompare();
+  }, [reFetchCompare, dataset]);
 
   return (
     <div className="container-fluid">
@@ -69,12 +84,12 @@ export const SchemesComparisonManagement: FC<{
           <div className="overflow-x-auto p-4">
             {compare ? (
               <table className="table-statistics">
-                <head>
+                <thead>
                   <tr>
                     <td>Metric</td>
                     <td>Value</td>
                   </tr>
-                </head>
+                </thead>
                 <tbody>
                   <tr>
                     <td>Overlapping labels (%)</td>

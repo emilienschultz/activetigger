@@ -1,6 +1,8 @@
 import { FC } from 'react';
 import { FaGithub } from 'react-icons/fa';
+import { IoMdLogOut } from 'react-icons/io';
 import { Link, useNavigate } from 'react-router-dom';
+import { Tooltip } from 'react-tooltip';
 import logo from '../assets/at.png';
 import { LoginForm } from '../components/forms/LoginForm';
 import Notifications from '../components/layout/Notifications';
@@ -9,7 +11,7 @@ import { useAuth } from '../core/auth';
 import { LoginParams } from '../types';
 
 export const HomePage: FC = () => {
-  const { authenticatedUser } = useAuth();
+  const { authenticatedUser, logout } = useAuth();
   const { users } = useGetActiveUsers();
 
   // add a development mode switch
@@ -34,7 +36,6 @@ export const HomePage: FC = () => {
       password: params.get('password'),
     } as LoginParams).then(() => {
       navigate('/projects');
-      console.log('Connect');
     });
   }
 
@@ -75,8 +76,25 @@ export const HomePage: FC = () => {
                 <LoginForm />
               ) : (
                 <div>
-                  <div>
-                    Welcome <span className="fw-bold">{authenticatedUser.username}</span>
+                  <div className="text-center">
+                    <div>
+                      Welcome{' '}
+                      <span className="fw-bold">
+                        {authenticatedUser.username}
+                        <IoMdLogOut
+                          title="Logout"
+                          onClick={async () => {
+                            const success = await logout();
+                            if (success) navigate('/');
+                          }}
+                          className="logout mx-2"
+                          style={{ cursor: 'pointer' }}
+                        />
+                        <Tooltip anchorSelect=".logout" place="top">
+                          Log out
+                        </Tooltip>
+                      </span>
+                    </div>
                     <div className="justify-content-center">
                       <Link
                         to="/projects"

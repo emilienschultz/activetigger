@@ -104,7 +104,7 @@ class Schemes:
         return df
 
     def get_reconciliation_table(
-        self, scheme: str, no_label: str = "-----"
+        self, scheme: str, dataset: str = "train", no_label: str = "-----"
     ) -> tuple[DataFrame, list[str]]:
         """
         Get reconciliation table
@@ -114,9 +114,13 @@ class Schemes:
         if scheme not in self.available():
             raise Exception("Scheme doesn't exist")
 
-        results = self.projects_service.get_table_annotations_users(self.project_slug, scheme)
+        results = self.projects_service.get_table_annotations_users(
+            self.project_slug, scheme, dataset
+        )
         # Shape the data
-        df = pd.DataFrame(results, columns=["id", "labels", "user", "time"])  # shape as a dataframe
+        df = pd.DataFrame(
+            results, columns=["id", "labels", "user", "time", "dataset"]
+        )  # shape as a dataframe
 
         # keep the real labels
         current_labels = df.loc[df.groupby("id")["time"].idxmax()].set_index("id")["labels"]
@@ -134,7 +138,17 @@ class Schemes:
         df = pd.DataFrame(
             df.apply(lambda x: x.fillna(no_label).to_dict(), axis=1), columns=["annotations"]
         )
-        df = df.join(self.data.train[["text"]], how="left")  # add the text
+        # add the text
+        if dataset == "train":
+            df = df.join(self.data.train[["text"]], how="left")  # add the text
+        elif dataset == "test":
+            if self.data.test is not None:
+                df = df.join(self.data.test[["text"]], how="left")  # add the text
+        elif dataset == "valid":
+            if self.data.valid is not None:
+                df = df.join(self.data.valid[["text"]], how="left")  # add the text
+        else:
+            raise Exception("Dataset not recognized")
 
         df["current_label"] = current_labels
         df = df[f_multi].reset_index()

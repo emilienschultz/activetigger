@@ -1,5 +1,8 @@
-import { FC } from 'react';
+import { FC, useState } from 'react';
+import { Modal } from 'react-bootstrap';
 import DataGrid, { Column } from 'react-data-grid';
+import { FaCloudDownloadAlt } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
 import { MLStatisticsModel } from '../types';
 import { DisplayTableStatistics } from './DisplayTableStatistics';
 
@@ -7,6 +10,7 @@ export interface DisplayScoresProps {
   title: string | null;
   scores: MLStatisticsModel;
   modelName?: string;
+  projectSlug?: string | null;
 }
 
 interface Row {
@@ -16,34 +20,16 @@ interface Row {
   text: string;
 }
 
-const columns: readonly Column<Row>[] = [
-  {
-    name: 'Id',
-    key: 'id',
-    resizable: true,
-  },
-  {
-    name: 'Label',
-    key: 'label',
-    resizable: true,
-  },
-  {
-    name: 'Prediction',
-    key: 'prediction',
-    resizable: true,
-  },
-  {
-    name: 'Text',
-    key: 'text',
-    resizable: true,
-  },
-];
-
 /**
  * DisplayScores component to show model statistics and false predictions.
  * It includes a table of statistics and a data grid for false predictions.
  **/
-export const DisplayScores: FC<DisplayScoresProps> = ({ title, scores, modelName }) => {
+export const DisplayScores: FC<DisplayScoresProps> = ({
+  title,
+  scores,
+  modelName,
+  projectSlug,
+}) => {
   const downloadModel = () => {
     if (!scores) return; // Ensure model is not null or undefined
 
@@ -59,6 +45,39 @@ export const DisplayScores: FC<DisplayScoresProps> = ({ title, scores, modelName
     link.download = modelName || 'model.json';
     link.click();
   };
+  const [showFalsePredictions, setShowFalsePredictions] = useState(false);
+  const columns: readonly Column<Row>[] = [
+    {
+      key: 'id',
+      name: 'Id',
+      resizable: true,
+      width: 180,
+      renderCell: (props) => (
+        <div>
+          {projectSlug ? (
+            <Link to={`/projects/${projectSlug}/tag/${props.row.id}`}>{props.row.id}</Link>
+          ) : (
+            props.row.id
+          )}
+        </div>
+      ),
+    },
+    {
+      name: 'Label',
+      key: 'label',
+      resizable: true,
+    },
+    {
+      name: 'Prediction',
+      key: 'prediction',
+      resizable: true,
+    },
+    {
+      name: 'Text',
+      key: 'text',
+      resizable: true,
+    },
+  ];
   if (!scores) return;
   return (
     <div>
@@ -67,24 +86,44 @@ export const DisplayScores: FC<DisplayScoresProps> = ({ title, scores, modelName
       </span>
       <DisplayTableStatistics scores={scores} title={title} />
       {scores['false_predictions'] && (
-        <details>
-          <summary>False predictions</summary>
-          <DataGrid<Row>
-            className="fill-grid"
-            columns={columns}
-            rows={scores['false_predictions'] as Row[]}
-          />
-        </details>
+        <button
+          className="btn btn-outline-secondary btn-sm me-2 "
+          id="false-predictions"
+          onClick={() => setShowFalsePredictions(true)}
+        >
+          Show false predictions
+        </button>
       )}
-      <a
-        href="#"
+      <button
+        className="btn btn-outline-secondary btn-sm me-2"
+        id="download-params"
         onClick={(e) => {
           e.preventDefault();
           downloadModel();
         }}
       >
-        JSON file
-      </a>
+        <FaCloudDownloadAlt size={15} className="me-2" />
+        Download as JSON
+      </button>
+      <Modal
+        show={showFalsePredictions}
+        id="quickmodel-modal"
+        onHide={() => setShowFalsePredictions(false)}
+        centered
+        size="xl"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>False prediction of the model {modelName}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {' '}
+          <DataGrid<Row>
+            className="fill-grid"
+            columns={columns}
+            rows={scores['false_predictions'] as Row[]}
+          />
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };
