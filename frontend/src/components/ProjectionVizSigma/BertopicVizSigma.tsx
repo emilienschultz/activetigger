@@ -63,7 +63,6 @@ export const BertopicVizSigma: FC<Props> = ({
   // prepare graph for sigma from data props
   const graph = useMemo(() => {
     console.log('compute graph');
-    console.log(data);
     const graph = new Graph<NodeAttributesType>();
     if (data) {
       //TODO: refine those quick heuristics
@@ -72,13 +71,6 @@ export const BertopicVizSigma: FC<Props> = ({
       data.x.forEach((_, index) => {
         const x = Number(data.x[index]);
         const y = Number(data.y[index]);
-        if (!Number.isFinite(x) || !Number.isFinite(y)) {
-          console.log('Invalid coordinates for index', index, {
-            id: data.id[index],
-            x: data.x[index],
-            y: data.y[index],
-          });
-        }
 
         if (!Number.isFinite(x) || !Number.isFinite(y)) {
           console.log(`Skipping invalid coordinates for node ${data.id[index]}`);
