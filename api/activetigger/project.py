@@ -19,6 +19,7 @@ from activetigger.config import config
 from activetigger.data import Data
 from activetigger.datamodels import (
     BertModelModel,
+    ElementInModel,
     ElementOutModel,
     EvalSetDataModel,
     ExportGenerationsParams,
@@ -692,11 +693,13 @@ class Project:
         if next.selection == "maxprob":
             if next.model_active is None:
                 raise Exception("Model active is required")
-            if not self.quickmodels.exists(next.model_active):
+            if next.model_active.type != "quickmodel":
+                raise Exception("Only quickmodel type is allowed for maxprob selection")
+            if not self.quickmodels.exists(next.model_active.value):
                 raise Exception(f"Quickmodel {next.model_active} doesn't exist")
             if next.label_maxprob is None:  # default label to first
                 raise Exception("Label maxprob is required")
-            prediction = self.quickmodels.get_prediction(next.model_active)  # get model
+            prediction = self.quickmodels.get_prediction(next.model_active.value)  # get model
             proba = prediction.reindex(f.index)
             # use the history to not send already tagged data
             ss_maxprob = (
@@ -712,9 +715,11 @@ class Project:
         if next.selection == "active":
             if next.model_active is None:
                 raise Exception("Model active is required")
-            if not self.quickmodels.exists(next.model_active):
+            if next.model_active.type != "quickmodel":
+                raise Exception("Only quickmodel type is allowed for active selection")
+            if not self.quickmodels.exists(next.model_active.value):
                 raise ValueError("Quickmodel doesn't exist")
-            prediction = self.quickmodels.get_prediction(next.model_active)  # get model
+            prediction = self.quickmodels.get_prediction(next.model_active.value)  # get model
             proba = prediction.reindex(f.index)
             # use the history to not send already tagged data
             ss_active = (
@@ -730,10 +735,10 @@ class Project:
 
         if (
             next.model_active is not None
-            and self.quickmodels.exists(next.model_active)
+            and self.quickmodels.exists(next.model_active.value)
             and next.dataset == "train"
         ):
-            prediction = self.quickmodels.get_prediction(next.model_active)
+            prediction = self.quickmodels.get_prediction(next.model_active.value)
             predicted_label = prediction.loc[element_id, "prediction"]
             predicted_proba = round(prediction.loc[element_id, predicted_label], 2)
             predict = PredictedLabel(label=predicted_label, proba=predicted_proba)
@@ -770,11 +775,8 @@ class Project:
 
     def get_element(
         self,
-        element_id: str,
-        scheme: str | None = None,
+        element: ElementInModel,
         user: str | None = None,
-        dataset: str = "train",
-        model_active: str | None = None,
     ) -> ElementOutModel:
         """
         Get an element of the database
@@ -782,16 +784,16 @@ class Project:
         """
         history = None
 
-        if dataset == "valid" and self.data.valid is not None:
-            if element_id not in self.data.valid.index:
+        if element.dataset == "valid" and self.data.valid is not None:
+            if element.element_id not in self.data.valid.index:
                 raise Exception("Element does not exist.")
-            if scheme is not None:
+            if element.scheme is not None:
                 history = self.schemes.projects_service.get_annotations_by_element(
-                    self.params.project_slug, scheme, element_id
+                    self.params.project_slug, element.scheme, element.element_id
                 )
             return ElementOutModel(
-                element_id=element_id,
-                text=str(self.data.valid.loc[element_id, "text"]),
+                element_id=element.element_id,
+                text=str(self.data.valid.loc[element.element_id, "text"]),
                 context={},
                 selection="valid",
                 info="",
@@ -801,16 +803,16 @@ class Project:
                 history=history,
             )
 
-        if dataset == "test" and self.data.test is not None:
-            if element_id not in self.data.test.index:
+        if element.dataset == "test" and self.data.test is not None:
+            if element.element_id not in self.data.test.index:
                 raise Exception("Element does not exist.")
-            if scheme is not None:
+            if element.scheme is not None:
                 history = self.schemes.projects_service.get_annotations_by_element(
-                    self.params.project_slug, scheme, element_id
+                    self.params.project_slug, element.scheme, element.element_id
                 )
             return ElementOutModel(
-                element_id=element_id,
-                text=str(self.data.test.loc[element_id, "text"]),
+                element_id=element.element_id,
+                text=str(self.data.test.loc[element.element_id, "text"]),
                 context={},
                 selection="test",
                 info="",
@@ -820,43 +822,48 @@ class Project:
                 history=history,
             )
 
-        if dataset == "train":
+        if element.dataset == "train":
             if self.data.train is None:
                 raise Exception("Train dataset is not defined")
-            if element_id not in self.data.train.index:
+            if element.element_id not in self.data.train.index:
                 raise Exception("Element does not exist.")
 
             # get prediction if it exists
             predict = PredictedLabel(label=None, proba=None)
-            if model_active is not None and self.quickmodels.exists(model_active):
-                prediction = self.quickmodels.get_prediction(model_active)
-                predicted_label = cast(str, prediction.loc[element_id, "prediction"])
-                predicted_proba = round(cast(float, prediction.loc[element_id, predicted_label]), 2)
+            print("ELEMENT ACTIVE MODEL:", element)
+            if element.active_model is not None and self.quickmodels.exists(
+                element.active_model.value
+            ):
+                prediction = self.quickmodels.get_prediction(element.active_model.value)
+                predicted_label = cast(str, prediction.loc[element.element_id, "prediction"])
+                predicted_proba = round(
+                    cast(float, prediction.loc[element.element_id, predicted_label]), 2
+                )
                 predict = PredictedLabel(label=predicted_label, proba=predicted_proba)
 
             # get element tags
-            if scheme is not None:
+            if element.scheme is not None:
                 history = self.schemes.projects_service.get_annotations_by_element(
-                    self.params.project_slug, scheme, element_id
+                    self.params.project_slug, element.scheme, element.element_id
                 )
 
             context = cast(
                 dict[str, Any],
-                self.data.train.loc[element_id, self.params.cols_context]  # type: ignore[index]
+                self.data.train.loc[element.element_id, self.params.cols_context]  # type: ignore[index]
                 .fillna("NA")
                 .astype(str)
                 .to_dict(),
             )
 
             return ElementOutModel(
-                element_id=element_id,
-                text=str(self.data.train.loc[element_id, "text"]),
+                element_id=element.element_id,
+                text=str(self.data.train.loc[element.element_id, "text"]),
                 context=context,
                 selection="request",
                 predict=predict,
                 info="get specific",
                 frame=None,
-                limit=cast(int, self.data.train.loc[element_id, "limit"]),
+                limit=cast(int, self.data.train.loc[element.element_id, "limit"]),
                 history=history,
             )
 

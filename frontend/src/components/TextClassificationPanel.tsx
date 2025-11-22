@@ -85,24 +85,22 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
       </div>
       {
         //display proba
-        phase != 'test' &&
-          displayConfig.displayPrediction &&
-          (element?.predict.label as unknown as string) && (
-            <div className="d-flex mb-2 justify-content-center display-prediction">
-              <button
-                type="button"
-                key={element?.predict.label + '_predict'}
-                value={element?.predict.label as unknown as string}
-                className="btn btn-secondary"
-                onClick={(e) => {
-                  postAnnotation(e.currentTarget.value, elementId);
-                }}
-              >
-                Predicted : {element?.predict.label as unknown as string} (
-                {element?.predict.proba as unknown as number})
-              </button>
-            </div>
-          )
+        phase == 'train' && displayConfig.displayPrediction && element?.predict.label && (
+          <div className="d-flex mb-2 justify-content-center display-prediction">
+            <button
+              type="button"
+              key={element?.predict.label + '_predict'}
+              value={element?.predict.label as unknown as string}
+              className="btn btn-secondary"
+              onClick={(e) => {
+                postAnnotation(e.currentTarget.value, elementId);
+              }}
+            >
+              Predicted : {element?.predict.label as unknown as string} (
+              {element?.predict.proba as unknown as number})
+            </button>
+          </div>
+        )
       }
       {
         //display context

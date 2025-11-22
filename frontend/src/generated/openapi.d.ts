@@ -595,20 +595,20 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/elements/{element_id}": {
+    "/elements/id": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        get?: never;
+        put?: never;
         /**
          * Get Element
          * @description Get specific element
          */
-        get: operations["get_element_elements__element_id__get"];
-        put?: never;
-        post?: never;
+        post: operations["get_element_elements_id_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1878,6 +1878,18 @@ export interface components {
          */
         ActionModel: "delete" | "add" | "update";
         /**
+         * ActiveModel
+         * @description Active learning model
+         */
+        ActiveModel: {
+            /** Type */
+            type: string;
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
+        };
+        /**
          * AnnotationModel
          * @description Specific Annotation
          */
@@ -2162,6 +2174,22 @@ export interface components {
             columns: string[];
             /** N Rows */
             n_rows: number;
+        };
+        /**
+         * ElementInModel
+         * @description Requesting element to annotate
+         */
+        ElementInModel: {
+            /** Element Id */
+            element_id: string;
+            /** Scheme */
+            scheme: string;
+            /**
+             * Dataset
+             * @default train
+             */
+            dataset: string;
+            active_model?: components["schemas"]["ActiveModel"] | null;
         };
         /**
          * ElementOutModel
@@ -2606,8 +2634,7 @@ export interface components {
             dataset: string;
             /** User */
             user?: string | null;
-            /** Model Active */
-            model_active?: string | null;
+            model_active?: components["schemas"]["ActiveModel"] | null;
         };
         /** NextProjectStateModel */
         NextProjectStateModel: {
@@ -4184,21 +4211,20 @@ export interface operations {
             };
         };
     };
-    get_element_elements__element_id__get: {
+    get_element_elements_id_post: {
         parameters: {
             query: {
-                scheme?: string | null;
-                dataset?: string;
-                model_active?: string | null;
                 project_slug: string;
             };
             header?: never;
-            path: {
-                element_id: string;
-            };
+            path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ElementInModel"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

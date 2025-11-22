@@ -16,18 +16,11 @@ export const SelectionManagement: FC<SelectionManagementProps> = ({
   setSettingChanged,
 }) => {
   const {
-    appContext: {
-      currentScheme,
-      selectionConfig,
-      currentProject: project,
-      activeQuickModel,
-      phase,
-    },
+    appContext: { currentScheme, selectionConfig, currentProject: project, activeModel, phase },
     setAppContext,
   } = useAppContext();
 
-  const availableModes =
-    activeQuickModel && project ? project.next.methods : project?.next.methods_min;
+  const availableModes = activeModel && project ? project.next.methods : project?.next.methods_min;
 
   const availableSamples = project?.next.sample ? project?.next.sample : [];
 

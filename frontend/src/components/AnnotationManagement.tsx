@@ -46,7 +46,7 @@ export const AnnotationManagement: FC = () => {
     selectionConfig,
     displayConfig,
     freqRefreshQuickModel,
-    activeQuickModel,
+    activeModel,
     history,
     selectionHistory,
     phase,
@@ -82,12 +82,12 @@ export const AnnotationManagement: FC = () => {
     selectionConfig,
     history,
     phase,
-    activeQuickModel || null,
+    activeModel || null,
   );
   const { getElementById } = useGetElementById(
     projectName || null,
     currentScheme || null,
-    activeQuickModel || null,
+    activeModel || null,
   );
 
   // hooks to manage annotation
@@ -213,8 +213,27 @@ export const AnnotationManagement: FC = () => {
   // Now filter by valid regex
   const validHighlightText = highlightText.filter(isValidRegex);
 
-  // existing quickmodels
+  // existing models
   const availableQuickModels = project?.quickmodel.available[currentScheme || ''] || [];
+  const availableBertModels = project?.languagemodels.available[currentScheme || ''] || [];
+  const groupedModels = [
+    {
+      label: 'Quick Models',
+      options: availableQuickModels.map((e) => ({
+        value: e.name,
+        label: e.name,
+        type: 'quickmodel',
+      })),
+    },
+    {
+      label: 'Language Models',
+      options: Object.keys(availableBertModels).map((e) => ({
+        value: e,
+        label: e,
+        type: 'languagemodel',
+      })),
+    },
+  ];
 
   // display active menu
   const [activeMenu, setActiveMenu] = useState<boolean>(false);
@@ -265,7 +284,11 @@ export const AnnotationManagement: FC = () => {
     if (selectFirstModelTrained && availableQuickModels.length > 0) {
       setAppContext((prev) => ({
         ...prev,
-        activeQuickModel: availableQuickModels[0].name,
+        activeModel: {
+          type: 'quickmodel',
+          value: availableQuickModels[0].name,
+          label: availableQuickModels[0].name,
+        },
       }));
     }
   }, [availableQuickModels, selectFirstModelTrained, setAppContext]);
@@ -274,16 +297,16 @@ export const AnnotationManagement: FC = () => {
   const { retrainQuickModel } = useRetrainQuickModel(projectName || null, currentScheme || null);
   const [updatedQuickModel, setUpdatedQuickModel] = useState(false);
   useEffect(() => {
-    console.log('updating quick model', freqRefreshQuickModel, history.length);
     if (
       !updatedQuickModel &&
       freqRefreshQuickModel &&
-      activeQuickModel &&
+      activeModel &&
       history.length > 0 &&
-      history.length % freqRefreshQuickModel == 0
+      history.length % freqRefreshQuickModel == 0 &&
+      activeModel.type === 'quickmodel'
     ) {
       setUpdatedQuickModel(true);
-      retrainQuickModel(activeQuickModel);
+      retrainQuickModel(activeModel.value);
     }
     if (updatedQuickModel && freqRefreshQuickModel && history.length % freqRefreshQuickModel != 0) {
       setUpdatedQuickModel(false);
@@ -291,7 +314,7 @@ export const AnnotationManagement: FC = () => {
   }, [
     freqRefreshQuickModel,
     setUpdatedQuickModel,
-    activeQuickModel,
+    activeModel,
     updatedQuickModel,
     retrainQuickModel,
     history.length,
@@ -345,14 +368,14 @@ export const AnnotationManagement: FC = () => {
                     size={30}
                     onClick={() => setActiveMenu(!activeMenu)}
                     className="cursor-pointer ms-2 activelearning"
-                    style={{ color: activeQuickModel ? 'green' : 'grey' }}
+                    style={{ color: activeModel ? 'green' : 'grey' }}
                     title="Active learning"
                   />
                   <Tooltip anchorSelect=".activelearning" place="top">
                     Active learning
                   </Tooltip>
                   <span className="badge rounded-pill bg-light text-dark opacity-50 small">
-                    {activeQuickModel ? activeQuickModel : 'inactive'}
+                    {activeModel ? activeModel.value : 'inactive'}
                   </span>
                 </>
               )}
@@ -596,10 +619,10 @@ export const AnnotationManagement: FC = () => {
         <Modal.Body>
           {availableQuickModels.length > 0 ? (
             <ActiveLearningManagement
-              availableQuickModels={availableQuickModels}
+              availableModels={groupedModels}
               setAppContext={setAppContext}
               freqRefreshQuickModel={freqRefreshQuickModel}
-              activeSimepleModel={activeQuickModel}
+              activeModel={activeModel}
               projectName={projectName}
               currentScheme={currentScheme}
             />
