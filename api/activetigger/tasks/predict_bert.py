@@ -210,7 +210,7 @@ class PredictBert(BaseTask):
                 metrics[dataset] = get_metrics(
                     pred[filter]["label"],
                     pred[filter]["prediction"],
-                    pred["text"],
+                    texts=pred[filter]["text"],
                 )
 
             # add out of sample (labelled data not in training data)
@@ -222,7 +222,9 @@ class PredictBert(BaseTask):
             )
             if filter_oos.sum() > 10:
                 metrics["outofsample"] = get_metrics(
-                    pred[filter_oos]["label"], pred[filter_oos]["prediction"], pred["text"]
+                    pred[filter_oos]["label"],
+                    pred[filter_oos]["prediction"],
+                    texts=pred[filter_oos]["text"],
                 )
 
             # write the metrics in a json file

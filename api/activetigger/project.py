@@ -582,6 +582,24 @@ class Project:
             texts=self.data.train["text"] if self.data.train is not None else None,
         )
 
+    def get_model_prediction(self, type: str, name: str) -> pd.DataFrame:
+        """
+        Get prediction of a model
+        """
+        if type == "quickmodel":
+            if not self.quickmodels.exists(name):
+                raise Exception("Quickmodel doesn't exist")
+            else:
+                prediction = self.quickmodels.get_prediction(name)
+        elif type == "languagemodel":
+            if not self.languagemodels.exists(name):
+                raise Exception("Languagemodel doesn't exist")
+            else:
+                prediction = self.languagemodels.get_prediction(name)
+        else:
+            raise Exception("Model type not recognized")
+        return prediction
+
     def get_next(
         self,
         next: NextInModel,
@@ -689,18 +707,17 @@ class Project:
         if next.selection == "random":  # random row
             element_id = ss.sample(frac=1).index[0]
 
-        # higher prob for the label_maxprob, only possible if the model has been trained
-        if next.selection == "maxprob":
+        # check conditions for active learning and get proba
+        if next.selection in ["maxprob", "active"]:
             if next.model_active is None:
                 raise Exception("Model active is required")
-            if next.model_active.type != "quickmodel":
-                raise Exception("Only quickmodel type is allowed for maxprob selection")
-            if not self.quickmodels.exists(next.model_active.value):
-                raise Exception(f"Quickmodel {next.model_active} doesn't exist")
+            prediction = self.get_model_prediction(next.model_active.type, next.model_active.value)
+            proba = prediction.reindex(f.index)
+
+        # higher prob for the label_maxprob, only possible if the model has been trained
+        if next.selection == "maxprob":
             if next.label_maxprob is None:  # default label to first
                 raise Exception("Label maxprob is required")
-            prediction = self.quickmodels.get_prediction(next.model_active.value)  # get model
-            proba = prediction.reindex(f.index)
             # use the history to not send already tagged data
             ss_maxprob = (
                 proba[f][next.label_maxprob]
@@ -713,14 +730,6 @@ class Project:
 
         # higher entropy, only possible if the model has been trained
         if next.selection == "active":
-            if next.model_active is None:
-                raise Exception("Model active is required")
-            if next.model_active.type != "quickmodel":
-                raise Exception("Only quickmodel type is allowed for active selection")
-            if not self.quickmodels.exists(next.model_active.value):
-                raise ValueError("Quickmodel doesn't exist")
-            prediction = self.quickmodels.get_prediction(next.model_active.value)  # get model
-            proba = prediction.reindex(f.index)
             # use the history to not send already tagged data
             ss_active = (
                 proba[f]["entropy"].drop(next.history, errors="ignore").sort_values(ascending=False)
@@ -781,6 +790,8 @@ class Project:
         """
         Get an element of the database
         Separate train/test dataset
+
+        TODO : get next and get element could be merged
         """
         history = None
 
@@ -830,15 +841,15 @@ class Project:
 
             # get prediction if it exists
             predict = PredictedLabel(label=None, proba=None)
-            print("ELEMENT ACTIVE MODEL:", element)
-            if element.active_model is not None and self.quickmodels.exists(
-                element.active_model.value
-            ):
-                prediction = self.quickmodels.get_prediction(element.active_model.value)
+            if element.active_model is not None:
+                prediction = self.get_model_prediction(
+                    element.active_model.type, element.active_model.value
+                )
                 predicted_label = cast(str, prediction.loc[element.element_id, "prediction"])
                 predicted_proba = round(
                     cast(float, prediction.loc[element.element_id, predicted_label]), 2
                 )
+                print("PREDICTED", predicted_proba)
                 predict = PredictedLabel(label=predicted_label, proba=predicted_proba)
 
             # get element tags

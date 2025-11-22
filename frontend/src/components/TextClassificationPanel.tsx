@@ -97,7 +97,7 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
               }}
             >
               Predicted : {element?.predict.label as unknown as string} (
-              {element?.predict.proba as unknown as number})
+              {(element?.predict.proba as unknown as number).toFixed(2)})
             </button>
           </div>
         )
