@@ -179,17 +179,12 @@ class Project:
             project.project_slug, jsonable_encoder(project), username
         )
         # add the default scheme (basic name or with a random number if the name already exists)
-        default_scheme_name = (
-            config.default_scheme
-            if import_trainset_labels is None
-            or f"dataset_{config.default_scheme}" not in import_trainset_labels
-            else f"{config.default_scheme}_{str(uuid.uuid4())[:8]}"
-        )
-        self.db_manager.projects_service.add_scheme(
-            self.project_slug, default_scheme_name, [], "multiclass", "system"
-        )
+        if import_trainset_labels is None or len(import_trainset_labels.columns) == 0:
+            self.db_manager.projects_service.add_scheme(
+                self.project_slug, config.default_scheme, [], "multiclass", "system"
+            )
         # if labels/schemes to import, add them to the database
-        if import_trainset_labels is not None:
+        else:
             for col in import_trainset_labels.columns:
                 scheme_name = col.replace("dataset_", "")
                 delimiters = import_trainset_labels[col].str.contains("|", regex=False).sum()
@@ -584,7 +579,9 @@ class Project:
 
     def get_model_prediction(self, type: str, name: str) -> pd.DataFrame:
         """
-        Get prediction of a model
+        Get prediction of a model or raise an error
+        - quickmodel
+        - languagemodel
         """
         if type == "quickmodel":
             if not self.quickmodels.exists(name):
