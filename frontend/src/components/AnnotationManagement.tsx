@@ -12,6 +12,7 @@ import {
   useAddAnnotation,
   useGetElementById,
   useGetNextElementId,
+  useRetrainQuickModel,
   useStatistics,
   useTrainQuickModel,
 } from '../core/api';
@@ -37,22 +38,21 @@ import { MarqueBoundingBox } from './ProjectionVizSigma/MarqueeController';
 export const AnnotationManagement: FC = () => {
   const { notify } = useNotifications();
   const { projectName, elementId } = useParams();
+  const { appContext, setAppContext } = useAppContext();
+
   const {
-    appContext: {
-      currentScheme,
-      currentProject: project,
-      selectionConfig,
-      displayConfig,
-      freqRefreshQuickModel,
-      activeQuickModel,
-      history,
-      selectionHistory,
-      phase,
-      currentProjection,
-      labelColorMapping,
-    },
-    setAppContext,
-  } = useAppContext();
+    currentScheme,
+    currentProject: project,
+    selectionConfig,
+    displayConfig,
+    freqRefreshQuickModel,
+    activeModel,
+    history,
+    selectionHistory,
+    phase,
+    currentProjection,
+    labelColorMapping,
+  } = appContext;
 
   const navigate = useNavigate();
   const [element, setElement] = useState<ElementOutModel | null>(null); //state for the current element
@@ -82,12 +82,12 @@ export const AnnotationManagement: FC = () => {
     selectionConfig,
     history,
     phase,
-    activeQuickModel || null,
+    activeModel || null,
   );
   const { getElementById } = useGetElementById(
     projectName || null,
     currentScheme || null,
-    activeQuickModel || null,
+    activeModel || null,
   );
 
   // hooks to manage annotation
@@ -213,8 +213,27 @@ export const AnnotationManagement: FC = () => {
   // Now filter by valid regex
   const validHighlightText = highlightText.filter(isValidRegex);
 
-  // existing quickmodels
+  // existing models
   const availableQuickModels = project?.quickmodel.available[currentScheme || ''] || [];
+  const availableBertModels = project?.languagemodels.available[currentScheme || ''] || [];
+  const groupedModels = [
+    {
+      label: 'Quick Models',
+      options: availableQuickModels.map((e) => ({
+        value: e.name,
+        label: e.name,
+        type: 'quickmodel',
+      })),
+    },
+    {
+      label: 'Language Models',
+      options: Object.keys(availableBertModels).map((e) => ({
+        value: e,
+        label: e,
+        type: 'languagemodel',
+      })),
+    },
+  ];
 
   // display active menu
   const [activeMenu, setActiveMenu] = useState<boolean>(false);
@@ -265,10 +284,41 @@ export const AnnotationManagement: FC = () => {
     if (selectFirstModelTrained && availableQuickModels.length > 0) {
       setAppContext((prev) => ({
         ...prev,
-        activeQuickModel: availableQuickModels[0].name,
+        activeModel: {
+          type: 'quickmodel',
+          value: availableQuickModels[0].name,
+          label: availableQuickModels[0].name,
+        },
       }));
     }
   }, [availableQuickModels, selectFirstModelTrained, setAppContext]);
+
+  // retrain quick model
+  const { retrainQuickModel } = useRetrainQuickModel(projectName || null, currentScheme || null);
+  const [updatedQuickModel, setUpdatedQuickModel] = useState(false);
+  useEffect(() => {
+    if (
+      !updatedQuickModel &&
+      freqRefreshQuickModel &&
+      activeModel &&
+      history.length > 0 &&
+      history.length % freqRefreshQuickModel == 0 &&
+      activeModel.type === 'quickmodel'
+    ) {
+      setUpdatedQuickModel(true);
+      retrainQuickModel(activeModel.value);
+    }
+    if (updatedQuickModel && freqRefreshQuickModel && history.length % freqRefreshQuickModel != 0) {
+      setUpdatedQuickModel(false);
+    }
+  }, [
+    freqRefreshQuickModel,
+    setUpdatedQuickModel,
+    activeModel,
+    updatedQuickModel,
+    retrainQuickModel,
+    history.length,
+  ]);
 
   if (!projectName || !currentScheme) return;
 
@@ -286,19 +336,6 @@ export const AnnotationManagement: FC = () => {
               className={`d-flex align-items-center mb-3 ${phase !== 'train' ? 'alert alert-warning' : ''}`}
             > */}
             <div className="text-center my-2">
-              <button
-                className={cx('getelement', settingChanged ? 'setting-changed' : '')}
-                onClick={() => {
-                  refetchElement();
-                  setSettingChanged(false);
-                }}
-                title="Get next element with the selection mode"
-              >
-                <LuRefreshCw size={20} /> Fetch
-                {/* <Tooltip anchorSelect=".getelement" place="top">
-                  Get next element with the selection mode
-                </Tooltip> */}
-              </button>
               {statistics ? (
                 <span className="ms-2" style={{ fontSize: '12px', color: 'gray' }}>
                   <span className="d-none d-md-inline">Annotated: </span>
@@ -312,20 +349,33 @@ export const AnnotationManagement: FC = () => {
               ) : (
                 'na'
               )}{' '}
+              <button
+                className={cx('getelement', settingChanged ? 'setting-changed' : '')}
+                onClick={() => {
+                  refetchElement();
+                  setSettingChanged(false);
+                }}
+                title="Get next element with the selection mode"
+              >
+                <LuRefreshCw size={20} /> Get
+                {/* <Tooltip anchorSelect=".getelement" place="top">
+                  Get next element with the selection mode
+                </Tooltip> */}
+              </button>
               {phase === 'train' && (
                 <>
                   <GiTigerHead
                     size={30}
                     onClick={() => setActiveMenu(!activeMenu)}
-                    className="cursor-pointer mx-2 activelearning"
-                    style={{ color: activeQuickModel ? 'green' : 'grey' }}
+                    className="cursor-pointer ms-2 activelearning"
+                    style={{ color: activeModel ? 'green' : 'grey' }}
                     title="Active learning"
                   />
                   <Tooltip anchorSelect=".activelearning" place="top">
                     Active learning
                   </Tooltip>
                   <span className="badge rounded-pill bg-light text-dark opacity-50 small">
-                    {activeQuickModel}
+                    {activeModel ? activeModel.value : 'inactive'}
                   </span>
                 </>
               )}
@@ -569,13 +619,12 @@ export const AnnotationManagement: FC = () => {
         <Modal.Body>
           {availableQuickModels.length > 0 ? (
             <ActiveLearningManagement
-              projectSlug={projectName}
-              history={history}
-              currentScheme={currentScheme}
-              availableQuickModels={availableQuickModels}
+              availableModels={groupedModels}
               setAppContext={setAppContext}
               freqRefreshQuickModel={freqRefreshQuickModel}
-              activeSimepleModel={activeQuickModel}
+              activeModel={activeModel}
+              projectName={projectName}
+              currentScheme={currentScheme}
             />
           ) : (
             <div className="text-center">

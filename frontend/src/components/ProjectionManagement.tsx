@@ -47,7 +47,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
       currentProject: project,
       currentProjection,
       selectionConfig,
-      activeQuickModel,
+      activeModel,
       isComputing,
       labelColorMapping,
     },
@@ -60,14 +60,13 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
   const { getElementById } = useGetElementById(
     projectName || null,
     currentScheme || null,
-    activeQuickModel || null,
+    activeModel || null,
   );
 
   // fetch projection data with the API (null if no model)
   const { projectionData, reFetchProjectionData } = useGetProjectionData(
     projectName,
     currentScheme,
-    activeQuickModel,
   );
 
   // unique labels

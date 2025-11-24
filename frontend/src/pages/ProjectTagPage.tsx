@@ -29,7 +29,7 @@ export const ProjectTagPage: FC = () => {
   }, [tab]);
 
   // nb users
-  const nbUsers = project?.users ? Object.keys(project.users).length : 0;
+  const nbUsers = project?.users?.users ? Object.keys(project.users?.users).length : 0;
   const [dataset, setDataset] = useState('train');
 
   const isValid = project?.params.valid;

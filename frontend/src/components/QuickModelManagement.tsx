@@ -207,7 +207,7 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
   const defaultFeatures = [predictions[predictions.length - 1]];
 
   const [formSelectedFeatures, setFormSelectedFeatures] = useState<string[]>(
-    defaultFeatures.map((e) => (e ? e.value : [])),
+    defaultFeatures.map((e) => e.value),
   );
 
   // state for new feature
@@ -477,7 +477,7 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
           <table className="table table-striped table-hover w-100 mt-2">
             <tbody>
               Model <b>{currentModelInformations?.model}</b> trained on{' '}
-              <b>{currentModelInformations?.features}</b>
+              <b>{JSON.stringify(currentModelInformations?.features)}</b>
               {Object.entries(currentModelInformations?.params || {}).map(([key, value], i) => (
                 <tr key={i}>
                   <td>{key}</td>

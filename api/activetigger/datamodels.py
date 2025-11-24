@@ -130,6 +130,16 @@ class ActionModel(str, Enum):
     update = "update"
 
 
+class ActiveModel(BaseModel):
+    """
+    Active learning model
+    """
+
+    type: str
+    value: str
+    label: str
+
+
 class NextInModel(BaseModel):
     """
     Requesting next element to annotate
@@ -145,7 +155,18 @@ class NextInModel(BaseModel):
     filter: str | None = None
     dataset: str = "train"
     user: str | None = None
-    model_active: str | None = None
+    model_active: ActiveModel | None = None
+
+
+class ElementInModel(BaseModel):
+    """
+    Requesting element to annotate
+    """
+
+    element_id: str
+    scheme: str
+    dataset: str = "train"
+    active_model: ActiveModel | None = None
 
 
 class ElementOutModel(BaseModel):
@@ -763,6 +784,11 @@ class ErrorsProjectStateModel(BaseModel):
     errors: list[list]
 
 
+class UsersStateModel(BaseModel):
+    users: list[str]
+    last_schemes: dict[str, str]
+
+
 class ProjectStateModel(BaseModel):
     """
     Response for server state
@@ -777,10 +803,10 @@ class ProjectStateModel(BaseModel):
     projections: ProjectionsProjectStateModel
     generations: GenerationsProjectStateModel
     bertopic: BertopicProjectStateModel
+    users: UsersStateModel
     errors: list[list]
     memory: float | None = None
     last_activity: str | None = None
-    users: list[str]
 
 
 class ProjectDescriptionModel(BaseModel):

@@ -1,4 +1,3 @@
-import os
 import uuid
 
 from sqlalchemy import create_engine, event

@@ -1,83 +1,72 @@
-import { Dispatch, FC, SetStateAction, useEffect, useState } from 'react';
+import { Dispatch, FC, SetStateAction, useState } from 'react';
 
+import { IoIosRefresh } from 'react-icons/io';
 import { PiEmptyBold } from 'react-icons/pi';
 import Select from 'react-select';
 import { useRetrainQuickModel } from '../core/api';
 import { AppContextValue } from '../core/context';
-import { ModelDescriptionModel } from '../types';
+import { ActiveModel } from '../types';
 
 /**
  * Component to manage one label
  */
 
 interface ActiveLearningManagementProps {
-  projectSlug: string | null;
-  currentScheme: string | null;
-  history: string[];
-  availableQuickModels: ModelDescriptionModel[];
-  activeSimepleModel?: string | null;
+  availableModels: {
+    label: string;
+    options: ActiveModel[];
+  }[];
+  activeModel?: ActiveModel | null;
   freqRefreshQuickModel?: number;
+  projectName: string;
+  currentScheme: string;
   setAppContext: Dispatch<SetStateAction<AppContextValue>>;
 }
 
 export const ActiveLearningManagement: FC<ActiveLearningManagementProps> = ({
-  projectSlug,
-  currentScheme,
-  availableQuickModels,
-  activeSimepleModel,
+  availableModels,
+  activeModel,
   freqRefreshQuickModel,
-  history,
   setAppContext,
+  projectName,
+  currentScheme,
 }) => {
-  const [currentQuickModel, setCurrentQuickModel] = useState<string | null>(null);
+  const [currentModel, setCurrentModel] = useState<ActiveModel | null>(null);
   // function to change refresh frequency
   const refreshFreq = (newValue: number) => {
     setAppContext((prev) => ({ ...prev, freqRefreshQuickModel: newValue }));
   };
-  const setActiveQuickModel = (newValue: string | null) => {
-    setAppContext((prev) => ({ ...prev, activeQuickModel: newValue }));
+  const setActiveQuickModel = (newValue: ActiveModel | null) => {
+    setAppContext((prev) => ({ ...prev, activeModel: newValue }));
   };
-  const { retrainQuickModel } = useRetrainQuickModel(projectSlug, currentScheme);
 
   // manage retrain of the model
-  const [updatedQuickModel, setUpdatedQuickModel] = useState(false);
-  useEffect(() => {
-    if (
-      !updatedQuickModel &&
-      freqRefreshQuickModel &&
-      activeSimepleModel &&
-      history.length > 0 &&
-      history.length % freqRefreshQuickModel == 0
-    ) {
-      setUpdatedQuickModel(true);
-      retrainQuickModel(activeSimepleModel);
-    }
-    if (updatedQuickModel && freqRefreshQuickModel && history.length % freqRefreshQuickModel != 0) {
-      setUpdatedQuickModel(false);
-    }
-  }, [
-    freqRefreshQuickModel,
-    setUpdatedQuickModel,
-    activeSimepleModel,
-    updatedQuickModel,
-    retrainQuickModel,
-    history,
-  ]);
+  const { retrainQuickModel } = useRetrainQuickModel(projectName || null, currentScheme || null);
 
   return (
     <div>
       <div>
         Current active learning model :{' '}
         <b>
-          {activeSimepleModel ? (
+          {activeModel ? (
             <span>
-              {activeSimepleModel}
+              {activeModel.value}
               <PiEmptyBold
                 className="mx-2"
                 size={20}
                 style={{ color: 'red', cursor: 'pointer' }}
                 onClick={() => setActiveQuickModel(null)}
               />
+              {activeModel.type === 'quickmodel' && (
+                <IoIosRefresh
+                  size={20}
+                  style={{ color: 'green', cursor: 'pointer' }}
+                  onClick={() => {
+                    retrainQuickModel(activeModel.value);
+                    console.log('retrain');
+                  }}
+                />
+              )}
             </span>
           ) : (
             'no model selected'
@@ -87,43 +76,40 @@ export const ActiveLearningManagement: FC<ActiveLearningManagementProps> = ({
       <div>
         <div className="d-flex align-items-center my-2">
           <Select
-            options={Object.values(availableQuickModels || {}).map((e) => ({
-              value: e.name,
-              label: e.name,
-            }))}
-            value={
-              currentQuickModel ? { value: currentQuickModel, label: currentQuickModel } : null
-            }
+            options={availableModels}
+            value={currentModel ? currentModel : null}
             onChange={(selectedOption) => {
-              setCurrentQuickModel(selectedOption ? selectedOption.value : null);
+              setCurrentModel(selectedOption ? selectedOption : null);
             }}
             isSearchable
             placeholder="Select a model for active learning"
           />
           <button
             className="btn btn-primary mx-2"
-            onClick={() => setActiveQuickModel(currentQuickModel)}
+            onClick={() => setActiveQuickModel(currentModel)}
           >
             Select
           </button>
         </div>
       </div>
-      <div className="d-flex align-items-center">
-        <label htmlFor="frequencySlider">Retrain model every</label>
-        <input
-          type="number"
-          id="frequencySlider"
-          min="0"
-          max="500"
-          value={freqRefreshQuickModel}
-          onChange={(e) => {
-            refreshFreq(Number(e.currentTarget.value));
-          }}
-          step="1"
-          className="mx-2"
-        />
-        annotations (0 for no refreshing)
-      </div>
+      {activeModel?.type === 'quickmodel' && (
+        <div className="d-flex align-items-center">
+          <label htmlFor="frequencySlider">Retrain model every</label>
+          <input
+            type="number"
+            id="frequencySlider"
+            min="0"
+            max="500"
+            value={freqRefreshQuickModel}
+            onChange={(e) => {
+              refreshFreq(Number(e.currentTarget.value));
+            }}
+            step="5"
+            className="mx-2"
+          />
+          annotations (0 for no refreshing)
+        </div>
+      )}
     </div>
   );
 };

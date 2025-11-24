@@ -73,6 +73,7 @@ export const ProjectCreationForm: FC = () => {
   const [creatingProject, setCreatingProject] = useState<boolean>(false); // state for the data
   const [dataset, setDataset] = useState<string | null>(null); // state for the data
   const [data, setData] = useState<DataType | null>(null); // state for the data
+  const [computeFeatures, setComputeFeatures] = useState<boolean>(true);
   const navigate = useNavigate(); // rooting
   const createProject = useCreateProject(); // API call
   const availableProjectName = useProjectNameAvailable(); // check if the project name is available
@@ -204,7 +205,7 @@ export const ProjectCreationForm: FC = () => {
             const status = await getProjectStatus(slug);
             if (status === 'existing') {
               clearInterval(intervalId);
-              addFeature(slug, 'sbert', 'sbert', { model: 'generic' });
+              if (computeFeatures) addFeature(slug, 'sbert', 'sbert', { model: 'generic' });
               resetContext();
               navigate(`/projects/${slug}?fromProjectPage=true`);
               return;
@@ -621,6 +622,19 @@ export const ProjectCreationForm: FC = () => {
                         disabled={creatingProject}
                         {...register('clear_test')}
                         className="mx-3"
+                      />
+                    </label>
+                    <label className="form-label" htmlFor="clear_test">
+                      Compute default sentence-bert feature{' '}
+                      <input
+                        id="compute_feature"
+                        type="checkbox"
+                        disabled={creatingProject}
+                        className="mx-3"
+                        checked={computeFeatures}
+                        onChange={() => {
+                          setComputeFeatures(!computeFeatures);
+                        }}
                       />
                     </label>
                   </details>

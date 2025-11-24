@@ -13,6 +13,7 @@ from activetigger.datamodels import (
     ActionModel,
     AnnotationModel,
     AnnotationsDataModel,
+    ElementInModel,
     ElementOutModel,
     NextInModel,
     ProjectionOutModel,
@@ -186,14 +187,11 @@ async def post_annotation_file(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.get("/elements/{element_id}", dependencies=[Depends(verified_user)])
+@router.post("/elements/id", dependencies=[Depends(verified_user)])
 async def get_element(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    element_id: str,
-    scheme: str | None = None,
-    dataset: str = "train",
-    model_active: str | None = None,
+    element: ElementInModel,
 ) -> ElementOutModel:
     """
     Get specific element
@@ -201,11 +199,8 @@ async def get_element(
     test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
         return project.get_element(
-            element_id,
-            scheme=scheme,
+            element=element,
             user=current_user.username,
-            dataset=dataset,
-            model_active=model_active,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e

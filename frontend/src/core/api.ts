@@ -7,6 +7,7 @@ import { useCallback, useState } from 'react';
 import streamSaver from 'streamsaver';
 import type { paths } from '../generated/openapi';
 import {
+  ActiveModel,
   AnnotationModel,
   AnnotationsDataModel,
   AvailableProjectsModel,
@@ -623,7 +624,7 @@ export function useGetNextElementId(
   },
   history: string[],
   phase: string,
-  activeQuickModel: string | null,
+  activeModel: ActiveModel | null,
 ) {
   const { notify } = useNotifications();
   const getNextElementId = useCallback(async () => {
@@ -641,7 +642,7 @@ export function useGetNextElementId(
           dataset: phase,
           label_maxprob: selectionConfig.label_maxprob,
           user: selectionConfig.user,
-          model_active: activeQuickModel,
+          model_active: activeModel,
         },
       });
       if (res.data?.element_id)
@@ -651,7 +652,7 @@ export function useGetNextElementId(
       notify({ type: 'error', message: 'Select a project/scheme to get elements' });
       return null;
     }
-  }, [projectSlug, currentScheme, notify, history, selectionConfig, phase, activeQuickModel]);
+  }, [projectSlug, currentScheme, notify, history, selectionConfig, phase, activeModel]);
 
   return { getNextElementId };
 }
@@ -662,20 +663,22 @@ export function useGetNextElementId(
 export function useGetElementById(
   projectSlug: string | null,
   currentScheme: string | null,
-  model_active: string | null,
+  activeModel: ActiveModel | null,
 ) {
   const getElementById = useCallback(
     async (elementId: string, dataset: string) => {
-      if (projectSlug) {
-        const res = await api.GET('/elements/{element_id}', {
+      if (projectSlug && currentScheme) {
+        const res = await api.POST('/elements/id', {
           params: {
-            path: { element_id: elementId },
             query: {
               project_slug: projectSlug,
-              scheme: currentScheme,
-              dataset: dataset,
-              model_active: model_active,
             },
+          },
+          body: {
+            element_id: elementId,
+            scheme: currentScheme,
+            dataset: dataset,
+            active_model: activeModel,
           },
         });
         if (res.response.status === 200) return res.data;
@@ -683,7 +686,7 @@ export function useGetElementById(
       }
       return null;
     },
-    [projectSlug, currentScheme, model_active],
+    [projectSlug, currentScheme, activeModel],
   );
 
   return { getElementById };
@@ -1718,14 +1721,13 @@ export function useUpdateProjection(
 export function useGetProjectionData(
   project_slug: string | undefined | null,
   scheme: string | undefined | null,
-  modelName: string | undefined | null,
 ) {
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
 
   const getProjectionData = useAsyncMemo(async () => {
     if (scheme && project_slug) {
       const res = await api.GET('/elements/projection', {
-        params: { query: { project_slug: project_slug, scheme: scheme, model: modelName } },
+        params: { query: { project_slug: project_slug, scheme: scheme, model: null } },
       });
       if (!res.error) {
         if ('data' in res) return res.data;

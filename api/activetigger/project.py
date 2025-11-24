@@ -19,6 +19,7 @@ from activetigger.config import config
 from activetigger.data import Data
 from activetigger.datamodels import (
     BertModelModel,
+    ElementInModel,
     ElementOutModel,
     EvalSetDataModel,
     ExportGenerationsParams,
@@ -178,17 +179,12 @@ class Project:
             project.project_slug, jsonable_encoder(project), username
         )
         # add the default scheme (basic name or with a random number if the name already exists)
-        default_scheme_name = (
-            config.default_scheme
-            if import_trainset_labels is None
-            or f"dataset_{config.default_scheme}" not in import_trainset_labels
-            else f"{config.default_scheme}_{str(uuid.uuid4())[:8]}"
-        )
-        self.db_manager.projects_service.add_scheme(
-            self.project_slug, default_scheme_name, [], "multiclass", "system"
-        )
+        if import_trainset_labels is None or len(import_trainset_labels.columns) == 0:
+            self.db_manager.projects_service.add_scheme(
+                self.project_slug, config.default_scheme, [], "multiclass", "system"
+            )
         # if labels/schemes to import, add them to the database
-        if import_trainset_labels is not None:
+        else:
             for col in import_trainset_labels.columns:
                 scheme_name = col.replace("dataset_", "")
                 delimiters = import_trainset_labels[col].str.contains("|", regex=False).sum()
@@ -581,6 +577,26 @@ class Project:
             texts=self.data.train["text"] if self.data.train is not None else None,
         )
 
+    def get_model_prediction(self, type: str, name: str) -> pd.DataFrame:
+        """
+        Get prediction of a model or raise an error
+        - quickmodel
+        - languagemodel
+        """
+        if type == "quickmodel":
+            if not self.quickmodels.exists(name):
+                raise Exception("Quickmodel doesn't exist")
+            else:
+                prediction = self.quickmodels.get_prediction(name)
+        elif type == "languagemodel":
+            if not self.languagemodels.exists(name):
+                raise Exception("Languagemodel doesn't exist")
+            else:
+                prediction = self.languagemodels.get_prediction(name)
+        else:
+            raise Exception("Model type not recognized")
+        return prediction
+
     def get_next(
         self,
         next: NextInModel,
@@ -688,16 +704,17 @@ class Project:
         if next.selection == "random":  # random row
             element_id = ss.sample(frac=1).index[0]
 
-        # higher prob for the label_maxprob, only possible if the model has been trained
-        if next.selection == "maxprob":
+        # check conditions for active learning and get proba
+        if next.selection in ["maxprob", "active"]:
             if next.model_active is None:
                 raise Exception("Model active is required")
-            if not self.quickmodels.exists(next.model_active):
-                raise Exception(f"Quickmodel {next.model_active} doesn't exist")
+            prediction = self.get_model_prediction(next.model_active.type, next.model_active.value)
+            proba = prediction.reindex(f.index)
+
+        # higher prob for the label_maxprob, only possible if the model has been trained
+        if next.selection == "maxprob":
             if next.label_maxprob is None:  # default label to first
                 raise Exception("Label maxprob is required")
-            prediction = self.quickmodels.get_prediction(next.model_active)  # get model
-            proba = prediction.reindex(f.index)
             # use the history to not send already tagged data
             ss_maxprob = (
                 proba[f][next.label_maxprob]
@@ -710,12 +727,6 @@ class Project:
 
         # higher entropy, only possible if the model has been trained
         if next.selection == "active":
-            if next.model_active is None:
-                raise Exception("Model active is required")
-            if not self.quickmodels.exists(next.model_active):
-                raise ValueError("Quickmodel doesn't exist")
-            prediction = self.quickmodels.get_prediction(next.model_active)  # get model
-            proba = prediction.reindex(f.index)
             # use the history to not send already tagged data
             ss_active = (
                 proba[f]["entropy"].drop(next.history, errors="ignore").sort_values(ascending=False)
@@ -730,10 +741,10 @@ class Project:
 
         if (
             next.model_active is not None
-            and self.quickmodels.exists(next.model_active)
+            and self.quickmodels.exists(next.model_active.value)
             and next.dataset == "train"
         ):
-            prediction = self.quickmodels.get_prediction(next.model_active)
+            prediction = self.quickmodels.get_prediction(next.model_active.value)
             predicted_label = prediction.loc[element_id, "prediction"]
             predicted_proba = round(prediction.loc[element_id, predicted_label], 2)
             predict = PredictedLabel(label=predicted_label, proba=predicted_proba)
@@ -770,28 +781,27 @@ class Project:
 
     def get_element(
         self,
-        element_id: str,
-        scheme: str | None = None,
+        element: ElementInModel,
         user: str | None = None,
-        dataset: str = "train",
-        model_active: str | None = None,
     ) -> ElementOutModel:
         """
         Get an element of the database
         Separate train/test dataset
+
+        TODO : get next and get element could be merged
         """
         history = None
 
-        if dataset == "valid" and self.data.valid is not None:
-            if element_id not in self.data.valid.index:
+        if element.dataset == "valid" and self.data.valid is not None:
+            if element.element_id not in self.data.valid.index:
                 raise Exception("Element does not exist.")
-            if scheme is not None:
+            if element.scheme is not None:
                 history = self.schemes.projects_service.get_annotations_by_element(
-                    self.params.project_slug, scheme, element_id
+                    self.params.project_slug, element.scheme, element.element_id
                 )
             return ElementOutModel(
-                element_id=element_id,
-                text=str(self.data.valid.loc[element_id, "text"]),
+                element_id=element.element_id,
+                text=str(self.data.valid.loc[element.element_id, "text"]),
                 context={},
                 selection="valid",
                 info="",
@@ -801,16 +811,16 @@ class Project:
                 history=history,
             )
 
-        if dataset == "test" and self.data.test is not None:
-            if element_id not in self.data.test.index:
+        if element.dataset == "test" and self.data.test is not None:
+            if element.element_id not in self.data.test.index:
                 raise Exception("Element does not exist.")
-            if scheme is not None:
+            if element.scheme is not None:
                 history = self.schemes.projects_service.get_annotations_by_element(
-                    self.params.project_slug, scheme, element_id
+                    self.params.project_slug, element.scheme, element.element_id
                 )
             return ElementOutModel(
-                element_id=element_id,
-                text=str(self.data.test.loc[element_id, "text"]),
+                element_id=element.element_id,
+                text=str(self.data.test.loc[element.element_id, "text"]),
                 context={},
                 selection="test",
                 info="",
@@ -820,43 +830,48 @@ class Project:
                 history=history,
             )
 
-        if dataset == "train":
+        if element.dataset == "train":
             if self.data.train is None:
                 raise Exception("Train dataset is not defined")
-            if element_id not in self.data.train.index:
+            if element.element_id not in self.data.train.index:
                 raise Exception("Element does not exist.")
 
             # get prediction if it exists
             predict = PredictedLabel(label=None, proba=None)
-            if model_active is not None and self.quickmodels.exists(model_active):
-                prediction = self.quickmodels.get_prediction(model_active)
-                predicted_label = cast(str, prediction.loc[element_id, "prediction"])
-                predicted_proba = round(cast(float, prediction.loc[element_id, predicted_label]), 2)
+            if element.active_model is not None:
+                prediction = self.get_model_prediction(
+                    element.active_model.type, element.active_model.value
+                )
+                predicted_label = cast(str, prediction.loc[element.element_id, "prediction"])
+                predicted_proba = round(
+                    cast(float, prediction.loc[element.element_id, predicted_label]), 2
+                )
+                print("PREDICTED", predicted_proba)
                 predict = PredictedLabel(label=predicted_label, proba=predicted_proba)
 
             # get element tags
-            if scheme is not None:
+            if element.scheme is not None:
                 history = self.schemes.projects_service.get_annotations_by_element(
-                    self.params.project_slug, scheme, element_id
+                    self.params.project_slug, element.scheme, element.element_id
                 )
 
             context = cast(
                 dict[str, Any],
-                self.data.train.loc[element_id, self.params.cols_context]  # type: ignore[index]
+                self.data.train.loc[element.element_id, self.params.cols_context]  # type: ignore[index]
                 .fillna("NA")
                 .astype(str)
                 .to_dict(),
             )
 
             return ElementOutModel(
-                element_id=element_id,
-                text=str(self.data.train.loc[element_id, "text"]),
+                element_id=element.element_id,
+                text=str(self.data.train.loc[element.element_id, "text"]),
                 context=context,
                 selection="request",
                 predict=predict,
                 info="get specific",
                 frame=None,
-                limit=cast(int, self.data.train.loc[element_id, "limit"]),
+                limit=cast(int, self.data.train.loc[element.element_id, "limit"]),
                 history=history,
             )
 
@@ -973,8 +988,6 @@ class Project:
         Send state of the project
         Collecting states for submodules
         """
-        users = self.users.db_manager.users_service.get_project_users(self.params.project_slug)
-
         return ProjectStateModel(
             params=self.params,
             next=NextProjectStateModel(
@@ -994,7 +1007,7 @@ class Project:
             last_activity=self.db_manager.logs_service.get_last_activity_project(
                 self.params.project_slug
             ),
-            users=users,
+            users=self.users.state(self.params.project_slug),
         )
 
     def export_features(self, features: list, format: str = "parquet") -> FileResponse:

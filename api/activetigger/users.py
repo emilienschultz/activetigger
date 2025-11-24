@@ -4,7 +4,13 @@ from pathlib import Path
 import yaml  # type: ignore[import]
 
 from activetigger.config import config
-from activetigger.datamodels import UserInDBModel, UserModel, UserStatistics
+from activetigger.datamodels import (
+    AnnotationModel,
+    UserInDBModel,
+    UserModel,
+    UsersStateModel,
+    UserStatistics,
+)
 from activetigger.db.manager import DatabaseManager
 from activetigger.functions import compare_to_hash, get_dir_size, get_hash
 
@@ -206,3 +212,13 @@ class Users:
             return float(self.users[username]["storage_limit"])
         # default value
         return config.user_hdd_max
+
+    def state(self, project_slug: str) -> UsersStateModel:
+        """
+        Get last annotation date for all users
+        """
+        r = self.db_manager.users_service.get_project_users_last_annotation(project_slug)
+        return UsersStateModel(
+            users=list(r.keys()),
+            last_schemes={i: r[i].scheme for i in r},
+        )

@@ -32,7 +32,6 @@ export const ProjectActionsSidebar: FC<{
   const projectSlug = projectState ? projectState.params.project_slug : null;
   const projectName = projectState ? projectState.params.project_name : null;
   const { authenticatedUser } = useAuth();
-  // const nbUsers = projectState ? projectState.users.length : 0;
 
   // 2 types of menu
   const canEdit = authenticatedUser?.status !== 'annotator';
@@ -50,9 +49,9 @@ export const ProjectActionsSidebar: FC<{
   }
 
   return (
-    <div className={`project-sidebar flex-shrink-0 bg-light`}>
+    <div className={`project-sidebar flex-shrink-0 bg-light sticky-top`}>
       {canEdit && (
-        <ul className="nav nav-pills mb-auto">
+        <ul className="nav nav-pills mb-auto ">
           <li className="nav-item  d-none d-md-inline w-100">
             <div className="nav-link d-inline-block rounded-pill px-3 py-1 bg-light w-100">
               <div className="fw-semibold text-dark text-truncate">{projectName}</div>

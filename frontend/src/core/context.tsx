@@ -9,6 +9,7 @@ import {
 } from 'react';
 
 import {
+  ActiveModel,
   DisplayConfig,
   GenerateConfig,
   NotificationType,
@@ -27,7 +28,7 @@ export type AppContextValue = {
   currentScheme?: string; // scheme selected to annotate
   currentProjection?: ProjectionOutModel;
   labelColorMapping?: { [key: string]: string };
-  activeQuickModel?: string | null;
+  activeModel?: ActiveModel | null;
   freqRefreshQuickModel: number; // freq to refresh active learning model
   history: string[]; // element annotated
   selectionHistory: Record<string, string>; // history of the selection

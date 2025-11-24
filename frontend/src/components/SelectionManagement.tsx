@@ -16,22 +16,15 @@ export const SelectionManagement: FC<SelectionManagementProps> = ({
   setSettingChanged,
 }) => {
   const {
-    appContext: {
-      currentScheme,
-      selectionConfig,
-      currentProject: project,
-      activeQuickModel,
-      phase,
-    },
+    appContext: { currentScheme, selectionConfig, currentProject: project, activeModel, phase },
     setAppContext,
   } = useAppContext();
 
-  const availableModes =
-    activeQuickModel && project ? project.next.methods : project?.next.methods_min;
+  const availableModes = activeModel && project ? project.next.methods : project?.next.methods_min;
 
   const availableSamples = project?.next.sample ? project?.next.sample : [];
 
-  const availableUsers = project?.users ? project?.users : [];
+  const availableUsers = project?.users?.users ? project?.users?.users : [];
 
   // API call to get the current model & refetch
   // TODO : MODEL SELECTION TO CHANGE

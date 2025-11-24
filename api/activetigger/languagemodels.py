@@ -3,7 +3,7 @@ import os
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Optional, cast
+from typing import Any, Callable, Optional, Tuple, cast
 
 import pandas as pd  # type: ignore[import]
 from fastapi.responses import FileResponse
@@ -43,6 +43,7 @@ class LanguageModels:
     db_manager: DatabaseManager
     base_models: list[dict[str, Any]]
     params_default: LMParametersModel
+    cache_predictions: dict[str, Tuple[datetime, pd.DataFrame]]
 
     def __init__(
         self,
@@ -59,6 +60,7 @@ class LanguageModels:
         self.computing = computing
         self.language_models_service = db_manager.language_models_service
         self.path: Path = Path(path).joinpath("bert")
+        self.cache_predictions = {}
 
         # load the list of models
         if list_models is not None:
@@ -106,6 +108,12 @@ class LanguageModels:
                 predicted_external=m.parameters.get("predicted_external", False),
             )
         return r
+
+    def exists(self, name: str) -> bool:
+        """
+        Check if a model exists
+        """
+        return self.language_models_service.model_exists(self.project_slug, name)
 
     def training(self) -> dict[str, LMComputingOutModel]:
         """
@@ -548,3 +556,27 @@ class LanguageModels:
         if not path.exists():
             raise FileNotFoundError("Training ids file does not exist")
         return [str(i) for i in pd.read_csv(path, index_col=0).index]
+
+    def get_prediction(self, model_name: str, cache_time: int = 120) -> pd.DataFrame:
+        """
+        Get the prediction dataframe for a model with a cache to avoid reloading the file too often
+        """
+
+        # update cache
+        for key in list(self.cache_predictions.keys()):
+            timestamp, _ = self.cache_predictions[key]
+            if (datetime.now() - timestamp).total_seconds() > cache_time:
+                del self.cache_predictions[key]
+
+        # return from cache
+        if model_name in self.cache_predictions:
+            _, cached_df = self.cache_predictions[model_name]
+            return cached_df
+
+        # load, cache and return prediction file
+        path = self.path.joinpath(model_name).joinpath("predict_annotable.parquet")
+        if not path.exists():
+            raise FileNotFoundError("Prediction file does not exist")
+        df = pd.read_parquet(path)
+        self.cache_predictions[model_name] = (datetime.now(), df)
+        return df
