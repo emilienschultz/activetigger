@@ -222,7 +222,17 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
     return formSelectedFeatures.map((feature) => feature.slice(0, 8) === 'predict_').includes(true);
   };
 
-  console.log(currentQuickModelName);
+  const cleanDisplay = (listOfFeatures: string) => {
+    if (listOfFeatures) {
+      return listOfFeatures
+        .replaceAll('"', '')
+        .replaceAll('[', '')
+        .replaceAll(']', '')
+        .replaceAll(',', ' and ');
+    } else {
+      return 'Loading...';
+    }
+  };
 
   return (
     <div className="w-100">
@@ -481,7 +491,11 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
           <table className="table table-striped table-hover w-100 mt-2">
             <tbody>
               Model <b>{currentModelInformations?.model}</b> trained on{' '}
-              <b>{JSON.stringify(currentModelInformations?.features)}</b>
+              <b>
+                {cleanDisplay(
+                  JSON.stringify(currentModelInformations?.features) as unknown as string,
+                )}
+              </b>
               {Object.entries(currentModelInformations?.params || {}).map(([key, value], i) => (
                 <tr key={i}>
                   <td>{key}</td>
