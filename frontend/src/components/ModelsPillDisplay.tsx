@@ -1,7 +1,6 @@
 import cx from 'classnames';
 import { Dispatch, FC, ReactNode, SetStateAction, useState } from 'react';
 import { Modal } from 'react-bootstrap';
-
 import { MdOutlineDeleteOutline } from 'react-icons/md';
 
 interface ModelsNameInput {
@@ -19,54 +18,56 @@ export const ModelsPillDisplay: FC<ModelsNameInput> = ({
   deleteModelFunction,
   children,
 }) => {
-  const [showDelete, setShowDelete] = useState<boolean | string>(false);
+  const [modelToDelete, setModelToDelete] = useState<string | null>(null);
+
   return (
     <div className="model-pill-selection">
       {(modelNames || []).map((name) => (
         <button
-          className={cx('model-pill ', currentModelName === name ? 'selected' : '')}
-          onClick={() => {
-            setCurrentModelName(name);
-          }}
           key={name}
+          className={cx('model-pill', currentModelName === name && 'selected')}
+          onClick={() => setCurrentModelName(name)}
         >
           {name}
+
           <span
-            id="bin"
-            onClick={() => {
-              setShowDelete(name);
+            className="delete-icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              setModelToDelete(name);
             }}
           >
-            <MdOutlineDeleteOutline size={20} />
+            <MdOutlineDeleteOutline size={18} />
           </span>
-          <Modal
-            show={showDelete === name}
-            id={`deletescheme-${name}`}
-            onHide={() => setShowDelete(false)}
-          >
-            <Modal.Header closeButton>
-              <Modal.Title>Delete the current model</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-              <p>
-                Are you sure you want to delete the model <b>{name}</b>?
-              </p>
-              <button
-                className="btn btn-danger"
-                onClick={() => {
-                  deleteModelFunction(name);
-                  setCurrentModelName(null);
-                  setShowDelete(false);
-                  console.log('delete');
-                }}
-              >
-                Delete
-              </button>
-            </Modal.Body>
-          </Modal>
         </button>
       ))}
-      {children ? <>{children}</> : <></>}
+
+      {children}
+
+      <Modal show={!!modelToDelete} onHide={() => setModelToDelete(null)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Delete the model</Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          <p>
+            Are you sure you want to delete <b>{modelToDelete}</b>?
+          </p>
+
+          <button
+            className="btn btn-danger"
+            onClick={async () => {
+              setCurrentModelName(null);
+              if (modelToDelete) {
+                await deleteModelFunction(modelToDelete);
+              }
+              setModelToDelete(null);
+            }}
+          >
+            Delete
+          </button>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };

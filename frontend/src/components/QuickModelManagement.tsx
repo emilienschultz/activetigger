@@ -106,7 +106,9 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
   const features = availableFeatures.map((e) => ({ value: e, label: e }));
 
   // current quickmodel
-  const [currentQuickModelName, setCurrentQuickModelName] = useState<string | null>(null);
+  const [currentQuickModelName, setCurrentQuickModelName] = useState<string | null>(
+    availableQuickModels.length > 0 ? availableQuickModels[0].name : null,
+  );
   // Modal rename and form to rename
   const [showRename, setShowRename] = useState(false);
   const { renameQuickModel } = useRenameQuickModel(projectName || null);
@@ -219,6 +221,8 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
   const selectedFeaturesContainsBERTFeatures = () => {
     return formSelectedFeatures.map((feature) => feature.slice(0, 8) === 'predict_').includes(true);
   };
+
+  console.log(currentQuickModelName);
 
   return (
     <div className="w-100">

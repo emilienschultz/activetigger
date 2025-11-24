@@ -50,7 +50,9 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
 
   // current model and automatic selection
 
-  const [currentBertModel, setCurrentBertModel] = useState<string | null>(null);
+  const [currentBertModel, setCurrentBertModel] = useState<string | null>(
+    availableBertModels ? Object.keys(availableBertModels)[0] : null,
+  );
   const { deleteBertModel } = useDeleteBertModel(projectSlug || null);
 
   // get model information from api
