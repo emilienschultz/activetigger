@@ -1,6 +1,6 @@
 import cx from 'classnames';
 import { FC, useCallback, useEffect, useRef, useState } from 'react';
-import { FaLock, FaPencilAlt } from 'react-icons/fa';
+import { FaPencilAlt } from 'react-icons/fa';
 import { FiRefreshCcw } from 'react-icons/fi';
 import { LuRefreshCw } from 'react-icons/lu';
 import { PiEraser } from 'react-icons/pi';
@@ -22,7 +22,6 @@ import { ElementOutModel } from '../types';
 import { Modal } from 'react-bootstrap';
 import { FaMapMarkedAlt } from 'react-icons/fa';
 import { GiTigerHead } from 'react-icons/gi';
-import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { MdDisplaySettings } from 'react-icons/md';
 import { ActiveLearningManagement } from '../components/ActiveLearningManagement';
 import { MulticlassInput } from '../components/MulticlassInput';
@@ -32,8 +31,7 @@ import { TagDisplayParameters } from '../components/TagDisplayParameters';
 import { TextClassificationPanel } from '../components/TextClassificationPanel';
 import { TextSpanPanel } from '../components/TextSpanPanel';
 import { useNotifications } from '../core/notifications';
-import { ProjectionVizSigma } from './ProjectionVizSigma';
-import { MarqueBoundingBox } from './ProjectionVizSigma/MarqueeController';
+import { DisplayProjection } from './vizualisation/DisplayProjection';
 
 export const AnnotationManagement: FC = () => {
   const { notify } = useNotifications();
@@ -50,8 +48,6 @@ export const AnnotationManagement: FC = () => {
     history,
     selectionHistory,
     phase,
-    currentProjection,
-    labelColorMapping,
   } = appContext;
 
   const navigate = useNavigate();
@@ -567,61 +563,11 @@ export const AnnotationManagement: FC = () => {
           <Modal.Title>Current projection</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {currentProjection ? (
-            <div
-              className="row align-items-start"
-              style={{ height: '400px', marginBottom: '50px' }}
-            >
-              <div className="my-2">
-                <label style={{ display: 'block' }}>
-                  <input
-                    type="checkbox"
-                    checked={selectionConfig.frameSelection}
-                    className="mx-2"
-                    onChange={(_) => {
-                      setAppContext((prev) => ({
-                        ...prev,
-                        selectionConfig: {
-                          ...selectionConfig,
-                          frameSelection: !selectionConfig.frameSelection,
-                        },
-                      }));
-                    }}
-                  />
-                  <span className="lock">
-                    <FaLock /> Lock on selection
-                  </span>
-                  <a className="lockhelp">
-                    <HiOutlineQuestionMarkCircle />
-                  </a>
-                  <Tooltip anchorSelect=".lockhelp" place="top">
-                    Once a vizualisation computed, you can use the square tool to select an area (or
-                    remove the square).<br></br> Then you can lock the selection, and only elements
-                    in the selected area will be available for annoation.
-                  </Tooltip>
-                </label>
-              </div>
-              <ProjectionVizSigma
-                className={`col-12 border h-100`}
-                data={currentProjection}
-                selectedId={elementId}
-                setSelectedId={(id?: string | undefined) => id}
-                frame={selectionConfig.frame}
-                setFrameBbox={(bbox?: MarqueBoundingBox) => {
-                  setAppContext((prev) => ({
-                    ...prev,
-                    selectionConfig: {
-                      ...selectionConfig,
-                      frame: bbox ? [bbox.x.min, bbox.x.max, bbox.y.min, bbox.y.max] : undefined,
-                    },
-                  }));
-                }}
-                labelColorMapping={labelColorMapping || {}}
-              />
-            </div>
-          ) : (
-            <>No projection computed</>
-          )}
+          <DisplayProjection
+            projectName={projectName}
+            currentScheme={currentScheme}
+            elementId={elementId}
+          />
         </Modal.Body>
       </Modal>
       <Modal show={showDisplayConfig} onHide={handleCloseConfig} size="xl" id="config-modal">
