@@ -64,8 +64,6 @@ export const FeaturesManagement: FC = () => {
     setSelectedFeature(null);
   };
 
-  console.log(featuresInfo);
-
   if (!project) {
     return <div>No project selected</div>;
   }

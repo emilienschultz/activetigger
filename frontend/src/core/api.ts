@@ -1113,7 +1113,7 @@ export function useAddUserAuthProject(projectSlug: string | null, reFetchUsersAu
             query: { project_slug: projectSlug, username: username, status: auth },
           },
         });
-        if (!res.error) notify({ type: 'success', message: 'Auth deleted for user' });
+        if (!res.error) notify({ type: 'success', message: 'Auth added for user' });
         reFetchUsersAuth();
         return true;
       }

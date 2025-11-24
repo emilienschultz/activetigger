@@ -19,9 +19,28 @@ export const ProjectValidatePage: FC = () => {
     appContext: { currentScheme, currentProject: project, isComputing },
   } = useAppContext();
 
+  const availableBertModels = useMemo(
+    () =>
+      project?.languagemodels.available
+        ? project?.languagemodels.available[currentScheme || '']
+        : [],
+    [project?.languagemodels.available, currentScheme],
+  );
+
+  const availableQuickModels = useMemo(
+    () =>
+      project?.quickmodel.available
+        ? (project?.quickmodel.available[currentScheme || ''] as ModelDescriptionModel[])
+        : [],
+    [project?.quickmodel.available, currentScheme],
+  );
   // model selected
-  const [currentQuickModelName, setCurrentQuickModelName] = useState<string | null>(null);
-  const [currentBertModelName, setCurrentBertModelName] = useState<string | null>(null);
+  const [currentQuickModelName, setCurrentQuickModelName] = useState<string | null>(
+    availableQuickModels ? availableQuickModels[0]?.name : null,
+  );
+  const [currentBertModelName, setCurrentBertModelName] = useState<string | null>(
+    availableBertModels ? Object.keys(availableBertModels)[0] : null,
+  );
   // delete quickmodel
   const { deleteQuickModel } = useDeleteQuickModel(projectName as string);
   const { deleteBertModel } = useDeleteBertModel(projectName as string);
@@ -39,22 +58,6 @@ export const ProjectValidatePage: FC = () => {
     currentQuickModelName || null,
     'quick',
     isComputing,
-  );
-
-  const availableBertModels = useMemo(
-    () =>
-      project?.languagemodels.available
-        ? project?.languagemodels.available[currentScheme || '']
-        : [],
-    [project?.languagemodels.available, currentScheme],
-  );
-
-  const availableQuickModels = useMemo(
-    () =>
-      project?.quickmodel.available
-        ? (project?.quickmodel.available[currentScheme || ''] as ModelDescriptionModel[])
-        : [],
-    [project?.quickmodel.available, currentScheme],
   );
 
   return (
