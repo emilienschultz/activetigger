@@ -294,6 +294,7 @@ table {
   align-items: center;
 
   table {
+    max-width: 1000px;
     tbody {
       td.label-col {
         font-weight: bold;
@@ -314,6 +315,14 @@ table {
       }
       td.rowspan-cell {
         border-right: $secondary 1px solid;
+        text-align: right;
+        padding-right: 5px;
+      }
+      
+      td.name-recall{
+        color: rgb(160, 160, 160);
+        font-size: smaller;
+        font-weight: bold;
       }
     }
   }

@@ -48,6 +48,18 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
     return '';
   };
 
+  const limitLabelSize = (label: string, maxLength: number = 10) => {
+    if (label) {
+      if (label.length > maxLength) {
+        return label.slice(0, maxLength) + '...';
+      } else {
+        return label;
+      }
+    } else {
+      return 'Loading...';
+    }
+  };
+
   return (
     <div id="DisplayTableStatistics">
       {table && (
@@ -75,16 +87,16 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
             <tr className="bg-gray-100">
               <th></th>
               <th></th>
-              {table?.columns.map((col, colIndex) => (
-                <td
-                  key={col}
+              {table?.columns.map((colName, colIndex) => (
+                <th
+                  key={colName}
                   className={cx(
-                    'text-center ',
+                    'text-center px-2',
                     colIndex === table?.columns.length - 1 ? '' : 'fw-bold',
                   )}
                 >
-                  {col}
-                </td>
+                  {limitLabelSize(colName)}
+                </th>
               ))}
               <th></th>
               <th className="text-center fw-normal">Recall</th>
@@ -99,12 +111,13 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
                     Truth
                   </td>
                 )}
-                <td className="font-medium p-1">
-                  {rowIndex === table.data.length - 1 ? (
-                    table.index[rowIndex]
-                  ) : (
-                    <b>{table.index[rowIndex]}</b>
+                <td
+                  className={cx(
+                    'text-end px-2',
+                    rowIndex === table.data.length - 1 ? '' : 'fw-bold',
                   )}
+                >
+                  {limitLabelSize(table.index[rowIndex])}
                 </td>
                 {row.map((cell, colIndex) => (
                   <td
@@ -127,6 +140,11 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
                 <td className="cell">
                   {scores.f1_label && displayScore(scores.f1_label[labels[rowIndex]])}
                 </td>
+                <td className="name-recall">
+                  {rowIndex === Object.entries(labels).length - 1
+                    ? ''
+                    : limitLabelSize(table.index[rowIndex])}
+                </td>
               </tr>
             ))}
 
@@ -143,7 +161,7 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
                 {' '}
                 Scores
               </td>
-              <td>Precision</td>
+              <td className="text-end">Precision</td>
               {table.columns.map((col, colIndex) => (
                 <td key={colIndex} className="cell">
                   {scores.precision_label && displayScore(scores.precision_label[col])}
@@ -154,10 +172,22 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
               <td></td>
             </tr>
             <tr>
-              <td>F1</td>
+              <td className="text-end">F1</td>
               {table.columns.map((col, colIndex) => (
                 <td key={colIndex} className="cell">
                   {scores.f1_label && displayScore(scores.f1_label[col])}
+                </td>
+              ))}
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td></td>
+              <td></td>
+              {table.columns.map((col, colIndex) => (
+                <td key={colIndex} className="name-recall">
+                  {colIndex === Object.entries(labels).length - 1 ? '' : limitLabelSize(col)}
                 </td>
               ))}
               <td></td>
