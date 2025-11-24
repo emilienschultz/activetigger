@@ -282,6 +282,7 @@ export const AnnotationManagement: FC = () => {
   // fastrack active learning model
   useEffect(() => {
     if (selectFirstModelTrained && availableQuickModels.length > 0) {
+      // select the first trained model
       setAppContext((prev) => ({
         ...prev,
         activeModel: {
@@ -289,6 +290,7 @@ export const AnnotationManagement: FC = () => {
           value: availableQuickModels[0].name,
           label: availableQuickModels[0].name,
         },
+        selectionConfig: { ...prev.selectionConfig, mode: 'active' },
       }));
     }
   }, [availableQuickModels, selectFirstModelTrained, setAppContext]);
@@ -319,6 +321,24 @@ export const AnnotationManagement: FC = () => {
     retrainQuickModel,
     history.length,
   ]);
+
+  // deactivate active model if it has been removed from available models
+  useEffect(() => {
+    if (
+      activeModel &&
+      !availableQuickModels.find((model) => model.name === activeModel.value) &&
+      activeModel.type === 'quickmodel'
+    ) {
+      setAppContext((prev) => ({ ...prev, activeModel: null }));
+    }
+    if (
+      activeModel &&
+      !Object.keys(availableBertModels).includes(activeModel.value) &&
+      activeModel.type === 'languagemodel'
+    ) {
+      setAppContext((prev) => ({ ...prev, activeModel: null }));
+    }
+  }, [availableQuickModels, activeModel, setAppContext, availableBertModels]);
 
   if (!projectName || !currentScheme) return;
 
