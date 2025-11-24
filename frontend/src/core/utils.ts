@@ -393,5 +393,5 @@ export function getRandomName(prefix: string) {
   const minute = ('0' + String(now.getMinutes())).slice(-2);
   const year = String(now.getFullYear());
 
-  return `${random_name}_${year}-${month}-${day}-${hour}h${minute}`;
+  return `${year}-${month}-${day}-${hour}h${minute}_${random_name}`;
 }
