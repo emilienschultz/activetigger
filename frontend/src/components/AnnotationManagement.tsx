@@ -212,7 +212,7 @@ export const AnnotationManagement: FC = () => {
   // existing models
   const availableQuickModels = project?.quickmodel.available[currentScheme || ''] || [];
   const availableBertModels = project?.languagemodels.available[currentScheme || ''] || {};
-  const availableBertModelsWithPrediction = Object.entries(availableBertModels)
+  const availableBertModelsWithPrediction = Object.entries(availableBertModels || {})
     .filter(([_, v]) => v && v.predicted)
     .map(([k, _]) => k);
   //
@@ -220,19 +220,23 @@ export const AnnotationManagement: FC = () => {
   const groupedModels = [
     {
       label: 'Quick Models',
-      options: availableQuickModels.map((e) => ({
-        value: e.name,
-        label: e.name,
-        type: 'quickmodel',
-      })),
+      options: (availableQuickModels ?? [])
+        .filter((e) => e?.name) // <-- protect against undefined/missing name
+        .map((e) => ({
+          value: e.name,
+          label: e.name,
+          type: 'quickmodel',
+        })),
     },
     {
       label: 'Language Models',
-      options: availableBertModelsWithPrediction.map((e) => ({
-        value: e,
-        label: e,
-        type: 'languagemodel',
-      })),
+      options: (availableBertModelsWithPrediction ?? [])
+        .filter((e) => e) // <-- ensure non-null
+        .map((e) => ({
+          value: e,
+          label: e,
+          type: 'languagemodel',
+        })),
     },
   ];
 
