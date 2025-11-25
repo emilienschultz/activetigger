@@ -37,8 +37,6 @@ class OpenRouter(GenerationModelClient):
         if response.status_code == 200:
             return response.json()["choices"][0]["message"]["content"]
         else:
-            print(response.content)
             raise Exception(
-                f"HTTP call responded with code {response.status_code}"
-                + str(response.content)
+                f"HTTP call responded with code {response.status_code}" + str(response.content)
             )
