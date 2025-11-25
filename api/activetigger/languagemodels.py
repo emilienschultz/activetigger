@@ -98,6 +98,7 @@ class LanguageModels:
         Available models
         """
         models = self.language_models_service.available_models(self.project_slug, "bert")
+        print(models)
         r: dict = {}
         for m in models:
             if m.scheme not in r:
@@ -416,7 +417,7 @@ class LanguageModels:
             print("Testing finished")
         if element.status == "predicting":
             # update flag if there is a prediction of the whole dataset
-            if element.dataset == "all":
+            if element.dataset in ["all", "annotable"]:
                 self.language_models_service.set_model_params(
                     self.project_slug,
                     element.model_name,

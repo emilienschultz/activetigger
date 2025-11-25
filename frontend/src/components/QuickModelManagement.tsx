@@ -198,8 +198,11 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
   const filterFeatures = (features: Feature[]) => {
     const filtered = features.filter((e) => /sbert|fasttext/i.test(e.label));
     const predictFeature = features.find((e) => /predict/i.test(e.label)); // Trouve le premier "predict"
+    const sbertFeature = features.find((e) => /sbert/i.test(e.label)); // Trouve le premier "sbert"
 
-    if (predictFeature) {
+    if (sbertFeature) {
+      filtered.push(sbertFeature);
+    } else if (predictFeature) {
       filtered.push(predictFeature);
     }
 

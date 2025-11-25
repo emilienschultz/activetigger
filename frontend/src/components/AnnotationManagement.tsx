@@ -211,7 +211,12 @@ export const AnnotationManagement: FC = () => {
 
   // existing models
   const availableQuickModels = project?.quickmodel.available[currentScheme || ''] || [];
-  const availableBertModels = project?.languagemodels.available[currentScheme || ''] || [];
+  const availableBertModels = project?.languagemodels.available[currentScheme || ''] || {};
+  const availableBertModelsWithPrediction = Object.entries(availableBertModels)
+    .filter(([_, v]) => v && v.predicted)
+    .map(([k, _]) => k);
+  //
+  // TODO only keep those with prediction
   const groupedModels = [
     {
       label: 'Quick Models',
@@ -223,7 +228,7 @@ export const AnnotationManagement: FC = () => {
     },
     {
       label: 'Language Models',
-      options: Object.keys(availableBertModels).map((e) => ({
+      options: availableBertModelsWithPrediction.map((e) => ({
         value: e,
         label: e,
         type: 'languagemodel',
