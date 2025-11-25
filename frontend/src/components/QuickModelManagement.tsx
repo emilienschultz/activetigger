@@ -66,7 +66,7 @@ export default function ModelsTable(
         </thead>
         <tbody>
           {model.parameters &&
-            Object.entries(model.parameters).map(([key, value], i) => (
+            Object.entries(model.parameters || {}).map(([key, value], i) => (
               <tr key={i}>
                 <td>{key}</td>
                 <td>
@@ -131,6 +131,22 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
     currentQuickModelName,
     currentQuickModelName,
   );
+  const filterFeatures = (features: Feature[]) => {
+    const filtered = features.filter((e) => /sbert|fasttext/i.test(e.label));
+    const predictFeature = features.find((e) => /predict/i.test(e.label)); // Trouve le premier "predict"
+    const sbertFeature = features.find((e) => /sbert/i.test(e.label)); // Trouve le premier "sbert"
+
+    if (sbertFeature) {
+      filtered.push(sbertFeature);
+    } else if (predictFeature) {
+      filtered.push(predictFeature);
+    }
+
+    return filtered;
+  };
+
+  const predictions = filterFeatures(features);
+  const defaultFeatures = predictions.length > 0 ? [predictions[predictions.length - 1]] : [];
 
   // delete quickmodel
   const { deleteQuickModel } = useDeleteQuickModel(projectName);
@@ -150,6 +166,7 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
         max_features: null,
       },
       dichotomize: kindScheme == 'multilabel' ? availableLabels[0] : undefined,
+      features: defaultFeatures.map((e) => e.value),
     },
   });
 
@@ -195,21 +212,6 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
     label: string;
     value: string;
   };
-  const filterFeatures = (features: Feature[]) => {
-    const filtered = features.filter((e) => /sbert|fasttext/i.test(e.label));
-    const predictFeature = features.find((e) => /predict/i.test(e.label)); // Trouve le premier "predict"
-    const sbertFeature = features.find((e) => /sbert/i.test(e.label)); // Trouve le premier "sbert"
-
-    if (sbertFeature) {
-      filtered.push(sbertFeature);
-    } else if (predictFeature) {
-      filtered.push(predictFeature);
-    }
-
-    return filtered;
-  };
-  const predictions = filterFeatures(features);
-  const defaultFeatures = [predictions[predictions.length - 1]];
 
   const [formSelectedFeatures, setFormSelectedFeatures] = useState<string[]>(
     defaultFeatures.map((e) => e.value),
@@ -326,7 +328,6 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
                   <Controller
                     name="features"
                     control={control}
-                    defaultValue={defaultFeatures.map((e) => (e ? e.value : null))}
                     render={({ field: { onChange, value } }) => (
                       <>
                         {' '}
