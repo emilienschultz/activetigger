@@ -23,9 +23,6 @@ from sklearn.metrics import (  # type: ignore[import]
 )
 from sklearn.preprocessing import OneHotEncoder  # type: ignore[import]
 from slugify import slugify as python_slugify  # type: ignore[import]
-from transformers import (  # type: ignore[import]
-    BertTokenizer,
-)
 
 from activetigger.datamodels import GpuInformationModel, MLStatisticsModel
 
@@ -190,18 +187,18 @@ def decrypt(text: str | None, secret_key: str | None) -> str:
 
 
 def get_metrics(
-    Y_true: Series, 
-    Y_pred: Series, 
-    labels: list[str] | None = None, 
-    texts: Series | None = None, 
+    Y_true: Series,
+    Y_pred: Series,
+    labels: list[str] | None = None,
+    texts: Series | None = None,
     decimals: int = 3,
 ) -> MLStatisticsModel:
     """
     Compute metrics for a prediction
     """
-    if labels is None : 
+    if labels is None:
         labels = list(Y_true.unique())
-        
+
     precision = [
         round(i, decimals)
         for i in precision_score(
