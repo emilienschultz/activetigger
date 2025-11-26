@@ -94,7 +94,7 @@ export const ProjectParameters: FC<ProjectParametersModel> = ({ project, project
       </button>
 
       <div>
-        <Modal show={show} onHide={actionDelete}>
+        <Modal show={show} onHide={handleClose}>
           <Modal.Header>
             <Modal.Title>Delete the project</Modal.Title>
           </Modal.Header>
