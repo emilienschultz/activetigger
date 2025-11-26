@@ -263,7 +263,7 @@ export const AnnotationManagement: FC = () => {
       });
     }
     const formData = {
-      name: 'default-quickmodel',
+      name: 'basic-quickmodel',
       model: 'liblinear',
       scheme: currentScheme || '',
       params: {

@@ -204,7 +204,7 @@ class QuickModels:
         """
         Add computed model in the database
         """
-
+        print("Adding quickmodel to the database", element)
         model_path = self.path.joinpath(element.name)
         self.language_models_service.add_model(
             kind="quickmodel",
