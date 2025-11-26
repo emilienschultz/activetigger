@@ -40,7 +40,9 @@ async def train_quickmodel(
     """
     try:
         project.train_quickmodel(quickmodel, current_user.username)
-        orchestrator.log_action(current_user.username, "TRAIN SIMPLE MODEL", project.name)
+        orchestrator.log_action(
+            current_user.username, f"TRAIN SIMPLE MODEL {quickmodel.name}", project.name
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -80,6 +82,7 @@ async def delete_quickmodel(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.post("/models/quick/rename", dependencies=[Depends(verified_user)])
 async def save_bert(
     project: Annotated[Project, Depends(get_project)],
@@ -100,6 +103,7 @@ async def save_bert(
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.get("/models/quickmodel", dependencies=[Depends(verified_user)])
 async def get_quickmodel(
