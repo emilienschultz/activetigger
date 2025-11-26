@@ -12,6 +12,7 @@ from activetigger.generation.client import GenerationModelClient
 from activetigger.generation.huggingface import HuggingFace
 from activetigger.generation.ollama import Ollama
 from activetigger.generation.openai import OpenAI
+from activetigger.generation.openapi import OpenAPI
 from activetigger.generation.openrouter import OpenRouter
 from activetigger.tasks.base_task import BaseTask
 
@@ -111,6 +112,11 @@ class GenerateCall(BaseTask):
                 )
             elif self.model.api == "OpenRouter":
                 gen_model = OpenRouter(credentials=self.model.credentials)
+            elif self.model.api == "ilaas":
+                gen_model = OpenAPI(
+                    endpoint="https://llm.ilaas.fr/v1/chat/completions",
+                    credentials=self.model.credentials,
+                )
             else:
                 errors.append(Exception("Model does not exist"))
                 continue

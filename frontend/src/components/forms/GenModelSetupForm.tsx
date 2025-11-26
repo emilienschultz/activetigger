@@ -77,7 +77,7 @@ export const GenModelSetupForm: FC<{
         {(() => {
           const inputs = [];
           if (selectedAPI !== undefined) {
-            if (selectedAPI.name === 'OpenAI')
+            if (selectedAPI.name === 'OpenAI' || selectedAPI.name === 'ilaas')
               inputs.push(
                 <div className="form-floating col-5" key="model-select">
                   <select
