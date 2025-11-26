@@ -12,7 +12,6 @@ from activetigger.generation.client import GenerationModelClient
 from activetigger.generation.huggingface import HuggingFace
 from activetigger.generation.ollama import Ollama
 from activetigger.generation.openai import OpenAI
-from activetigger.generation.openapi import OpenAPI
 from activetigger.generation.openrouter import OpenRouter
 from activetigger.tasks.base_task import BaseTask
 
