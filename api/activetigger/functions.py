@@ -34,7 +34,7 @@ def slugify(text: str, way: str = "file") -> str:
     if way == "file":
         return python_slugify(text)
     elif way == "url":
-        return quote(text)
+        return quote(text, safe="")
     else:
         raise ValueError("Invalid way parameter. Use 'file' or 'url'.")
 

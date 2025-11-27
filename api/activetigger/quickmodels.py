@@ -23,6 +23,7 @@ from activetigger.datamodels import (
     ModelInformationsModel,
     ModelScoresModel,
     Multi_naivebayesParams,
+    PredictedLabel,
     QuickModelComputed,
     QuickModelComputing,
     QuickModelsProjectStateModel,
@@ -204,7 +205,6 @@ class QuickModels:
         """
         Add computed model in the database
         """
-        print("Adding quickmodel to the database", element)
         model_path = self.path.joinpath(element.name)
         self.language_models_service.add_model(
             kind="quickmodel",
@@ -254,6 +254,22 @@ class QuickModels:
         if sm.proba is None:
             raise ValueError("No probability available for this model")
         return sm.proba
+
+    def get_prediction_element(self, model_name: str, element_id: Any) -> PredictedLabel:
+        """
+        Get prediction for a specific element
+        """
+        sm = self.get(model_name)
+        if sm.proba is None:
+            raise ValueError("No probability available for this model")
+        if element_id not in sm.proba.index:
+            raise ValueError("Element ID not found in the predictions")
+        predicted_label = sm.proba.loc[element_id, "prediction"]
+        predicted_proba = round(sm.proba.loc[element_id, predicted_label], 2)
+        predicted_entropy = round(sm.proba.loc[element_id, "entropy"], 2)
+        return PredictedLabel(
+            label=predicted_label, proba=predicted_proba, entropy=predicted_entropy
+        )
 
     def training(self) -> dict[str, list[str]]:
         """
