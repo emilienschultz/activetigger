@@ -326,6 +326,10 @@ export function getRandomName(prefix: string) {
     ];
     random_name = sample(quick_names) as string;
   }
+  if (prefix === 'feature') {
+    const feature_names = ['Feature'];
+    random_name = sample(feature_names) as string;
+  }
   if (prefix === 'bertmodel') {
     const bert_names = [
       'Bleu',
