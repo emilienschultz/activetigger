@@ -310,6 +310,8 @@ class LMStatusModel(BaseModel):
     predicted: bool = False
     tested: bool = False
     predicted_external: bool = False
+    name: str
+    time: str
 
 
 class BertModelModel(BaseModel):
@@ -748,6 +750,7 @@ class ModelDescriptionModel(BaseModel):
     scheme: str
     parameters: dict[str, Any]
     path: str
+    time: str
 
 
 class QuickModelsProjectStateModel(BaseModel):
@@ -770,9 +773,12 @@ class ProjectionsProjectStateModel(BaseModel):
     available: dict[str, str | int]
     training: dict[str, str]
 
+class BERTopicDescriptionModel(BaseModel):
+    name:str
+    time:str
 
 class BertopicProjectStateModel(BaseModel):
-    available: dict[str, str | None]
+    available: dict[str, BERTopicDescriptionModel]
     training: dict[str, dict[str, str | int | None]]
     models: list[str]
 

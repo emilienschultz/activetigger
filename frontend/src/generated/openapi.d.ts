@@ -1938,6 +1938,13 @@ export interface components {
             /** Projects */
             projects: components["schemas"]["ProjectSummaryModel"][];
         };
+        /** BERTopicDescriptionModel */
+        BERTopicDescriptionModel: {
+            /** Name */
+            name: string;
+            /** Time */
+            time: string;
+        };
         /**
          * BertModelModel
          * @description Request Bertmodel
@@ -2008,7 +2015,7 @@ export interface components {
         BertopicProjectStateModel: {
             /** Available */
             available: {
-                [key: string]: (string | null) | undefined;
+                [key: string]: components["schemas"]["BERTopicDescriptionModel"] | undefined;
             };
             /** Training */
             training: {
@@ -2487,6 +2494,10 @@ export interface components {
              * @default false
              */
             predicted_external: boolean;
+            /** Name */
+            name: string;
+            /** Time */
+            time: string;
         };
         /** LanguageModelsProjectStateModel */
         LanguageModelsProjectStateModel: {
@@ -2572,9 +2583,13 @@ export interface components {
             /** Scheme */
             scheme: string;
             /** Parameters */
-            parameters: Record<string, never>;
+            parameters: {
+                [key: string]: unknown;
+            };
             /** Path */
             path: string;
+            /** Time */
+            time: string;
         };
         /** ModelInformationsModel */
         ModelInformationsModel: {

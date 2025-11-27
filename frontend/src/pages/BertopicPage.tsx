@@ -20,6 +20,7 @@ import {
   useGetElementById,
 } from '../core/api';
 import { useAppContext } from '../core/context';
+import { sortDatesAsStrings } from '../core/utils';
 
 export const BertopicPage: FC = () => {
   const { projectName } = useParams();
@@ -89,7 +90,11 @@ export const BertopicPage: FC = () => {
       <div className="col-12">
         <div className="d-flex my-2" style={{ zIndex: 100 }}>
           <ModelsPillDisplay
-            modelNames={Object.keys(availableBertopic).map((name) => name)}
+            modelNames={Object.values(availableBertopic)
+              .sort((bertopicA, bertopicB) =>
+                sortDatesAsStrings(bertopicA?.time, bertopicB?.time, true),
+              )
+              .map((model) => (model && model.name ? model.name : ''))}
             currentModelName={currentBertopic}
             setCurrentModelName={setCurrentBertopic}
             deleteModelFunction={deleteBertopic}

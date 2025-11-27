@@ -399,3 +399,18 @@ export function getRandomName(prefix: string) {
 
   return `${year}-${month}-${day}-${hour}h${minute}_${random_name}`;
 }
+
+export const sortDatesAsStrings = (
+  timeA: string | undefined,
+  timeB: string | undefined,
+  reverse?: boolean,
+) => {
+  if (timeA && timeB) {
+    const output = timeA < timeB ? -1 : timeA > timeB ? 1 : 0;
+    if (reverse) {
+      return 1 - output;
+    }
+    return output;
+  }
+  return 0;
+};

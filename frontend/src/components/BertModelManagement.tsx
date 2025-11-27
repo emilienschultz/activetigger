@@ -16,6 +16,7 @@ import { FaGear } from 'react-icons/fa6';
 import { MdDriveFileRenameOutline } from 'react-icons/md';
 import { useDeleteBertModel, useModelInformations, useRenameBertModel } from '../core/api';
 import { useNotifications } from '../core/notifications';
+import { sortDatesAsStrings } from '../core/utils';
 import { MLStatisticsModel } from '../types';
 
 interface renameModel {
@@ -85,7 +86,11 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
   return (
     <div>
       <ModelsPillDisplay
-        modelNames={Object.keys(availableBertModels || {}).map((model) => model)}
+        modelNames={Object.values(availableBertModels)
+          .sort((bertModelA, bertModelB) =>
+            sortDatesAsStrings(bertModelA?.time, bertModelB?.time, true),
+          )
+          .map((model) => model.name)}
         currentModelName={currentBertModel}
         setCurrentModelName={setCurrentBertModel}
         deleteModelFunction={deleteBertModel}

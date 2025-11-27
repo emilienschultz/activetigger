@@ -109,12 +109,20 @@ class Bertopic:
         """
         Get available BERTopic models.
         """
+        def retrieve_date(folder_path):
+            with open(folder_path / "params.json", "r") as file:
+                p = json.load(file)
+            return p["timestamp"]
+        
         if self.path.exists() and self.path.joinpath("runs").exists():
             return {
-                i: i
-                for i in os.listdir(self.path.joinpath("runs"))
-                if (self.path.joinpath("runs") / i).is_dir()
-                and (self.path.joinpath("runs") / i / "bertopic_topics.csv").exists()
+                folder_name: {
+                    'name':folder_name,
+                    'time': retrieve_date(self.path.joinpath("runs") / folder_name)
+                }
+                for folder_name in os.listdir(self.path.joinpath("runs"))
+                if (self.path.joinpath("runs") / folder_name).is_dir()
+                and (self.path.joinpath("runs") / folder_name / "bertopic_topics.csv").exists()
             }
         return {}
 

@@ -9,6 +9,7 @@ import { useAppContext } from '../core/context';
 import { FeatureDescriptionModelOut } from '../types';
 import { CreateNewFeature } from './CreateNewFeature';
 import { ModelsPillDisplay } from './ModelsPillDisplay';
+import { sortDatesAsStrings } from '../core/utils';
 
 export default function SimpleTable(data: FeatureDescriptionModelOut) {
   return (
@@ -70,7 +71,9 @@ export const FeaturesManagement: FC = () => {
   return (
     <div className="row">
       <ModelsPillDisplay
-        modelNames={Object.keys(featuresInfo || {}).map((feature) => feature)}
+        modelNames={Object.values(featuresInfo || {})
+          .sort((featureA, featureB) => sortDatesAsStrings(featureA?.time, featureB?.time, true))
+          .map((feature) => (feature && feature.name ? feature.name : ''))}
         currentModelName={selectedFeature}
         setCurrentModelName={setSelectedFeature}
         deleteModelFunction={deleteSelectedFeature}

@@ -14,7 +14,7 @@ import {
   useTrainQuickModel,
 } from '../core/api';
 import { useNotifications } from '../core/notifications';
-import { getRandomName } from '../core/utils';
+import { getRandomName, sortDatesAsStrings } from '../core/utils';
 import { MLStatisticsModel, ModelDescriptionModel, QuickModelInModel } from '../types';
 import { CreateNewFeature } from './CreateNewFeature';
 import { DisplayScores } from './DisplayScores';
@@ -224,7 +224,9 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
   const [showParameters, setShowParameters] = useState(false);
 
   const selectedFeaturesContainsBERTFeatures = () => {
-    return formSelectedFeatures.map((feature) => feature.slice(0, 8) === 'predict_').includes(true);
+    return formSelectedFeatures
+      .map((feature) => feature?.slice(0, 8) === 'predict_')
+      .includes(true);
   };
 
   const cleanDisplay = (listOfFeatures: string) => {
@@ -242,7 +244,11 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
   return (
     <div className="w-100">
       <ModelsPillDisplay
-        modelNames={availableQuickModels?.map((quickModel) => quickModel.name)}
+        modelNames={availableQuickModels
+          .sort((quickModelA, quickModelB) =>
+            sortDatesAsStrings(quickModelA?.time, quickModelB?.time, true),
+          )
+          .map((quickModel) => quickModel.name)}
         currentModelName={currentQuickModelName}
         setCurrentModelName={setCurrentQuickModelName}
         deleteModelFunction={deleteQuickModel}
