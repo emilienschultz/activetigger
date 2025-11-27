@@ -6,11 +6,11 @@ import requests  # type: ignore[import]
 from activetigger.generation.client import GenerationModelClient
 
 
-class OpenRouter(GenerationModelClient):
+class Ilaas(GenerationModelClient):
     endpoint: str
 
     def __init__(self, credentials: str | None):
-        self.endpoint = "https://openrouter.ai/api/v1/chat/completions"
+        self.endpoint = "https://llm.ilaas.fr/v1/chat/completions"
         self.credentials = credentials
 
     def generate(self, prompt: str, model: str) -> str:
@@ -33,7 +33,6 @@ class OpenRouter(GenerationModelClient):
             ),
             headers=headers,
         )
-        logging.debug("openrouter output: %s", response.content)
         if response.status_code == 200:
             return response.json()["choices"][0]["message"]["content"]
         else:

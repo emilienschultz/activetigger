@@ -2,8 +2,8 @@ import cx from 'classnames';
 import { FC } from 'react';
 import { GrValidate } from 'react-icons/gr';
 
-import { useComputeModelPrediction } from '../core/api';
 import { CSSProperties } from 'styled-components';
+import { useComputeModelPrediction } from '../core/api';
 
 interface validateButtonsProps {
   projectSlug: string | null;
@@ -14,6 +14,7 @@ interface validateButtonsProps {
   id?: string;
   buttonLabel?: string;
   style?: CSSProperties;
+  idComputing?: boolean;
 }
 
 export const ValidateButtons: FC<validateButtonsProps> = ({
@@ -25,6 +26,7 @@ export const ValidateButtons: FC<validateButtonsProps> = ({
   id,
   buttonLabel,
   style,
+  idComputing,
 }) => {
   const { computeModelPrediction } = useComputeModelPrediction(projectSlug || null, 16);
   return (
@@ -35,6 +37,7 @@ export const ValidateButtons: FC<validateButtonsProps> = ({
         computeModelPrediction(modelName || '', 'annotable', currentScheme, kind);
       }}
       id={id}
+      disabled={idComputing}
     >
       <GrValidate size={20} /> {buttonLabel ? buttonLabel : 'Compute statistics on annotations'}
     </button>

@@ -93,7 +93,7 @@ export const SchemesComparisonManagement: FC<AnnotationDisagreementManagementPro
                 <tbody>
                   <tr>
                     <td>Overlapping labels (%)</td>
-                    <td>{compare.labels_overlapping}</td>
+                    <td>{compare.labels_overlapping.toFixed(2)}</td>
                   </tr>
                   <tr>
                     <td>Annotated elements in common</td>
@@ -101,11 +101,11 @@ export const SchemesComparisonManagement: FC<AnnotationDisagreementManagementPro
                   </tr>
                   <tr>
                     <td>Agreement Cohen-Kappa</td>
-                    <td>{compare.cohen_kappa}</td>
+                    <td>{compare.cohen_kappa && compare.cohen_kappa.toFixed(2)}</td>
                   </tr>
                   <tr>
                     <td>Agreement Percentage</td>
-                    <td>{compare.percentage}</td>
+                    <td>{compare.percentage && compare.percentage.toFixed(2)}</td>
                   </tr>
                 </tbody>
               </table>

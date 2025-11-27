@@ -33,7 +33,11 @@ export const Notifications: FC = () => {
   return (
     <div
       className="toasts-container fixed-bottom"
-      style={{ zIndex: 1056, left: 'auto', maxWidth: '50%' }}
+      style={{
+        bottom: '20px',
+        left: '0px', // ⬅️ place toasts on the bottom-left
+        zIndex: 1056,
+      }}
     >
       {notifications.map((notification) => (
         <Notification

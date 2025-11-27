@@ -23,6 +23,7 @@ class ChangePasswordModel(BaseModel):
 class PredictedLabel(BaseModel):
     label: str | None
     proba: float | None
+    entropy: float | None = None
 
 
 class QueueTaskModel(BaseModel):

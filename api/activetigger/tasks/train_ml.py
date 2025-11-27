@@ -91,7 +91,6 @@ class TrainML(BaseTask):
         if self.texts is not None:
             texts_train = self.texts.loc[Y_train.index]
             texts_test = self.texts.loc[Y_test.index]
-            print(type(Y_train), type(Y_pred_train), type(texts_train))
             metrics_train = get_metrics(Y_train, Y_pred_train, texts=texts_train)
             metrics_test = get_metrics(Y_test, Y_pred_test, texts=texts_test)
         else:

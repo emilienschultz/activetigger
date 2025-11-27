@@ -326,6 +326,10 @@ export function getRandomName(prefix: string) {
     ];
     random_name = sample(quick_names) as string;
   }
+  if (prefix === 'feature') {
+    const feature_names = ['Feature'];
+    random_name = sample(feature_names) as string;
+  }
   if (prefix === 'bertmodel') {
     const bert_names = [
       'Bleu',
@@ -393,5 +397,5 @@ export function getRandomName(prefix: string) {
   const minute = ('0' + String(now.getMinutes())).slice(-2);
   const year = String(now.getFullYear());
 
-  return `${random_name}_${year}-${month}-${day}-${hour}h${minute}`;
+  return `${year}-${month}-${day}-${hour}h${minute}_${random_name}`;
 }

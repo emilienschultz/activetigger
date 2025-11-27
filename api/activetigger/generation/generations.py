@@ -34,6 +34,18 @@ class Generations:
         """
         return [
             GenerationModelApi(
+                name="ilaas",
+                models=[
+                    GenerationAvailableModel(slug="gpt-oss-120b", api="illas", name="gpt-oss-120b"),
+                    GenerationAvailableModel(
+                        slug="mistral-small-3.2-24b", api="illas", name="mistral-small-3.2-24b"
+                    ),
+                    GenerationAvailableModel(
+                        slug="llama-3.3-70b", api="illas", name="llama-3.3-70b"
+                    ),
+                ],
+            ),
+            GenerationModelApi(
                 name="Ollama",
                 models=[
                     GenerationAvailableModel(
@@ -41,6 +53,7 @@ class Generations:
                     )
                 ],
             ),
+            GenerationModelApi(name="OpenRouter", models=[]),
             GenerationModelApi(
                 name="OpenAI",
                 models=[
@@ -48,10 +61,16 @@ class Generations:
                         slug="gpt-4o-mini", api="OpenAI", name="ChatGPT 4o mini"
                     ),
                     GenerationAvailableModel(slug="gpt-4o", api="OpenAI", name="ChatGPT 4o"),
+                    GenerationAvailableModel(
+                        slug="gpt-4.1-mini", api="OpenAI", name="ChatGPT 4.1 mini"
+                    ),
+                    GenerationAvailableModel(slug="gpt-4.1", api="OpenAI", name="ChatGPT 4.1"),
+                    GenerationAvailableModel(
+                        slug="gpt-4.1-nano", api="OpenAI", name="ChatGPT 4.1 nano"
+                    ),
                 ],
             ),
             GenerationModelApi(name="HuggingFace", models=[]),
-            GenerationModelApi(name="OpenRouter", models=[]),
         ]
 
     def __init__(self, db_manager: DatabaseManager, computing: list[GenerationComputing]) -> None:

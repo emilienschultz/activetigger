@@ -361,21 +361,22 @@ class Features:
         if kind not in {"sbert", "fasttext", "dfm", "regex", "dataset"}:
             raise ValueError("Kind not recognized")
 
+        name = f"{kind}_{name}"
+        if self.exists(name):
+            raise ValueError("This regex already exists")
+
         # features without queue
 
         if kind == "regex":
             if "value" not in parameters:
                 raise ValueError("No value for regex")
 
-            regex_name = f"regex_[{parameters['value']}]_by_{username}"
-            if self.exists(regex_name):
-                raise ValueError("This regex already exists")
             pattern = re.compile(parameters["value"])
             f = df.apply(lambda x: bool(pattern.search(x)))
             parameters["count"] = int(f.sum())
-            self.add(regex_name, kind, username, parameters, f)
+            self.add(name, kind, username, parameters, f)
             parameters = {
-                "name": regex_name,
+                "name": name,
                 "kind": kind,
                 "regex": parameters["value"],
                 "count": int(f.sum()),
@@ -398,14 +399,9 @@ class Features:
                 column = column.apply(str)
 
             # add the feature to the project
-            dataset_name = (
-                f"dataset_{parameters['dataset_col']}_{parameters['dataset_type']}".lower()
-            )
-            if self.exists(dataset_name):
-                raise ValueError("This dataset feature already exists")
-            self.add(dataset_name, kind, username, parameters, column)
+            self.add(name, kind, username, parameters, column)
             parameters = {
-                "name": dataset_name,
+                "name": name,
                 "kind": kind,
                 "dataset_col": parameters["dataset_col"],
                 "dataset_type": parameters["dataset_type"],
@@ -426,9 +422,6 @@ class Features:
                 model = parameters["model"]
             if "max_length_tokens" not in parameters:
                 parameters["max_length_tokens"] = 1024
-            name = f"sbert_{model.replace('/', '_')}"
-            if self.exists(name):
-                raise ValueError("This sbert model already exists")
             unique_id = self.queue.add_task(
                 "feature",
                 self.project_slug,
@@ -449,9 +442,6 @@ class Features:
             }
 
         if kind == "fasttext":
-            name = f"fasttext_{parameters['model']}"
-            if self.exists(name):
-                raise ValueError("This fasttext model already exists")
             unique_id = self.queue.add_task(
                 "feature",
                 self.project_slug,
@@ -473,9 +463,6 @@ class Features:
             }
 
         if kind == "dfm":
-            name = "dfm"
-            if self.exists(name):
-                raise ValueError("This dfm model already exists")
             args = parameters.copy()
             args["texts"] = df
             args["language"] = self.lang

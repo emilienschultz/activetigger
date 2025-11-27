@@ -268,7 +268,7 @@ You can adjust the parameters for the model, or leave it at default values.
 
 Leave some time for the training process (you can follow the progress). Depending the parameters it will consume more or less computational power, especially GPU. It can take some time depending on the number of elements. Once the model is available, you can consult it under the **Models** tab.
 
-!!! "GPU load" warning
+!!! warning "GPU load"
 
     When available, the process will use GPU. Since resources are limited, overloads can happen. Consequently, a process can fail if there is no enough memory. You can follow the current state of the GPU use in the left menu of the screen. 
 

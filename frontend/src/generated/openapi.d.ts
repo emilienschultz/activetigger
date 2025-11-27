@@ -2651,6 +2651,8 @@ export interface components {
             label: string | null;
             /** Proba */
             proba: number | null;
+            /** Entropy */
+            entropy?: number | null;
         };
         /**
          * ProjectAuthsModel

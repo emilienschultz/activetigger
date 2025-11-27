@@ -6,16 +6,16 @@ import requests  # type: ignore[import]
 from activetigger.generation.client import GenerationModelClient
 
 
-class OpenRouter(GenerationModelClient):
+class OpenAPI(GenerationModelClient):
     endpoint: str
 
-    def __init__(self, credentials: str | None):
-        self.endpoint = "https://openrouter.ai/api/v1/chat/completions"
+    def __init__(self, endpoint: str, credentials: str | None):
+        self.endpoint = endpoint
         self.credentials = credentials
 
     def generate(self, prompt: str, model: str) -> str:
         """
-        Make a request to ollama
+        Make a request to OpenAPI
         """
         print("START", self.credentials)
         headers = {
@@ -33,7 +33,6 @@ class OpenRouter(GenerationModelClient):
             ),
             headers=headers,
         )
-        logging.debug("openrouter output: %s", response.content)
         if response.status_code == 200:
             return response.json()["choices"][0]["message"]["content"]
         else:

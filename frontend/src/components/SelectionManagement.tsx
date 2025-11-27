@@ -1,6 +1,7 @@
 import { ChangeEvent, Dispatch, FC, SetStateAction, useEffect, useState } from 'react';
 import { FaLock } from 'react-icons/fa';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
+import { useNavigate } from 'react-router-dom';
 import { Tooltip } from 'react-tooltip';
 import { useGetQuickModel } from '../core/api';
 import { useAppContext } from '../core/context';
@@ -19,6 +20,8 @@ export const SelectionManagement: FC<SelectionManagementProps> = ({
     appContext: { currentScheme, selectionConfig, currentProject: project, activeModel, phase },
     setAppContext,
   } = useAppContext();
+
+  const navigate = useNavigate();
 
   const availableModes = activeModel && project ? project.next.methods : project?.next.methods_min;
 
@@ -62,11 +65,13 @@ export const SelectionManagement: FC<SelectionManagementProps> = ({
     }
   }, [availableLabels, selectionConfig, setAppContext]);
 
+  // change dataset : there should be a navigation to reset element id
   const changeDataSet = (e: ChangeEvent<HTMLSelectElement>) => {
     setAppContext((prev) => ({
       ...prev,
       phase: e.target.value,
     }));
+    navigate(`/projects/${project?.params.project_slug}/tag/`);
   };
 
   const changeSample = (e: ChangeEvent<HTMLSelectElement>) => {
@@ -82,6 +87,21 @@ export const SelectionManagement: FC<SelectionManagementProps> = ({
   return (
     <div className="w-100">
       <div id="tag-parameters-div">
+        <div className="parameter-div">
+          <label className="form-label label-small-gray">Dataset</label>
+          <select
+            className="form-select"
+            value={phase}
+            onChange={(e) => {
+              if (!settingChanged) setSettingChanged(true);
+              changeDataSet(e);
+            }}
+          >
+            <option value="train">train</option>
+            {isValid && <option value="valid">validation</option>}
+            {isTest && <option value="test">test</option>}
+          </select>
+        </div>
         <div className="parameter-div">
           <label className="form-label label-small-gray">Selection</label>
           <select
@@ -123,21 +143,7 @@ export const SelectionManagement: FC<SelectionManagementProps> = ({
             )
           }
         </div>
-        <div className="parameter-div">
-          <label className="form-label label-small-gray">Dataset</label>
-          <select
-            className="form-select"
-            value={phase}
-            onChange={(e) => {
-              if (!settingChanged) setSettingChanged(true);
-              changeDataSet(e);
-            }}
-          >
-            <option value="train">train</option>
-            {isValid && <option value="valid">validation</option>}
-            {isTest && <option value="test">test</option>}
-          </select>
-        </div>
+
         <div className="parameter-div">
           <label className="form-label label-small-gray">Tagged</label>
           <select

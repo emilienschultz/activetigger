@@ -114,7 +114,7 @@ export const StatusNotch: FC<{
                 <a
                   id="stop-button"
                   onClick={() => stopProcesses('all')}
-                  style={{ paddingBottom: '1.5px' }}
+                  style={{ paddingBottom: '1.5px', cursor: 'pointer', marginLeft: '8px' }}
                 >
                   <FaStopCircle style={{ color: 'red' }} />
                 </a>

@@ -58,9 +58,11 @@ class LanguageModelsService:
         session = self.SessionMaker()
 
         # test if the name does not exist
-        models = session.query(Models).filter(Models.name == name).all()
+        models = (
+            session.query(Models).filter(Models.name == name, Models.project_slug == project).all()
+        )
         if len(models) > 0:
-            return False
+            raise Exception("Model already exists")
 
         model = Models(
             project_slug=project,
@@ -76,10 +78,6 @@ class LanguageModelsService:
         session.add(model)
         session.commit()
         session.close()
-
-        #        print("available", self.available_models(project))
-
-        return True
 
     def model_exists(self, project_slug: str, name: str):
         session = self.SessionMaker()

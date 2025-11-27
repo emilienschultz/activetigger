@@ -737,17 +737,14 @@ class Project:
             indicator = f"entropy: {indicator}"
 
         # get prediction of the id if it exists
-        predict = PredictedLabel(label=None, proba=None)
+        predict = PredictedLabel(label=None, proba=None, entropy=None)
 
         if (
             next.model_active is not None
             and self.quickmodels.exists(next.model_active.value)
             and next.dataset == "train"
         ):
-            prediction = self.quickmodels.get_prediction(next.model_active.value)
-            predicted_label = prediction.loc[element_id, "prediction"]
-            predicted_proba = round(prediction.loc[element_id, predicted_label], 2)
-            predict = PredictedLabel(label=predicted_label, proba=predicted_proba)
+            predict = self.quickmodels.get_prediction_element(next.model_active.value, element_id)
 
         # get all tags already existing for the element
         previous = self.schemes.projects_service.get_annotations_by_element(
@@ -805,7 +802,7 @@ class Project:
                 context={},
                 selection="valid",
                 info="",
-                predict=PredictedLabel(label=None, proba=None),
+                predict=PredictedLabel(label=None, proba=None, entropy=None),
                 frame=None,
                 limit=1200,
                 history=history,
@@ -824,7 +821,7 @@ class Project:
                 context={},
                 selection="test",
                 info="",
-                predict=PredictedLabel(label=None, proba=None),
+                predict=PredictedLabel(label=None, proba=None, entropy=None),
                 frame=None,
                 limit=1200,
                 history=history,
@@ -837,17 +834,11 @@ class Project:
                 raise Exception("Element does not exist.")
 
             # get prediction if it exists
-            predict = PredictedLabel(label=None, proba=None)
+            predict = PredictedLabel(label=None, proba=None, entropy=None)
             if element.active_model is not None:
-                prediction = self.get_model_prediction(
-                    element.active_model.type, element.active_model.value
+                predict = self.quickmodels.get_prediction_element(
+                    element.active_model.value, element.element_id
                 )
-                predicted_label = cast(str, prediction.loc[element.element_id, "prediction"])
-                predicted_proba = round(
-                    cast(float, prediction.loc[element.element_id, predicted_label]), 2
-                )
-                print("PREDICTED", predicted_proba)
-                predict = PredictedLabel(label=predicted_label, proba=predicted_proba)
 
             # get element tags
             if element.scheme is not None:

@@ -1,4 +1,4 @@
-import { FC, useMemo, useState } from 'react';
+import { FC, useEffect, useMemo, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
 import { useParams } from 'react-router-dom';
 import { DisplayScoresMenu } from '../components/DisplayScoresMenu';
@@ -8,6 +8,7 @@ import { ModelsPillDisplay } from '../components/ModelsPillDisplay';
 import { ValidateButtons } from '../components/validateButton';
 import { useDeleteBertModel, useDeleteQuickModel, useModelInformations } from '../core/api';
 import { useAppContext } from '../core/context';
+import { useNotifications } from '../core/notifications';
 import { MLStatisticsModel, ModelDescriptionModel } from '../types';
 
 /**
@@ -15,6 +16,8 @@ import { MLStatisticsModel, ModelDescriptionModel } from '../types';
  */
 export const ProjectValidatePage: FC = () => {
   const { projectName } = useParams();
+  const { notify } = useNotifications();
+
   const {
     appContext: { currentScheme, currentProject: project, isComputing },
   } = useAppContext();
@@ -45,20 +48,22 @@ export const ProjectValidatePage: FC = () => {
   const { deleteQuickModel } = useDeleteQuickModel(projectName as string);
   const { deleteBertModel } = useDeleteBertModel(projectName as string);
 
-  const { model: bertModelInformations } = useModelInformations(
-    projectName || null,
-    currentBertModelName || null,
-    'bert',
-    isComputing,
-  );
-
   // get model information from api
-  const { model: quickModelInformations } = useModelInformations(
-    projectName || null,
-    currentQuickModelName || null,
-    'quick',
-    isComputing,
-  );
+  const { model: bertModelInformations, reFetch: reFetchBertModelInformations } =
+    useModelInformations(projectName || null, currentBertModelName || null, 'bert', isComputing);
+  const { model: quickModelInformations, reFetch: reFetchQuickModelInformations } =
+    useModelInformations(projectName || null, currentQuickModelName || null, 'quick', isComputing);
+
+  // refetch model informations when computation is done
+  useEffect(() => {
+    if (!isComputing) {
+      reFetchBertModelInformations();
+      reFetchQuickModelInformations();
+      notify({ type: 'info', message: 'Score updated' });
+    }
+  }, [isComputing, reFetchBertModelInformations, reFetchQuickModelInformations, notify]);
+
+  console.log(bertModelInformations);
 
   return (
     <ProjectPageLayout projectName={projectName} currentAction="validate">
@@ -88,6 +93,7 @@ export const ProjectValidatePage: FC = () => {
                       projectSlug={projectName || null}
                       id="compute-validate"
                       style={{ margin: '8px 0px', color: 'white' }}
+                      idComputing={isComputing}
                     />
 
                     <DisplayScoresMenu
@@ -143,6 +149,7 @@ export const ProjectValidatePage: FC = () => {
                         projectSlug={projectName || null}
                         id="compute-validate"
                         style={{ margin: '8px 0px', color: 'white' }}
+                        idComputing={isComputing}
                       />
                       <DisplayScoresMenu
                         scores={

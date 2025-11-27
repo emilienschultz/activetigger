@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 
 import { useAddFeature } from '../core/api';
 import { useNotifications } from '../core/notifications';
+import { getRandomName } from '../core/utils';
 import { FeatureModelExtended } from '../types';
 
 interface Options {
@@ -43,6 +44,7 @@ export const CreateNewFeature: FC<CreateNewFeatureProps> = ({
         max_length_tokens: 1024,
       },
       type: 'sbert',
+      name: getRandomName('feature'),
     },
   });
 
@@ -79,6 +81,14 @@ export const CreateNewFeature: FC<CreateNewFeatureProps> = ({
             </option>
           ))}{' '}
         </select>
+
+        <label htmlFor="name">Feature name</label>
+        <input
+          type="text"
+          className="form-control"
+          placeholder="Enter the feature name"
+          {...register('name', { required: true })}
+        />
 
         {selectedFeatureToCreate === 'sbert' && (
           <details className="custom-details">

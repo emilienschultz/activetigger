@@ -1,6 +1,6 @@
 import cx from 'classnames';
 import { FC, useCallback, useEffect, useRef, useState } from 'react';
-import { FaLock, FaPencilAlt } from 'react-icons/fa';
+import { FaPencilAlt } from 'react-icons/fa';
 import { FiRefreshCcw } from 'react-icons/fi';
 import { LuRefreshCw } from 'react-icons/lu';
 import { PiEraser } from 'react-icons/pi';
@@ -22,7 +22,6 @@ import { ElementOutModel } from '../types';
 import { Modal } from 'react-bootstrap';
 import { FaMapMarkedAlt } from 'react-icons/fa';
 import { GiTigerHead } from 'react-icons/gi';
-import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { MdDisplaySettings } from 'react-icons/md';
 import { ActiveLearningManagement } from '../components/ActiveLearningManagement';
 import { MulticlassInput } from '../components/MulticlassInput';
@@ -32,8 +31,7 @@ import { TagDisplayParameters } from '../components/TagDisplayParameters';
 import { TextClassificationPanel } from '../components/TextClassificationPanel';
 import { TextSpanPanel } from '../components/TextSpanPanel';
 import { useNotifications } from '../core/notifications';
-import { ProjectionVizSigma } from './ProjectionVizSigma';
-import { MarqueBoundingBox } from './ProjectionVizSigma/MarqueeController';
+import { DisplayProjection } from './vizualisation/DisplayProjection';
 
 export const AnnotationManagement: FC = () => {
   const { notify } = useNotifications();
@@ -50,8 +48,6 @@ export const AnnotationManagement: FC = () => {
     history,
     selectionHistory,
     phase,
-    currentProjection,
-    labelColorMapping,
   } = appContext;
 
   const navigate = useNavigate();
@@ -215,23 +211,32 @@ export const AnnotationManagement: FC = () => {
 
   // existing models
   const availableQuickModels = project?.quickmodel.available[currentScheme || ''] || [];
-  const availableBertModels = project?.languagemodels.available[currentScheme || ''] || [];
+  const availableBertModels = project?.languagemodels.available[currentScheme || ''] || {};
+  const availableBertModelsWithPrediction = Object.entries(availableBertModels || {})
+    .filter(([_, v]) => v && v.predicted)
+    .map(([k, _]) => k);
+  //
+  // TODO only keep those with prediction
   const groupedModels = [
     {
       label: 'Quick Models',
-      options: availableQuickModels.map((e) => ({
-        value: e.name,
-        label: e.name,
-        type: 'quickmodel',
-      })),
+      options: (availableQuickModels ?? [])
+        .filter((e) => e?.name) // <-- protect against undefined/missing name
+        .map((e) => ({
+          value: e.name,
+          label: e.name,
+          type: 'quickmodel',
+        })),
     },
     {
       label: 'Language Models',
-      options: Object.keys(availableBertModels).map((e) => ({
-        value: e,
-        label: e,
-        type: 'languagemodel',
-      })),
+      options: (availableBertModelsWithPrediction ?? [])
+        .filter((e) => e) // <-- ensure non-null
+        .map((e) => ({
+          value: e,
+          label: e,
+          type: 'languagemodel',
+        })),
     },
   ];
 
@@ -258,7 +263,7 @@ export const AnnotationManagement: FC = () => {
       });
     }
     const formData = {
-      name: 'default-quickmodel',
+      name: 'basic-quickmodel',
       model: 'liblinear',
       scheme: currentScheme || '',
       params: {
@@ -282,6 +287,7 @@ export const AnnotationManagement: FC = () => {
   // fastrack active learning model
   useEffect(() => {
     if (selectFirstModelTrained && availableQuickModels.length > 0) {
+      // select the first trained model
       setAppContext((prev) => ({
         ...prev,
         activeModel: {
@@ -289,6 +295,7 @@ export const AnnotationManagement: FC = () => {
           value: availableQuickModels[0].name,
           label: availableQuickModels[0].name,
         },
+        selectionConfig: { ...prev.selectionConfig, mode: 'active' },
       }));
     }
   }, [availableQuickModels, selectFirstModelTrained, setAppContext]);
@@ -319,6 +326,24 @@ export const AnnotationManagement: FC = () => {
     retrainQuickModel,
     history.length,
   ]);
+
+  // deactivate active model if it has been removed from available models
+  useEffect(() => {
+    if (
+      activeModel &&
+      !availableQuickModels.find((model) => model.name === activeModel.value) &&
+      activeModel.type === 'quickmodel'
+    ) {
+      setAppContext((prev) => ({ ...prev, activeModel: null }));
+    }
+    if (
+      activeModel &&
+      !Object.keys(availableBertModels).includes(activeModel.value) &&
+      activeModel.type === 'languagemodel'
+    ) {
+      setAppContext((prev) => ({ ...prev, activeModel: null }));
+    }
+  }, [availableQuickModels, activeModel, setAppContext, availableBertModels]);
 
   if (!projectName || !currentScheme) return;
 
@@ -547,61 +572,11 @@ export const AnnotationManagement: FC = () => {
           <Modal.Title>Current projection</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {currentProjection ? (
-            <div
-              className="row align-items-start"
-              style={{ height: '400px', marginBottom: '50px' }}
-            >
-              <div className="my-2">
-                <label style={{ display: 'block' }}>
-                  <input
-                    type="checkbox"
-                    checked={selectionConfig.frameSelection}
-                    className="mx-2"
-                    onChange={(_) => {
-                      setAppContext((prev) => ({
-                        ...prev,
-                        selectionConfig: {
-                          ...selectionConfig,
-                          frameSelection: !selectionConfig.frameSelection,
-                        },
-                      }));
-                    }}
-                  />
-                  <span className="lock">
-                    <FaLock /> Lock on selection
-                  </span>
-                  <a className="lockhelp">
-                    <HiOutlineQuestionMarkCircle />
-                  </a>
-                  <Tooltip anchorSelect=".lockhelp" place="top">
-                    Once a vizualisation computed, you can use the square tool to select an area (or
-                    remove the square).<br></br> Then you can lock the selection, and only elements
-                    in the selected area will be available for annoation.
-                  </Tooltip>
-                </label>
-              </div>
-              <ProjectionVizSigma
-                className={`col-12 border h-100`}
-                data={currentProjection}
-                selectedId={elementId}
-                setSelectedId={(id?: string | undefined) => id}
-                frame={selectionConfig.frame}
-                setFrameBbox={(bbox?: MarqueBoundingBox) => {
-                  setAppContext((prev) => ({
-                    ...prev,
-                    selectionConfig: {
-                      ...selectionConfig,
-                      frame: bbox ? [bbox.x.min, bbox.x.max, bbox.y.min, bbox.y.max] : undefined,
-                    },
-                  }));
-                }}
-                labelColorMapping={labelColorMapping || {}}
-              />
-            </div>
-          ) : (
-            <>No projection computed</>
-          )}
+          <DisplayProjection
+            projectName={projectName}
+            currentScheme={currentScheme}
+            elementId={elementId}
+          />
         </Modal.Body>
       </Modal>
       <Modal show={showDisplayConfig} onHide={handleCloseConfig} size="xl" id="config-modal">

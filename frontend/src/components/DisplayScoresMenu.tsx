@@ -21,15 +21,17 @@ export const DisplayScoresMenu: FC<DisplayScoresMenuPropos> = ({
   skip,
   projectSlug,
 }) => {
-  const keys = Object.keys(scores);
-  const [currentScore, setCurrentScore] = useState<string>(keys[0]);
-
+  const allowedScores = Object.entries(scores)
+    .filter(([_, value]) => value != null)
+    .filter(([key]) => !skip?.includes(key));
+  const scoreKeys = allowedScores.map(([key]) => key);
+  const [currentScore, setCurrentScore] = useState<string>(scoreKeys[0] || '');
   // Ensure currentScore is still valid when scores change
   useEffect(() => {
-    if (!keys.includes(currentScore)) {
-      setCurrentScore(keys[0] || '');
+    if (!scoreKeys.includes(currentScore)) {
+      setCurrentScore(Object.keys(scoreKeys)[0] || '');
     }
-  }, [scores, currentScore, keys]);
+  }, [scores, currentScore, allowedScores, scoreKeys]);
 
   if (!scores || Object.keys(scores).length === 0) {
     return <div>No scores available</div>;
@@ -44,14 +46,11 @@ export const DisplayScoresMenu: FC<DisplayScoresMenuPropos> = ({
           value={currentScore}
           onChange={(e) => setCurrentScore(e.target.value)}
         >
-          {Object.entries(scores)
-            .filter(([_, value]) => value != null)
-            .filter(([key]) => !skip?.includes(key))
-            .map(([key]) => (
-              <option key={key} value={key}>
-                {key}
-              </option>
-            ))}
+          {allowedScores.map(([key]) => (
+            <option key={key} value={key}>
+              {key}
+            </option>
+          ))}
         </select>
       </label>
       {scores && (
