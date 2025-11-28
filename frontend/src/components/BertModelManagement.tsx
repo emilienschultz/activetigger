@@ -76,6 +76,7 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
     if (currentBertModel) {
       await renameBertModel(currentBertModel, data.new_name);
       resetRename();
+      setShowRename(false);
     } else notify({ type: 'error', message: 'New name is void' });
   };
 

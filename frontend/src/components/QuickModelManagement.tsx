@@ -122,6 +122,7 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
     if (currentQuickModelName) {
       await renameQuickModel(currentQuickModelName, data.new_name);
       resetRename();
+      setShowRename(false);
     } else notify({ type: 'error', message: 'New name is void' });
   };
 
