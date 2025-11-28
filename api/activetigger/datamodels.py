@@ -395,23 +395,18 @@ class FeatureModel(BaseModel):
     name: str
     parameters: dict[str, str | float]
 
+class LogisticL1Params(BaseModel):
+    costLogL1: float
 
-class LogisticParams(BaseModel):
-    cost: float
-
+class LogisticL2Params(BaseModel):
+    costLogL2: float
 
 class KnnParams(BaseModel):
     n_neighbors: int
 
-
 class RandomforestParams(BaseModel):
     n_estimators: int
     max_features: int | None
-
-
-class LassoParams(BaseModel):
-    C: int
-
 
 class Multi_naivebayesParams(BaseModel):
     alpha: float
