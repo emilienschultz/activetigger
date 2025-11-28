@@ -88,6 +88,7 @@ class TrainML(BaseTask):
         proba["prediction"] = proba.drop(columns="entropy").idxmax(axis=1)
 
         # compute training metrics and write
+        print("Computing metrics...", self.texts)
         if self.texts is not None:
             texts_train = self.texts.loc[Y_train.index]
             texts_test = self.texts.loc[Y_test.index]

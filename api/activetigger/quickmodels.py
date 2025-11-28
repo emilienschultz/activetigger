@@ -10,7 +10,7 @@ from typing import Any
 import pandas as pd  # type: ignore[import]
 from pandas import DataFrame
 from sklearn.ensemble import RandomForestClassifier  # type: ignore[import]
-from sklearn.linear_model import LogisticRegression, Lasso  # type: ignore[import]
+from sklearn.linear_model import Lasso, LogisticRegression  # type: ignore[import]
 from sklearn.naive_bayes import MultinomialNB  # type: ignore[import]
 from sklearn.neighbors import KNeighborsClassifier  # type: ignore[import]
 from sklearn.preprocessing import StandardScaler  # type: ignore[import]
@@ -118,15 +118,17 @@ class QuickModels:
 
         if model_type == "logistic-l1":
             params_libL1 = LogisticL1Params(**model_params)
-            model = LogisticRegression(penalty="l1", solver="saga", 
-                C=params_libL1.costLogL1, n_jobs=-1, random_state=42)
+            model = LogisticRegression(
+                penalty="l1", solver="saga", C=params_libL1.costLogL1, n_jobs=-1, random_state=42
+            )
             model_params = params_libL1.model_dump()
 
         if model_type == "logistic-l2":
             # Liblinear : method = 1 : multimodal logistic regression l2
             params_libL2 = LogisticL2Params(**model_params)
-            model = LogisticRegression(penalty="l2", solver="lbfgs", 
-                C=params_libL2.costLogL2, n_jobs=-1)
+            model = LogisticRegression(
+                penalty="l2", solver="lbfgs", C=params_libL2.costLogL2, n_jobs=-1
+            )
             model_params = params_libL2.model_dump()
 
         if model_type == "randomforest":
@@ -385,6 +387,7 @@ class QuickModels:
         col_dataset: str,
         cols_features: list,
         col_label: str | None = None,
+        col_text: str | None = None,
         statistics: list[str] | None = None,
     ) -> None:
         """
@@ -406,6 +409,7 @@ class QuickModels:
                 path=self.path.joinpath(name),
                 file_name=file_name,
                 statistics=statistics,
+                col_text=col_text,
             ),
             queue="cpu",
         )

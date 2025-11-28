@@ -39,7 +39,7 @@ class PredictML(BaseTask):
         self.unique_id = unique_id
         self.statistics = statistics
         self.col_label = col_label
-        self.col_text = col_text
+        self.col_text = None
 
         if col_dataset not in self.df.columns:
             raise ValueError(f"Dataset column {col_dataset} not in dataframe")
@@ -59,7 +59,7 @@ class PredictML(BaseTask):
         self.Y = self.df[col_label] if col_label is not None else None
 
         if self.statistics and self.col_text is None:
-            print("Thre is no full text")
+            print("There is no full text")
 
     def __call__(self):
         """
@@ -74,6 +74,8 @@ class PredictML(BaseTask):
         Y_full["dataset"] = self.X["dataset"]
         Y_full["label"] = self.df[self.col_label]
         Y_full.to_parquet(self.path.joinpath(self.file_name), index=True)
+        if self.col_text:
+            Y_full["text"] = self.df[self.col_text]
 
         # Compute statistics if labels are provided
         metrics = {}
@@ -87,7 +89,7 @@ class PredictML(BaseTask):
             metrics[dataset] = get_metrics(
                 Y_full[filter]["label"],
                 Y_full[filter]["prediction"],
-                Y_full["text"] if self.col_text else None,
+                Y_full[filter]["text"] if self.col_text else None,
             )
 
         # add out of sample (labelled data not in training data)
@@ -97,7 +99,7 @@ class PredictML(BaseTask):
             metrics["outofsample"] = get_metrics(
                 Y_full[filter_oos]["label"],
                 Y_full[filter_oos]["prediction"],
-                Y_full["text"] if self.col_text else None,
+                Y_full[filter_oos]["text"] if self.col_text else None,
             )
 
         # write the metrics in a json file

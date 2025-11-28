@@ -250,6 +250,7 @@ async def predict(
             cols_features = [col for col in df.columns if col != "dataset"]
             labels = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=datasets)
             df["labels"] = labels["labels"]
+            df["text"] = labels["text"]
 
             # add the data for the labels
             project.quickmodels.start_predicting_process(
@@ -261,6 +262,7 @@ async def predict(
                 cols_features=cols_features,
                 col_label="labels",
                 statistics=datasets,
+                col_text=None,  # TODO : fx bug
             )
 
         orchestrator.log_action(
