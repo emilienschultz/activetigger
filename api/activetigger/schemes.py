@@ -24,13 +24,14 @@ from activetigger.functions import clean_regex, slugify
 
 class SchemeCache:
     """
-    Cache schemes for a project
-    content is a dict of scheme name to (timestamp, kind, dataframe)
+    Cache schemes for a project to performe whole dataset operations
+    content is a view of scheme for a moment (timestamp, dataframe)
     dataframe : ['dataset', 'labels', 'user', 'timestamp', 'comment', 'text', 'id']
-
+    It has a lifetime then is cleaned
+    It is modified when an annotation is added/deleted to keep it up to date
     """
 
-    content: dict[str, Tuple[datetime.datetime, list[str], DataFrame]] = {}
+    content: dict[str, Tuple[datetime.datetime, DataFrame]] = {}
 
     def __init__(self, expiration_delay: int = 5) -> None:
         """
@@ -52,34 +53,33 @@ class SchemeCache:
         for k in to_delete:
             del self.content[k]
 
-    def get(self, scheme: str, kind: list[str]) -> DataFrame | None:
+    def get(self, scheme: str) -> DataFrame | None:
         """
-        Get schemes from cache
+        Get a scheme from cache
         """
         self.clean()
-        print("get from cache attempt", scheme, kind)
         r = self.content.get(scheme, None)
-        if r is not None and r[1] == kind:
+        if r is not None:
             print("get from cache", scheme)
             return r[-1]
         return None
 
-    def put(self, scheme: str, kind: list[str], df: DataFrame) -> None:
+    def put(self, scheme: str, df: DataFrame) -> None:
         """
         Put scheme in cache
         """
         print("put in cache", scheme)
         self.clean()
-        self.content[scheme] = (datetime.datetime.now(), kind, df)
+        self.content[scheme] = (datetime.datetime.now(), df)
 
-    def update(self, scheme: str, id: str, label: str, user: str) -> None:
+    def update(self, scheme: str, id: str, label: str | None, user: str) -> None:
         """
         Update scheme in the cache with a change if exist
         """
         print("update in cache", scheme)
         self.clean()
         if scheme in self.content:
-            ts, _, df = self.content[scheme]
+            ts, df = self.content[scheme]
             df.loc[id, "labels"] = label
             df.loc[id, "user"] = user
             df.loc[id, "timestamp"] = datetime.datetime.now()
@@ -122,75 +122,67 @@ class Schemes:
 
         self.cache = SchemeCache()
 
-    def get_scheme_data(
+    def get_scheme_data(self, scheme: str, user: str | None = None) -> DataFrame:
+        """
+        Get complete current label for a scheme
+        Use the cache if possible
+        """
+
+        df = self.cache.get(scheme)
+        # if no cache, get from database
+        if df is None:
+            print("get from database", scheme)
+            # complete index of the current element
+            idx = self.data.train.index
+            if self.data.valid is not None:
+                idx = idx.append(self.data.valid.index)
+            if self.data.test is not None:
+                idx = idx.append(self.data.test.index)
+            df = pd.DataFrame(index=idx)
+
+            # annotations from the database
+            results = self.projects_service.get_scheme_elements(
+                self.project_slug, scheme, ["train", "test", "valid"]
+            )
+            results_df = pd.DataFrame(
+                results, columns=["id", "dataset", "labels", "user", "timestamp", "comment"]
+            ).set_index("id")
+            df = df.join(results_df, how="left")
+            self.cache.put(scheme, df)
+        return df
+
+    def get_scheme(
         self,
         scheme: str,
         user: str | None = None,
         complete: bool = False,
-        kind: list[str] = ["train"],
+        kind: list[str] = ["train"],  # TODO : rename with dataset
     ) -> DataFrame:
         """
         Get data from a scheme : id, text, context, labels
         complete : add text from dataset & all the row
         """
-
-        update = False
-
-        for k in kind:
-            if k not in ["train", "test", "valid", "predict", "reconciliation"]:
-                raise Exception(f"Kind {k} not recognized")
         if scheme not in self.available():
             raise Exception("Scheme doesn't exist")
-
-        # get the scheme either from cache or database
-        df = self.cache.get(scheme, kind)
-        if df is None:
-            results = self.projects_service.get_scheme_elements(
-                self.project_slug, scheme, kind, user
-            )
-            df = pd.DataFrame(
-                results, columns=["id", "dataset", "labels", "user", "timestamp", "comment"]
-            ).set_index("id")
-            df.index = pd.Index([str(i) for i in df.index])
-            update = True
-
-        # get the current scheme
-        # results = self.projects_service.get_scheme_elements(self.project_slug, scheme, kind, user)
-        # df = pd.DataFrame(
-        #     results, columns=["id", "dataset", "labels", "user", "timestamp", "comment"]
-        # ).set_index("id")
-        # df.index = pd.Index([str(i) for i in df.index])
+        df = self.get_scheme_data(scheme, user)
 
         # add optionnaly the text content
-        columns = []
         if complete:
-            columns = ["text"]
-        content = []
-        for k in kind:
-            if k == "test":
-                if self.data.test is not None:
-                    content.append(self.data.test[columns])
-            elif k == "valid":
-                if self.data.valid is not None:
-                    content.append(self.data.valid[columns])
-            elif k == "train":
-                if self.data.train is not None:
-                    content.append(self.data.train[columns])
-        df_content = pd.concat(content)
-        df = df.join(df_content, rsuffix="_content", how="right")
+            content = []
+            for k in kind:
+                if k == "test":
+                    if self.data.test is not None:
+                        content.append(self.data.test[["text"]])
+                elif k == "valid":
+                    if self.data.valid is not None:
+                        content.append(self.data.valid[["text"]])
+                elif k == "train":
+                    if self.data.train is not None:
+                        content.append(self.data.train[["text"]])
+            df_text = pd.concat(content)
+            df = df.join(df_text, rsuffix="_content", how="right")
         df["id"] = df.index
-
-        # cache the result if updated
-        if update:
-            self.cache.put(scheme, kind, df[["dataset", "labels", "user", "timestamp", "comment"]])
-
-        # return the result
-        if complete:
-            return df
-        else:
-            return df[["dataset", "labels", "user", "timestamp", "comment"]].dropna(
-                subset=["labels"]
-            )
+        return df
 
     def get_reconciliation_table(
         self, scheme: str, dataset: str = "train", no_label: str = "-----"
@@ -254,12 +246,12 @@ class Schemes:
             self.add_label(new_label, scheme, username)
 
         # add a new tag for the annotated id in the trainset
-        df_train = self.get_scheme_data(scheme, kind=["train"])
+        df_train = self.get_scheme(scheme, kind=["train"])
         elements_train = [
             {"element_id": element_id, "annotation": new_label, "comment": "label renamed"}
             for element_id in list(df_train[df_train["labels"] == former_label].index)
         ]
-        df_test = self.get_scheme_data(scheme, kind=["test"])
+        df_test = self.get_scheme(scheme, kind=["test"])
         elements_test = [
             {"element_id": element_id, "annotation": new_label, "comment": "label renamed"}
             for element_id in list(df_test[df_test["labels"] == former_label].index)
@@ -315,7 +307,7 @@ class Schemes:
             raise Exception("Mode not available")
         if scheme not in self.available():
             raise Exception("Scheme doesn't exist")
-        df = self.get_scheme_data(scheme, complete=True, kind=[dataset])
+        df = self.get_scheme(scheme, complete=True, kind=[dataset])
         # build dataset
         if mode == "tagged":
             df = cast(DataFrame, df[df["labels"].notnull()])
@@ -353,7 +345,7 @@ class Schemes:
             raise Exception(f"Scheme {batch.scheme} is not available")
 
         # case of the test set, no fancy stuff
-        df: DataFrame = self.get_scheme_data(
+        df: DataFrame = self.get_scheme(
             batch.scheme,
             complete=True,
             kind=["test"] if batch.dataset == "test" else [batch.dataset],
@@ -470,12 +462,12 @@ class Schemes:
         labels.remove(label)
         # push empty entry for tagged elements
         # both for train
-        df = self.get_scheme_data(scheme, kind=["train"])
+        df = self.get_scheme(scheme, kind=["train"])
         elements = list(df[df["labels"] == label].index)
         for i in elements:
             self.push_annotation(i, None, scheme, user, "train", "delete")
         # and test
-        df = self.get_scheme_data(scheme, kind=["test"])
+        df = self.get_scheme(scheme, kind=["test"])
         elements = list(df[df["labels"] == label].index)
         for i in elements:
             self.push_annotation(i, None, scheme, user, "test", "delete")
@@ -580,6 +572,9 @@ class Schemes:
             annotation=None,
         )
 
+        # update cache
+        self.cache.update(scheme, element_id, None, user)
+
     def push_annotation(
         self,
         element_id: str,
@@ -593,6 +588,8 @@ class Schemes:
         """
         Record a tag in the database
         mode : train, predict, test
+
+        + update cache
         """
 
         if element_id == "noelement":
@@ -631,6 +628,9 @@ class Schemes:
             comment=comment,
             selection=selection,
         )
+
+        # update cache
+        self.cache.update(scheme, element_id, label if label is not None else "", user)
 
     def get_coding_users(self, scheme: str) -> list[str]:
         """
@@ -774,8 +774,8 @@ class Schemes:
             2,
         )
 
-        df_A = self.get_scheme_data(schemeA)
-        df_B = self.get_scheme_data(schemeB)
+        df_A = self.get_scheme(schemeA)
+        df_B = self.get_scheme(schemeB)
 
         # only keeps elements that have been annotated in both schemes
         df = pd.concat({"schemeA": df_A["labels"], "schemeB": df_B["labels"]}, axis=1).dropna()

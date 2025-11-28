@@ -28,3 +28,14 @@ class Data:
         self.train = pd.read_parquet(path_train)
         self.valid = pd.read_parquet(path_valid) if path_valid else None
         self.test = pd.read_parquet(path_test) if path_test else None
+
+    # def index(self):
+    #     """
+    #     Get the index of all the elements
+    #     """
+    #     indices = set(self.train.index)
+    #     if self.valid is not None:
+    #         indices = indices.union(set(self.valid.index))
+    #     if self.test is not None:
+    #         indices = indices.union(set(self.test.index))
+    #     return pd.Index(sorted(list(indices)))
