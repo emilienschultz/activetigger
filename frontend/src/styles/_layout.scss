@@ -283,7 +283,7 @@ table {
 }
 
 #DisplayTableStatistics {
-  width: 1000px;
+  width: 50%;
   padding: 10px;
   margin: 10px 0px;
   border: rgb(200, 200, 200) 1px solid;
@@ -299,7 +299,6 @@ table {
         font-weight: bold;
       }
       td.cell {
-        width: 50px;
         text-align: center;
         text-overflow: clip;
       }
@@ -315,6 +314,109 @@ table {
       td.rowspan-cell {
         border-right: $secondary 1px solid;
       }
+    }
+  }
+}
+@for $nLabel from 1 through 100 {
+  #DisplayTableStatisticsRENEW-#{$nLabel}{
+    $min-cell-width: 50px;
+    $inter-table-margin: 10px;
+
+    width: 80%;
+    min-width: calc(($nLabel + 4) * $min-cell-width + $inter-table-margin);
+    // border: 1px rgb(200, 200, 200) solid;
+    padding: 0px;
+    margin: 0px;
+    margin-bottom: 40px;
+    font-size: small;
+    
+    // containers
+    .row{
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      justify-content: space-between;
+      align-items: flex-start;
+
+      width: 100%;
+      margin: 0px;
+      padding: 0px;
+    }
+
+    .main, .score-bottom{
+      width: 80%;
+      padding: 0px;
+      margin-bottom: $inter-table-margin;
+      margin-right: $inter-table-margin;
+    }
+    
+    .table{
+      width:90%;
+      margin: 0px;
+      padding:0px;
+    }
+
+    .score-left{
+      width: 25%;
+    }
+
+    #truth-container{
+      width:  $min-cell-width;
+      margin:0px;
+      padding:0px;
+      display: flex;
+      flex-direction: column;
+      flex-wrap: nowrap;
+      justify-content: flex-end;
+      span{
+        writing-mode:sideways-lr;
+        // text-orientation: sideways;
+        text-align: center;
+        border-right:  $secondary 1px solid;
+        max-width: fit-content;
+      }
+    }
+
+    // Table cells
+    .table-cell{
+      flex: 0 1 auto;
+      // min-width: 60px;
+      // background-color: red;
+      min-width: $min-cell-width;
+      height: 30px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .label-name{
+      font-weight: bold;
+    }
+
+    .recall{
+      font-size: 8px;
+      color: rgb(160, 160, 160);
+    }
+
+    .diag-cell{
+      color: green;
+      background: $tertiary;
+    }
+
+    .label-column-left{
+      align-items: flex-end;
+      flex: 0 1 auto;
+    }
+
+    #overlay-label{
+      border-bottom: $secondary 1px solid;
+      min-width: calc(2 * $min-cell-width);
+      font-weight: bold;
     }
   }
 }

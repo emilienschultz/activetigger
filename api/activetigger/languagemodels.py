@@ -106,6 +106,8 @@ class LanguageModels:
                 predicted=m.parameters.get("predicted", False),
                 tested=m.parameters.get("tested", False),
                 predicted_external=m.parameters.get("predicted_external", False),
+                name=m.name,
+                time=m.time
             )
         return r
 

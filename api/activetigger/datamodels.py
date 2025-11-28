@@ -310,6 +310,8 @@ class LMStatusModel(BaseModel):
     predicted: bool = False
     tested: bool = False
     predicted_external: bool = False
+    name: str
+    time: str
 
 
 class BertModelModel(BaseModel):
@@ -393,23 +395,18 @@ class FeatureModel(BaseModel):
     name: str
     parameters: dict[str, str | float]
 
+class LogisticL1Params(BaseModel):
+    costLogL1: float
 
-class LiblinearParams(BaseModel):
-    cost: float
-
+class LogisticL2Params(BaseModel):
+    costLogL2: float
 
 class KnnParams(BaseModel):
     n_neighbors: int
 
-
 class RandomforestParams(BaseModel):
     n_estimators: int
     max_features: int | None
-
-
-class LassoParams(BaseModel):
-    C: int
-
 
 class Multi_naivebayesParams(BaseModel):
     alpha: float
@@ -748,6 +745,7 @@ class ModelDescriptionModel(BaseModel):
     scheme: str
     parameters: dict[str, Any]
     path: str
+    time: str
 
 
 class QuickModelsProjectStateModel(BaseModel):
@@ -770,9 +768,12 @@ class ProjectionsProjectStateModel(BaseModel):
     available: dict[str, str | int]
     training: dict[str, str]
 
+class BERTopicDescriptionModel(BaseModel):
+    name:str
+    time:str
 
 class BertopicProjectStateModel(BaseModel):
-    available: dict[str, str | None]
+    available: dict[str, BERTopicDescriptionModel]
     training: dict[str, dict[str, str | int | None]]
     models: list[str]
 

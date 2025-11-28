@@ -124,8 +124,8 @@ def visualize_documents(
         fig.add_trace(
             go.Scatter(
                 x = X[indexes], y= Y[indexes], mode="markers",
-                hovertemplate = "%{text}",
-                text = hovertext[indexes],
+                # hovertemplate = "%{text}",
+                # text = hovertext[indexes],
                 marker = {'opacity': 0.75},
                 name = topic_info.loc[topic == topic_info.Topic, "Name"].item()
             )

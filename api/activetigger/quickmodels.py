@@ -10,15 +10,15 @@ from typing import Any
 import pandas as pd  # type: ignore[import]
 from pandas import DataFrame
 from sklearn.ensemble import RandomForestClassifier  # type: ignore[import]
-from sklearn.linear_model import LogisticRegression  # type: ignore[import]
+from sklearn.linear_model import LogisticRegression, Lasso  # type: ignore[import]
 from sklearn.naive_bayes import MultinomialNB  # type: ignore[import]
 from sklearn.neighbors import KNeighborsClassifier  # type: ignore[import]
 from sklearn.preprocessing import StandardScaler  # type: ignore[import]
 
 from activetigger.datamodels import (
     KnnParams,
-    LassoParams,
-    LiblinearParams,
+    LogisticL1Params,
+    LogisticL2Params,
     ModelDescriptionModel,
     ModelInformationsModel,
     ModelScoresModel,
@@ -73,10 +73,10 @@ class QuickModels:
 
         # Models and default parameters
         self.available_models = {
-            "liblinear": LiblinearParams(cost=1),
+            "logistic-l1": LogisticL1Params(costLogL1=1),
+            "logistic-l2": LogisticL2Params(costLogL2=1),
             "knn": KnnParams(n_neighbors=3),
             "randomforest": RandomforestParams(n_estimators=500, max_features=None),
-            "lasso": LassoParams(C=32),
             "multi_naivebayes": Multi_naivebayesParams(alpha=1, fit_prior=True, class_prior=None),
         }
 
@@ -116,18 +116,18 @@ class QuickModels:
             model = KNeighborsClassifier(n_neighbors=int(params_knn.n_neighbors), n_jobs=-1)
             model_params = params_knn.model_dump()
 
-        if model_type == "lasso":
-            params_lasso = LassoParams(**model_params)
-            model = LogisticRegression(
-                penalty="l1", solver="liblinear", C=params_lasso.C, n_jobs=-1
-            )
-            model_params = params_lasso.model_dump()
+        if model_type == "logistic-l1":
+            params_libL1 = LogisticL1Params(**model_params)
+            model = LogisticRegression(penalty="l1", solver="saga", 
+                C=params_libL1.costLogL1, n_jobs=-1, random_state=42)
+            model_params = params_libL1.model_dump()
 
-        if model_type == "liblinear":
+        if model_type == "logistic-l2":
             # Liblinear : method = 1 : multimodal logistic regression l2
-            params_lib = LiblinearParams(**model_params)
-            model = LogisticRegression(penalty="l2", solver="lbfgs", C=params_lib.cost, n_jobs=-1)
-            model_params = params_lib.model_dump()
+            params_libL2 = LogisticL2Params(**model_params)
+            model = LogisticRegression(penalty="l2", solver="lbfgs", 
+                C=params_libL2.costLogL2, n_jobs=-1)
+            model_params = params_libL2.model_dump()
 
         if model_type == "randomforest":
             # params  Num. trees mtry  Sample fraction

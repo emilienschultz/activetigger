@@ -9,6 +9,7 @@ import { ValidateButtons } from '../components/validateButton';
 import { useDeleteBertModel, useDeleteQuickModel, useModelInformations } from '../core/api';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
+import { sortDatesAsStrings } from '../core/utils';
 import { MLStatisticsModel, ModelDescriptionModel } from '../types';
 
 /**
@@ -63,8 +64,6 @@ export const ProjectValidatePage: FC = () => {
     }
   }, [isComputing, reFetchBertModelInformations, reFetchQuickModelInformations, notify]);
 
-  console.log(bertModelInformations);
-
   return (
     <ProjectPageLayout projectName={projectName} currentAction="validate">
       <div className="container-fluid">
@@ -77,7 +76,11 @@ export const ProjectValidatePage: FC = () => {
                 </div>
                 {availableQuickModels && (
                   <ModelsPillDisplay
-                    modelNames={(availableQuickModels || {})?.map((model) => model.name)}
+                    modelNames={availableQuickModels
+                      .sort((quickModelA, quickModelB) =>
+                        sortDatesAsStrings(quickModelA?.time, quickModelB?.time, true),
+                      )
+                      .map((quickModel) => quickModel.name)}
                     currentModelName={currentQuickModelName}
                     setCurrentModelName={setCurrentQuickModelName}
                     deleteModelFunction={deleteQuickModel}
@@ -116,7 +119,11 @@ export const ProjectValidatePage: FC = () => {
                 </div>
                 {availableQuickModels && (
                   <ModelsPillDisplay
-                    modelNames={Object.keys(availableBertModels || {})?.map((model) => model)}
+                    modelNames={Object.values(availableBertModels || {})
+                      .sort((bertModelA, bertModelB) =>
+                        sortDatesAsStrings(bertModelA?.time, bertModelB?.time, true),
+                      )
+                      .map((model) => (model?.name ? model.name : ''))}
                     currentModelName={currentBertModelName}
                     setCurrentModelName={setCurrentBertModelName}
                     deleteModelFunction={deleteBertModel}
