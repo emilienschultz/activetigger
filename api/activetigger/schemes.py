@@ -1,6 +1,6 @@
 import datetime
 from io import StringIO
-from typing import cast
+from typing import Tuple, cast
 
 import pandas as pd
 from pandas import DataFrame
@@ -22,6 +22,69 @@ from activetigger.db.projects import ProjectsService
 from activetigger.functions import clean_regex, slugify
 
 
+class SchemeCache:
+    """
+    Cache schemes for a project
+    content is a dict of scheme name to (timestamp, kind, dataframe)
+    dataframe : ['dataset', 'labels', 'user', 'timestamp', 'comment', 'text', 'id']
+
+    """
+
+    content: dict[str, Tuple[datetime.datetime, list[str], DataFrame]] = {}
+
+    def __init__(self, expiration_delay: int = 5) -> None:
+        """
+        Init
+        """
+        self.content = {}
+        self.expiration_delay = expiration_delay
+
+    def clean(self) -> None:
+        """
+        Clean old entries in the cache after a delay (no mater what)
+        """
+        now = datetime.datetime.now()
+        to_delete = []
+        for k, v in self.content.items():
+            if (now - v[0]).total_seconds() > self.expiration_delay:
+                to_delete.append(k)
+                print(f"Scheme cache : delete {k}")
+        for k in to_delete:
+            del self.content[k]
+
+    def get(self, scheme: str, kind: list[str]) -> DataFrame | None:
+        """
+        Get schemes from cache
+        """
+        self.clean()
+        print("get from cache attempt", scheme, kind)
+        r = self.content.get(scheme, None)
+        if r is not None and r[1] == kind:
+            print("get from cache", scheme)
+            return r[-1]
+        return None
+
+    def put(self, scheme: str, kind: list[str], df: DataFrame) -> None:
+        """
+        Put scheme in cache
+        """
+        print("put in cache", scheme)
+        self.clean()
+        self.content[scheme] = (datetime.datetime.now(), kind, df)
+
+    def update(self, scheme: str, id: str, label: str, user: str) -> None:
+        """
+        Update scheme in the cache with a change if exist
+        """
+        print("update in cache", scheme)
+        self.clean()
+        if scheme in self.content:
+            ts, _, df = self.content[scheme]
+            df.loc[id, "labels"] = label
+            df.loc[id, "user"] = user
+            df.loc[id, "timestamp"] = datetime.datetime.now()
+
+
 class Schemes:
     """
     Manage project schemes & tags
@@ -35,6 +98,7 @@ class Schemes:
     projects_service: ProjectsService
     db_manager: DatabaseManager
     content: DataFrame
+    cache: SchemeCache
 
     def __init__(
         self,
@@ -56,6 +120,8 @@ class Schemes:
         if len(available) == 0:
             self.add_scheme(name="default", labels=[])
 
+        self.cache = SchemeCache()
+
     def get_scheme_data(
         self,
         scheme: str,
@@ -67,41 +133,64 @@ class Schemes:
         Get data from a scheme : id, text, context, labels
         complete : add text from dataset & all the row
         """
+
+        update = False
+
         for k in kind:
             if k not in ["train", "test", "valid", "predict", "reconciliation"]:
                 raise Exception(f"Kind {k} not recognized")
         if scheme not in self.available():
             raise Exception("Scheme doesn't exist")
 
+        # get the scheme either from cache or database
+        df = self.cache.get(scheme, kind)
+        if df is None:
+            results = self.projects_service.get_scheme_elements(
+                self.project_slug, scheme, kind, user
+            )
+            df = pd.DataFrame(
+                results, columns=["id", "dataset", "labels", "user", "timestamp", "comment"]
+            ).set_index("id")
+            df.index = pd.Index([str(i) for i in df.index])
+            update = True
+
         # get the current scheme
-        results = self.projects_service.get_scheme_elements(self.project_slug, scheme, kind, user)
-        df = pd.DataFrame(
-            results, columns=["id", "dataset", "labels", "user", "timestamp", "comment"]
-        ).set_index("id")
+        # results = self.projects_service.get_scheme_elements(self.project_slug, scheme, kind, user)
+        # df = pd.DataFrame(
+        #     results, columns=["id", "dataset", "labels", "user", "timestamp", "comment"]
+        # ).set_index("id")
+        # df.index = pd.Index([str(i) for i in df.index])
 
-        df.index = pd.Index([str(i) for i in df.index])
-
-        # only the labels
-        if not complete:
-            df["id"] = df.index
-            return df
-
-        # add the content from the datasets
-        list_texts = []
+        # add optionnaly the text content
+        columns = []
+        if complete:
+            columns = ["text"]
+        content = []
         for k in kind:
             if k == "test":
                 if self.data.test is not None:
-                    list_texts.append(self.data.test[["text"]])
+                    content.append(self.data.test[columns])
             elif k == "valid":
                 if self.data.valid is not None:
-                    list_texts.append(self.data.valid[["text"]])
+                    content.append(self.data.valid[columns])
             elif k == "train":
                 if self.data.train is not None:
-                    list_texts.append(self.data.train[["text"]])
-        texts = pd.concat(list_texts)
-        df = df.join(texts, rsuffix="_content", how="right")
+                    content.append(self.data.train[columns])
+        df_content = pd.concat(content)
+        df = df.join(df_content, rsuffix="_content", how="right")
         df["id"] = df.index
-        return df
+
+        # cache the result if updated
+        if update:
+            self.cache.put(scheme, kind, df[["dataset", "labels", "user", "timestamp", "comment"]])
+
+        # return the result
+        if complete:
+            return df
+        else:
+            return df[["dataset", "labels", "user", "timestamp", "comment"]].dropna(
+                subset=["labels"]
+            )
 
     def get_reconciliation_table(
         self, scheme: str, dataset: str = "train", no_label: str = "-----"

@@ -60,6 +60,7 @@
     "streamsaver": "^2.0.6",
     "styled-components": "^6.1.15",
     "tiktoken": "^1.0.18",
+    "usehooks-ts": "^3.1.1",
     "victory": "^37.0.2",
     "xlsx": "^0.18.5"
   },
