@@ -1,7 +1,7 @@
 import cx from 'classnames';
 import { FC } from 'react';
-import { MLStatisticsModel } from '../types';
 import { useWindowSize } from 'usehooks-ts';
+import { MLStatisticsModel } from '../types';
 
 export interface DisplayTableStatisticsProps {
   scores: MLStatisticsModel;
@@ -89,18 +89,21 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
                   {/* Labels row */}
                   <div className="table-cell label-column-left label-name"></div>
                   {labels.map((label) => (
-                    <div className="table-cell label-name">{limitLabelSize(label)}</div>
+                    <div className="table-cell label-name" key={label}>
+                      {limitLabelSize(label)}
+                    </div>
                   ))}
                 </div>
                 {table.data.map((row, rowIndex) => (
                   // All data
-                  <div className="row">
+                  <div className="row" key={rowIndex}>
                     <div className="table-cell label-column-left label-name">
                       {limitLabelSize(table.index[rowIndex])}
                     </div>
                     {row.map((cell, colIndex) => (
                       <div
                         className={cx('table-cell', isDiag(colIndex, rowIndex) ? ' diag-cell' : '')}
+                        key={colIndex}
                       >
                         {cell}
                       </div>
@@ -122,8 +125,8 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
                   <div className="table-cell">{limitLabelSize('F1 Score')}</div>
                   <div className="table-cell"></div>
                 </div>
-                {table.data.map((row, rowIndex) => (
-                  <div className="row">
+                {table.data.map((_, rowIndex) => (
+                  <div className="row" key={rowIndex}>
                     <div className="table-cell">
                       {scores.recall_label && displayScore(scores.recall_label[labels[rowIndex]])}
                     </div>

@@ -261,7 +261,6 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
           <FaPlusCircle size={20} /> Create new model
         </button>
       </ModelsPillDisplay>
-      <hr className="mt-2" />
 
       {isComputing && (
         <div className="btn btn-primary mt-3 d-flex align-items-center">

@@ -50,14 +50,12 @@ export const ProjectExplorePage: FC = () => {
               </Tab>
               <Tab eventKey="visualization" title="Visualization" unmountOnExit={true}>
                 <div className="explanations">Explore your train data as a projection</div>
-                {phase != 'test' && (
-                  <ProjectionManagement
-                    projectName={projectName || null}
-                    currentScheme={currentScheme || null}
-                    availableFeatures={availableFeatures}
-                    currentElementId={undefined}
-                  />
-                )}
+                <ProjectionManagement
+                  projectName={projectName || null}
+                  currentScheme={currentScheme || null}
+                  availableFeatures={availableFeatures}
+                  currentElementId={undefined}
+                />
               </Tab>
               <Tab eventKey="bertopic" title="Topic model">
                 <div className="explanations">

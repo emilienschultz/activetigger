@@ -74,7 +74,7 @@ export const ProjectValidatePage: FC = () => {
                 <div className="explanations">
                   Compute statistics on annotations for machine learning models
                 </div>
-                {availableQuickModels && (
+                {availableQuickModels ? (
                   <ModelsPillDisplay
                     modelNames={availableQuickModels
                       .sort((quickModelA, quickModelB) =>
@@ -85,6 +85,8 @@ export const ProjectValidatePage: FC = () => {
                     setCurrentModelName={setCurrentQuickModelName}
                     deleteModelFunction={deleteQuickModel}
                   ></ModelsPillDisplay>
+                ) : (
+                  <div className="alert alert-warning">No model available</div>
                 )}
 
                 {quickModelInformations && (
@@ -117,7 +119,7 @@ export const ProjectValidatePage: FC = () => {
                 <div className="explanations">
                   Compute statistics on annotations for BERT models
                 </div>
-                {availableQuickModels && (
+                {availableQuickModels ? (
                   <ModelsPillDisplay
                     modelNames={Object.values(availableBertModels || {})
                       .sort((bertModelA, bertModelB) =>
@@ -128,6 +130,8 @@ export const ProjectValidatePage: FC = () => {
                     setCurrentModelName={setCurrentBertModelName}
                     deleteModelFunction={deleteBertModel}
                   ></ModelsPillDisplay>
+                ) : (
+                  <div className="alert alert-warning">No model available</div>
                 )}
                 <div>
                   {/* AM: Necessary ? Confused... */}

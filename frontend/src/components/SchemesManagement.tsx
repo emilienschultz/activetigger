@@ -256,6 +256,7 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
             placeholder="Enter new scheme name"
             value={newSchemeName}
             onChange={(e) => setNewSchemeName(e.target.value)}
+            onFocus={(e) => e.target.select()}
           />
           <button
             className="btn btn-primary"

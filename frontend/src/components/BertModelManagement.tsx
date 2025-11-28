@@ -110,7 +110,6 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
           displayStopButton={isComputing}
         />
       )}
-      <hr className="mt-2" />
       {currentBertModel && (
         <div>
           {model && (
