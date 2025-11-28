@@ -267,8 +267,8 @@ export const AnnotationManagement: FC = () => {
       model: 'liblinear',
       scheme: currentScheme || '',
       params: {
-        cost: 1,
-        C: 32,
+        costLogL2: 1,
+        costLogL1: 1,
         n_neighbors: 3,
         alpha: 1,
         n_estimators: 500,

@@ -155,11 +155,11 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
   const { register, handleSubmit, control, watch, setValue } = useForm<QuickModelInModel>({
     defaultValues: {
       name: getRandomName('QuickModel'),
-      model: 'logistic',
+      model: 'logistic-l1',
       scheme: currentScheme || undefined,
       params: {
-        cost: 1,
-        C: 32,
+        costLogL1: 1,
+        costLogL2: 1,
         n_neighbors: 3,
         alpha: 1,
         n_estimators: 500,
@@ -392,14 +392,14 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
                 )}
                 {
                   //generate_config(selectedQuickModel)
-                  (selectedModel == 'logistic' && (
-                    <div key="logistic">
-                      <label htmlFor="cost">Cost</label>
+                  (selectedModel == 'logistic-l2' && (
+                    <div key="logistic-l2">
+                      <label htmlFor="costLogL2">Cost</label>
                       <input
                         type="number"
                         step="1"
-                        id="cost"
-                        {...register('params.cost', { valueAsNumber: true })}
+                        id="logistic-l2"
+                        {...register('params.costLogL2', { valueAsNumber: true })}
                       ></input>
                     </div>
                   )) ||
@@ -414,14 +414,14 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
                         ></input>
                       </div>
                     )) ||
-                    (selectedModel == 'lasso' && (
-                      <div key="lasso">
-                        <label htmlFor="c">C</label>
+                    (selectedModel == 'logistic-l1' && (
+                      <div key="logistic-l1">
+                        <label htmlFor="costLogL1">Cost</label>
                         <input
                           type="number"
                           step="1"
-                          id="C"
-                          {...register('params.C', { valueAsNumber: true })}
+                          id="logistic-l1"
+                          {...register('params.costLogL1', { valueAsNumber: true })}
                         ></input>
                       </div>
                     )) ||
