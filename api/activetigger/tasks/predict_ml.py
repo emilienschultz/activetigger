@@ -39,7 +39,7 @@ class PredictML(BaseTask):
         self.unique_id = unique_id
         self.statistics = statistics
         self.col_label = col_label
-        self.col_text = None
+        self.col_text = col_text
 
         if col_dataset not in self.df.columns:
             raise ValueError(f"Dataset column {col_dataset} not in dataframe")

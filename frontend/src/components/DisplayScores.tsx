@@ -78,7 +78,6 @@ export const DisplayScores: FC<DisplayScoresProps> = ({
       resizable: true,
     },
   ];
-  console.log(scores);
   if (!scores) return;
   return (
     <div>

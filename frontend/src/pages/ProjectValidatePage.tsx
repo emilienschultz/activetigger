@@ -64,6 +64,8 @@ export const ProjectValidatePage: FC = () => {
     }
   }, [isComputing, reFetchBertModelInformations, reFetchQuickModelInformations, notify]);
 
+  console.log(isComputing);
+
   return (
     <ProjectPageLayout projectName={projectName} currentAction="validate">
       <div className="container-fluid">
