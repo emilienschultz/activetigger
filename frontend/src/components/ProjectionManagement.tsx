@@ -225,6 +225,21 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
 
   return (
     <div>
+      {!projectionTraining ? (
+        <button
+          onClick={() => setShowComputeNewProjection(true)}
+          className="create-new-element"
+          disabled={isComputing}
+        >
+          <FaPlusCircle size={20} className="me-1" /> Compute new projection
+        </button>
+      ) : (
+        <div className="col-8 d-flex justify-content-center">
+          <div className="d-flex align-items-center gap-2">
+            <PulseLoader /> Computing a projection, please wait
+          </div>
+        </div>
+      )}
       {projectionData && labelColorMapping && (
         <div>
           <details className="m-2">
@@ -289,11 +304,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
               )}
             </div>
           </div>
-        </div>
-      )}
-
-      <div>
-        {projectionData && (
           <label style={{ display: 'block' }}>
             <input
               type="checkbox"
@@ -321,22 +331,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
               selected area will be available for annoation.
             </Tooltip>
           </label>
-        )}
-      </div>
-
-      {!projectionTraining ? (
-        <button
-          onClick={() => setShowComputeNewProjection(true)}
-          className="btn btn-primary my-2"
-          disabled={isComputing}
-        >
-          Compute new projection
-        </button>
-      ) : (
-        <div className="col-8 d-flex justify-content-center">
-          <div className="d-flex align-items-center gap-2">
-            <PulseLoader /> Computing a projection, please wait
-          </div>
         </div>
       )}
       <Modal

@@ -222,6 +222,21 @@ table {
   }
 }
 
+.create-new-element {
+  font-size: normal;
+  background-color: $primary;
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 20px;
+  padding: 0px 15px;
+  height: 35px;
+  display: inline-flex;
+  align-items: center;
+  font-size: smaller;
+  cursor: pointer;
+}
+
 .model-pill-selection {
   display: flex;
   flex-wrap: wrap;

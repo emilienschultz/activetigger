@@ -114,7 +114,7 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
         <div>
           {model && (
             <div>
-              <div className="d-flex my-2">
+              <div className="d-flex my-4">
                 <button
                   className="btn btn-outline-secondary btn-sm me-2 d-flex align-items-center"
                   onClick={() => setShowParameters(true)}
