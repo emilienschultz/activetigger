@@ -299,16 +299,17 @@ table {
 
 @for $nLabel from 1 through 100 {
   #DisplayTableStatistics-#{$nLabel}{
-    $min-cell-width: 50px;
+    $min-cell-width: 20px;
     $inter-table-margin: 10px;
+    $grey: rgb(160, 160, 160);
 
     width: 80%;
-    min-width: calc(($nLabel + 4) * $min-cell-width + $inter-table-margin);
-    // border: 1px rgb(200, 200, 200) solid;
+    min-width: calc(($nLabel + 4) * $min-cell-width + 200px + $inter-table-margin);
+    max-width: calc(($nLabel + 30) * $min-cell-width + 200px + $inter-table-margin);
     padding: 0px;
     margin: 0px;
     margin-bottom: 40px;
-    font-size: small;
+    font-size: 10px;
     
     // containers
     .row{
@@ -331,7 +332,7 @@ table {
     }
     
     .table{
-      width:90%;
+      width:70%;
       margin: 0px;
       padding:0px;
     }
@@ -354,14 +355,23 @@ table {
         text-align: center;
         border-right:  $secondary 1px solid;
         max-width: fit-content;
+        font-weight: bold;
       }
+    }
+
+    #horizontal-labels-container{
+      width: 20%;
+      margin:0px;
+      padding:0px;
+      display: flex;
+      flex-direction: column;
+      flex-wrap: nowrap;
+      justify-content: flex-end;
     }
 
     // Table cells
     .table-cell{
-      flex: 0 1 auto;
-      // min-width: 60px;
-      // background-color: red;
+      flex: 1 1 auto;
       min-width: $min-cell-width;
       height: 30px;
       display: flex;
@@ -380,7 +390,7 @@ table {
 
     .recall{
       font-size: 8px;
-      color: rgb(160, 160, 160);
+      color: $grey;
     }
 
     .diag-cell{
@@ -388,9 +398,22 @@ table {
       background: $tertiary;
     }
 
+    .total-cell{
+      font-style: italic;
+      color: $grey;
+    }
+
+    .number-cell{
+      font-size: 11px;
+    }
+
     .label-column-left{
       align-items: flex-end;
-      flex: 0 1 auto;
+    }
+    
+    .label-column-right{
+      align-items: flex-start;
+      min-width: 100px;
     }
 
     #overlay-label{

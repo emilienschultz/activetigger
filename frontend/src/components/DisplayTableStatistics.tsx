@@ -38,6 +38,9 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
   const isDiag = (colIndex: number, rowIndex: number) => {
     return colIndex < nLabels - 1 && colIndex === rowIndex;
   };
+  const isTotal = (colIndex: number, rowIndex: number) => {
+    return colIndex === nLabels - 1 || rowIndex === nLabels - 1;
+  };
 
   const displayScore = (score: number | undefined) => {
     if (typeof score === 'number') {
@@ -52,11 +55,16 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
     return '';
   };
 
-  const limitLabelSize = (label: string) => {
-    const maxLength = widthWindow > 1000 ? 8 : widthWindow > 500 ? 5 : 4;
+  const limitLabelSize = (label: string, orientation: string) => {
+    let maxLength = 100;
+    if (orientation == 'vertical') {
+      maxLength = widthWindow > 1000 ? 6 : 4;
+    } else if (orientation === 'horizontal') {
+      maxLength = widthWindow > 1000 ? 15 : 13;
+    }
     if (label) {
       if (label.length > maxLength) {
-        return label.slice(0, maxLength - 3) + '..' + label.slice(-1);
+        return label.slice(0, maxLength - 4) + '..' + label.slice(-2);
       } else {
         return label;
       }
@@ -74,13 +82,25 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
               <div id="truth-container" style={{ height: `${(nLabels + 2) * 30}px` }}>
                 <span style={{ height: `${nLabels * 30}px` }}>Truth</span>
               </div>
+              <div id="horizontal-labels-container" style={{ height: `${(nLabels + 2) * 30}px` }}>
+                <div style={{ height: `${nLabels * 30}px` }}>
+                  {labels.map((label) => (
+                    <div
+                      className="table-cell label-column-left label-name"
+                      key={label}
+                      title={label}
+                    >
+                      {limitLabelSize(label, 'horizontal')}
+                    </div>
+                  ))}
+                </div>
+              </div>
               <div className="table">
                 <div className="row">
                   {/* Predicted overlay row */}
-                  <div className="table-cell label-column-left"></div>
                   <div
                     className="table-cell"
-                    style={{ flex: `0 ${1 / nLabels} auto` }}
+                    style={{ flex: `${nLabels} 1 auto` }}
                     id="overlay-label"
                   >
                     Predicted
@@ -88,22 +108,22 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
                 </div>
                 <div className="row">
                   {/* Labels row */}
-                  <div className="table-cell label-column-left label-name"></div>
                   {labels.map((label) => (
-                    <div className="table-cell label-name" key={label}>
-                      {limitLabelSize(label)}
+                    <div className="table-cell label-name" key={label} title={label}>
+                      {limitLabelSize(label, 'vertical')}
                     </div>
                   ))}
                 </div>
                 {table.data.map((row, rowIndex) => (
                   // All data
                   <div className="row" key={rowIndex}>
-                    <div className="table-cell label-column-left label-name">
-                      {limitLabelSize(table.index[rowIndex])}
-                    </div>
                     {row.map((cell, colIndex) => (
                       <div
-                        className={cx('table-cell', isDiag(colIndex, rowIndex) ? ' diag-cell' : '')}
+                        className={cx(
+                          'table-cell number-cell',
+                          isDiag(colIndex, rowIndex) ? ' diag-cell' : '',
+                          isTotal(colIndex, rowIndex) ? ' total-cell' : '',
+                        )}
                         key={colIndex}
                       >
                         {cell}
@@ -113,34 +133,40 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
                 ))}
               </div>
             </div>
-            <div className="score-left">
+            <div className="score-left row">
               <div className="table">
                 <div className="row">
                   <div className="table-cell" style={{ flex: `0 .5 auto` }} id="overlay-label">
                     Scores
                   </div>
-                  <div className="table-cell" style={{ flex: `0 1 auto` }}></div>
                 </div>
                 <div className="row">
-                  <div className="table-cell">{limitLabelSize('Recall')}</div>
-                  <div className="table-cell">{limitLabelSize('F1 Score')}</div>
-                  <div className="table-cell"></div>
+                  <div className="table-cell">{limitLabelSize('Recall', 'vertical')}</div>
+                  <div className="table-cell">{limitLabelSize('F1 Score', 'vertical')}</div>
                 </div>
                 {table.data.map((_, rowIndex) => (
                   <div className="row" key={rowIndex}>
-                    <div className="table-cell">
+                    <div className="table-cell number-cell">
                       {scores.recall_label && displayScore(scores.recall_label[labels[rowIndex]])}
                     </div>
-                    <div className="table-cell">
+                    <div className="table-cell number-cell">
                       {scores.f1_label && displayScore(scores.f1_label[labels[rowIndex]])}
-                    </div>
-                    <div className="table-cell label-name recall">
-                      {table.index[rowIndex] !== 'Total'
-                        ? limitLabelSize(table.index[rowIndex])
-                        : ''}
                     </div>
                   </div>
                 ))}
+              </div>
+              <div id="horizontal-labels-container" style={{ height: `${(nLabels + 2) * 30}px` }}>
+                <div style={{ height: `${nLabels * 30}px` }}>
+                  {labels.map((label) => (
+                    <div
+                      className="table-cell label-column-right label-name recall"
+                      key={label}
+                      title={label}
+                    >
+                      {label !== 'Total' ? limitLabelSize(label, 'horizontal') : ''}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -148,28 +174,36 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
             <div id="truth-container" style={{ height: `${2 * 30}px` }}>
               <span style={{ height: `${2 * 30}px` }}>Scores</span>
             </div>
+            <div id="horizontal-labels-container" style={{ height: '60px' }}>
+              <div style={{ height: '60px' }}>
+                <div className="table-cell label-column-left">
+                  {limitLabelSize('Accuracy', 'horizontal')}
+                </div>
+                <div className="table-cell label-column-left">
+                  {limitLabelSize('F1-score', 'horizontal')}
+                </div>
+                <div className="table-cell label-column-left"></div>
+              </div>
+            </div>
             <div className="table">
               <div className="row">
-                <div className="table-cell label-column-left">{limitLabelSize('Accuracy')}</div>
                 {table.columns.map((col, colIndex) => (
-                  <div key={colIndex} className="table-cell">
+                  <div key={colIndex} className="table-cell number-cell">
                     {scores.f1_label && displayScore(scores.f1_label[col])}
                   </div>
                 ))}
               </div>
               <div className="row">
-                <div className="table-cell label-column-left">{limitLabelSize('F1-Score')}</div>
                 {table.columns.map((col, colIndex) => (
-                  <div key={colIndex} className="table-cell">
+                  <div key={colIndex} className="table-cell number-cell">
                     {scores.f1_label && displayScore(scores.f1_label[col])}
                   </div>
                 ))}
               </div>
               <div className="row">
-                <div className="table-cell label-column-left"></div>
                 {table.columns.map((col, colIndex) => (
-                  <div key={colIndex} className="table-cell label-name recall">
-                    {col !== 'Total' ? limitLabelSize(col) : ''}
+                  <div key={colIndex} className="table-cell label-name recall" title={col}>
+                    {col !== 'Total' ? limitLabelSize(col, 'vertical') : ''}
                   </div>
                 ))}
               </div>
