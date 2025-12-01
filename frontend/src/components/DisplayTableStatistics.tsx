@@ -2,6 +2,7 @@ import cx from 'classnames';
 import { FC } from 'react';
 import { useWindowSize } from 'usehooks-ts';
 import { MLStatisticsModel } from '../types';
+import React from 'react';
 
 export interface DisplayTableStatisticsProps {
   scores: MLStatisticsModel;
@@ -67,7 +68,7 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
   return (
     <>
       {table && (
-        <div id={`DisplayTableStatisticsRENEW-${nLabels}`}>
+        <div id={`DisplayTableStatistics-${nLabels}`}>
           <div className="row">
             <div className="main row">
               <div id="truth-container" style={{ height: `${(nLabels + 2) * 30}px` }}>
@@ -176,143 +177,6 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
           </div>
         </div>
       )}
-      <div id="DisplayTableStatistics" style={{ display: 'none' }}>
-        {table && (
-          <table>
-            {title && (
-              <caption className="caption-top text-lg font-medium mb-2 text-gray-700">
-                {title}
-              </caption>
-            )}
-            <thead>
-              <tr>
-                <td></td>
-                <td></td>
-                <td
-                  colSpan={Object.entries(labels).length}
-                  className="text-center p-2 border-bottom border-secondary"
-                >
-                  Predicted
-                </td>
-                <td style={{ width: '20px' }}></td>
-                <td colSpan={2} className="text-center p-2 border-bottom border-secondary">
-                  Scores
-                </td>
-              </tr>
-              <tr className="bg-gray-100">
-                <th></th>
-                <th></th>
-                {table?.columns.map((colName, colIndex) => (
-                  <th
-                    key={colName}
-                    className={cx(
-                      'text-center px-2',
-                      colIndex === table?.columns.length - 1 ? '' : 'fw-bold',
-                    )}
-                  >
-                    {limitLabelSize(colName)}
-                  </th>
-                ))}
-                <th></th>
-                <th className="text-center fw-normal">Recall</th>
-                <th className="text-center fw-normal">F1</th>
-              </tr>
-            </thead>
-            <tbody>
-              {table.data.map((row, rowIndex) => (
-                <tr key={table.index[rowIndex]}>
-                  {rowIndex === 0 && (
-                    <td rowSpan={colCount} className="rowspan-cell">
-                      Truth
-                    </td>
-                  )}
-                  <td
-                    className={cx(
-                      'text-end px-2',
-                      rowIndex === table.data.length - 1 ? '' : 'fw-bold',
-                    )}
-                  >
-                    {limitLabelSize(table.index[rowIndex])}
-                  </td>
-                  {row.map((cell, colIndex) => (
-                    <td
-                      key={colIndex}
-                      className={cx(
-                        'cell',
-                        isLabelColumn(colIndex, rowIndex, labels) ? ' label-col' : '',
-                        isDiag(colIndex, rowIndex) ? ' diag-cell' : '',
-                        isTotalCell(colIndex, rowIndex, labels) ? ' total-cell' : '',
-                      )}
-                    >
-                      {cell}
-                    </td>
-                  ))}
-                  <td></td>
-
-                  <td className="cell">
-                    {scores.recall_label && displayScore(scores.recall_label[labels[rowIndex]])}
-                  </td>
-                  <td className="cell">
-                    {scores.f1_label && displayScore(scores.f1_label[labels[rowIndex]])}
-                  </td>
-                  <td className="name-recall">
-                    {rowIndex === Object.entries(labels).length - 1
-                      ? ''
-                      : limitLabelSize(table.index[rowIndex])}
-                  </td>
-                </tr>
-              ))}
-
-              <tr style={{ height: '20px' }}>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-              </tr>
-
-              <tr>
-                <td rowSpan={2} className="rowspan-cell">
-                  {' '}
-                  Scores
-                </td>
-                <td className="text-end">Precision</td>
-                {table.columns.map((col, colIndex) => (
-                  <td key={colIndex} className="cell">
-                    {scores.precision_label && displayScore(scores.precision_label[col])}
-                  </td>
-                ))}
-                <td></td>
-                <td></td>
-                <td></td>
-              </tr>
-              <tr>
-                <td className="text-end">F1</td>
-                {table.columns.map((col, colIndex) => (
-                  <td key={colIndex} className="cell">
-                    {scores.f1_label && displayScore(scores.f1_label[col])}
-                  </td>
-                ))}
-                <td></td>
-                <td></td>
-                <td></td>
-              </tr>
-              <tr>
-                <td></td>
-                <td></td>
-                {table.columns.map((col, colIndex) => (
-                  <td key={colIndex} className="name-recall">
-                    {colIndex === Object.entries(labels).length - 1 ? '' : limitLabelSize(col)}
-                  </td>
-                ))}
-                <td></td>
-                <td></td>
-                <td></td>
-              </tr>
-            </tbody>
-          </table>
-        )}
-      </div>
     </>
   );
 };

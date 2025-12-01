@@ -297,43 +297,8 @@ table {
   }
 }
 
-#DisplayTableStatistics {
-  width: 50%;
-  padding: 10px;
-  margin: 10px 0px;
-  border: rgb(200, 200, 200) 1px solid;
-
-  // Center content
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  table {
-    tbody {
-      td.label-col {
-        font-weight: bold;
-      }
-      td.cell {
-        text-align: center;
-        text-overflow: clip;
-      }
-      td.total-cell {
-        color: rgb(160, 160, 160);
-        text-decoration: underline;
-        font-style: italic;
-      }
-      td.diag-cell {
-        color: green;
-        background: $tertiary;
-      }
-      td.rowspan-cell {
-        border-right: $secondary 1px solid;
-      }
-    }
-  }
-}
 @for $nLabel from 1 through 100 {
-  #DisplayTableStatisticsRENEW-#{$nLabel}{
+  #DisplayTableStatistics-#{$nLabel}{
     $min-cell-width: 50px;
     $inter-table-margin: 10px;
 
