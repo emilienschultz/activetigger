@@ -250,6 +250,8 @@ async def predict(
             sm = project.quickmodels.get(model_name)
             if sm is None:
                 raise Exception(f"Quick model {model_name} not found")
+
+            # build the X, y dataframe
             df = project.features.get(sm.features, dataset=dataset, keep_dataset_column=True)
             cols_features = [col for col in df.columns if col != "dataset"]
             labels = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=datasets)
@@ -266,7 +268,7 @@ async def predict(
                 cols_features=cols_features,
                 col_label="labels",
                 statistics=datasets,
-                col_text=None,  # TODO : fx bug
+                col_text="text",  # TODO : fx bug
             )
 
         orchestrator.log_action(
