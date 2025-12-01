@@ -406,9 +406,9 @@ export const sortDatesAsStrings = (
   reverse?: boolean,
 ) => {
   if (timeA && timeB) {
-    const output = timeA < timeB ? -1 : timeA > timeB ? 1 : 0;
+    const output = timeA < timeB ? -1 : timeA > timeB ? 1 : -1;
     if (reverse) {
-      return 1 - output;
+      return -1 * output;
     }
     return output;
   }

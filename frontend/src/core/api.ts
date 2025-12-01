@@ -1151,6 +1151,7 @@ export function useTrainBertModel(projectSlug: string | null, scheme: string | n
             class_min_freq: dataForm.class_min_freq || 1,
             exclude_labels: dataForm.exclude_labels || [],
             max_length: dataForm.max_length || 512,
+            auto_max_length: dataForm.auto_max_length,
           },
         });
         if (!res.error) notify({ type: 'warning', message: 'Bertmodel training' });

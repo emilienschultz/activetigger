@@ -163,6 +163,7 @@ export interface newBertModel {
   test_size?: number;
   exclude_labels?: string[];
   max_length?: number;
+  auto_max_length: boolean;
 }
 
 export interface EvalSetModel {
