@@ -230,13 +230,16 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
       .includes(true);
   };
 
-  const cleanDisplay = (listOfFeatures: string) => {
+  const cleanDisplay = (listOfFeatures: string, sep?: string) => {
+    if (!sep) {
+      sep = ' and ';
+    }
     if (listOfFeatures) {
       return listOfFeatures
         .replaceAll('"', '')
         .replaceAll('[', '')
         .replaceAll(']', '')
-        .replaceAll(',', ' and ');
+        .replaceAll(',', sep);
     } else {
       return 'Loading...';
     }
@@ -500,12 +503,19 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
         <Modal.Body>
           <table className="table table-striped table-hover w-100 mt-2">
             <tbody>
-              Model <b>{currentModelInformations?.model}</b> trained on{' '}
-              <b>
-                {cleanDisplay(
-                  JSON.stringify(currentModelInformations?.features) as unknown as string,
-                )}
-              </b>
+              <tr>
+                <td>Model type</td>
+                <td>{currentModelInformations?.model}</td>
+              </tr>
+              <tr>
+                <td>Input features</td>
+                <td>
+                  {cleanDisplay(
+                    JSON.stringify(currentModelInformations?.features) as unknown as string,
+                    ', ',
+                  )}
+                </td>
+              </tr>
               {Object.entries(currentModelInformations?.params || {}).map(([key, value], i) => (
                 <tr key={i}>
                   <td>{key}</td>
