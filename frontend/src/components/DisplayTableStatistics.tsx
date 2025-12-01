@@ -2,7 +2,6 @@ import cx from 'classnames';
 import { FC } from 'react';
 import { useWindowSize } from 'usehooks-ts';
 import { MLStatisticsModel } from '../types';
-import React from 'react';
 
 export interface DisplayTableStatisticsProps {
   scores: MLStatisticsModel;
