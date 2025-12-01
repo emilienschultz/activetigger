@@ -140,6 +140,7 @@ class TrainBert(BaseTask):
         unique_id: Optional[str] = None,
         loss: Optional[str] = "cross_entropy",
         max_length: int = 512,
+        auto_max_length : bool = False,
         **kwargs,
     ):
         self.path = path
@@ -156,6 +157,7 @@ class TrainBert(BaseTask):
         self.unique_id = unique_id
         self.loss = loss
         self.max_length = max_length
+        self.auto_max_length = auto_max_length
 
     def retrieve_model_max_length(self) -> int:
         try: 
@@ -221,11 +223,40 @@ class TrainBert(BaseTask):
         self.df["text"] = self.df[self.col_text]
         self.df = datasets.Dataset.from_pandas(self.df[["text", "labels"]])
 
-        # cap max_length
-        self.max_length = min(self.max_length,self.retrieve_model_max_length())
-
         # Tokenizer
         tokenizer = AutoTokenizer.from_pretrained(self.base_model, trust_remote_code=True)
+
+        # if auto_max_length set max_length to the maximum length of tokenized sentences
+        # Tokenize the text column
+        def length_after_tokenizing(text : str):
+            try:
+                return len(tokenizer(text).input_ids)
+            except:
+                return np.nan
+        if self.auto_max_length:
+            self.max_length = int(
+                self.df
+                .to_pandas()
+                ["text"]
+                .apply(length_after_tokenizing)
+                .dropna()
+                .max()
+            )
+
+        # cap max_length
+        self.max_length = min(self.max_length,self.retrieve_model_max_length())
+        # evaluate the proportion of elements truncated
+        percentage_truncated = int(
+                100 * 
+                self.df
+                .to_pandas()
+                ["text"]
+                .apply(length_after_tokenizing)
+                .dropna()
+                .apply(lambda x : x > self.max_length)
+                .mean()
+            )
+        
         if self.params.adapt:
             self.df = self.df.map(
                 lambda e: tokenizer(
@@ -360,6 +391,7 @@ class TrainBert(BaseTask):
             params_to_save["base_model"] = self.base_model
             params_to_save["n_train"] = len(self.df["train"])
             params_to_save["max_length"] = self.max_length
+            params_to_save["Proportion of elements truncated (%)"] = percentage_truncated
 
             with open(current_path.joinpath("parameters.json"), "w") as f:
                 json.dump(params_to_save, f)
