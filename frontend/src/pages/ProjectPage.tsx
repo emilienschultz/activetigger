@@ -58,8 +58,6 @@ export const ProjectPage: FC = () => {
     }
   }, [fromProjectPage, availableLabels, navigate, projectSlug, currentScheme]);
 
-  console.log('Interface type', displayConfig.interfaceType);
-
   if (!projectSlug || !project) return;
 
   return (

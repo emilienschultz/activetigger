@@ -6,10 +6,10 @@ import { Modal } from 'react-bootstrap';
 import { FaPlusCircle } from 'react-icons/fa';
 import { useDeleteFeature, useGetFeatureInfo } from '../core/api';
 import { useAppContext } from '../core/context';
+import { sortDatesAsStrings } from '../core/utils';
 import { FeatureDescriptionModelOut } from '../types';
 import { CreateNewFeature } from './CreateNewFeature';
 import { ModelsPillDisplay } from './ModelsPillDisplay';
-import { sortDatesAsStrings } from '../core/utils';
 
 export default function SimpleTable(data: FeatureDescriptionModelOut) {
   return (
@@ -90,10 +90,8 @@ export const FeaturesManagement: FC = () => {
       {Object.entries(project?.features.training).map(([key, element]) => (
         <div className="card text-bg-light mt-3 bg-warning" key={key}>
           <div className="d-flex m-2 align-items-center">
-            <span className="w-25">
-              Currently computing {element ? element.name : ''}
-              {element?.progress ? ` (${element.progress}%)` : ''}
-            </span>
+            Currently computing {element ? element.name : ''}
+            {element?.progress ? ` (${element.progress}%)` : ''}
           </div>
         </div>
       ))}

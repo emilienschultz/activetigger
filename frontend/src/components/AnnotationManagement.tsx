@@ -264,7 +264,7 @@ export const AnnotationManagement: FC = () => {
     }
     const formData = {
       name: 'basic-quickmodel',
-      model: 'liblinear',
+      model: 'logistic-l1',
       scheme: currentScheme || '',
       params: {
         costLogL2: 1,

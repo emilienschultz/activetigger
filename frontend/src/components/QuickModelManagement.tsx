@@ -122,6 +122,7 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
     if (currentQuickModelName) {
       await renameQuickModel(currentQuickModelName, data.new_name);
       resetRename();
+      setShowRename(false);
     } else notify({ type: 'error', message: 'New name is void' });
   };
 
@@ -229,13 +230,16 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
       .includes(true);
   };
 
-  const cleanDisplay = (listOfFeatures: string) => {
+  const cleanDisplay = (listOfFeatures: string, sep?: string) => {
+    if (!sep) {
+      sep = ' and ';
+    }
     if (listOfFeatures) {
       return listOfFeatures
         .replaceAll('"', '')
         .replaceAll('[', '')
         .replaceAll(']', '')
-        .replaceAll(',', ' and ');
+        .replaceAll(',', sep);
     } else {
       return 'Loading...';
     }
@@ -261,7 +265,6 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
           <FaPlusCircle size={20} /> Create new model
         </button>
       </ModelsPillDisplay>
-      <hr className="mt-2" />
 
       {isComputing && (
         <div className="btn btn-primary mt-3 d-flex align-items-center">
@@ -270,7 +273,7 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
       )}
       {currentModelInformations && currentQuickModelName && (
         <div>
-          <div className="d-flex my-2">
+          <div className="d-flex my-4">
             <button
               className="btn btn-outline-secondary btn-sm me-2 d-flex align-items-center"
               onClick={() => setShowParameters(true)}
@@ -500,12 +503,19 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
         <Modal.Body>
           <table className="table table-striped table-hover w-100 mt-2">
             <tbody>
-              Model <b>{currentModelInformations?.model}</b> trained on{' '}
-              <b>
-                {cleanDisplay(
-                  JSON.stringify(currentModelInformations?.features) as unknown as string,
-                )}
-              </b>
+              <tr>
+                <td>Model type</td>
+                <td>{currentModelInformations?.model}</td>
+              </tr>
+              <tr>
+                <td>Input features</td>
+                <td>
+                  {cleanDisplay(
+                    JSON.stringify(currentModelInformations?.features) as unknown as string,
+                    ', ',
+                  )}
+                </td>
+              </tr>
               {Object.entries(currentModelInformations?.params || {}).map(([key, value], i) => (
                 <tr key={i}>
                   <td>{key}</td>
