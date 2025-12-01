@@ -1,4 +1,4 @@
-import { Dispatch, FC, SetStateAction } from 'react';
+import { Dispatch, FC, SetStateAction, useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import Select from 'react-select';
@@ -30,6 +30,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
 }) => {
   // form to train a model
   const { trainBertModel } = useTrainBertModel(projectSlug || null, currentScheme || null);
+  const [disableMaxLengthInput, setDisableMaxLengthInput] = useState<boolean>(true);
   // available base models suited for the project : sorted by language + priority
   const filteredModels = ((project?.languagemodels.options as unknown as BertModel[]) ?? [])
     .sort((a, b) => b.priority - a.priority)
@@ -63,6 +64,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
   const {
     handleSubmit: handleSubmitNewModel,
     register: registerNewModel,
+    watch,
     control,
   } = useForm<newBertModel>({
     defaultValues: {
@@ -72,6 +74,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
       class_min_freq: 1,
       test_size: 0.2,
       max_length: 512,
+      auto_max_length: false,
       parameters: {
         batchsize: 4,
         gradacc: 4.0,
@@ -85,6 +88,11 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
       },
     },
   });
+
+  const autoMaxLengthValue = watch('auto_max_length');
+  useEffect(() => {
+    setDisableMaxLengthInput(autoMaxLengthValue);
+  }, [autoMaxLengthValue]);
 
   const onSubmitNewModel: SubmitHandler<newBertModel> = async (data) => {
     // setActiveKey('models');
@@ -108,80 +116,104 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
       )}
 
       <label htmlFor="new-model-type"></label>
-      <div>
-        <label>Name for the model</label>
-        <input
-          type="text"
-          {...registerNewModel('name')}
-          placeholder="Name the model"
-          className="form-control"
-        />
+      <label>Name for the model</label>
+      <input
+        type="text"
+        {...registerNewModel('name')}
+        placeholder="Name the model"
+        className="form-control"
+      />
+      <label>
+        Model base{' '}
+        <a className="basemodel">
+          <HiOutlineQuestionMarkCircle />
+        </a>
+        <Tooltip anchorSelect=".basemodel" place="top">
+          The pre-trained model to be used for fine-tuning.
+        </Tooltip>
+      </label>
+
+      <Controller
+        name="base"
+        control={control}
+        defaultValue={availableBaseModels?.[0]?.value}
+        render={({ field }) => (
+          <Select
+            {...field}
+            options={availableBaseModels}
+            classNamePrefix="react-select"
+            value={availableBaseModels.find((option) => option.value === field.value)}
+            onChange={(selectedOption) => field.onChange(selectedOption?.value)}
+          />
+        )}
+      />
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', marginTop: '10px' }}>
+        <label style={{ flex: '1 1 auto' }}>
+          Auto adjust Max context window{' '}
+          <a className="optimum_max_length">
+            <HiOutlineQuestionMarkCircle />
+          </a>
+          <Tooltip anchorSelect=".optimum_max_length" place="top">
+            Automatically sets the the context window size to the maximum number of tokens in one
+            <br />
+            element of your corpus.
+          </Tooltip>
+          <input type="checkbox" {...registerNewModel('auto_max_length')} />
+        </label>
+        <div style={{ display: 'flex', flex: '3 1 auto' }}>
+          <label style={{ flex: '3 0 300px' }}>
+            Context window size (in tokens){' '}
+            <a className="max_length">
+              <HiOutlineQuestionMarkCircle />
+            </a>
+            <Tooltip anchorSelect=".max_length" place="top">
+              Number of tokens before truncation (depends on the model)
+            </Tooltip>
+          </label>
+          <input
+            type="number"
+            step="1"
+            {...registerNewModel('max_length')}
+            disabled={disableMaxLengthInput}
+            style={{ flex: '1 1 400px' }}
+          />
+        </div>
       </div>
 
-      <div>
-        <label>
-          Model base{' '}
-          <a className="basemodel">
-            <HiOutlineQuestionMarkCircle />
-          </a>
-          <Tooltip anchorSelect=".basemodel" place="top">
-            The pre-trained model to be used for fine-tuning.
-          </Tooltip>
-        </label>
+      <label>
+        Epochs{' '}
+        <a className="epochs">
+          <HiOutlineQuestionMarkCircle />
+        </a>
+        <Tooltip anchorSelect=".epochs" place="top">
+          number of complete pass through the entire training dataset
+        </Tooltip>
+      </label>
+      <input type="number" {...registerNewModel('parameters.epochs')} min={0} />
+      <label>
+        Learning Rate{' '}
+        <a className="learningrate">
+          <HiOutlineQuestionMarkCircle />
+        </a>
+        <Tooltip anchorSelect=".learningrate" place="top">
+          step size at which the model updates its weights during training (use a factor 3 to change
+          <br />
+          it)
+        </Tooltip>
+      </label>
+      <input type="number" step="0.00001" min={0} {...registerNewModel('parameters.lrate')} />
+      <label>
+        Weight Decay{' '}
+        <a className="weightdecay">
+          <HiOutlineQuestionMarkCircle />
+        </a>
+        <Tooltip anchorSelect=".weightdecay" place="top">
+          regularization technique that reduces model weights over time to prevent overfitting
+        </Tooltip>
+      </label>
+      <input type="number" step="0.001" min={0} {...registerNewModel('parameters.wdecay')} />
 
-        <Controller
-          name="base"
-          control={control}
-          defaultValue={availableBaseModels?.[0]?.value}
-          render={({ field }) => (
-            <Select
-              {...field}
-              options={availableBaseModels}
-              classNamePrefix="react-select"
-              value={availableBaseModels.find((option) => option.value === field.value)}
-              onChange={(selectedOption) => field.onChange(selectedOption?.value)}
-            />
-          )}
-        />
-      </div>
-
-      <div>
-        <label>
-          Epochs{' '}
-          <a className="epochs">
-            <HiOutlineQuestionMarkCircle />
-          </a>
-          <Tooltip anchorSelect=".epochs" place="top">
-            number of complete pass through the entire training dataset
-          </Tooltip>
-        </label>
-        <input type="number" {...registerNewModel('parameters.epochs')} min={0} />
-      </div>
-      <div>
-        <label>
-          Learning Rate{' '}
-          <a className="learningrate">
-            <HiOutlineQuestionMarkCircle />
-          </a>
-          <Tooltip anchorSelect=".learningrate" place="top">
-            step size at which the model updates its weights during training (use a factor 3 to
-            change it)
-          </Tooltip>
-        </label>
-        <input type="number" step="0.00001" min={0} {...registerNewModel('parameters.lrate')} />
-      </div>
-      <div>
-        <label>
-          Weight Decay{' '}
-          <a className="weightdecay">
-            <HiOutlineQuestionMarkCircle />
-          </a>
-          <Tooltip anchorSelect=".weightdecay" place="top">
-            regularization technique that reduces model weights over time to prevent overfitting
-          </Tooltip>
-        </label>
-        <input type="number" step="0.001" min={0} {...registerNewModel('parameters.wdecay')} />
-      </div>
       <div className="form-group d-flex align-items-center">
         <label>
           Use GPU
@@ -196,18 +228,6 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
       </div>
       <details className="custom-details">
         <summary>Advanced parameters for the model</summary>
-        <div>
-          <label>
-            Max context window (tokens){' '}
-            <a className="max_length">
-              <HiOutlineQuestionMarkCircle />
-            </a>
-            <Tooltip anchorSelect=".max_length" place="top">
-              Number of token before truncating (depend of the model)
-            </Tooltip>
-          </label>
-          <input type="number" step="1" {...registerNewModel('max_length')} />
-        </div>
         <div>
           <label>
             Batch Size{' '}
