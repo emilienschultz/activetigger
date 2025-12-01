@@ -60,7 +60,7 @@ export const ProjectValidatePage: FC = () => {
     if (!isComputing) {
       reFetchBertModelInformations();
       reFetchQuickModelInformations();
-      notify({ type: 'info', message: 'Score updated' });
+      // notify({ type: 'info', message: 'Score updated' });
     }
   }, [isComputing, reFetchBertModelInformations, reFetchQuickModelInformations, notify]);
 
