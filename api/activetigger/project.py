@@ -19,6 +19,7 @@ from activetigger.config import config
 from activetigger.data import Data
 from activetigger.datamodels import (
     BertModelModel,
+    BertopicComputing,
     ElementInModel,
     ElementOutModel,
     EvalSetDataModel,
@@ -327,7 +328,12 @@ class Project:
         )
         self.projections = Projections(self.params.dir, self.computing, self.queue)
         self.bertopic = Bertopic(
-            project_slug, self.params.dir, self.queue, self.computing, self.features
+            project_slug,
+            self.params.dir,
+            self.queue,
+            self.computing,
+            self.features,
+            self.db_manager,
         )
 
     def load_params(self, project_slug: str) -> ProjectModel:
@@ -1304,7 +1310,7 @@ class Project:
             test_size=bert.test_size,
             loss=bert.loss,
             max_length=bert.max_length,
-            auto_max_length=bert.auto_max_length
+            auto_max_length=bert.auto_max_length,
         )
 
     def start_generation(self, request: GenerationRequest, username: str) -> None:
@@ -1577,7 +1583,9 @@ class Project:
             # case for bertopic
             if e.kind == "bertopic":
                 try:
+                    bertmodel = cast(BertopicComputing, e)
                     print("Bertopic trained")
+                    # self.bertopic.add(bertmodel)
                     logging.debug("Bertopic trained")
                 except Exception as ex:
                     self.errors.append(

@@ -16,6 +16,8 @@ from activetigger.datamodels import (
     BertopicProjectStateModel,
     TopicsOutModel,
 )
+from activetigger.db.languagemodels import ModelsService
+from activetigger.db.manager import DatabaseManager
 from activetigger.features import Features
 from activetigger.queue import Queue
 from activetigger.tasks.compute_bertopic import ComputeBertopic
@@ -29,8 +31,16 @@ class Bertopic:
     Class to handle BERTopic computations.
     """
 
+    models_service: ModelsService
+
     def __init__(
-        self, project_slug: str, path: Path, queue: Queue, computing: list, features: Features
+        self,
+        project_slug: str,
+        path: Path,
+        queue: Queue,
+        computing: list,
+        features: Features,
+        db_manager: DatabaseManager,
     ) -> None:
         self.project_slug = project_slug
         self.queue = queue
@@ -46,6 +56,7 @@ class Bertopic:
             "all-MiniLM-L6-v2",
             "paraphrase-multilingual-mpnet-base-v2",
         ]
+        self.models_service = db_manager.language_models_service
 
     def compute(
         self,
@@ -65,8 +76,6 @@ class Bertopic:
 
         if len(self.current_user_processes(user)) > 0:
             raise ValueError("You already have computation in progress.")
-
-        print("BERTopic compute called with parameters:", parameters)
 
         args = ComputeBertopic(
             path_bertopic=self.path,
@@ -95,6 +104,22 @@ class Bertopic:
         )
         return unique_id
 
+    # def add(self, element: BertopicComputing) -> None:
+    #     """
+    #     Add a trained BERTopic in the database
+    #     """
+    #     model_path = self.path.joinpath("runs").joinpath(element.name)
+    #     self.models_service.add_model(
+    #         kind="bertopic",
+    #         name=element.name,
+    #         user=element.user,
+    #         project=self.project_slug,
+    #         scheme="all",
+    #         params=element.parameters.model_dump(),
+    #         path=str(model_path),
+    #         status="computed",
+    #     )
+
     def training(self) -> dict[str, dict[str, str | int | None]]:
         """
         Get available BERTopic models in the current process
@@ -105,20 +130,21 @@ class Bertopic:
             if e.kind == "bertopic"
         }
 
-    def available(self) -> dict[str, str | None]:
+    def available(self) -> dict[str, str | dict[str, str] | None]:
         """
         Get available BERTopic models.
         """
+
         def retrieve_date(folder_path):
             with open(folder_path / "params.json", "r") as file:
                 p = json.load(file)
             return p["timestamp"]
-        
+
         if self.path.exists() and self.path.joinpath("runs").exists():
             return {
                 folder_name: {
-                    'name':folder_name,
-                    'time': retrieve_date(self.path.joinpath("runs") / folder_name)
+                    "name": folder_name,
+                    "time": retrieve_date(self.path.joinpath("runs") / folder_name),
                 }
                 for folder_name in os.listdir(self.path.joinpath("runs"))
                 if (self.path.joinpath("runs") / folder_name).is_dir()
@@ -162,6 +188,8 @@ class Bertopic:
         """
         Delete a BERTopic model.
         """
+
+        # on disk
         path_model = self.path.joinpath("runs").joinpath(name)
         if path_model.exists():
             shutil.rmtree(path_model)

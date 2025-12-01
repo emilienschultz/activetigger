@@ -1,26 +1,27 @@
-RANDOM_SEED = 2306406
-
 import datetime
 import json
 import shutil
 from pathlib import Path
 from string import punctuation
-from jinja2 import Template
 
 import hdbscan  # type: ignore[import]
-import pandas as pd
 import numpy as np
+import pandas as pd
+import plotly.graph_objects as go  # type: ignore[import]
 import stopwordsiso as stopwords  # type: ignore[import]
+import umap  # type: ignore[import]
 from bertopic import BERTopic  # type: ignore[import]
-import plotly.graph_objects as go
+from great_tables import GT, loc, style
+from jinja2 import Template
 from simplemma import lemmatize
 from sklearn.feature_extraction.text import CountVectorizer  # type: ignore[import]
 from slugify import slugify
-from great_tables import GT, style, loc 
 
 from activetigger.datamodels import BertopicParamsModel
 from activetigger.tasks.base_task import BaseTask
 from activetigger.tasks.compute_sbert import ComputeSbert
+
+RANDOM_SEED = 2306406
 
 # accelerate UMAP
 try:
@@ -30,7 +31,6 @@ try:
 except ImportError:
     print("CuML not installed")
     CUMl_AVAILABLE = False
-import umap  # type: ignore[import]
 
 """
 Rational : 
@@ -44,55 +44,52 @@ Rational :
 # TODO : multicolumns for text
 # TODO : manage special case of embeddings of trainset
 
+
 def visualize_documents(
-        topics : list[int],
-        topic_info : pd.DataFrame,
-        embeddings : list[list[float]] | np.ndarray,
-        docs : list[str] | np.ndarray,
-        n_neighbors : int = 15,
-        min_dist: float = 0.0,
-        min_number_of_element : int = 50
-    )-> go.Figure:
-    ''''''
+    topics: list[int],
+    topic_info: pd.DataFrame,
+    embeddings: list[list[float]] | np.ndarray,
+    docs: list[str] | np.ndarray,
+    n_neighbors: int = 15,
+    min_dist: float = 0.0,
+    min_number_of_element: int = 50,
+) -> go.Figure:
+    """"""
     # Transform inputs in np.ndarray
     embeddings = np.array(embeddings)
-    topics = np.array(topics)
+    topics = np.array(topics)  # type: ignore[assignment]
 
     # Reduce embeddings
     umap_model = umap.UMAP(
-        n_neighbors = n_neighbors,
-        n_components = 2,
-        min_dist = min_dist,
-        metric = "cosine",
-        random_state=RANDOM_SEED
+        n_neighbors=n_neighbors,
+        n_components=2,
+        min_dist=min_dist,
+        metric="cosine",
+        random_state=RANDOM_SEED,
     )
     reduced_embeddings = umap_model.fit_transform(embeddings)
-    X,Y = reduced_embeddings[:,0], reduced_embeddings[:,1]
+    X, Y = reduced_embeddings[:, 0], reduced_embeddings[:, 1]
 
     fig = go.Figure(
         data=[
             go.Scatter(
-                x = X, y = Y, mode = "markers",
-                hoverinfo = "skip",
-                marker={'color': "#bababa", "opacity": 0.3},
-                showlegend = False
+                x=X,
+                y=Y,
+                mode="markers",
+                hoverinfo="skip",
+                marker={"color": "#bababa", "opacity": 0.3},
+                showlegend=False,
             )
         ],
-        layout = {
-            "plot_bgcolor":"#FCFCFC", 
+        layout={
+            "plot_bgcolor": "#FCFCFC",
             "margin": {"t": 20, "b": 40},
-            "xaxis": {
-                "zerolinecolor": "#ECECEC",
-                "gridcolor": "#ECECEC"
-            },
-            "yaxis": {
-                "zerolinecolor": "#ECECEC",
-                "gridcolor": "#ECECEC"
-            }
-        }
+            "xaxis": {"zerolinecolor": "#ECECEC", "gridcolor": "#ECECEC"},
+            "yaxis": {"zerolinecolor": "#ECECEC", "gridcolor": "#ECECEC"},
+        },
     )
 
-    def adapt_length_to_width(text : str, width : int = 100, max_n_words : int = 10):
+    def adapt_length_to_width(text: str, width: int = 100, max_n_words: int = 10):
         output = ""
         len_line = 0
         n_words = 0
@@ -100,37 +97,40 @@ def visualize_documents(
             if len(word) + len_line > width:
                 output += "<br>" + word + " "
                 len_line = len(word) + 1
-            else: 
+            else:
                 output += word + " "
                 len_line += len(word) + 1
-            
+
             n_words += 1
-            if n_words > max_n_words : break 
+            if n_words > max_n_words:
+                break
         return output
 
-    def hovertext_transform(docs : list[str], width : int = 100, max_n_words : int = 100):
-        """"""
-        return np.array([
-            adapt_length_to_width(doc, width, max_n_words)
-            for doc in docs
-        ])
-    
-    hovertext = hovertext_transform(docs)
+    # def hovertext_transform(docs: list[str] | np.ndarray, width: int = 100, max_n_words: int = 100):
+    #     """"""
+    #     return np.array([adapt_length_to_width(doc, width, max_n_words) for doc in docs])
+
+    # hovertext = hovertext_transform(docs)
 
     for topic in np.unique(topics):
-        if topic == -1: continue 
-        indexes : np.ndarray = topics == topic
-        if sum(indexes) < min_number_of_element: continue
+        if topic == -1:
+            continue
+        indexes: np.ndarray = topics == topic
+        if sum(indexes) < min_number_of_element:
+            continue
         fig.add_trace(
             go.Scatter(
-                x = X[indexes], y= Y[indexes], mode="markers",
+                x=X[indexes],
+                y=Y[indexes],
+                mode="markers",
                 # hovertemplate = "%{text}",
                 # text = hovertext[indexes],
-                marker = {'opacity': 0.75},
-                name = topic_info.loc[topic == topic_info.Topic, "Name"].item()
+                marker={"opacity": 0.75},
+                name=topic_info.loc[topic == topic_info.Topic, "Name"].item(),
             )
         )
     return fig
+
 
 class CustomLemmatizer:
     """An object to apply the lemmatize function."""
@@ -155,6 +155,7 @@ class CustomLemmatizer:
                 if lemma not in self.__stop_words:
                     out += [lemma]
         return out
+
 
 class ComputeBertopic(BaseTask):
     """
@@ -294,7 +295,7 @@ class ComputeBertopic(BaseTask):
                     # min_dist=self.parameters.umap_min_dist, # Removed because 0.0 is the best value to use for clustering - Axel
                     min_dist=0.0,
                     metric="cosine",
-                    random_state=RANDOM_SEED # for deterministic behaviour
+                    random_state=RANDOM_SEED,  # for deterministic behaviour
                 )
             except Exception as e:
                 print(f"CuML UMAP failed: {e}, using standard UMAP instead.")
@@ -304,7 +305,7 @@ class ComputeBertopic(BaseTask):
                     # min_dist=self.parameters.umap_min_dist, # Removed because 0.0 is the best value to use for clustering - Axel
                     min_dist=0.0,
                     metric="cosine",
-                    random_state=RANDOM_SEED # for deterministic behaviour
+                    random_state=RANDOM_SEED,  # for deterministic behaviour
                 )
 
             # Clustering with HDBSCAN
@@ -381,11 +382,11 @@ class ComputeBertopic(BaseTask):
 
             # Create a report
             self.create_report(
-                topic_model = topic_model,
-                topics = topics,
-                topic_info = topics_df,
-                docs = df[self.col_text].to_list(),
-                embeddings = embeddings
+                topic_model=topic_model,
+                topics=topics,
+                topic_info=topics_df,
+                docs=df[self.col_text].to_list(),
+                embeddings=embeddings,
             )
 
             self.path_run.joinpath("progress").unlink(missing_ok=True)
@@ -441,20 +442,20 @@ class ComputeBertopic(BaseTask):
         """
         try:
             reducer = cuml.UMAP(
-                n_neighbors=self.parameters.umap_n_neighbors, 
-                n_components=2, 
-                min_dist=0.0, 
+                n_neighbors=self.parameters.umap_n_neighbors,
+                n_components=2,
+                min_dist=0.0,
                 metric="cosine",
-                random_state=RANDOM_SEED # for deterministic behaviour
+                random_state=RANDOM_SEED,  # for deterministic behaviour
             )
             print("Using cuML for UMAP computation")
         except Exception:
             reducer = umap.UMAP(
-                n_neighbors=self.parameters.umap_n_neighbors, 
-                n_components=2, 
-                min_dist=0.0, 
+                n_neighbors=self.parameters.umap_n_neighbors,
+                n_components=2,
+                min_dist=0.0,
                 metric="cosine",
-                random_state=RANDOM_SEED # for deterministic behaviour
+                random_state=RANDOM_SEED,  # for deterministic behaviour
             )
             print("Using standard UMAP for computation")
         embeddings = pd.read_parquet(path_embeddings)
@@ -462,57 +463,43 @@ class ComputeBertopic(BaseTask):
         df_reduced = pd.DataFrame(reduced_embeddings, index=embeddings.index, columns=["x", "y"])
         df_reduced.to_parquet(path_projection)
 
-    def create_report(self, 
-        topic_model : BERTopic, 
-        topics : list[int], 
-        topic_info : pd.DataFrame,
-        docs : list[str], 
-        embeddings : list[list[float]]
+    def create_report(
+        self,
+        topic_model: BERTopic,
+        topics: list[int],
+        topic_info: pd.DataFrame,
+        docs: list[str],
+        embeddings: list[list[float]],
     ) -> None:
         """Creates an HTML report downloadable by the user"""
         # Creates a table for topic info with great tables
         topic_info = topic_info.copy()
-        topic_info["Representation"] = (
-            topic_info["Representation"]
-            .apply(lambda l : " - ".join(l))
-        )
+        topic_info["Representation"] = topic_info["Representation"].apply(lambda l: " - ".join(l))
         table_topics = (
-            GT(topic_info.drop(columns = ["Name", "Representative_Docs"]))
+            GT(topic_info.drop(columns=["Name", "Representative_Docs"]))
             .cols_align("center", "Count")
-            .tab_header(title = "Topic info", subtitle = None)
-            .cols_width(
-                cases={
-                    "Topic": "10%",
-                    "Count": "10%",
-                    "Representation": "60%"
-                }
-            )
+            .tab_header(title="Topic info", subtitle=None)
+            .cols_width(cases={"Topic": "10%", "Count": "10%", "Representation": "60%"})
             .tab_style(
-                style = [
-                    style.text(align="right"),
-                    style.borders(sides = "right", color="#d3d3d3")
-                ],
-                locations = loc.body(columns = "Topic")
+                style=[style.text(align="right"), style.borders(sides="right", color="#d3d3d3")],
+                locations=loc.body(columns="Topic"),
             )
         )
-        
+
         # Create a table for the topic model settings
         settings = {
-            "language" : self.parameters.language,
-            "top_n_words" : self.parameters.top_n_words,
-            "n_gram_range" : self.parameters.n_gram_range,
-            "outlier_reduction" : self.parameters.outlier_reduction,
-            "hdbscan_min_cluster_size" : self.parameters.hdbscan_min_cluster_size,
-            "umap_n_neighbors" : self.parameters.umap_n_neighbors,
-            "umap_n_components" : self.parameters.umap_n_components,
-            "embedding_kind" : self.parameters.embedding_kind,
-            "embedding_model" : self.parameters.embedding_model,
-            "filter_text_length" : self.parameters.filter_text_length,
+            "language": self.parameters.language,
+            "top_n_words": self.parameters.top_n_words,
+            "n_gram_range": self.parameters.n_gram_range,
+            "outlier_reduction": self.parameters.outlier_reduction,
+            "hdbscan_min_cluster_size": self.parameters.hdbscan_min_cluster_size,
+            "umap_n_neighbors": self.parameters.umap_n_neighbors,
+            "umap_n_components": self.parameters.umap_n_components,
+            "embedding_kind": self.parameters.embedding_kind,
+            "embedding_model": self.parameters.embedding_model,
+            "filter_text_length": self.parameters.filter_text_length,
         }
-        setting_df = pd.DataFrame({
-            "Parameter" : settings.keys(),
-            "Value" : settings.values()
-        })
+        setting_df = pd.DataFrame({"Parameter": settings.keys(), "Value": settings.values()})
 
         table_settings = (
             GT(setting_df)
@@ -524,59 +511,55 @@ class ComputeBertopic(BaseTask):
                     "Value": "40%",
                 }
             )
-        ) 
-        
-        # Create Plotly figure for 2D maps
-        fig_map = (
-            visualize_documents(
-                topics = topics,
-                topic_info = topic_info,
-                docs = docs, 
-                embeddings = embeddings,
-                n_neighbors = self.parameters.umap_n_neighbors,
-                min_dist = 0.0,
-                min_number_of_element=-1 # Need additional implementation
-            )
-            .update_layout(width = 900)
         )
 
+        # Create Plotly figure for 2D maps
+        fig_map = visualize_documents(
+            topics=topics,
+            topic_info=topic_info,
+            docs=docs,
+            embeddings=embeddings,
+            n_neighbors=self.parameters.umap_n_neighbors,
+            min_dist=0.0,
+            min_number_of_element=-1,  # Need additional implementation
+        ).update_layout(width=900)
+
         # Create plotly figure for hierarchical representation
-        fig_hierarchical = (
-            topic_model
-            .visualize_hierarchy()
-            .update_layout(
-                width = 900,
-                title = {"text":""},
-                margin = {"t": 20, "b" : 40},
-                plot_bgcolor = "#FCFCFC",
-            )
+        fig_hierarchical = topic_model.visualize_hierarchy().update_layout(
+            width=900,
+            title={"text": ""},
+            margin={"t": 20, "b": 40},
+            plot_bgcolor="#FCFCFC",
         )
         # Export results
         saving_kwargs = {
-            "full_html" : False,
-            "include_plotlyjs" : 'cdn', 
-            "include_mathjax": 'cdn',
-            "config" : {
-                "responsive" : False,
+            "full_html": False,
+            "include_plotlyjs": "cdn",
+            "include_mathjax": "cdn",
+            "config": {
+                "responsive": False,
                 "modeBarButtonsToRemove": ["zoomIn", "zoomOut", "autoScale", "select"],
                 "displaylogo": False,
-                "displayModeBar": False
-            }
+                "displayModeBar": False,
+            },
         }
 
         jinja_data = {
             "bertopic_name": self.name.replace("-", " "),
-            "topics" : table_topics.as_raw_html(),
-            "map" : fig_map.to_html(**saving_kwargs,), 
-            "hierarchical" : fig_hierarchical.to_html(**saving_kwargs,), 
+            "topics": table_topics.as_raw_html(),
+            "map": fig_map.to_html(
+                **saving_kwargs,
+            ),
+            "hierarchical": fig_hierarchical.to_html(
+                **saving_kwargs,
+            ),
             "RepresentativeTopics": {
-                topic_repr : topic_docs
+                topic_repr: topic_docs
                 for topic_repr, topic_docs in zip(
-                    topic_info.Representation, 
-                    topic_info.Representative_Docs
+                    topic_info.Representation, topic_info.Representative_Docs
                 )
             },
-            "parameters" : table_settings.as_raw_html(),
+            "parameters": table_settings.as_raw_html(),
         }
 
         input_template_path = "./activetigger/html/bertopic_report_template.html"

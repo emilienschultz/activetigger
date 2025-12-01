@@ -11,9 +11,9 @@ from activetigger.db.models import (
 )
 
 
-class LanguageModelsService:
+class ModelsService:
     """
-    Database service for language models
+    Database service for models
     """
 
     SessionMaker: sessionmaker[Session]
@@ -27,7 +27,9 @@ class LanguageModelsService:
         """
         with self.SessionMaker() as session:
             models = session.execute(
-                select(Models.name, Models.parameters, Models.path, Models.scheme_name, Models.time).filter_by(
+                select(
+                    Models.name, Models.parameters, Models.path, Models.scheme_name, Models.time
+                ).filter_by(
                     project_slug=project_slug,
                     status="trained",
                     kind=kind,

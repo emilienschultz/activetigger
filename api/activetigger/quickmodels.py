@@ -10,7 +10,7 @@ from typing import Any
 import pandas as pd  # type: ignore[import]
 from pandas import DataFrame
 from sklearn.ensemble import RandomForestClassifier  # type: ignore[import]
-from sklearn.linear_model import Lasso, LogisticRegression  # type: ignore[import]
+from sklearn.linear_model import LogisticRegression  # type: ignore[import]
 from sklearn.naive_bayes import MultinomialNB  # type: ignore[import]
 from sklearn.neighbors import KNeighborsClassifier  # type: ignore[import]
 from sklearn.preprocessing import StandardScaler  # type: ignore[import]
@@ -29,7 +29,7 @@ from activetigger.datamodels import (
     QuickModelsProjectStateModel,
     RandomforestParams,
 )
-from activetigger.db.languagemodels import LanguageModelsService
+from activetigger.db.languagemodels import ModelsService
 from activetigger.db.manager import DatabaseManager
 from activetigger.functions import get_model_metrics
 from activetigger.queue import Queue
@@ -50,7 +50,7 @@ class QuickModels:
     available_models: dict[str, Any]
     computing: list
     loaded: dict
-    language_models_service: LanguageModelsService
+    language_models_service: ModelsService
 
     def __init__(
         self,

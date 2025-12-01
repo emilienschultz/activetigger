@@ -22,7 +22,7 @@ from activetigger.datamodels import (
     ModelScoresModel,
     StaticFileModel,
 )
-from activetigger.db.languagemodels import LanguageModelsService
+from activetigger.db.languagemodels import ModelsService
 from activetigger.db.manager import DatabaseManager
 from activetigger.functions import get_model_metrics
 from activetigger.queue import Queue
@@ -39,7 +39,7 @@ class LanguageModels:
     path: Path
     queue: Queue
     computing: list
-    language_models_service: LanguageModelsService
+    language_models_service: ModelsService
     db_manager: DatabaseManager
     base_models: list[dict[str, Any]]
     params_default: LMParametersModel
@@ -107,7 +107,7 @@ class LanguageModels:
                 tested=m.parameters.get("tested", False),
                 predicted_external=m.parameters.get("predicted_external", False),
                 name=m.name,
-                time=m.time
+                time=m.time,
             )
         return r
 
@@ -188,7 +188,7 @@ class LanguageModels:
         num_min_annotations_per_label: int = 5,
         loss: str = "cross_entropy",
         max_length: int = 512,
-        auto_max_length : bool = False
+        auto_max_length: bool = False,
     ) -> None:
         """
         Manage the training of a model from the API
@@ -233,7 +233,7 @@ class LanguageModels:
                 test_size=test_size,
                 loss=loss,
                 max_length=max_length,
-                auto_max_length=auto_max_length
+                auto_max_length=auto_max_length,
             ),
             queue="gpu",
         )
