@@ -37,6 +37,9 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
   const isDiag = (colIndex: number, rowIndex: number) => {
     return colIndex < nLabels - 1 && colIndex === rowIndex;
   };
+  const isTotal = (colIndex: number, rowIndex: number) => {
+    return colIndex === nLabels - 1 || rowIndex === nLabels - 1;
+  };
 
   const displayScore = (score: number | undefined) => {
     if (typeof score === 'number') {
@@ -51,11 +54,16 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
     return '';
   };
 
-  const limitLabelSize = (label: string) => {
-    const maxLength = widthWindow > 1000 ? 8 : widthWindow > 500 ? 5 : 4;
+  const limitLabelSize = (label: string, orientation: string) => {
+    let maxLength = 100;
+    if (orientation == 'vertical') {
+      maxLength = widthWindow > 1000 ? 6 : 4;
+    } else if (orientation === 'horizontal') {
+      maxLength = widthWindow > 1000 ? 15 : 13;
+    }
     if (label) {
       if (label.length > maxLength) {
-        return label.slice(0, maxLength - 3) + '..' + label.slice(-1);
+        return label.slice(0, maxLength - 4) + '..' + label.slice(-2);
       } else {
         return label;
       }
@@ -67,19 +75,31 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
   return (
     <>
       {table && (
-        <div id={`DisplayTableStatisticsRENEW-${nLabels}`}>
+        <div id={`DisplayTableStatistics-${nLabels}`}>
           <div className="row">
             <div className="main row">
               <div id="truth-container" style={{ height: `${(nLabels + 2) * 30}px` }}>
                 <span style={{ height: `${nLabels * 30}px` }}>Truth</span>
               </div>
+              <div id="horizontal-labels-container" style={{ height: `${(nLabels + 2) * 30}px` }}>
+                <div style={{ height: `${nLabels * 30}px` }}>
+                  {labels.map((label) => (
+                    <div
+                      className="table-cell label-column-left label-name"
+                      key={label}
+                      title={label}
+                    >
+                      {limitLabelSize(label, 'horizontal')}
+                    </div>
+                  ))}
+                </div>
+              </div>
               <div className="table">
                 <div className="row">
                   {/* Predicted overlay row */}
-                  <div className="table-cell label-column-left"></div>
                   <div
                     className="table-cell"
-                    style={{ flex: `0 ${1 / nLabels} auto` }}
+                    style={{ flex: `${nLabels} 1 auto` }}
                     id="overlay-label"
                   >
                     Predicted
@@ -87,22 +107,22 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
                 </div>
                 <div className="row">
                   {/* Labels row */}
-                  <div className="table-cell label-column-left label-name"></div>
                   {labels.map((label) => (
-                    <div className="table-cell label-name" key={label}>
-                      {limitLabelSize(label)}
+                    <div className="table-cell label-name" key={label} title={label}>
+                      {limitLabelSize(label, 'vertical')}
                     </div>
                   ))}
                 </div>
                 {table.data.map((row, rowIndex) => (
                   // All data
                   <div className="row" key={rowIndex}>
-                    <div className="table-cell label-column-left label-name">
-                      {limitLabelSize(table.index[rowIndex])}
-                    </div>
                     {row.map((cell, colIndex) => (
                       <div
-                        className={cx('table-cell', isDiag(colIndex, rowIndex) ? ' diag-cell' : '')}
+                        className={cx(
+                          'table-cell number-cell',
+                          isDiag(colIndex, rowIndex) ? ' diag-cell' : '',
+                          isTotal(colIndex, rowIndex) ? ' total-cell' : '',
+                        )}
                         key={colIndex}
                       >
                         {cell}
@@ -112,34 +132,40 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
                 ))}
               </div>
             </div>
-            <div className="score-left">
+            <div className="score-left row">
               <div className="table">
                 <div className="row">
                   <div className="table-cell" style={{ flex: `0 .5 auto` }} id="overlay-label">
                     Scores
                   </div>
-                  <div className="table-cell" style={{ flex: `0 1 auto` }}></div>
                 </div>
                 <div className="row">
-                  <div className="table-cell">{limitLabelSize('Recall')}</div>
-                  <div className="table-cell">{limitLabelSize('F1 Score')}</div>
-                  <div className="table-cell"></div>
+                  <div className="table-cell">{limitLabelSize('Recall', 'vertical')}</div>
+                  <div className="table-cell">{limitLabelSize('F1 Score', 'vertical')}</div>
                 </div>
                 {table.data.map((_, rowIndex) => (
                   <div className="row" key={rowIndex}>
-                    <div className="table-cell">
+                    <div className="table-cell number-cell">
                       {scores.recall_label && displayScore(scores.recall_label[labels[rowIndex]])}
                     </div>
-                    <div className="table-cell">
+                    <div className="table-cell number-cell">
                       {scores.f1_label && displayScore(scores.f1_label[labels[rowIndex]])}
-                    </div>
-                    <div className="table-cell label-name recall">
-                      {table.index[rowIndex] !== 'Total'
-                        ? limitLabelSize(table.index[rowIndex])
-                        : ''}
                     </div>
                   </div>
                 ))}
+              </div>
+              <div id="horizontal-labels-container" style={{ height: `${(nLabels + 2) * 30}px` }}>
+                <div style={{ height: `${nLabels * 30}px` }}>
+                  {labels.map((label) => (
+                    <div
+                      className="table-cell label-column-right label-name recall"
+                      key={label}
+                      title={label}
+                    >
+                      {label !== 'Total' ? limitLabelSize(label, 'horizontal') : ''}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -147,28 +173,36 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
             <div id="truth-container" style={{ height: `${2 * 30}px` }}>
               <span style={{ height: `${2 * 30}px` }}>Scores</span>
             </div>
+            <div id="horizontal-labels-container" style={{ height: '60px' }}>
+              <div style={{ height: '60px' }}>
+                <div className="table-cell label-column-left">
+                  {limitLabelSize('Accuracy', 'horizontal')}
+                </div>
+                <div className="table-cell label-column-left">
+                  {limitLabelSize('F1-score', 'horizontal')}
+                </div>
+                <div className="table-cell label-column-left"></div>
+              </div>
+            </div>
             <div className="table">
               <div className="row">
-                <div className="table-cell label-column-left">{limitLabelSize('Accuracy')}</div>
                 {table.columns.map((col, colIndex) => (
-                  <div key={colIndex} className="table-cell">
+                  <div key={colIndex} className="table-cell number-cell">
                     {scores.f1_label && displayScore(scores.f1_label[col])}
                   </div>
                 ))}
               </div>
               <div className="row">
-                <div className="table-cell label-column-left">{limitLabelSize('F1-Score')}</div>
                 {table.columns.map((col, colIndex) => (
-                  <div key={colIndex} className="table-cell">
+                  <div key={colIndex} className="table-cell number-cell">
                     {scores.f1_label && displayScore(scores.f1_label[col])}
                   </div>
                 ))}
               </div>
               <div className="row">
-                <div className="table-cell label-column-left"></div>
                 {table.columns.map((col, colIndex) => (
-                  <div key={colIndex} className="table-cell label-name recall">
-                    {col !== 'Total' ? limitLabelSize(col) : ''}
+                  <div key={colIndex} className="table-cell label-name recall" title={col}>
+                    {col !== 'Total' ? limitLabelSize(col, 'vertical') : ''}
                   </div>
                 ))}
               </div>
@@ -176,143 +210,6 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
           </div>
         </div>
       )}
-      <div id="DisplayTableStatistics" style={{ display: 'none' }}>
-        {table && (
-          <table>
-            {title && (
-              <caption className="caption-top text-lg font-medium mb-2 text-gray-700">
-                {title}
-              </caption>
-            )}
-            <thead>
-              <tr>
-                <td></td>
-                <td></td>
-                <td
-                  colSpan={Object.entries(labels).length}
-                  className="text-center p-2 border-bottom border-secondary"
-                >
-                  Predicted
-                </td>
-                <td style={{ width: '20px' }}></td>
-                <td colSpan={2} className="text-center p-2 border-bottom border-secondary">
-                  Scores
-                </td>
-              </tr>
-              <tr className="bg-gray-100">
-                <th></th>
-                <th></th>
-                {table?.columns.map((colName, colIndex) => (
-                  <th
-                    key={colName}
-                    className={cx(
-                      'text-center px-2',
-                      colIndex === table?.columns.length - 1 ? '' : 'fw-bold',
-                    )}
-                  >
-                    {limitLabelSize(colName)}
-                  </th>
-                ))}
-                <th></th>
-                <th className="text-center fw-normal">Recall</th>
-                <th className="text-center fw-normal">F1</th>
-              </tr>
-            </thead>
-            <tbody>
-              {table.data.map((row, rowIndex) => (
-                <tr key={table.index[rowIndex]}>
-                  {rowIndex === 0 && (
-                    <td rowSpan={colCount} className="rowspan-cell">
-                      Truth
-                    </td>
-                  )}
-                  <td
-                    className={cx(
-                      'text-end px-2',
-                      rowIndex === table.data.length - 1 ? '' : 'fw-bold',
-                    )}
-                  >
-                    {limitLabelSize(table.index[rowIndex])}
-                  </td>
-                  {row.map((cell, colIndex) => (
-                    <td
-                      key={colIndex}
-                      className={cx(
-                        'cell',
-                        isLabelColumn(colIndex, rowIndex, labels) ? ' label-col' : '',
-                        isDiag(colIndex, rowIndex) ? ' diag-cell' : '',
-                        isTotalCell(colIndex, rowIndex, labels) ? ' total-cell' : '',
-                      )}
-                    >
-                      {cell}
-                    </td>
-                  ))}
-                  <td></td>
-
-                  <td className="cell">
-                    {scores.recall_label && displayScore(scores.recall_label[labels[rowIndex]])}
-                  </td>
-                  <td className="cell">
-                    {scores.f1_label && displayScore(scores.f1_label[labels[rowIndex]])}
-                  </td>
-                  <td className="name-recall">
-                    {rowIndex === Object.entries(labels).length - 1
-                      ? ''
-                      : limitLabelSize(table.index[rowIndex])}
-                  </td>
-                </tr>
-              ))}
-
-              <tr style={{ height: '20px' }}>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-              </tr>
-
-              <tr>
-                <td rowSpan={2} className="rowspan-cell">
-                  {' '}
-                  Scores
-                </td>
-                <td className="text-end">Precision</td>
-                {table.columns.map((col, colIndex) => (
-                  <td key={colIndex} className="cell">
-                    {scores.precision_label && displayScore(scores.precision_label[col])}
-                  </td>
-                ))}
-                <td></td>
-                <td></td>
-                <td></td>
-              </tr>
-              <tr>
-                <td className="text-end">F1</td>
-                {table.columns.map((col, colIndex) => (
-                  <td key={colIndex} className="cell">
-                    {scores.f1_label && displayScore(scores.f1_label[col])}
-                  </td>
-                ))}
-                <td></td>
-                <td></td>
-                <td></td>
-              </tr>
-              <tr>
-                <td></td>
-                <td></td>
-                {table.columns.map((col, colIndex) => (
-                  <td key={colIndex} className="name-recall">
-                    {colIndex === Object.entries(labels).length - 1 ? '' : limitLabelSize(col)}
-                  </td>
-                ))}
-                <td></td>
-                <td></td>
-                <td></td>
-              </tr>
-            </tbody>
-          </table>
-        )}
-      </div>
     </>
   );
 };
