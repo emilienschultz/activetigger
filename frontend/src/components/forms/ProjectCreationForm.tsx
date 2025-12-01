@@ -4,7 +4,7 @@ import DataTable from 'react-data-table-component';
 import { Controller, SubmitHandler, useForm, useWatch } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
-import ClipLoader from 'react-spinners/ClipLoader';
+import { UploadProgressBar } from '../UploadProgressBar';
 
 import { CanceledError } from 'axios';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
@@ -647,37 +647,7 @@ export const ProjectCreationForm: FC = () => {
               overlay progression bar with cancel button 
             */}
           {data && creatingProject && (
-            <div>
-              <div className="position-absolute bg-white w-100 h-100 top-0 left-0 d-flex flex-column justify-content-center bg-opacity-50">
-                <div className="d-flex flex-column bg-white p-4 border border-dark gap-2">
-                  <div className="d-flex align-items-center gap-2 ">
-                    <ClipLoader /> <span>Uploading and creating the project</span>{' '}
-                    <span>
-                      {progression.loaded && progression.total
-                        ? `${((progression.loaded / progression.total) * 100).toFixed(2)}%`
-                        : null}
-                    </span>
-                  </div>
-                  <progress
-                    id="upload-progress"
-                    value={progression.loaded}
-                    max={progression.total}
-                  />
-                  {cancel !== undefined && (
-                    <div>
-                      <button
-                        className="btn btn-warning mt-1"
-                        onClick={() => {
-                          cancel.abort();
-                        }}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            <UploadProgressBar progression={progression} cancel={cancel} />
           )}
         </div>
         {

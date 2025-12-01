@@ -196,12 +196,16 @@ async def predict(
         if kind == "bert":
             # case the prediction is done on an external dataset
             if dataset == "external":
+                # TODO : load data in the job rather than in the api
                 if external_dataset is None:
                     raise HTTPException(status_code=400, detail="External dataset is missing")
-                csv_buffer = io.StringIO(external_dataset.csv)
-                df = pd.read_csv(
-                    csv_buffer,
-                )
+                # load the external dataset
+                if not project.data.check_dataset_exists(external_dataset.filename):
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"External dataset file {external_dataset.filename} not found",
+                    )
+                df = project.data.read_dataset(external_dataset.filename)
                 df["text"] = df[external_dataset.text]
                 df["index"] = df[external_dataset.id].apply(str)
                 df["id"] = df["index"]
@@ -322,7 +326,7 @@ async def delete_bert(
 
 
 @router.post("/models/bert/rename", dependencies=[Depends(verified_user)])
-async def save_bert(
+async def rename_bert(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     former_name: str,

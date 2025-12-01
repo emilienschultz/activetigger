@@ -287,7 +287,8 @@ export function useDropEvalSet(projectSlug: string | null) {
 }
 
 /**
- * Import dataset to predict
+ * Launch prediction on a dataset
+ * (should be loaded first)
  */
 export function usePredictOnDataset() {
   const { notify } = useNotifications();
@@ -2373,7 +2374,7 @@ export async function getProjectStatus(projectSlug: string) {
 }
 
 /**
- * Add file
+ * Add file for project creation
  */
 export function useAddProjectFile() {
   const { notify } = useNotifications();
@@ -2426,6 +2427,54 @@ export function useAddProjectFile() {
 
   return {
     addProjectFile,
+    progression,
+    cancel: controller,
+  };
+}
+
+/**
+ * Add external dataset (TODO : merge with previous function)
+ */
+export function useAddFile() {
+  const { notify } = useNotifications();
+  const { authenticatedUser } = useAuth();
+  const [progression, setProgression] = useState<{ loaded?: number; total?: number }>({});
+  const [controller, setController] = useState<AbortController | undefined>(undefined);
+  const addFile = useCallback(
+    async (project_slug: string, file: File) => {
+      try {
+        const controller = new AbortController();
+        setController(controller);
+        const url = config.api.url.replace(/\/$/, '');
+        await axios.postForm(
+          `${url}/files/add/dataset`,
+          { file },
+          {
+            signal: controller.signal,
+            params: {
+              project_slug,
+            },
+            headers: getAuthHeaders(authenticatedUser)?.headers,
+            onUploadProgress: (progressEvent) => {
+              const { loaded, total } = progressEvent;
+              setProgression({ loaded, total });
+            },
+          },
+        );
+        notify({ type: 'success', message: 'File uploaded' });
+      } catch (error) {
+        notify({ type: 'error', message: `Upload failed: ${error}` });
+      } finally {
+        // reset internal state
+        setProgression({});
+        setController(undefined);
+      }
+    },
+    [notify, authenticatedUser, setController],
+  );
+
+  return {
+    addFile,
     progression,
     cancel: controller,
   };

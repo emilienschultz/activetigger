@@ -395,18 +395,23 @@ class FeatureModel(BaseModel):
     name: str
     parameters: dict[str, str | float]
 
+
 class LogisticL1Params(BaseModel):
     costLogL1: float
+
 
 class LogisticL2Params(BaseModel):
     costLogL2: float
 
+
 class KnnParams(BaseModel):
     n_neighbors: int
+
 
 class RandomforestParams(BaseModel):
     n_estimators: int
     max_features: int | None
+
 
 class Multi_naivebayesParams(BaseModel):
     alpha: float
@@ -768,9 +773,11 @@ class ProjectionsProjectStateModel(BaseModel):
     available: dict[str, str | int]
     training: dict[str, str]
 
+
 class BERTopicDescriptionModel(BaseModel):
-    name:str
-    time:str
+    name: str
+    time: str
+
 
 class BertopicProjectStateModel(BaseModel):
     available: dict[str, BERTopicDescriptionModel]
@@ -1013,8 +1020,7 @@ class PromptModel(BaseModel):
 class TextDatasetModel(BaseModel):
     id: str
     text: str
-    filename: str | None = None
-    csv: str | None = None
+    filename: str
 
 
 class GeneratedElementsIn(BaseModel):

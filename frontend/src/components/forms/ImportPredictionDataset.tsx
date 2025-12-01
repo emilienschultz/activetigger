@@ -4,12 +4,12 @@ import DataTable from 'react-data-table-component';
 import { SubmitHandler, useForm, useWatch } from 'react-hook-form';
 
 import { omit } from 'lodash';
-import { unparse } from 'papaparse';
 import { FaCloudDownloadAlt } from 'react-icons/fa';
-import { useGetPredictionsFile, usePredictOnDataset } from '../../core/api';
+import { useAddFile, useGetPredictionsFile, usePredictOnDataset } from '../../core/api';
 import { useNotifications } from '../../core/notifications';
 import { loadFile } from '../../core/utils';
 import { TextDatasetModel } from '../../types';
+import { UploadProgressBar } from '../UploadProgressBar';
 
 // format of the data table
 export interface DataType {
@@ -43,9 +43,10 @@ export const ImportPredictionDataset: FC<ImportPredictionDatasetProps> = ({
   >({
     defaultValues: {},
   });
+  const { addFile, progression, cancel } = useAddFile();
   const predict = usePredictOnDataset(); // API call
   const { notify } = useNotifications();
-
+  const [importingDataset, setImportingDataset] = useState<boolean>(false); // state for the data
   const [data, setData] = useState<DataType | null>(null);
   const files = useWatch({ control, name: 'files' });
   // available columns
@@ -82,107 +83,115 @@ export const ImportPredictionDataset: FC<ImportPredictionDatasetProps> = ({
         notify({ type: 'error', message: 'Please fill all the fields' });
         return;
       }
-      const csv = data ? unparse(data.data, { header: true, columns: data.headers }) : '';
+      setImportingDataset(true);
+      // first upload file
+      await addFile(projectSlug, formData.files[0]);
+      // then launch prediction
       await predict(projectSlug, scheme, modelName, {
         ...omit(formData, 'files'),
-        csv,
         filename: data.filename,
       });
       setData(null);
+      setImportingDataset(false);
       reset();
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="form-frame">
-      <div className="explanations">
-        One predicted, you can export them in Export as the external dataset. If you predict on a
-        new dataset, it will erase the previous one.
-      </div>
-      {availablePredictionExternal && (
-        <div className="alert alert-warning">
-          You already have a prediction for this model.{' '}
-          <a
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              getPredictionsFile(modelName, 'csv', 'external');
-            }}
-            className="text-blue-600 hover:underline"
-          >
-            You can export it <FaCloudDownloadAlt />.
-          </a>{' '}
-          If you continue, it will be replaced.
+    <div>
+      <form onSubmit={handleSubmit(onSubmit)} className="form-frame">
+        <div className="explanations">
+          One predicted, you can export them in Export as the external dataset. If you predict on a
+          new dataset, it will erase the previous one.
         </div>
-      )}
-      <div>
-        <label className="form-label" htmlFor="csvFile">
-          Import text dataset to predict
-        </label>
-        <input className="form-control" id="csvFile" type="file" {...register('files')} />
-        {
-          // display datable if data available
-          data !== null && (
-            <div>
-              <div>Preview</div>
-              <div className="m-3">
-                Size of the dataset : <b>{data.data.length - 1}</b>
+        {availablePredictionExternal && (
+          <div className="alert alert-warning">
+            You already have a prediction for this model.{' '}
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                getPredictionsFile(modelName, 'csv', 'external');
+              }}
+              className="text-blue-600 hover:underline"
+            >
+              You can export it <FaCloudDownloadAlt />.
+            </a>{' '}
+            If you continue, it will be replaced.
+          </div>
+        )}
+        <div>
+          <label className="form-label" htmlFor="csvFile">
+            Import text dataset to predict
+          </label>
+          <input className="form-control" id="csvFile" type="file" {...register('files')} />
+          {
+            // display datable if data available
+            data !== null && (
+              <div>
+                <div>Preview</div>
+                <div className="m-3">
+                  Size of the dataset : <b>{data.data.length - 1}</b>
+                </div>
+                <DataTable<Record<DataType['headers'][number], string | number>>
+                  columns={data.headers.map((h) => ({
+                    name: h,
+                    selector: (row) => row[h],
+                    format: (row) => {
+                      const v = row[h];
+                      return typeof v === 'bigint' ? Number(v) : v;
+                    },
+                    width: '200px',
+                  }))}
+                  data={
+                    data.data.slice(0, 5) as Record<keyof DataType['headers'], string | number>[]
+                  }
+                />
               </div>
-              <DataTable<Record<DataType['headers'][number], string | number>>
-                columns={data.headers.map((h) => ({
-                  name: h,
-                  selector: (row) => row[h],
-                  format: (row) => {
-                    const v = row[h];
-                    return typeof v === 'bigint' ? Number(v) : v;
-                  },
-                  width: '200px',
-                }))}
-                data={data.data.slice(0, 5) as Record<keyof DataType['headers'], string | number>[]}
-              />
+            )
+          }
+        </div>
+
+        {
+          // only display if data
+          data != null && (
+            <div>
+              <div>
+                <label className="form-label" htmlFor="col_id">
+                  Column for id (they need to be unique, otherwise replaced by a number)
+                </label>
+                <select
+                  className="form-control"
+                  id="col_id"
+                  disabled={data === null}
+                  {...register('id')}
+                >
+                  {columns}
+                </select>
+              </div>
+              <div>
+                <label className="form-label" htmlFor="col_text">
+                  Column for text
+                </label>
+                <select
+                  className="form-control"
+                  id="col_text"
+                  disabled={data === null}
+                  {...register('text')}
+                >
+                  <option key="none"></option>
+
+                  {columns}
+                </select>
+              </div>
+              <button type="submit" className="btn btn-info my-4 form-button col-6">
+                Launch the prediction on the imported dataset
+              </button>
             </div>
           )
         }
-      </div>
-
-      {
-        // only display if data
-        data != null && (
-          <div>
-            <div>
-              <label className="form-label" htmlFor="col_id">
-                Column for id (they need to be unique, otherwise replaced by a number)
-              </label>
-              <select
-                className="form-control"
-                id="col_id"
-                disabled={data === null}
-                {...register('id')}
-              >
-                {columns}
-              </select>
-            </div>
-            <div>
-              <label className="form-label" htmlFor="col_text">
-                Column for text
-              </label>
-              <select
-                className="form-control"
-                id="col_text"
-                disabled={data === null}
-                {...register('text')}
-              >
-                <option key="none"></option>
-
-                {columns}
-              </select>
-            </div>
-            <button type="submit" className="btn btn-info my-4 form-button col-6">
-              Launch the prediction on the imported dataset
-            </button>
-          </div>
-        )
-      }
-    </form>
+      </form>
+      {data && importingDataset && <UploadProgressBar progression={progression} cancel={cancel} />}
+    </div>
   );
 };

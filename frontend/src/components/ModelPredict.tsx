@@ -58,7 +58,7 @@ export const ModelPredict: FC<{ currentModel: string | null; batchSize?: number 
       <div>
         {model && (
           <button
-            className="btn btn-info mt-2"
+            className="btn btn-info mt-2 me-2"
             onClick={() => setDisplayExternalForm(!displayExternalForm)}
           >
             Prediction external dataset

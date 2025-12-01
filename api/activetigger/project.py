@@ -286,6 +286,7 @@ class Project:
 
         # Tabular data management
         self.data = Data(
+            self.params.dir,
             self.params.dir.joinpath(config.train_file),
             self.params.dir.joinpath(config.valid_file) if self.params.valid else None,
             self.params.dir.joinpath(config.test_file) if self.params.test else None,
