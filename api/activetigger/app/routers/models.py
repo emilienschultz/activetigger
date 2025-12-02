@@ -116,17 +116,32 @@ async def get_quickmodel(
     """
     try:
         sm = project.quickmodels.get(name)
-        return QuickModelOutModel(
-            name=sm.name,
-            model=sm.model_type,
-            params=sm.model_params,
-            features=sm.features,
-            statistics_train=sm.statistics_train,
-            statistics_test=sm.statistics_test,
-            statistics_cv10=sm.statistics_cv10,
-            scheme=sm.scheme,
-            username=sm.user,
-        )
+        # AM : transition measure, #TODELETE
+        if "balance_classes" in sm.dict():
+            return QuickModelOutModel(
+                name=sm.name,
+                model=sm.model_type,
+                params=sm.model_params,
+                features=sm.features,
+                statistics_train=sm.statistics_train,
+                statistics_test=sm.statistics_test,
+                statistics_cv10=sm.statistics_cv10,
+                balance_classes=sm.balance_classes,
+                scheme=sm.scheme,
+                username=sm.user,
+            )
+        else:
+            return QuickModelOutModel(
+                name=sm.name,
+                model=sm.model_type,
+                params=sm.model_params,
+                features=sm.features,
+                statistics_train=sm.statistics_train,
+                statistics_test=sm.statistics_test,
+                statistics_cv10=sm.statistics_cv10,
+                scheme=sm.scheme,
+                username=sm.user,
+            )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

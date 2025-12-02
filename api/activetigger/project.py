@@ -580,6 +580,7 @@ class Project:
             model_params=params,
             standardize=quickmodel.standardize or False,
             cv10=quickmodel.cv10 or False,
+            balance_classes=quickmodel.balance_classes or False,
             retrain=retrain,
             texts=self.data.train["text"] if self.data.train is not None else None,
         )

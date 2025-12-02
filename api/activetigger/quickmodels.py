@@ -96,6 +96,7 @@ class QuickModels:
         standardize: bool = True,
         model_params: dict | None = None,
         cv10: bool = False,
+        balance_classes: bool = False,
         retrain: bool = False,
         texts: pd.Series | None = None,
     ) -> None:
@@ -114,20 +115,30 @@ class QuickModels:
         if model_type == "knn":
             params_knn = KnnParams(**model_params)
             model = KNeighborsClassifier(n_neighbors=int(params_knn.n_neighbors), n_jobs=-1)
+            balance_classes = "NA"
             model_params = params_knn.model_dump()
 
         if model_type == "logistic-l1":
             params_libL1 = LogisticL1Params(**model_params)
             model = LogisticRegression(
-                penalty="l1", solver="saga", C=params_libL1.costLogL1, n_jobs=-1, random_state=42
+                penalty="l1", 
+                solver="saga", 
+                C=params_libL1.costLogL1, 
+                class_weight = "balanced" if balance_classes else None,
+                n_jobs=-1,
+                random_state=42
             )
             model_params = params_libL1.model_dump()
 
         if model_type == "logistic-l2":
-            # Liblinear : method = 1 : multimodal logistic regression l2
             params_libL2 = LogisticL2Params(**model_params)
             model = LogisticRegression(
-                penalty="l2", solver="lbfgs", C=params_libL2.costLogL2, n_jobs=-1
+                penalty="l2", 
+                solver="lbfgs", 
+                C=params_libL2.costLogL2, 
+                class_weight = "balanced" if balance_classes else None,
+                n_jobs=-1,
+                random_state=42
             )
             model_params = params_libL2.model_dump()
 
@@ -139,11 +150,13 @@ class QuickModels:
             params_rf = RandomforestParams(**model_params)
             model = RandomForestClassifier(
                 n_estimators=int(params_rf.n_estimators),
-                random_state=42,
                 max_features=(
-                    int(params_rf.max_features) if params_rf.max_features is not None else None
+                    int(params_rf.max_features) 
+                    if params_rf.max_features is not None else None
                 ),
+                class_weight = "balanced" if balance_classes else None, # AM: Need to choose between balanced and balanced_subsample
                 n_jobs=-1,
+                random_state=42,
             )
             model_params = params_rf.model_dump()
 
@@ -161,6 +174,7 @@ class QuickModels:
                 fit_prior=params_nb.fit_prior,
                 class_prior=class_prior,
             )
+            balance_classes = "NA"
             model_params = params_nb.model_dump()
 
         # launch the compuation (model + statistics) as a future process
@@ -170,6 +184,7 @@ class QuickModels:
             "Y": Y,
             "labels": labels,
             "cv10": cv10,
+            "balance_classes": balance_classes,
             "path": self.path,
             "name": name,
             "retrain": retrain,
@@ -198,6 +213,7 @@ class QuickModels:
             model_params=model_params,
             standardize=standardize,
             cv10=cv10,
+            balance_classes=balance_classes,
             retrain=retrain,
             dataset="train",
         )

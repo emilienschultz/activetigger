@@ -591,6 +591,7 @@ class QuickModelInModel(BaseModel):
     standardize: bool | None = True
     dichotomize: str | None = None
     cv10: bool = False
+    balance_classes: bool = False
 
 
 class QuickModelComputing(ProcessComputing):
@@ -608,6 +609,7 @@ class QuickModelComputing(ProcessComputing):
     dataset: str
     standardize: bool = False
     cv10: bool = False
+    balance_classes: bool | str = False
     retrain: bool = False
 
 
@@ -628,6 +630,7 @@ class QuickModelComputed(BaseModel):
     time: datetime.datetime
     standardize: bool = False
     cv10: bool = False
+    balance_classes: bool | str = "NA"
     retrain: bool = False
     proba: DataFrame | None = None
     model: BaseEstimator
@@ -654,6 +657,7 @@ class QuickModelOutModel(BaseModel):
     statistics_train: MLStatisticsModel | None = None
     statistics_test: MLStatisticsModel | None = None
     statistics_cv10: MLStatisticsModel | None = None
+    balance_classes: bool | str  = "NA"
 
 
 class GenerationComputingOut(BaseModel):
