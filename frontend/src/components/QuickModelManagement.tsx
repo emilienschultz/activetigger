@@ -437,14 +437,13 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
                           {...register('params.alpha', { valueAsNumber: true })}
                         ></input>
                         <label htmlFor="fit_prior">
-                          Fit prior
                           <input
                             type="checkbox"
                             id="fit_prior"
                             {...register('params.fit_prior')}
-                            className="mx-3"
                             checked
                           />
+                          Fit prior
                         </label>
                       </div>
                     )) ||
@@ -469,8 +468,10 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
                 }
 
                 <div className="d-flex align-items-center">
-                  <label htmlFor="cv10">10-fold cross validation</label>
-                  <input type="checkbox" id="cv10" {...register('cv10')} className="mx-3" />
+                  <label htmlFor="cv10">
+                    <input type="checkbox" id="cv10" {...register('cv10')} />
+                    10-fold cross validation
+                  </label>
                 </div>
               </details>
 

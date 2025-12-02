@@ -66,7 +66,6 @@ export const DisplayProjection: FC<DisplayProjectionProps> = ({
               <input
                 type="checkbox"
                 checked={selectionConfig.frameSelection}
-                className="mx-2"
                 onChange={(_) => {
                   setAppContext((prev) => ({
                     ...prev,

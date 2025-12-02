@@ -26,7 +26,6 @@ export const TagDisplayParameters: FC<TagDisplayParametersProps> = ({
               },
             }));
           }}
-          style={{ marginRight: '10px' }}
         />
         Existing annotation
       </label>
@@ -43,7 +42,6 @@ export const TagDisplayParameters: FC<TagDisplayParametersProps> = ({
               },
             }));
           }}
-          style={{ marginRight: '10px' }}
         />
         Prediction
       </label>
@@ -60,7 +58,6 @@ export const TagDisplayParameters: FC<TagDisplayParametersProps> = ({
               },
             }));
           }}
-          style={{ marginRight: '10px' }}
         />
         Contextual information
       </label>
@@ -77,7 +74,6 @@ export const TagDisplayParameters: FC<TagDisplayParametersProps> = ({
               },
             }));
           }}
-          style={{ marginRight: '10px' }}
         />
         Element history
       </label>
