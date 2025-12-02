@@ -116,22 +116,16 @@ export const BertopicForm: FC<BertopicCreationFormProps> = ({
           <summary>Advanced parameters</summary>
           <div className="explanations">Using UMAP (reduction) and HDBSCAN (clustering)</div>
           <label className="form-label" htmlFor="outlier_reduction">
+            <input id="outlier_reduction" type="checkbox" {...register('outlier_reduction')} />
             Outlier reduction
-            <input
-              id="outlier_reduction"
-              type="checkbox"
-              {...register('outlier_reduction')}
-              className="mx-2"
-            />
           </label>
           <label className="form-label" htmlFor="force_compute_embeddings">
-            Force compute embeddings
             <input
               id="force_compute_embeddings"
               type="checkbox"
               {...register('force_compute_embeddings')}
-              className="mx-2"
             />
+            Force compute embeddings
           </label>
           <label className="form-label" htmlFor="filter_text_length">
             Filter out texts of length lower than

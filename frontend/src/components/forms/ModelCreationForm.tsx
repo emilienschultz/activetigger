@@ -150,6 +150,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
 
       <div style={{ display: 'flex', flexWrap: 'wrap', marginTop: '10px' }}>
         <label style={{ flex: '1 1 auto' }}>
+          <input type="checkbox" {...registerNewModel('auto_max_length')} />
           Auto adjust Max context window{' '}
           <a className="optimum_max_length">
             <HiOutlineQuestionMarkCircle />
@@ -159,7 +160,6 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
             <br />
             element of your corpus.
           </Tooltip>
-          <input type="checkbox" {...registerNewModel('auto_max_length')} />
         </label>
         <div style={{ display: 'flex', flex: '3 1 auto' }}>
           <label style={{ flex: '3 0 300px' }}>
@@ -216,6 +216,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
 
       <div className="form-group d-flex align-items-center">
         <label>
+          <input type="checkbox" {...registerNewModel('parameters.gpu')} />
           Use GPU
           <a className="gpu">
             <HiOutlineQuestionMarkCircle />
@@ -224,7 +225,6 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
             Compute the training on GPU.
           </Tooltip>
         </label>
-        <input type="checkbox" {...registerNewModel('parameters.gpu')} />
       </div>
       <details className="custom-details">
         <summary>Advanced parameters for the model</summary>
@@ -292,6 +292,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
 
         <div className="form-group d-flex align-items-center">
           <label>
+            <input type="checkbox" {...registerNewModel('class_balance')} />
             Balance classes
             <a className="class_balance">
               <HiOutlineQuestionMarkCircle />
@@ -300,7 +301,6 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
               Downsize classes to the lowest one.
             </Tooltip>
           </label>
-          <input type="checkbox" {...registerNewModel('class_balance')} />
         </div>
         <div className="form-group d-flex align-items-center">
           <label className="d-flex align-items-center">
@@ -319,6 +319,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
         </div>
         <div className="form-group d-flex align-items-center">
           <label>
+            <input type="checkbox" {...registerNewModel('parameters.best')} />
             Keep the best model
             <a className="best">
               <HiOutlineQuestionMarkCircle />
@@ -327,7 +328,6 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
               Keep the model with the lowest validation loss.
             </Tooltip>
           </label>
-          <input type="checkbox" {...registerNewModel('parameters.best')} />
         </div>
       </details>
       <details className="custom-details">
