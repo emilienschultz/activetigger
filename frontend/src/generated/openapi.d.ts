@@ -1305,10 +1305,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Save Bert
+         * Rename Bert
          * @description Rename bertmodel
          */
-        post: operations["save_bert_models_bert_rename_post"];
+        post: operations["rename_bert_models_bert_rename_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1550,11 +1550,31 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Upload File
+         * Upload File Project
          * @description Upload a file on the server to create a new project
          *     use: type de file
          */
-        post: operations["upload_file_files_add_project_post"];
+        post: operations["upload_file_project_files_add_project_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/files/add/dataset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload File Dataset
+         * @description Upload a file on the server for a project in the data folder
+         */
+        post: operations["upload_file_dataset_files_add_dataset_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1992,6 +2012,11 @@ export interface components {
              * @default 512
              */
             max_length: number;
+            /**
+             * Auto Max Length
+             * @default false
+             */
+            auto_max_length: boolean;
         };
         /** BertopicOutModelParameters */
         BertopicOutModelParameters: {
@@ -2038,10 +2063,7 @@ export interface components {
             grant_type?: string | null;
             /** Username */
             username: string;
-            /**
-             * Password
-             * Format: password
-             */
+            /** Password */
             password: string;
             /**
              * Scope
@@ -2050,14 +2072,19 @@ export interface components {
             scope: string;
             /** Client Id */
             client_id?: string | null;
-            /**
-             * Client Secret
-             * Format: password
-             */
+            /** Client Secret */
             client_secret?: string | null;
         };
-        /** Body_upload_file_files_add_project_post */
-        Body_upload_file_files_add_project_post: {
+        /** Body_upload_file_dataset_files_add_dataset_post */
+        Body_upload_file_dataset_files_add_dataset_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /** Body_upload_file_project_files_add_project_post */
+        Body_upload_file_project_files_add_project_post: {
             /**
              * File
              * Format: binary
@@ -2196,7 +2223,7 @@ export interface components {
             /** Element Id */
             element_id: string;
             /** Scheme */
-            scheme: string;
+            scheme?: string | null;
             /**
              * Dataset
              * @default train
@@ -2214,9 +2241,7 @@ export interface components {
             /** Text */
             text: string;
             /** Context */
-            context: {
-                [key: string]: unknown;
-            };
+            context: Record<string, never>;
             /** Selection */
             selection: string;
             /** Info */
@@ -2261,9 +2286,7 @@ export interface components {
             /** Name */
             name: string;
             /** Parameters */
-            parameters: {
-                [key: string]: unknown;
-            };
+            parameters: Record<string, never>;
             /** User */
             user: string;
             /** Time */
@@ -2289,9 +2312,7 @@ export interface components {
         FeaturesProjectStateModel: {
             /** Options */
             options: {
-                [key: string]: {
-                    [key: string]: unknown;
-                } | undefined;
+                [key: string]: Record<string, never> | undefined;
             };
             /** Available */
             available: string[];
@@ -2433,9 +2454,7 @@ export interface components {
             progress?: number | null;
             /** Loss */
             loss?: {
-                [key: string]: {
-                    [key: string]: unknown;
-                } | undefined;
+                [key: string]: Record<string, never> | undefined;
             } | null;
             /** Epochs */
             epochs?: number | null;
@@ -2516,9 +2535,7 @@ export interface components {
         /** LanguageModelsProjectStateModel */
         LanguageModelsProjectStateModel: {
             /** Options */
-            options: {
-                [key: string]: unknown;
-            }[];
+            options: Record<string, never>[];
             /** Available */
             available: {
                 [key: string]: {
@@ -2562,13 +2579,9 @@ export interface components {
             /** Confusion Matrix */
             confusion_matrix?: number[][] | null;
             /** False Predictions */
-            false_predictions?: {
-                [key: string]: unknown;
-            } | unknown[] | null;
+            false_predictions?: Record<string, never> | unknown[] | null;
             /** Table */
-            table?: {
-                [key: string]: unknown;
-            } | null;
+            table?: Record<string, never> | null;
         };
         /** MessagesInModel */
         MessagesInModel: {
@@ -2603,9 +2616,7 @@ export interface components {
             /** Scheme */
             scheme: string;
             /** Parameters */
-            parameters: {
-                [key: string]: unknown;
-            };
+            parameters: Record<string, never>;
             /** Path */
             path: string;
             /** Time */
@@ -2614,37 +2625,23 @@ export interface components {
         /** ModelInformationsModel */
         ModelInformationsModel: {
             /** Params */
-            params?: {
-                [key: string]: unknown;
-            } | null;
+            params?: Record<string, never> | null;
             /** Loss */
-            loss?: {
-                [key: string]: unknown;
-            } | null;
+            loss?: Record<string, never> | null;
             scores: components["schemas"]["ModelScoresModel"];
         };
         /** ModelScoresModel */
         ModelScoresModel: {
             /** Internalvalid Scores */
-            internalvalid_scores?: {
-                [key: string]: unknown;
-            } | null;
+            internalvalid_scores?: Record<string, never> | null;
             /** Train Scores */
-            train_scores?: {
-                [key: string]: unknown;
-            } | null;
+            train_scores?: Record<string, never> | null;
             /** Valid Scores */
-            valid_scores?: {
-                [key: string]: unknown;
-            } | null;
+            valid_scores?: Record<string, never> | null;
             /** Test Scores */
-            test_scores?: {
-                [key: string]: unknown;
-            } | null;
+            test_scores?: Record<string, never> | null;
             /** Outofsample Scores */
-            outofsample_scores?: {
-                [key: string]: unknown;
-            } | null;
+            outofsample_scores?: Record<string, never> | null;
         };
         /**
          * NextInModel
@@ -2834,9 +2831,7 @@ export interface components {
             /** Train Annotated N */
             train_annotated_n: number;
             /** Train Annotated Distribution */
-            train_annotated_distribution: {
-                [key: string]: unknown;
-            };
+            train_annotated_distribution: Record<string, never>;
             /** Test Set N */
             test_set_n?: number | null;
             /** Valid Set N */
@@ -2846,13 +2841,9 @@ export interface components {
             /** Valid Annotated N */
             valid_annotated_n?: number | null;
             /** Test Annotated Distribution */
-            test_annotated_distribution?: {
-                [key: string]: unknown;
-            } | null;
+            test_annotated_distribution?: Record<string, never> | null;
             /** Valid Annotated Distribution */
-            valid_annotated_distribution?: {
-                [key: string]: unknown;
-            } | null;
+            valid_annotated_distribution?: Record<string, never> | null;
             /** Sm 10Cv */
             sm_10cv?: unknown | null;
         };
@@ -3065,9 +3056,7 @@ export interface components {
         ProjectionsProjectStateModel: {
             /** Options */
             options: {
-                [key: string]: {
-                    [key: string]: unknown;
-                } | undefined;
+                [key: string]: Record<string, never> | undefined;
             };
             /** Available */
             available: {
@@ -3092,9 +3081,7 @@ export interface components {
             /** Text */
             text: string;
             /** Parameters */
-            parameters: {
-                [key: string]: unknown;
-            };
+            parameters: Record<string, never>;
         };
         /**
          * QuickModelInModel
@@ -3157,9 +3144,7 @@ export interface components {
         /** QuickModelsProjectStateModel */
         QuickModelsProjectStateModel: {
             /** Options */
-            options: {
-                [key: string]: unknown;
-            };
+            options: Record<string, never>;
             /** Available */
             available: {
                 [key: string]: components["schemas"]["ModelDescriptionModel"][] | undefined;
@@ -3226,17 +3211,11 @@ export interface components {
             };
             gpu: components["schemas"]["GpuInformationModel"];
             /** Cpu */
-            cpu: {
-                [key: string]: unknown;
-            };
+            cpu: Record<string, never>;
             /** Memory */
-            memory: {
-                [key: string]: unknown;
-            };
+            memory: Record<string, never>;
             /** Disk */
-            disk: {
-                [key: string]: unknown;
-            };
+            disk: Record<string, never>;
             /** Mail Available */
             mail_available: boolean;
             /** Messages */
@@ -3309,9 +3288,7 @@ export interface components {
             /** Text */
             text: string;
             /** Filename */
-            filename?: string | null;
-            /** Csv */
-            csv?: string | null;
+            filename: string;
         };
         /**
          * TokenModel
@@ -5487,7 +5464,7 @@ export interface operations {
             };
         };
     };
-    save_bert_models_bert_rename_post: {
+    rename_bert_models_bert_rename_post: {
         parameters: {
             query: {
                 former_name: string;
@@ -5890,7 +5867,7 @@ export interface operations {
             };
         };
     };
-    upload_file_files_add_project_post: {
+    upload_file_project_files_add_project_post: {
         parameters: {
             query: {
                 project_name: string;
@@ -5901,7 +5878,42 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_upload_file_files_add_project_post"];
+                "multipart/form-data": components["schemas"]["Body_upload_file_project_files_add_project_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_file_dataset_files_add_dataset_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_file_dataset_files_add_dataset_post"];
             };
         };
         responses: {
@@ -6042,9 +6054,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        [key: string]: (unknown[] | {
-                            [key: string]: unknown;
-                        }) | undefined;
+                        [key: string]: (unknown[] | Record<string, never>) | undefined;
                     };
                 };
             };

@@ -57,11 +57,11 @@ export const BertopicPage: FC = () => {
   const setSelectedId = useCallback(
     // For the moment, only get something if it is the trainset
     (id?: string) => {
-      if (id)
-        getElementById(id, 'train').then((res) =>
-          setCurrentText(String(id) + ': ' + res?.text || null),
-        );
-      else setCurrentText(null);
+      if (id) {
+        getElementById(id, 'train').then((res) => {
+          setCurrentText(String(id) + ': ' + res?.text || null);
+        });
+      } else setCurrentText(null);
     },
     [getElementById],
   );
