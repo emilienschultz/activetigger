@@ -1305,10 +1305,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Save Bert
+         * Rename Bert
          * @description Rename bertmodel
          */
-        post: operations["save_bert_models_bert_rename_post"];
+        post: operations["rename_bert_models_bert_rename_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1550,11 +1550,31 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Upload File
+         * Upload File Project
          * @description Upload a file on the server to create a new project
          *     use: type de file
          */
-        post: operations["upload_file_files_add_project_post"];
+        post: operations["upload_file_project_files_add_project_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/files/add/dataset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload File Dataset
+         * @description Upload a file on the server for a project in the data folder
+         */
+        post: operations["upload_file_dataset_files_add_dataset_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1992,6 +2012,11 @@ export interface components {
              * @default 512
              */
             max_length: number;
+            /**
+             * Auto Max Length
+             * @default false
+             */
+            auto_max_length: boolean;
         };
         /** BertopicOutModelParameters */
         BertopicOutModelParameters: {
@@ -2056,8 +2081,16 @@ export interface components {
              */
             client_secret?: string | null;
         };
-        /** Body_upload_file_files_add_project_post */
-        Body_upload_file_files_add_project_post: {
+        /** Body_upload_file_dataset_files_add_dataset_post */
+        Body_upload_file_dataset_files_add_dataset_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /** Body_upload_file_project_files_add_project_post */
+        Body_upload_file_project_files_add_project_post: {
             /**
              * File
              * Format: binary
@@ -3126,6 +3159,11 @@ export interface components {
              * @default false
              */
             cv10: boolean;
+            /**
+             * Balance Classes
+             * @default false
+             */
+            balance_classes: boolean;
         };
         /**
          * QuickModelOutModel
@@ -3153,6 +3191,11 @@ export interface components {
             statistics_train?: components["schemas"]["MLStatisticsModel"] | null;
             statistics_test?: components["schemas"]["MLStatisticsModel"] | null;
             statistics_cv10?: components["schemas"]["MLStatisticsModel"] | null;
+            /**
+             * Balance Classes
+             * @default NA
+             */
+            balance_classes: boolean | string;
         };
         /** QuickModelsProjectStateModel */
         QuickModelsProjectStateModel: {
@@ -3309,9 +3352,7 @@ export interface components {
             /** Text */
             text: string;
             /** Filename */
-            filename?: string | null;
-            /** Csv */
-            csv?: string | null;
+            filename: string;
         };
         /**
          * TokenModel
@@ -5487,7 +5528,7 @@ export interface operations {
             };
         };
     };
-    save_bert_models_bert_rename_post: {
+    rename_bert_models_bert_rename_post: {
         parameters: {
             query: {
                 former_name: string;
@@ -5890,7 +5931,7 @@ export interface operations {
             };
         };
     };
-    upload_file_files_add_project_post: {
+    upload_file_project_files_add_project_post: {
         parameters: {
             query: {
                 project_name: string;
@@ -5901,7 +5942,42 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_upload_file_files_add_project_post"];
+                "multipart/form-data": components["schemas"]["Body_upload_file_project_files_add_project_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_file_dataset_files_add_dataset_post: {
+        parameters: {
+            query: {
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_file_dataset_files_add_dataset_post"];
             };
         };
         responses: {
