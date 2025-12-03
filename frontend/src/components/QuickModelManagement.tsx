@@ -166,6 +166,8 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
         n_estimators: 500,
         max_features: null,
       },
+      balance_classes: false,
+      cv10: false,
       dichotomize: kindScheme == 'multilabel' ? availableLabels[0] : undefined,
       features: defaultFeatures.map((e) => e.value),
     },
@@ -245,6 +247,9 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
     }
   };
 
+  const displayBalanceClasses = (balance_classes: boolean) => {
+    return balance_classes ? 'true' : 'false';
+  };
   return (
     <div className="w-100">
       <ModelsPillDisplay
@@ -303,10 +308,17 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
             projectSlug={projectName}
           />
           {currentModelInformations.statistics_cv10 && (
-            <DisplayScores
-              title="Cross validation CV10"
-              scores={currentModelInformations.statistics_cv10 as unknown as Record<string, number>}
-            />
+            <>
+              <div className="subsection">
+                Validation scores from the training data (internal validation)
+              </div>
+              <DisplayScores
+                title="Cross validation CV10"
+                scores={
+                  currentModelInformations.statistics_cv10 as unknown as Record<string, number>
+                }
+              />
+            </>
           )}
         </div>
       )}
@@ -404,6 +416,14 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
                         id="logistic-l2"
                         {...register('params.costLogL2', { valueAsNumber: true })}
                       ></input>
+                      <label htmlFor="balance_classes">
+                        <input
+                          type="checkbox"
+                          id="balance_classes"
+                          {...register('balance_classes')}
+                        />
+                        Automatically balance classes
+                      </label>
                     </div>
                   )) ||
                     (selectedModel == 'knn' && (
@@ -426,6 +446,14 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
                           id="logistic-l1"
                           {...register('params.costLogL1', { valueAsNumber: true })}
                         ></input>
+                        <label htmlFor="balance_classes">
+                          <input
+                            type="checkbox"
+                            id="balance_classes"
+                            {...register('balance_classes')}
+                          />
+                          Automatically balance classes
+                        </label>
                       </div>
                     )) ||
                     (selectedModel == 'multi_naivebayes' && (
@@ -463,16 +491,22 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
                           id="max_features"
                           {...register('params.max_features', { valueAsNumber: true })}
                         ></input>
+                        <label htmlFor="balance_classes">
+                          <input
+                            type="checkbox"
+                            id="balance_classes"
+                            {...register('balance_classes')}
+                          />
+                          Automatically balance classes
+                        </label>
                       </div>
                     ))
                 }
 
-                <div className="d-flex align-items-center">
-                  <label htmlFor="cv10">
-                    <input type="checkbox" id="cv10" {...register('cv10')} />
-                    10-fold cross validation
-                  </label>
-                </div>
+                <label htmlFor="cv10">
+                  <input type="checkbox" id="cv10" {...register('cv10')} />
+                  10-fold cross validation
+                </label>
               </details>
 
               <button className="btn btn-primary btn-validation">Train quick model</button>
@@ -502,35 +536,41 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
           <Modal.Title>Parameters of {currentQuickModelName}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <table className="table table-striped table-hover w-100 mt-2">
-            <tbody>
-              <tr>
-                <td>Model type</td>
-                <td>{currentModelInformations?.model}</td>
-              </tr>
-              <tr>
-                <td>Input features</td>
-                <td>
-                  {cleanDisplay(
-                    JSON.stringify(currentModelInformations?.features) as unknown as string,
-                    ', ',
-                  )}
-                </td>
-              </tr>
-              {Object.entries(currentModelInformations?.params || {}).map(([key, value], i) => (
-                <tr key={i}>
-                  <td>{key}</td>
+          {currentModelInformations && (
+            <table className="table table-striped table-hover w-100 mt-2">
+              <tbody>
+                <tr>
+                  <td>Model type</td>
+                  <td>{currentModelInformations?.model}</td>
+                </tr>
+                <tr>
+                  <td>Input features</td>
                   <td>
-                    {Array.isArray(value)
-                      ? (value as string[]).join(', ') // or use bullets if you prefer
-                      : typeof value === 'object' && value !== null
-                        ? JSON.stringify(value, null, 2)
-                        : String(value)}
+                    {cleanDisplay(
+                      JSON.stringify(currentModelInformations?.features) as unknown as string,
+                      ', ',
+                    )}
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+                {Object.entries(currentModelInformations?.params || {}).map(([key, value], i) => (
+                  <tr key={i}>
+                    <td>{key}</td>
+                    <td>
+                      {Array.isArray(value)
+                        ? (value as string[]).join(', ') // or use bullets if you prefer
+                        : typeof value === 'object' && value !== null
+                          ? JSON.stringify(value, null, 2)
+                          : String(value)}
+                    </td>
+                  </tr>
+                ))}
+                <tr>
+                  <td>Balance classes</td>
+                  <td>{displayBalanceClasses(currentModelInformations?.balance_classes)}</td>
+                </tr>
+              </tbody>
+            </table>
+          )}
         </Modal.Body>
       </Modal>
       <Modal show={showRename} id="rename-modal" onHide={() => setShowRename(false)}>

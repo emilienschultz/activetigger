@@ -41,6 +41,7 @@ class TrainML(BaseTask):
         model_type: str,
         standardize: bool = False,
         cv10: bool = False,
+        balance_classes: bool  = False, 
         retrain: bool = False,
         texts: pd.Series | None = None,
         **kwargs,
@@ -52,6 +53,7 @@ class TrainML(BaseTask):
         self.Y = Y
         self.user = user
         self.cv10 = cv10
+        self.balance_classes = balance_classes
         self.path = path
         self.model_path = path.joinpath(name)
         self.retrain = retrain
@@ -139,6 +141,7 @@ class TrainML(BaseTask):
             model_params=self.model_params,
             standardize=self.standardize,
             cv10=self.cv10,
+            balance_classes=self.balance_classes,
             retrain=self.retrain,
             proba=proba,
             statistics_train=metrics_train,
