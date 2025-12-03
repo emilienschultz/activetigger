@@ -217,7 +217,7 @@ class ProjectsService:
 
     def get_scheme_elements(
         self, project_slug: str, scheme: str, dataset: list[str], user: str | None = None
-    ) -> list:
+    ) -> list[list]:
         """
         Get last annotation for each element id for a project/scheme
         """

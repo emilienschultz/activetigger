@@ -546,7 +546,7 @@ class Project:
 
         # get data
         df_features = self.features.get(quickmodel.features, dataset=["train"])
-        df_scheme = self.schemes.get_scheme_data(scheme=quickmodel.scheme)
+        df_scheme = self.schemes.get_scheme(scheme=quickmodel.scheme)
 
         # management for multilabels / dichotomize
         if quickmodel.dichotomize is not None:
@@ -628,13 +628,13 @@ class Project:
         if next.dataset == "test":
             if self.data.test is None:
                 raise ValueError("No test dataset available")
-            df = self.schemes.get_scheme_data(next.scheme, complete=True, kind=["test"])
+            df = self.schemes.get_scheme(next.scheme, complete=True, kind=["test"])
         elif next.dataset == "valid":
             if self.data.valid is None:
                 raise ValueError("No valid dataset available")
-            df = self.schemes.get_scheme_data(next.scheme, complete=True, kind=["valid"])
+            df = self.schemes.get_scheme(next.scheme, complete=True, kind=["valid"])
         else:
-            df = self.schemes.get_scheme_data(next.scheme, complete=True, kind=["train"])
+            df = self.schemes.get_scheme(next.scheme, complete=True, kind=["train"])
 
         # the filter for the sample
         if next.sample == "untagged":
@@ -914,12 +914,12 @@ class Project:
 
         # part train
         users = self.db_manager.users_service.get_coding_users(scheme, self.params.project_slug)
-        df_train = self.schemes.get_scheme_data(scheme, kind=["train"])
+        df_train = self.schemes.get_scheme(scheme, kind=["train"])
         train_annotated_distribution = self.compute_annotations_distribution(df_train, kind)
 
         # part valid
         if self.params.valid and (self.data.valid is not None):
-            df_valid = self.schemes.get_scheme_data(scheme, kind=["valid"])
+            df_valid = self.schemes.get_scheme(scheme, kind=["valid"])
             valid_set_n = len(self.data.valid)
             valid_annotated_n = len(df_valid.dropna(subset=["labels"]))
             valid_annotated_distribution = self.compute_annotations_distribution(df_valid, kind)
@@ -930,7 +930,7 @@ class Project:
 
         # part test
         if self.params.test and (self.data.test is not None):
-            df_test = self.schemes.get_scheme_data(scheme, kind=["test"])
+            df_test = self.schemes.get_scheme(scheme, kind=["test"])
             test_set_n = len(self.data.test)
             test_annotated_n = len(df_test.dropna(subset=["labels"]))
             test_annotated_distribution = self.compute_annotations_distribution(df_test, kind)
@@ -963,7 +963,7 @@ class Project:
         if projection is None:
             return None
         # get annotations
-        df = self.schemes.get_scheme_data(scheme, complete=True, kind=["train"])
+        df = self.schemes.get_scheme(scheme, complete=True, kind=["train"])
         data = projection.data
         data["labels"] = df["labels"].fillna("NA")
 
@@ -1055,7 +1055,7 @@ class Project:
                     raise Exception("No scheme available")
                 data = pd.concat(
                     {
-                        s: self.schemes.get_scheme_data(s, complete=True, kind=["test"])["labels"]
+                        s: self.schemes.get_scheme(s, complete=True, kind=["test"])["labels"]
                         for s in schemes
                     },
                     axis=1,
@@ -1063,7 +1063,7 @@ class Project:
                 file_name = f"data_test_{self.name}_all_schemes.{format}"
                 dropna = False
             else:
-                data = self.schemes.get_scheme_data(scheme=scheme, complete=True, kind=["test"])
+                data = self.schemes.get_scheme(scheme=scheme, complete=True, kind=["test"])
                 file_name = f"data_test_{self.name}_{scheme}.{format}"
         else:
             if scheme == "all":
@@ -1072,7 +1072,7 @@ class Project:
                     raise Exception("No scheme available")
                 data = pd.concat(
                     {
-                        s: self.schemes.get_scheme_data(s, complete=True, kind=["train"])["labels"]
+                        s: self.schemes.get_scheme(s, complete=True, kind=["train"])["labels"]
                         for s in schemes
                     },
                     axis=1,
@@ -1080,7 +1080,7 @@ class Project:
                 file_name = f"data_train_{self.name}_all_schemes.{format}"
                 dropna = False
             else:
-                data = self.schemes.get_scheme_data(scheme=scheme, complete=True, kind=["train"])
+                data = self.schemes.get_scheme(scheme=scheme, complete=True, kind=["train"])
                 file_name = f"data_train_{self.name}_{scheme}.{format}"
 
         # transformation
@@ -1268,7 +1268,7 @@ class Project:
                 "User already has a process launched, please wait before launching another one"
             )
         # get data
-        df = self.schemes.get_scheme_data(bert.scheme, kind=["train"], complete=True)
+        df = self.schemes.get_scheme(bert.scheme, kind=["train"], complete=True)
         df = df[["text", "labels"]].dropna()
 
         # management for multilabels / dichotomize
