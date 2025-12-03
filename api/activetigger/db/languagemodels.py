@@ -69,7 +69,7 @@ class ModelsService:
             # A model has been retrained so nothing must
             # happen with regard to the database
             pass
-        elif len(models) > 1:
+        elif len(models) > 0:
             # A model already exists, we can't have another one
             raise Exception("Model already exists")
         else:
