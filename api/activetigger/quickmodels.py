@@ -233,6 +233,7 @@ class QuickModels:
             params=element.model_params,
             path=str(model_path),
             status="trained",
+            retrain=element.retrain
         )
 
     def available(self) -> dict[str, list[ModelDescriptionModel]]:
