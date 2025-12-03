@@ -89,7 +89,7 @@ class PredictML(BaseTask):
             metrics[dataset] = get_metrics(
                 Y_full[filter]["label"],
                 Y_full[filter]["prediction"],
-                Y_full[filter]["text"] if self.col_text else None,
+                texts=Y_full[filter]["text"] if self.col_text else None,
             )
 
         # add out of sample (labelled data not in training data)
@@ -99,7 +99,7 @@ class PredictML(BaseTask):
             metrics["outofsample"] = get_metrics(
                 Y_full[filter_oos]["label"],
                 Y_full[filter_oos]["prediction"],
-                Y_full[filter_oos]["text"] if self.col_text else None,
+                texts=Y_full[filter_oos]["text"] if self.col_text else None,
             )
 
         # write the metrics in a json file

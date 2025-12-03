@@ -668,7 +668,7 @@ export function useGetElementById(
 ) {
   const getElementById = useCallback(
     async (elementId: string, dataset: string) => {
-      if (projectSlug && currentScheme) {
+      if (projectSlug) {
         const res = await api.POST('/elements/id', {
           params: {
             query: {

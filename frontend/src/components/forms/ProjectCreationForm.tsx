@@ -516,6 +516,12 @@ export const ProjectCreationForm: FC = () => {
                     <summary>Advanced options</summary>
                     <div className="explanations">Check the documentation for explanations</div>
                     <label className="form-label" htmlFor="force_label">
+                      <input
+                        id="force_label"
+                        type="checkbox"
+                        disabled={creatingProject}
+                        {...register('force_label')}
+                      />
                       Prioritize existing labels{' '}
                       <a className="force_label">
                         <HiOutlineQuestionMarkCircle />
@@ -524,16 +530,15 @@ export const ProjectCreationForm: FC = () => {
                         Select in priority the elements with existing labels (if any) of the first
                         column of labels
                       </Tooltip>
-                      <input
-                        id="force_label"
-                        type="checkbox"
-                        disabled={creatingProject}
-                        {...register('force_label')}
-                        className="mx-3"
-                      />
                     </label>
 
                     <label className="form-label" htmlFor="random_selection">
+                      <input
+                        id="random_selection"
+                        type="checkbox"
+                        disabled={creatingProject || force_label}
+                        {...register('random_selection')}
+                      />
                       Random selection of elements{' '}
                       <a className="rselect">
                         <HiOutlineQuestionMarkCircle />
@@ -542,16 +547,15 @@ export const ProjectCreationForm: FC = () => {
                         If not, will keep the order (minus empty elements) only if no evaluation
                         datasets (eval/test)
                       </Tooltip>
-                      <input
-                        id="random_selection"
-                        type="checkbox"
-                        disabled={creatingProject || force_label}
-                        {...register('random_selection')}
-                        className="mx-3"
-                      />
                     </label>
 
                     <label className="form-label" htmlFor="stratify_train">
+                      <input
+                        id="stratify_train"
+                        type="checkbox"
+                        disabled={creatingProject || force_label}
+                        {...register('stratify_train')}
+                      />
                       Stratify trainset{' '}
                       <a className="stratify_train">
                         <HiOutlineQuestionMarkCircle />
@@ -560,16 +564,15 @@ export const ProjectCreationForm: FC = () => {
                         If selected, use the stratify columns to stratify train set. Small variation
                         in the number of elements can happen.
                       </Tooltip>
-                      <input
-                        id="stratify_train"
-                        type="checkbox"
-                        disabled={creatingProject || force_label}
-                        {...register('stratify_train')}
-                        className="mx-3"
-                      />
                     </label>
 
                     <label className="form-label" htmlFor="stratify_test">
+                      <input
+                        id="stratify_test"
+                        type="checkbox"
+                        disabled={creatingProject || force_label}
+                        {...register('stratify_test')}
+                      />
                       Stratify testset{' '}
                       <a className="stratify_train">
                         <HiOutlineQuestionMarkCircle />
@@ -578,13 +581,6 @@ export const ProjectCreationForm: FC = () => {
                         If selected, use the stratify columns to stratify test set. Small variation
                         in the number of elements can happen.
                       </Tooltip>
-                      <input
-                        id="stratify_test"
-                        type="checkbox"
-                        disabled={creatingProject || force_label}
-                        {...register('stratify_test')}
-                        className="mx-3"
-                      />
                     </label>
 
                     <label className="form-label" htmlFor="cols_stratify">
@@ -615,27 +611,25 @@ export const ProjectCreationForm: FC = () => {
                     />
 
                     <label className="form-label" htmlFor="clear_test">
-                      Drop annotations for the testset{' '}
                       <input
                         id="clear_test"
                         type="checkbox"
                         disabled={creatingProject}
                         {...register('clear_test')}
-                        className="mx-3"
                       />
+                      Drop annotations for the testset{' '}
                     </label>
                     <label className="form-label" htmlFor="clear_test">
-                      Compute default sentence-bert feature{' '}
                       <input
                         id="compute_feature"
                         type="checkbox"
                         disabled={creatingProject}
-                        className="mx-3"
                         checked={computeFeatures}
                         onChange={() => {
                           setComputeFeatures(!computeFeatures);
                         }}
                       />
+                      Compute default sentence-bert feature{' '}
                     </label>
                   </details>
                 </div>

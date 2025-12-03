@@ -32,10 +32,11 @@ export const Notifications: FC = () => {
 
   return (
     <div
-      className="toasts-container fixed-bottom"
+      className="toasts-container"
       style={{
-        bottom: '20px',
-        left: '0px', // ⬅️ place toasts on the bottom-left
+        position: 'fixed',
+        bottom: '25px',
+        right: '0px',
         zIndex: 1056,
       }}
     >

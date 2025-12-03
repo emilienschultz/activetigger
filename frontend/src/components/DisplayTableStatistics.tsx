@@ -14,25 +14,25 @@ interface TableModel {
   data: number[][];
 }
 
-export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores, title }) => {
+export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores }) => {
   const { width: widthWindow } = useWindowSize();
   const table = scores.table ? (scores.table as unknown as TableModel) : null;
   const labels = (scores?.table?.index as unknown as string[]) || [];
   const nLabels = Object.entries(labels).length;
-  const colCount = table?.columns.length || 0;
+  // const colCount = table?.columns.length || 0;
 
-  const isLabelColumn = (colIndex: number, rowIndex: number, labels: string[]) => {
-    return (
-      colIndex < Object.entries(labels).length - 1 && rowIndex < Object.entries(labels).length - 1
-    );
-  };
+  // const isLabelColumn = (colIndex: number, rowIndex: number, labels: string[]) => {
+  //   return (
+  //     colIndex < Object.entries(labels).length - 1 && rowIndex < Object.entries(labels).length - 1
+  //   );
+  // };
 
-  const isTotalCell = (colIndex: number, rowIndex: number, labels: string[]) => {
-    return (
-      colIndex === Object.entries(labels).length - 1 ||
-      rowIndex === Object.entries(labels).length - 1
-    );
-  };
+  // const isTotalCell = (colIndex: number, rowIndex: number, labels: string[]) => {
+  //   return (
+  //     colIndex === Object.entries(labels).length - 1 ||
+  //     rowIndex === Object.entries(labels).length - 1
+  //   );
+  // };
 
   const isDiag = (colIndex: number, rowIndex: number) => {
     return colIndex < nLabels - 1 && colIndex === rowIndex;

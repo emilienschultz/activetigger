@@ -165,7 +165,7 @@ class ElementInModel(BaseModel):
     """
 
     element_id: str
-    scheme: str
+    scheme: str | None = None
     dataset: str = "train"
     active_model: ActiveModel | None = None
 
@@ -333,6 +333,7 @@ class BertModelModel(BaseModel):
     exclude_labels: list[str] = []
     max_length: int = 512
     auto_max_length: bool = False
+
 
 class UmapModel(BaseModel):
     """
