@@ -278,6 +278,7 @@ export const AnnotationManagement: FC = () => {
       features: availableFeatures,
       cv10: false,
       standardize: false,
+      balance_classes: false,
     };
     trainQuickModel(formData);
     setActiveMenu(false);
