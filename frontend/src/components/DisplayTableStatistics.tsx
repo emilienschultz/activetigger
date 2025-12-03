@@ -61,6 +61,7 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
     } else if (orientation === 'horizontal') {
       maxLength = widthWindow > 1000 ? 15 : 13;
     }
+
     if (label) {
       if (label.length > maxLength) {
         return label.slice(0, maxLength - 4) + '..' + label.slice(-2);

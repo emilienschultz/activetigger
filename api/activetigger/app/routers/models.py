@@ -242,7 +242,7 @@ async def predict(
             else:
                 if datasets is None:
                     raise Exception("Datasets variable should be defined for annotable dataset")
-                df = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=datasets)
+                df = project.schemes.get_scheme(scheme=scheme, complete=True, kind=datasets)
                 col_label = "labels"
             project.languagemodels.start_predicting_process(
                 project_slug=project.name,
@@ -269,7 +269,7 @@ async def predict(
             # build the X, y dataframe
             df = project.features.get(sm.features, dataset=dataset, keep_dataset_column=True)
             cols_features = [col for col in df.columns if col != "dataset"]
-            labels = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=datasets)
+            labels = project.schemes.get_scheme(scheme=scheme, complete=True, kind=datasets)
             df["labels"] = labels["labels"]
             df["text"] = labels["text"]
 
