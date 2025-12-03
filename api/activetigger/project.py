@@ -497,6 +497,7 @@ class Project:
             standardize=model.standardize,
             dichotomize=model.model_params.get("dichotomize", None),
             cv10=model.cv10,
+            balance_classes=model.balance_classes
         )
         self.train_quickmodel(quickmodel, username, retrain=True)
 
