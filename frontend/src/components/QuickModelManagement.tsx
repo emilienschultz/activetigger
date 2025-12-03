@@ -247,12 +247,8 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
     }
   };
 
-  const displayBalanceClasses = (balance_classes: string | boolean) => {
-    if (typeof balance_classes === 'string') {
-      return balance_classes;
-    } else {
-      return balance_classes ? 'true' : 'false';
-    }
+  const displayBalanceClasses = (balance_classes: boolean) => {
+    return balance_classes ? 'true' : 'false';
   };
   return (
     <div className="w-100">

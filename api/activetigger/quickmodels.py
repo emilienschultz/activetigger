@@ -115,7 +115,7 @@ class QuickModels:
         if model_type == "knn":
             params_knn = KnnParams(**model_params)
             model = KNeighborsClassifier(n_neighbors=int(params_knn.n_neighbors), n_jobs=-1)
-            balance_classes = "NA"
+            balance_classes = False # Force the parameter to be set as False
             model_params = params_knn.model_dump()
 
         if model_type == "logistic-l1":
@@ -174,7 +174,7 @@ class QuickModels:
                 fit_prior=params_nb.fit_prior,
                 class_prior=class_prior,
             )
-            balance_classes = "NA"
+            balance_classes = False # Force the parameter to be set as False
             model_params = params_nb.model_dump()
 
         # launch the compuation (model + statistics) as a future process

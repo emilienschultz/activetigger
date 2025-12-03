@@ -41,7 +41,7 @@ class TrainML(BaseTask):
         model_type: str,
         standardize: bool = False,
         cv10: bool = False,
-        balance_classes: bool | str = "NA", 
+        balance_classes: bool  = False, 
         retrain: bool = False,
         texts: pd.Series | None = None,
         **kwargs,
