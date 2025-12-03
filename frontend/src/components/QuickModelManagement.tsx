@@ -420,6 +420,14 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
                         id="logistic-l2"
                         {...register('params.costLogL2', { valueAsNumber: true })}
                       ></input>
+                      <label htmlFor="balance_classes">
+                        <input
+                          type="checkbox"
+                          id="balance_classes"
+                          {...register('balance_classes')}
+                        />
+                        Automatically balance classes
+                      </label>
                     </div>
                   )) ||
                     (selectedModel == 'knn' && (
@@ -442,6 +450,14 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
                           id="logistic-l1"
                           {...register('params.costLogL1', { valueAsNumber: true })}
                         ></input>
+                        <label htmlFor="balance_classes">
+                          <input
+                            type="checkbox"
+                            id="balance_classes"
+                            {...register('balance_classes')}
+                          />
+                          Automatically balance classes
+                        </label>
                       </div>
                     )) ||
                     (selectedModel == 'multi_naivebayes' && (
@@ -479,16 +495,22 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
                           id="max_features"
                           {...register('params.max_features', { valueAsNumber: true })}
                         ></input>
+                        <label htmlFor="balance_classes">
+                          <input
+                            type="checkbox"
+                            id="balance_classes"
+                            {...register('balance_classes')}
+                          />
+                          Automatically balance classes
+                        </label>
                       </div>
                     ))
                 }
 
-                <div className="d-flex align-items-center">
-                  <label htmlFor="cv10">
-                    <input type="checkbox" id="cv10" {...register('cv10')} />
-                    10-fold cross validation
-                  </label>
-                </div>
+                <label htmlFor="cv10">
+                  <input type="checkbox" id="cv10" {...register('cv10')} />
+                  10-fold cross validation
+                </label>
               </details>
 
               <button className="btn btn-primary btn-validation">Train quick model</button>
