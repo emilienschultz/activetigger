@@ -1,11 +1,11 @@
 import logging
+from datetime import datetime
 from pathlib import Path
 
 import yaml  # type: ignore[import]
 
 from activetigger.config import config
 from activetigger.datamodels import (
-    AnnotationModel,
     UserInDBModel,
     UserModel,
     UsersStateModel,
@@ -22,6 +22,7 @@ class Users:
 
     db_manager: DatabaseManager
     users: dict
+    failed_attemps: dict[str, list[datetime]]
 
     def __init__(
         self,
@@ -37,6 +38,33 @@ class Users:
         self.users = {}
         if Path(file_users).exists():
             self.users = yaml.safe_load(open(file_users))
+        self.failed_attemps: dict = {}
+
+    def log_failed_login_attempt(self, username: str) -> None:
+        """
+        Register the timestamp of a failed login attempt
+        Raise an error if there are too many failed attempts in a short period
+        """
+        if username not in self.failed_attemps:
+            self.failed_attemps[username] = []
+        self.failed_attemps[username].append(datetime.now())
+
+    def check_failed_login_attempts(
+        self, username: str, timewindow: int = 10, max_attempts: int = 3
+    ) -> None:
+        """
+        Check if there are too many failed login attempts in a short period
+        Raise an error if there are too many failed attempts in a short period
+        """
+        if username not in self.failed_attemps:
+            return
+        # filter attempts in the timewindow
+        now = datetime.now()
+        self.failed_attemps[username] = [
+            t for t in self.failed_attemps[username] if (now - t).total_seconds() < timewindow
+        ]
+        if len(self.failed_attemps[username]) >= max_attempts:
+            raise Exception("Too many failed login attempts. Please try again after a few minutes.")
 
     def get_project_auth(self, project_slug: str) -> dict[str, str]:
         """
@@ -144,11 +172,18 @@ class Users:
     def authenticate_user(self, username: str, password: str) -> UserInDBModel:
         """
         User authentification
+        - Check too many failed login attempts
+        - Check username/password
         """
-        user = self.get_user(username)
-        if not compare_to_hash(password, user.hashed_password):
-            raise Exception("Wrong password")
-        return user
+        self.check_failed_login_attempts(username)
+        try:
+            user = self.get_user(username)
+            if not compare_to_hash(password, user.hashed_password):
+                raise Exception("Wrong password")
+            return user
+        except Exception as e:
+            self.log_failed_login_attempt(username)
+            raise Exception("Wrong username or password")
 
     def auth(self, username: str, project_slug: str) -> str | None:
         """
