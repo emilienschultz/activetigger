@@ -1,13 +1,17 @@
 import { FC, useCallback, useEffect, useState } from 'react';
 import { ReactSortable } from 'react-sortablejs';
+import { Tooltip } from 'react-tooltip';
 import { useAppContext } from '../core/context';
 import { reorderLabels } from '../core/utils';
+import { ElementOutModel } from '../types';
 
 interface MulticlassInputProps {
   elementId: string;
   labels: string[];
   postAnnotation: (label: string, elementId: string) => void;
   small?: boolean;
+  phase?: string;
+  element?: ElementOutModel;
 }
 
 interface LabelType {
@@ -19,6 +23,8 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
   elementId,
   postAnnotation,
   labels,
+  phase,
+  element,
   small = false,
 }) => {
   // get the context and set the labels
@@ -44,13 +50,18 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
         activeElement?.tagName === 'SELECT';
       if (isFormField) return;
 
+      // NEW ACTION FOR KEY "P"
+      if (ev.code === 'KeyP') {
+        postAnnotation(element?.predict.label || '', elementId);
+      }
+
       availableLabels.forEach((item, i) => {
         if (ev.code === `Digit` + (i + 1) || ev.code === `Numpad` + (i + 1)) {
           postAnnotation(item.label, elementId);
         }
       });
     },
-    [availableLabels, postAnnotation, elementId],
+    [availableLabels, postAnnotation, elementId, element],
   );
 
   useEffect(() => {
@@ -78,24 +89,49 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
     }));
   };
 
+  const predict_proba = element?.predict.proba ? element.predict.proba.toFixed(2) : 'NA';
+  const predict_entropy = element?.predict.entropy ? element.predict.entropy.toFixed(2) : 'NA';
+
   return (
-    <ReactSortable list={availableLabels} setList={updateLabels} tag="div">
+    <>
       {
-        // display buttons for label from the user
-        availableLabels.map((e, i) => (
-          <button
-            type="button"
-            key={e.label}
-            value={e.label}
-            className={`btn ${small ? 'btn-sm' : ''} btn-primary grow-1 gap-2 justify-content-center m-1`}
-            onClick={(v) => {
-              postAnnotation(v.currentTarget.value, elementId);
-            }}
-          >
-            {e.label} <span className="badge text-bg-secondary">{i + 1}</span>
-          </button>
-        ))
+        //display proba
+        phase == 'train' && displayConfig.displayPrediction && element?.predict.label && (
+          <div className="d-flex mb-2 justify-content-center display-prediction">
+            <button
+              type="button"
+              value={element?.predict.label as unknown as string}
+              className={`btn ${small ? 'btn-sm' : ''} btn-secondary grow-1 gap-2 justify-content-center m-1 elementpredicted`}
+              onClick={(e) => {
+                postAnnotation(e.currentTarget.value, elementId);
+              }}
+            >
+              Predicted : {element?.predict.label} <span className="badge text-bg-primary">p</span>
+            </button>
+            <Tooltip anchorSelect=".elementpredicted" place="top">
+              {`proba: ${predict_proba}, entropy: ${predict_entropy}`}
+            </Tooltip>
+          </div>
+        )
       }
-    </ReactSortable>
+      <ReactSortable list={availableLabels} setList={updateLabels} tag="div">
+        {
+          // display buttons for label from the user
+          availableLabels.map((e, i) => (
+            <button
+              type="button"
+              key={e.label}
+              value={e.label}
+              className={`btn ${small ? 'btn-sm' : ''} btn-primary grow-1 gap-2 justify-content-center m-1`}
+              onClick={(v) => {
+                postAnnotation(v.currentTarget.value, elementId);
+              }}
+            >
+              {e.label} <span className="badge text-bg-secondary">{i + 1}</span>
+            </button>
+          ))
+        }
+      </ReactSortable>
+    </>
   );
 };

@@ -468,6 +468,8 @@ export const AnnotationManagement: FC = () => {
                 elementId={elementId || 'noelement'}
                 postAnnotation={postAnnotation}
                 labels={availableLabels}
+                phase={phase}
+                element={element as ElementOutModel}
               />
             )}
             {kindScheme == 'multilabel' && (

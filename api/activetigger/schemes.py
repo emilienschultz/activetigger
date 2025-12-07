@@ -49,7 +49,6 @@ class SchemeCache:
         for k, v in self.content.items():
             if (now - v[0]).total_seconds() > self.expiration_delay:
                 to_delete.append(k)
-                print(f"Scheme cache : delete {k}")
         for k in to_delete:
             del self.content[k]
 
@@ -60,7 +59,6 @@ class SchemeCache:
         self.clean()
         r = self.content.get(scheme, None)
         if r is not None:
-            print("get from cache", scheme)
             return r[-1]
         return None
 
@@ -68,7 +66,6 @@ class SchemeCache:
         """
         Put scheme in cache
         """
-        print("put in cache", scheme)
         self.clean()
         self.content[scheme] = (datetime.datetime.now(), df)
 
@@ -76,7 +73,6 @@ class SchemeCache:
         """
         Update scheme in the cache with a change if exist
         """
-        print("update in cache", scheme)
         self.clean()
         if scheme in self.content:
             ts, df = self.content[scheme]

@@ -28,17 +28,16 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
   lastTag,
   phase,
   frameRef,
-  postAnnotation,
 }) => {
-  const displayPrediction = (element: ElementOutModel) => {
-    const proba = element?.predict.proba ? element.predict.proba.toFixed(2) : 'NA';
-    const entropy = element?.predict.entropy ? element.predict.entropy.toFixed(2) : 'NA';
-    return (
-      <div>
-        Predicted : {element?.predict.label} (p:{proba}/e:{entropy})
-      </div>
-    );
-  };
+  // const displayPrediction = (element: ElementOutModel) => {
+  //   const proba = element?.predict.proba ? element.predict.proba.toFixed(2) : 'NA';
+  //   const entropy = element?.predict.entropy ? element.predict.entropy.toFixed(2) : 'NA';
+  //   return (
+  //     <div>
+  //       Predicted : {element?.predict.label} (p:{proba}/e:{entropy})
+  //     </div>
+  //   );
+  // };
 
   return (
     <div className="row">
@@ -93,7 +92,7 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
           </Tooltip>
         </motion.div>
       </div>
-      {
+      {/* {
         //display proba
         phase == 'train' && displayConfig.displayPrediction && element?.predict.label && (
           <div className="d-flex mb-2 justify-content-center display-prediction">
@@ -110,7 +109,7 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
             </button>
           </div>
         )
-      }
+      } */}
       {
         //display context
         phase != 'test' && displayConfig.displayContext && (
