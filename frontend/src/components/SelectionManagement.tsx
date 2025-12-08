@@ -1,7 +1,6 @@
 import { ChangeEvent, Dispatch, FC, SetStateAction, useEffect, useState } from 'react';
 import { FaLock } from 'react-icons/fa';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
-import { useNavigate } from 'react-router-dom';
 import { Tooltip } from 'react-tooltip';
 import { useGetQuickModel } from '../core/api';
 import { useAppContext } from '../core/context';
@@ -20,8 +19,6 @@ export const SelectionManagement: FC<SelectionManagementProps> = ({
     appContext: { currentScheme, selectionConfig, currentProject: project, activeModel, phase },
     setAppContext,
   } = useAppContext();
-
-  const navigate = useNavigate();
 
   const availableModes = activeModel && project ? project.next.methods : project?.next.methods_min;
 
@@ -71,7 +68,6 @@ export const SelectionManagement: FC<SelectionManagementProps> = ({
       ...prev,
       phase: e.target.value,
     }));
-    navigate(`/projects/${project?.params.project_slug}/tag/`);
   };
 
   const changeSample = (e: ChangeEvent<HTMLSelectElement>) => {
