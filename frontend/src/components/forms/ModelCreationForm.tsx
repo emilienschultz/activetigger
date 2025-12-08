@@ -61,32 +61,34 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
       ? project.schemes.available[currentScheme].kind
       : 'multiclass';
 
+  const createDefaultValues = () => ({
+    name: getRandomName('bertmodel'),
+    class_balance: false,
+    loss: 'cross_entropy',
+    class_min_freq: 1,
+    test_size: 0.2,
+    max_length: 512,
+    auto_max_length: false,
+    parameters: {
+      batchsize: 4,
+      gradacc: 4.0,
+      epochs: 3,
+      lrate: 3e-5,
+      wdecay: 0.01,
+      best: true,
+      eval: 10,
+      gpu: true,
+      adapt: false,
+    },
+  });
+
   const {
     handleSubmit: handleSubmitNewModel,
     register: registerNewModel,
     watch,
     control,
   } = useForm<newBertModel>({
-    defaultValues: {
-      name: getRandomName('bertmodel'),
-      class_balance: false,
-      loss: 'cross_entropy',
-      class_min_freq: 1,
-      test_size: 0.2,
-      max_length: 512,
-      auto_max_length: false,
-      parameters: {
-        batchsize: 4,
-        gradacc: 4.0,
-        epochs: 3,
-        lrate: 3e-5,
-        wdecay: 0.01,
-        best: true,
-        eval: 10,
-        gpu: true,
-        adapt: false,
-      },
-    },
+    defaultValues: createDefaultValues(),
   });
 
   const autoMaxLengthValue = watch('auto_max_length');
