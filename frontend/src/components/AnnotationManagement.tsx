@@ -153,6 +153,7 @@ export const AnnotationManagement: FC = () => {
     reFetchStatistics,
     selectionConfig,
     setAppContext,
+    notify,
   ]);
 
   // post an annotation
@@ -186,8 +187,16 @@ export const AnnotationManagement: FC = () => {
   const refetchElement = () => {
     getNextElementId().then((res) => {
       if (res && res.n_sample) setNSample(res.n_sample);
-      if (res && res.element_id) navigate(`/projects/${projectName}/tag/${res.element_id}`);
-      else {
+      if (res && res.element_id) {
+        if (res.element_id === elementId) {
+          notify({
+            type: 'warning',
+            message:
+              'Next selected element is the same as the current one. Try changing selection settings.',
+          });
+        }
+        navigate(`/projects/${projectName}/tag/${res.element_id}`);
+      } else {
         navigate(`/projects/${projectName}/tag/noelement`);
       }
     });
