@@ -127,7 +127,6 @@ class Schemes:
         df = self.cache.get(scheme)
         # if no cache, get from database
         if df is None:
-            print("get from database", scheme)
             # complete index of the current element
             idx = self.data.train.index
             if self.data.valid is not None:
@@ -152,7 +151,8 @@ class Schemes:
         scheme: str,
         user: str | None = None,
         complete: bool = False,
-        kind: list[str] = ["train"],  # TODO : rename with dataset
+        datasets: list[str] = ["train"],
+        id_external: bool = False,
     ) -> DataFrame:
         """
         Get data from a scheme : id, text, context, labels
@@ -162,19 +162,24 @@ class Schemes:
             raise Exception("Scheme doesn't exist")
         df = self.get_scheme_data(scheme, user)
 
+        if id_external:
+            cols = ["text", "id_external"]
+        else:
+            cols = ["text"]
+
         # add optionnaly the text content
         if complete:
             content = []
-            for k in kind:
+            for k in datasets:
                 if k == "test":
                     if self.data.test is not None:
-                        content.append(self.data.test[["text"]])
+                        content.append(self.data.test[cols])
                 elif k == "valid":
                     if self.data.valid is not None:
-                        content.append(self.data.valid[["text"]])
+                        content.append(self.data.valid[cols])
                 elif k == "train":
                     if self.data.train is not None:
-                        content.append(self.data.train[["text"]])
+                        content.append(self.data.train[cols])
             df_text = pd.concat(content)
             df = df.join(df_text, rsuffix="_content", how="right")
         df["id"] = df.index
@@ -242,12 +247,12 @@ class Schemes:
             self.add_label(new_label, scheme, username)
 
         # add a new tag for the annotated id in the trainset
-        df_train = self.get_scheme(scheme, kind=["train"])
+        df_train = self.get_scheme(scheme, datasets=["train"])
         elements_train = [
             {"element_id": element_id, "annotation": new_label, "comment": "label renamed"}
             for element_id in list(df_train[df_train["labels"] == former_label].index)
         ]
-        df_test = self.get_scheme(scheme, kind=["test"])
+        df_test = self.get_scheme(scheme, datasets=["test"])
         elements_test = [
             {"element_id": element_id, "annotation": new_label, "comment": "label renamed"}
             for element_id in list(df_test[df_test["labels"] == former_label].index)
@@ -303,7 +308,7 @@ class Schemes:
             raise Exception("Mode not available")
         if scheme not in self.available():
             raise Exception("Scheme doesn't exist")
-        df = self.get_scheme(scheme, complete=True, kind=[dataset])
+        df = self.get_scheme(scheme, complete=True, datasets=[dataset])
         # build dataset
         if mode == "tagged":
             df = cast(DataFrame, df[df["labels"].notnull()])
@@ -344,7 +349,7 @@ class Schemes:
         df: DataFrame = self.get_scheme(
             batch.scheme,
             complete=True,
-            kind=["test"] if batch.dataset == "test" else [batch.dataset],
+            datasets=["test"] if batch.dataset == "test" else [batch.dataset],
         )
         # manage NaT to avoid problems with json
         df["timestamp"] = df["timestamp"].apply(lambda x: str(x) if pd.notna(x) else "")
@@ -458,12 +463,12 @@ class Schemes:
         labels.remove(label)
         # push empty entry for tagged elements
         # both for train
-        df = self.get_scheme(scheme, kind=["train"])
+        df = self.get_scheme(scheme, datasets=["train"])
         elements = list(df[df["labels"] == label].index)
         for i in elements:
             self.push_annotation(i, None, scheme, user, "train", "delete")
         # and test
-        df = self.get_scheme(scheme, kind=["test"])
+        df = self.get_scheme(scheme, datasets=["test"])
         elements = list(df[df["labels"] == label].index)
         for i in elements:
             self.push_annotation(i, None, scheme, user, "test", "delete")

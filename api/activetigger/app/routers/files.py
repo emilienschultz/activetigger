@@ -173,7 +173,7 @@ async def upload_file_dataset(
         raise HTTPException(status_code=500, detail="Only csv and parquet files are allowed")
     try:
         async with aiofiles.open(
-            project.data.datasets_dir.joinpath(file.filename), "wb"
+            project.data.path_datasets.joinpath(file.filename), "wb"
         ) as out_file:
             while chunk := await file.read(1024 * 1024):
                 await out_file.write(chunk)
