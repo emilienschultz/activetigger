@@ -52,7 +52,7 @@ export const DataTabular: FC<DataTabularModel> = ({
     }));
   };
 
-  // NOTE: Think it's not working
+  // NOTE: Think it's not working — Nevermind Axel
   const blocker = useBlocker(({ currentLocation, nextLocation }) => {
     return (
       currentLocation.pathname !== nextLocation.pathname && Object.values(modifiedRows).length > 0
