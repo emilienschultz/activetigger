@@ -105,3 +105,15 @@ table {
     border: 2px solid $secondary;
     color: $secondary;
 }
+
+.btn-stop-process{
+    background-color: $primary;
+    border: 2px solid $primary;
+    color: white;
+
+    width: 200px;
+    height: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
