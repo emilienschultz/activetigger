@@ -20,7 +20,7 @@ import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
 import { ElementOutModel, ProjectionParametersModel } from '../types';
-import { CreateNewFeature } from './CreateNewFeature';
+import { CreateNewFeature } from './forms/CreateNewFeature';
 import { MulticlassInput } from './MulticlassInput';
 import { MultilabelInput } from './MultilabelInput';
 import { ProjectionVizSigma } from './ProjectionVizSigma';

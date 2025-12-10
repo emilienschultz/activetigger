@@ -2,10 +2,10 @@ import { FC } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { useParams } from 'react-router-dom';
 
-import { useAddFeature } from '../core/api';
-import { useNotifications } from '../core/notifications';
-import { getRandomName } from '../core/utils';
-import { FeatureModelExtended } from '../types';
+import { useAddFeature } from '../../core/api';
+import { useNotifications } from '../../core/notifications';
+import { getRandomName } from '../../core/utils';
+import { FeatureModelExtended } from '../../types';
 
 interface Options {
   models?: string[];

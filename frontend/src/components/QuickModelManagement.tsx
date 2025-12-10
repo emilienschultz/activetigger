@@ -16,7 +16,7 @@ import {
 import { useNotifications } from '../core/notifications';
 import { getRandomName, sortDatesAsStrings } from '../core/utils';
 import { MLStatisticsModel, ModelDescriptionModel, QuickModelInModel } from '../types';
-import { CreateNewFeature } from './CreateNewFeature';
+import { CreateNewFeature } from './forms/CreateNewFeature';
 import { DisplayScores } from './DisplayScores';
 import { ModelsPillDisplay } from './ModelsPillDisplay';
 import { ValidateButtons } from './validateButton';

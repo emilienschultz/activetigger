@@ -8,7 +8,7 @@ import { useDeleteFeature, useGetFeatureInfo } from '../core/api';
 import { useAppContext } from '../core/context';
 import { sortDatesAsStrings } from '../core/utils';
 import { FeatureDescriptionModelOut } from '../types';
-import { CreateNewFeature } from './CreateNewFeature';
+import { CreateNewFeature } from './forms/CreateNewFeature';
 import { ModelsPillDisplay } from './ModelsPillDisplay';
 
 export default function SimpleTable(data: FeatureDescriptionModelOut) {
