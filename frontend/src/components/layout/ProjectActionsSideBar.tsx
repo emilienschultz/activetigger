@@ -49,6 +49,7 @@ export const ProjectActionsSidebar: FC<{
   }
 
   return (
+    // NOTE: Axel: I didn't do no css refactor here cause it's highly specific
     <div className={`project-sidebar flex-shrink-0 bg-light sticky-top`}>
       {canEdit && (
         <ul className="nav nav-pills mb-auto ">

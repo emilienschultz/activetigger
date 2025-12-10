@@ -31,6 +31,7 @@ export const Notifications: FC = () => {
   );
 
   return (
+    // NOTE: Axel: I didn't do no css refactor here cause it's highly specific
     <div
       className="toasts-container"
       style={{
@@ -79,6 +80,7 @@ const Notification: FC<{
   const { cancel, reschedule } = useTimeout(close, config.notificationTimeoutMs);
 
   return (
+    // NOTE: Axel: I didn't do no css refactor here cause it's highly specific
     <div
       className={cx('toast fade m-2', show ? 'show' : 'hide', CLASSES_TOAST[notification.type])}
       onMouseEnter={cancel}

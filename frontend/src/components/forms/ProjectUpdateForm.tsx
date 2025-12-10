@@ -57,85 +57,60 @@ export const ProjectUpdateForm: FC = () => {
   };
 
   return (
-    <div className="container-fluid">
-      <form onSubmit={handleSubmit(onSubmit)} className="form-frame">
-        <div>
-          <label className="form-label" htmlFor="project_name">
-            Change name
-          </label>
-          <input
-            className="form-control"
-            id="project_name"
-            type="text"
-            {...register('project_name')}
+    <form onSubmit={handleSubmit(onSubmit)} className="form-frame">
+      <label htmlFor="project_name">Change name</label>
+      <input id="project_name" type="text" {...register('project_name')} />
+
+      <label htmlFor="cols_text">Change text columns</label>
+      <Controller
+        name="cols_text"
+        control={control}
+        render={({ field: { onChange, value } }) => (
+          <Select
+            options={columnsSelect}
+            isMulti
+            value={columnsSelect.filter((option) => value?.includes(option.value))}
+            onChange={(selectedOptions) => {
+              onChange(selectedOptions ? selectedOptions.map((option) => option.value) : []);
+            }}
           />
-        </div>
+        )}
+      />
 
-        <div>
-          <div>
-            <label className="form-label" htmlFor="cols_text">
-              Change text columns
-            </label>
-            <Controller
-              name="cols_text"
-              control={control}
-              render={({ field: { onChange, value } }) => (
-                <Select
-                  options={columnsSelect}
-                  isMulti
-                  value={columnsSelect.filter((option) => value?.includes(option.value))}
-                  onChange={(selectedOptions) => {
-                    onChange(selectedOptions ? selectedOptions.map((option) => option.value) : []);
-                  }}
-                />
-              )}
-            />
+      <label htmlFor="language">
+        Change language of the corpus (for tokenization and word segmentation)
+      </label>
+      <select id="language" {...register('language')}>
+        {langages.map((lang) => (
+          <option key={lang.value} value={lang.value}>
+            {lang.label}
+          </option>
+        ))}
+      </select>
 
-            <label className="form-label" htmlFor="language">
-              Change language of the corpus (for tokenization and word segmentation)
-            </label>
-            <select className="form-control" id="language" {...register('language')}>
-              {langages.map((lang) => (
-                <option key={lang.value} value={lang.value}>
-                  {lang.label}
-                </option>
-              ))}
-            </select>
+      <label htmlFor="cols_context">Change contextual information columns</label>
 
-            <label className="form-label" htmlFor="cols_context">
-              Change contextual information columns
-            </label>
+      <Controller
+        name="cols_context"
+        control={control}
+        render={({ field: { onChange, value } }) => (
+          <Select
+            options={columnsSelect}
+            isMulti
+            value={columnsSelect.filter((option) => value?.includes(option.value))}
+            onChange={(selectedOptions) => {
+              onChange(selectedOptions ? selectedOptions.map((option) => option.value) : []);
+            }}
+          />
+        )}
+      />
 
-            <Controller
-              name="cols_context"
-              control={control}
-              render={({ field: { onChange, value } }) => (
-                <Select
-                  options={columnsSelect}
-                  isMulti
-                  value={columnsSelect.filter((option) => value?.includes(option.value))}
-                  onChange={(selectedOptions) => {
-                    onChange(selectedOptions ? selectedOptions.map((option) => option.value) : []);
-                  }}
-                />
-              )}
-            />
+      <label htmlFor="add_n_trai">Add N elements in the train set</label>
+      <input id="add_n_train" type="number" {...register('add_n_train')} />
 
-            <label className="form-label" htmlFor="add_n_trai">
-              Add N elements in the train set
-            </label>
-            <input
-              className="form-control"
-              id="add_n_train"
-              type="number"
-              {...register('add_n_train')}
-            />
-          </div>
-          <button type="submit" className="btn btn-primary form-button">
-            Validate modifications
-          </button>
-        </div>
-      </form>
-    </div>
+      <button type="submit" className="btn-submit">
+        Validate modifications
+      </button>
+    </form>
   );
 };

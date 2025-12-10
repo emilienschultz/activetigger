@@ -232,29 +232,25 @@ export const GenPage: FC = () => {
     if (contextColumns) listOfTags = listOfTags.concat(contextColumns);
 
     return (
-      <>
-        <div className="col-12" id="context-container">
-          <div id="button-context-wrapper">
-            <a className="context-tag-help">
-              <HiOutlineQuestionMarkCircle />
-            </a>
-            <Tooltip anchorSelect=".context-tag-help" place="top" style={{ zIndex: 99 }}>
-              Add contextual information to your prompt by clicking on the tags, or by typing
-              [[column name]]
-            </Tooltip>
-            {listOfTags.map((context) => (
-              <button
-                className="context-link"
-                id="context-button"
-                key={'add-context-button-' + context}
-                onClick={() => addContextTagToPrompt(context)}
-              >
-                {context}
-              </button>
-            ))}
-          </div>
-        </div>
-      </>
+      <div id="button-context-wrapper">
+        <a className="context-tag-help">
+          <HiOutlineQuestionMarkCircle />
+        </a>
+        <Tooltip anchorSelect=".context-tag-help" place="top" style={{ zIndex: 99 }}>
+          Add contextual information to your prompt by clicking on the tags, or by typing [[column
+          name]]
+        </Tooltip>
+        {listOfTags.map((context) => (
+          <button
+            className="context-link"
+            id="context-button"
+            key={'add-context-button-' + context}
+            onClick={() => addContextTagToPrompt(context)}
+          >
+            {context}
+          </button>
+        ))}
+      </div>
     );
   };
 

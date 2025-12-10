@@ -76,7 +76,7 @@ export const StatusNotch: FC<{
   }
 
   const errors = projectState?.errors.map((arr) => arr.join(' - ')) || [];
-
+  // NOTE: Axel: I didn't do no css refactor here cause it's highly specific
   return (
     <div id="status-notch">
       {canEdit && (

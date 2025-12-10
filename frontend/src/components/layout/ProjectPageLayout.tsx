@@ -40,6 +40,7 @@ export const ProjectPageLayout: FC<ProjectPageLayoutProps> = ({
   if (!authenticatedUser) return '';
 
   return (
+    // NOTE: Axel: I didn't do no css refactor here cause it's highly specific
     <PageLayout currentPage="projects" projectName={projectName || null}>
       <div className="container-fluid p-relative" style={{ paddingBottom: '30px' }}>
         <div className="d-flex flex-column flex-md-row gap-1 gap-md-3 gap-lg-5">

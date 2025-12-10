@@ -99,7 +99,7 @@ export const ImportPredictionDataset: FC<ImportPredictionDatasetProps> = ({
 
   return (
     <div>
-      <form onSubmit={handleSubmit(onSubmit)} className="form-frame">
+      <form onSubmit={handleSubmit(onSubmit)}>
         <div className="explanations">
           One predicted, you can export them in Export as the external dataset. If you predict on a
           new dataset, it will erase the previous one.
@@ -121,16 +121,14 @@ export const ImportPredictionDataset: FC<ImportPredictionDatasetProps> = ({
           </div>
         )}
         <div>
-          <label className="form-label" htmlFor="csvFile">
-            Import text dataset to predict
-          </label>
+          <label htmlFor="csvFile">Import text dataset to predict</label>
           <input className="form-control" id="csvFile" type="file" {...register('files')} />
           {
             // display datable if data available
             data !== null && (
-              <div>
-                <div>Preview</div>
-                <div className="m-3">
+              <>
+                <div className="explanations">Preview</div>
+                <div>
                   Size of the dataset : <b>{data.data.length - 1}</b>
                 </div>
                 <DataTable<Record<DataType['headers'][number], string | number>>
@@ -147,7 +145,7 @@ export const ImportPredictionDataset: FC<ImportPredictionDatasetProps> = ({
                     data.data.slice(0, 5) as Record<keyof DataType['headers'], string | number>[]
                   }
                 />
-              </div>
+              </>
             )
           }
         </div>
@@ -155,39 +153,26 @@ export const ImportPredictionDataset: FC<ImportPredictionDatasetProps> = ({
         {
           // only display if data
           data != null && (
-            <div>
+            <>
               <div>
-                <label className="form-label" htmlFor="col_id">
+                <label htmlFor="col_id">
                   Column for id (they need to be unique, otherwise replaced by a number)
                 </label>
-                <select
-                  className="form-control"
-                  id="col_id"
-                  disabled={data === null}
-                  {...register('id')}
-                >
+                <select id="col_id" disabled={data === null} {...register('id')}>
                   {columns}
                 </select>
               </div>
               <div>
-                <label className="form-label" htmlFor="col_text">
-                  Column for text
-                </label>
-                <select
-                  className="form-control"
-                  id="col_text"
-                  disabled={data === null}
-                  {...register('text')}
-                >
+                <label htmlFor="col_text">Column for text</label>
+                <select id="col_text" disabled={data === null} {...register('text')}>
                   <option key="none"></option>
-
                   {columns}
                 </select>
               </div>
-              <button type="submit" className="btn btn-info my-4 form-button col-6">
+              <button type="submit" className="btn-submit">
                 Launch the prediction on the imported dataset
               </button>
-            </div>
+            </>
           )
         }
       </form>

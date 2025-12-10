@@ -19,26 +19,11 @@ export const ChangePassword: FC = () => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <div className="subsection my-2">Change password for the current user</div>
-      <input
-        type="password"
-        placeholder="Old password"
-        className="form-control my-2"
-        {...register('pwdOld')}
-      />
-      <input
-        type="password"
-        placeholder="New password"
-        className="form-control my-2"
-        {...register('pwd1')}
-      />
-      <input
-        type="password"
-        placeholder="Confirm new password"
-        className="form-control my-2"
-        {...register('pwd2')}
-      />
-      <button className="btn btn-primary btn-validation">Valid</button>
+      <div className="subsection">Change password for the current user</div>
+      <input type="password" placeholder="Old password" {...register('pwdOld')} />
+      <input type="password" placeholder="New password" {...register('pwd1')} />
+      <input type="password" placeholder="Confirm new password" {...register('pwd2')} />
+      <button className="btn-submit">Valid</button>
     </form>
   );
 };

@@ -1,0 +1,84 @@
+// At the element level
+input, select, textarea{
+    width: 100%;
+    padding: 10px;
+    margin: 2px 0px;
+
+    background-color: white;
+    border: $tertiary 1px solid;    
+    border-radius: $border-radius;
+}
+
+input[type="checkbox"], input[type="radio"]{
+    height:15px;
+    width: 15px;
+    margin-right: 6px;
+  }
+
+button{
+    margin: 2px;
+    border: 0px;
+    border-radius: $border-radius;
+    padding: 2px 10px;
+    font-size: larger;
+    cursor: pointer;
+}
+
+button:hover{
+    filter: brightness(1.8);
+}
+    
+button:active {
+    filter: brightness(5.0);
+}
+
+input::placeholder{
+    color: $grey-color;
+    opacity: .5;
+    font-style: italic;
+}
+
+table {
+    margin: 10px 0px;
+}
+
+// Recurring elements
+.btn-danger{
+    background-color: $danger-color;
+    color: white;
+}
+
+.btn-drop-dataset{
+    margin: 0px 5px;
+    font-size:medium;
+    font-style: italic;
+    background-color: $danger-color;
+    color: white;
+}
+
+.alert{
+    border: 1px rgb(251, 231, 165) solid;
+    background-color: rgba(251, 231, 165, 0.5);
+    color: rgb(98,78, 23);
+    margin: 5px 0px;
+}
+
+.badge{
+    border: 0px;
+    border-radius: $border-radius;
+    background-color: $grey-color;
+    padding: 5px 10px;
+    margin: 2px 5px;
+}
+
+.badge.info{
+    background-color: $info-color;
+}
+
+.badge.danger{
+    background-color: $danger-color;
+}
+
+.badge.hotkey{
+    background-color: rgba(0,0,0,0.2);
+}
