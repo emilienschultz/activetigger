@@ -85,7 +85,7 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
   const [displayNewBertModel, setDisplayNewBertModel] = useState(false);
 
   return (
-    <div>
+    <>
       <ModelsPillDisplay
         modelNames={Object.values(availableBertModels)
           .sort((bertModelA, bertModelB) =>
@@ -112,22 +112,15 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
         />
       )}
       {currentBertModel && (
-        <div>
+        <>
           {model && (
-            <div>
-              <div className="d-flex my-4">
-                <button
-                  className="btn btn-outline-secondary btn-sm me-2 d-flex align-items-center"
-                  onClick={() => setShowParameters(true)}
-                >
+            <>
+              <div className="horizontal wrap">
+                <button className="btn-secondary-action" onClick={() => setShowParameters(true)}>
                   <FaGear size={18} className="me-1" />
                   Parameters
                 </button>
-
-                <button
-                  className="btn btn-outline-secondary btn-sm me-2 d-flex align-items-center"
-                  onClick={() => setShowRename(true)}
-                >
+                <button className="btn-secondary-action" onClick={() => setShowRename(true)}>
                   <MdDriveFileRenameOutline size={18} className="me-1" />
                   Rename
                 </button>
@@ -148,12 +141,10 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
                 projectSlug={projectSlug}
               />
 
-              <div className="mt-2">
-                <LossChart loss={loss} />
-              </div>
-            </div>
+              <LossChart loss={loss} />
+            </>
           )}
-        </div>
+        </>
       )}
 
       <Modal
@@ -202,15 +193,14 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
           <form onSubmit={handleSubmitRename(onSubmitRename)}>
             <input
               id="new_name"
-              className="form-control me-2 mt-2"
               type="text"
               placeholder="New name of the model"
               {...registerRename('new_name')}
             />
-            <button className="btn btn-primary me-2 mt-2">Rename</button>
+            <button className="btn-submit">Rename</button>
           </form>
         </Modal.Body>
       </Modal>
-    </div>
+    </>
   );
 };
