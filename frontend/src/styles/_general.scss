@@ -82,3 +82,15 @@ table {
 .badge.hotkey{
     background-color: rgba(0,0,0,0.2);
 }
+
+.transparent-background{
+    background-color: $transparent;
+}
+
+.btn-submit{
+    font-size: larger;
+    color: white;
+    background-color: $primary;
+    margin: 10px 0px;
+    width: 100%;
+  }

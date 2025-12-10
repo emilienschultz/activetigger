@@ -411,23 +411,21 @@ export const AnnotationManagement: FC = () => {
       </div>
       {kindScheme !== 'span' ? (
         <>
-          {elementId === 'noelement' ||
-            (true && (
-              <div className="alert horizontal center">
-                <div>
-                  No element available
-                  <button onClick={refetchElement}>
-                    <LuRefreshCw size={20} /> Get element
-                  </button>
-                </div>
+          {elementId === 'noelement' && (
+            <div className="alert horizontal center">
+              <div>
+                No element available
+                <button onClick={refetchElement}>
+                  <LuRefreshCw size={20} /> Get element
+                </button>
               </div>
-            ))}
-          {!isValidRegex(selectionConfig.filter || '') ||
-            (true && (
-              <div className="horizontal center">
-                <span className="badge danger">Regex not valid</span>
-              </div>
-            ))}
+            </div>
+          )}
+          {!isValidRegex(selectionConfig.filter || '') && (
+            <div className="horizontal center">
+              <span className="badge danger">Regex not valid</span>
+            </div>
+          )}
           {elementId !== 'noelement' && (
             <TextClassificationPanel
               element={element as ElementOutModel}
@@ -454,101 +452,89 @@ export const AnnotationManagement: FC = () => {
           />
         </>
       )}
-
+      {/* NOTE: Axel Not too much customisation cause it's gonna be refactored soon */}
       {elementId !== 'noelement' && (
-        <div className="row">
-          <div className="d-flex flex-wrap gap-2 justify-content-center">
-            <BackButton
-              projectName={projectName || ''}
-              history={history}
-              setAppContext={setAppContext}
+        <div className="horizontal center">
+          <BackButton
+            projectName={projectName || ''}
+            history={history}
+            setAppContext={setAppContext}
+          />
+
+          {kindScheme == 'multiclass' && (
+            <MulticlassInput
+              elementId={elementId || 'noelement'}
+              postAnnotation={postAnnotation}
+              labels={availableLabels}
+              phase={phase}
+              element={element as ElementOutModel}
             />
+          )}
+          {kindScheme == 'multilabel' && (
+            <MultilabelInput
+              elementId={elementId || 'noelement'}
+              postAnnotation={postAnnotation}
+              labels={availableLabels}
+            />
+          )}
 
-            {kindScheme == 'multiclass' && (
-              <MulticlassInput
-                elementId={elementId || 'noelement'}
-                postAnnotation={postAnnotation}
-                labels={availableLabels}
-                phase={phase}
-                element={element as ElementOutModel}
-              />
-            )}
-            {kindScheme == 'multilabel' && (
-              <MultilabelInput
-                elementId={elementId || 'noelement'}
-                postAnnotation={postAnnotation}
-                labels={availableLabels}
-              />
-            )}
-
-            <button
-              className="btn addcomment"
-              onClick={() => setDisplayComment(!displayComment)}
-              title="Add a comment"
-            >
-              <FaPencilAlt />
-              <Tooltip anchorSelect=".addcomment" place="top">
-                Add a comment
-              </Tooltip>
-            </button>
-            {
-              // erase button to remove last annotation
-              lastTag && (
-                <button
-                  className="btn clearannotation"
-                  onClick={() => {
-                    postAnnotation(null, elementId);
-                  }}
-                  title="Erase current tag"
-                >
-                  <PiEraser />
-                  <Tooltip anchorSelect=".clearannotation" place="top">
-                    Erase current tag
-                  </Tooltip>
-                </button>
-              )
-            }
-            {elementId && (
-              <ForwardButton
-                setAppContext={setAppContext}
-                elementId={elementId}
-                refetchElement={refetchElement}
-              />
-            )}
-          </div>
+          <button
+            className="transparent-background"
+            onClick={() => setDisplayComment(!displayComment)}
+            title="Add a comment"
+          >
+            <FaPencilAlt />
+          </button>
+          {
+            // erase button to remove last annotation
+            lastTag && (
+              <button
+                className="transparent-background"
+                onClick={() => {
+                  postAnnotation(null, elementId);
+                }}
+                title="Erase current tag"
+              >
+                <PiEraser />
+              </button>
+            )
+          }
+          {elementId && (
+            <ForwardButton
+              setAppContext={setAppContext}
+              elementId={elementId}
+              refetchElement={refetchElement}
+            />
+          )}
         </div>
       )}
-      <div className="d-flex flex-wrap gap-2 justify-content-center">
+      <div className="horizontal center">
+        {/* NOTE: Axel Not too much customisation cause it's gonna be refactored soon */}
         <button
-          className="btn displayconfig"
+          className="transparent-background"
           onClick={() => {
             setShowDisplayConfig(!showDisplayConfig);
           }}
           title="Display config menu"
         >
           <MdDisplaySettings />
-          <Tooltip anchorSelect=".displayconfig" place="top">
-            Display config menu
-          </Tooltip>
         </button>
         <button
-          className="btn displayviz"
+          className="transparent-background"
           onClick={() => {
             setShowDisplayViz(!showDisplayConfig);
           }}
           title="Display the projection"
         >
           <FaMapMarkedAlt />
-          <Tooltip anchorSelect=".displayviz" place="top">
-            Display the projection
-          </Tooltip>
         </button>
-        <button className="btn clearhistory" onClick={actionClearHistory} title="Clear the history">
+        <button
+          className="transparent-background"
+          onClick={actionClearHistory}
+          title="Clear the history"
+        >
           <FiRefreshCcw />
         </button>
-        <Tooltip anchorSelect=".clearhistory" place="top">
-          Clear the history
-        </Tooltip>
       </div>
 
       <Modal show={displayComment} onHide={handleCloseComment} id="comment-modal">
@@ -565,7 +551,7 @@ export const AnnotationManagement: FC = () => {
           />
         </Modal.Body>
         <Modal.Footer>
-          <button className="btn btn-primary" onClick={handleCloseComment}>
+          <button className="btn-submit" onClick={handleCloseComment}>
             Save
           </button>
         </Modal.Footer>
@@ -605,12 +591,14 @@ export const AnnotationManagement: FC = () => {
               currentScheme={currentScheme}
             />
           ) : (
-            <div className="text-center">
-              No quick model currently available. Go to model tab or
-              <button className="btn btn-primary m-2" onClick={startTrainQuickModel}>
+            <>
+              <div className="horizontal center">
+                No quick model currently available. Go to model tab or
+              </div>
+              <button className="btn-submit" onClick={startTrainQuickModel}>
                 Train a default quick model
               </button>
-            </div>
+            </>
           )}
         </Modal.Body>
       </Modal>
