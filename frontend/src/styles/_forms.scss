@@ -1,0 +1,87 @@
+form {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+
+  label{
+    margin-top: 10px;
+    font-style: italic;
+    color: $label-color;
+    font-weight: bolder;
+  
+    a{
+      // tooltips
+      margin: 0px 4px;
+    }
+  }
+
+  details {
+    background-color: $tertiary;
+    margin: 5px 0px;
+    padding: 15px;
+    border: 0px;
+    border-radius: $border-radius;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .btn-submit{
+    font-size: larger;
+    color: white;
+    background-color: $primary;
+    margin: 10px 0px;
+    width: 100%;
+  }
+}
+
+.form-frame {
+    padding: 0px;
+}
+
+#tag-parameters-div {
+    width: 100%;
+    display: flex;
+    align-items: start;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+
+    .parameter-div {
+        min-width: 50px;
+        margin: 3px 7px;
+        flex: 1 1 200px;
+    }
+
+    .parameter-div-small {
+        width: 20px;
+        margin: 3px 7px;
+        flex: 1 1 30px;
+    }
+}
+
+// Project Creation form upload progress
+#upload-progress,
+#upload-progress[value]::-webkit-progress-bar {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  border: none;
+  border-radius: 0;
+  background-color: lightgray;
+  height: 6px;
+  color: $secondary;
+  margin: 0;
+}
+
+#upload-progress[value]::-moz-progress-bar {
+  background-color: $secondary;
+}
+
+#upload-progress[value]::-webkit-progress-value {
+  background-color: $secondary;
+}
+
+.label-small-gray {
+    font-size: 0.8rem;
+    color: #9ca3af; // Tailwind's neutral gray tone (lighter)
+    margin-bottom: -5px;
+  }

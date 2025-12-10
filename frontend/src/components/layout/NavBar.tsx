@@ -38,7 +38,8 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
         ];
 
   return (
-    <nav className="navbar navbar-dark bg-primary navbar-expand-md" id="header">
+    // NOTE: Axel: I didn't do no css refactor here cause it's highly specific
+    <nav className="navbar navbar-dark bg-primary navbar-expand-md" id="nav-bar-header">
       <div className="container-fluid">
         <div id="logo-container" className="navbar-brand">
           <Link className="navbar-brand" to="/">

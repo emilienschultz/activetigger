@@ -6,8 +6,6 @@
 @import 'bootstrap/scss/variables';
 @import 'bootstrap/scss/variables-dark';
 
-@import 'variables-override';
-
 @import 'bootstrap/scss/maps';
 @import 'bootstrap/scss/mixins';
 @import 'bootstrap/scss/utilities';
@@ -47,6 +45,8 @@
 
 // project specific styles:
 @import 'layout';
+@import 'general';
+@import 'forms';
+@import 'gen_page';
 @import 'data_table';
 @import 'sigma';
-@import 'status_notch'

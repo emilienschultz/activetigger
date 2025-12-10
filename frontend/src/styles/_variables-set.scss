@@ -1,7 +1,15 @@
+// Colors
 $primary: #ea6b1f;
 $secondary: #b04302;
 $tertiary: rgb(239, 239, 239);
 $quaternary: #faf9f8;
+$label-color: #64809d;
+$grey-color: rgb(160, 160, 160);
+$danger-color: #e60000;
+$info-color: #64809d;
+$transparent: rgba(0,0,0,0);
+// Variables
+$border-radius: 5px;
 
 .project-link {
   display: block;
@@ -54,44 +62,21 @@ $quaternary: #faf9f8;
 
 .btn-validation {
   margin-top: 20px;
+  width: 100%;
 }
 
-.general-info {
-  margin-top: 10px;
-  background-color: #f8f9fa;
-  padding: 1rem;
-  color: #343a40;
-  border-radius: 0.25rem;
-  text-align: center;
-  color: #747d85;
-}
+// .general-info {
+//   margin-top: 10px;
+//   background-color: #f8f9fa;
+//   padding: 1rem;
+//   color: #343a40;
+//   border-radius: 0.25rem;
+//   text-align: center;
+//   color: #747d85;
+// }
 
 .navbar-text-margins {
   margin-left: 10px;
-}
-
-.delete-button {
-  background-color: #e60000;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  padding: 10px 20px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.delete-button:hover {
-  background-color: #cc0000;
-}
-
-.delete-button:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(255, 76, 76, 0.5);
-}
-
-.delete-button:active {
-  background-color: #cc0000;
 }
 
 .table-statistics {
@@ -120,12 +105,6 @@ $quaternary: #faf9f8;
   background-color: #cccccc;
   font-weight: bold;
   text-align: center;
-}
-
-.subsection {
-  font-weight: bold;
-  color: $secondary;
-  padding-top: 20px;
 }
 
 .explanations {
@@ -161,14 +140,17 @@ $quaternary: #faf9f8;
   color: #737373;
 }
 
-.custom-details {
-  border: 0px solid $tertiary;
-  border-radius: 8px;
-  padding: 10px;
-  margin: 5px 0;
-  background-color: #f8f9fa;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
+// .custom-details {
+//   border: 0px solid $tertiary;
+//   border-radius: 8px;
+//   padding: 10px;
+//   margin: 5px 0;
+//   background-color: $tertiary;
+//   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+//   display: flex;
+//   flex-direction: column;
+// }
 
 .custom-summary {
   cursor: pointer;

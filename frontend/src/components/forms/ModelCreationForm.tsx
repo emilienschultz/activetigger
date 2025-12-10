@@ -117,12 +117,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
 
       <label htmlFor="new-model-type"></label>
       <label>Name for the model</label>
-      <input
-        type="text"
-        {...registerNewModel('name')}
-        placeholder="Name the model"
-        className="form-control"
-      />
+      <input type="text" {...registerNewModel('name')} placeholder="Name the model" />
       <label>
         Model base{' '}
         <a className="basemodel">
@@ -214,151 +209,139 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
       </label>
       <input type="number" step="0.001" min={0} {...registerNewModel('parameters.wdecay')} />
 
-      <div className="form-group d-flex align-items-center">
-        <label>
-          <input type="checkbox" {...registerNewModel('parameters.gpu')} />
-          Use GPU
-          <a className="gpu">
-            <HiOutlineQuestionMarkCircle />
-          </a>
-          <Tooltip anchorSelect=".gpu" place="top">
-            Compute the training on GPU.
-          </Tooltip>
-        </label>
-      </div>
+      <label>
+        <input type="checkbox" {...registerNewModel('parameters.gpu')} />
+        Use GPU
+        <a className="gpu">
+          <HiOutlineQuestionMarkCircle />
+        </a>
+        <Tooltip anchorSelect=".gpu" place="top">
+          Compute the training on GPU.
+        </Tooltip>
+      </label>
       <details className="custom-details">
         <summary>Advanced parameters for the model</summary>
-        <div>
-          <label>
-            Batch Size{' '}
-            <a className="batchsize">
-              <HiOutlineQuestionMarkCircle />
-            </a>
-            <Tooltip anchorSelect=".batchsize" place="top">
-              How many samples are processed simultaneously. With small GPU, keep it around 4.
-            </Tooltip>
-          </label>
-          <input type="number" {...registerNewModel('parameters.batchsize')} />
-        </div>
-        <div>
-          <label>
-            Gradient Accumulation{' '}
-            <a className="gradientacc">
-              <HiOutlineQuestionMarkCircle />
-            </a>
-            <Tooltip anchorSelect=".gradientacc" place="top">
-              summing gradients over multiple steps before updating the model weights
-            </Tooltip>
-          </label>
-          <input type="number" step="0.01" {...registerNewModel('parameters.gradacc')} />
-        </div>
-        <div>
-          <label>
-            Eval{' '}
-            <a className="evalstep">
-              <HiOutlineQuestionMarkCircle />
-            </a>
-            <Tooltip anchorSelect=".evalstep" place="top">
-              how often (in terms of training steps) the evaluation of the model on the validation
-              dataset is performed during training
-            </Tooltip>
-          </label>
-          <input type="number" {...registerNewModel('parameters.eval')} />
-        </div>
-        <div>
-          <label>
-            Validation dataset size{' '}
-            <a className="test_size">
-              <HiOutlineQuestionMarkCircle />
-            </a>
-            <Tooltip anchorSelect=".test_size" place="top">
-              Eval size for the dev test to compute metrics.
-            </Tooltip>
-          </label>
-          <input type="number" step="0.1" {...registerNewModel('test_size')} />
-        </div>
-        <div>
-          <label>
-            Class threshold{' '}
-            <a className="class_min_freq">
-              <HiOutlineQuestionMarkCircle />
-            </a>
-            <Tooltip anchorSelect=".class_min_freq" place="top">
-              Drop classses with less than this number of elements
-            </Tooltip>
-          </label>
-          <input type="number" step="1" {...registerNewModel('class_min_freq')} />
-        </div>
 
-        <div className="form-group d-flex align-items-center">
-          <label>
-            <input type="checkbox" {...registerNewModel('class_balance')} />
-            Balance classes
-            <a className="class_balance">
-              <HiOutlineQuestionMarkCircle />
-            </a>
-            <Tooltip anchorSelect=".class_balance" place="top">
-              Downsize classes to the lowest one.
-            </Tooltip>
-          </label>
-        </div>
-        <div className="form-group d-flex align-items-center">
-          <label className="d-flex align-items-center">
-            Loss
-            <a className="loss">
-              <HiOutlineQuestionMarkCircle />
-            </a>
-            <Tooltip anchorSelect=".loss" place="top">
-              Use a specific loss function
-            </Tooltip>
-            <select {...registerNewModel('loss')} className="mx-2">
-              <option value="cross_entropy">Cross Entropy</option>
-              <option value="weighted_cross_entropy">Weighted Cross Entropy</option>
-            </select>{' '}
-          </label>
-        </div>
-        <div className="form-group d-flex align-items-center">
-          <label>
-            <input type="checkbox" {...registerNewModel('parameters.best')} />
-            Keep the best model
-            <a className="best">
-              <HiOutlineQuestionMarkCircle />
-            </a>
-            <Tooltip anchorSelect=".best" place="top">
-              Keep the model with the lowest validation loss.
-            </Tooltip>
-          </label>
-        </div>
+        <label>
+          Batch Size{' '}
+          <a className="batchsize">
+            <HiOutlineQuestionMarkCircle />
+          </a>
+          <Tooltip anchorSelect=".batchsize" place="top">
+            How many samples are processed simultaneously. With small GPU, keep it around 4.
+          </Tooltip>
+        </label>
+        <input type="number" {...registerNewModel('parameters.batchsize')} />
+
+        <label>
+          Gradient Accumulation{' '}
+          <a className="gradientacc">
+            <HiOutlineQuestionMarkCircle />
+          </a>
+          <Tooltip anchorSelect=".gradientacc" place="top">
+            summing gradients over multiple steps before updating the model weights
+          </Tooltip>
+        </label>
+        <input type="number" step="0.01" {...registerNewModel('parameters.gradacc')} />
+
+        <label>
+          Eval{' '}
+          <a className="evalstep">
+            <HiOutlineQuestionMarkCircle />
+          </a>
+          <Tooltip anchorSelect=".evalstep" place="top">
+            how often (in terms of training steps) the evaluation of the model on the validation
+            dataset is performed during training
+          </Tooltip>
+        </label>
+        <input type="number" {...registerNewModel('parameters.eval')} />
+
+        <label>
+          Validation dataset size{' '}
+          <a className="test_size">
+            <HiOutlineQuestionMarkCircle />
+          </a>
+          <Tooltip anchorSelect=".test_size" place="top">
+            Eval size for the dev test to compute metrics.
+          </Tooltip>
+        </label>
+        <input type="number" step="0.1" {...registerNewModel('test_size')} />
+
+        <label>
+          Class threshold{' '}
+          <a className="class_min_freq">
+            <HiOutlineQuestionMarkCircle />
+          </a>
+          <Tooltip anchorSelect=".class_min_freq" place="top">
+            Drop classses with less than this number of elements
+          </Tooltip>
+        </label>
+        <input type="number" step="1" {...registerNewModel('class_min_freq')} />
+
+        <label>
+          <input type="checkbox" {...registerNewModel('class_balance')} />
+          Balance classes
+          <a className="class_balance">
+            <HiOutlineQuestionMarkCircle />
+          </a>
+          <Tooltip anchorSelect=".class_balance" place="top">
+            Downsize classes to the lowest one.
+          </Tooltip>
+        </label>
+
+        <label className="horizontal">
+          Loss
+          <a className="loss">
+            <HiOutlineQuestionMarkCircle />
+          </a>
+          <Tooltip anchorSelect=".loss" place="top">
+            Use a specific loss function
+          </Tooltip>
+          <select {...registerNewModel('loss')} className="mx-2">
+            <option value="cross_entropy">Cross Entropy</option>
+            <option value="weighted_cross_entropy">Weighted Cross Entropy</option>
+          </select>{' '}
+        </label>
+
+        <label>
+          <input type="checkbox" {...registerNewModel('parameters.best')} />
+          Keep the best model
+          <a className="best">
+            <HiOutlineQuestionMarkCircle />
+          </a>
+          <Tooltip anchorSelect=".best" place="top">
+            Keep the model with the lowest validation loss.
+          </Tooltip>
+        </label>
       </details>
       <details className="custom-details">
         <summary>Advanced parameters for the data</summary>
-        <div>
-          <label>
-            Labels to ignore{' '}
-            <a className="ignore">
-              <HiOutlineQuestionMarkCircle />
-            </a>
-            <Tooltip anchorSelect=".ignore" place="top">
-              Elements with those labels will be ignored during training
-            </Tooltip>
-          </label>
 
-          <Controller
-            name="exclude_labels"
-            control={control}
-            render={({ field: { onChange } }) => (
-              <Select
-                options={existingLabels}
-                isMulti
-                onChange={(selectedOptions) => {
-                  onChange(selectedOptions ? selectedOptions.map((option) => option.label) : []);
-                }}
-              />
-            )}
-          />
-        </div>
+        <label>
+          Labels to ignore{' '}
+          <a className="ignore">
+            <HiOutlineQuestionMarkCircle />
+          </a>
+          <Tooltip anchorSelect=".ignore" place="top">
+            Elements with those labels will be ignored during training
+          </Tooltip>
+        </label>
+
+        <Controller
+          name="exclude_labels"
+          control={control}
+          render={({ field: { onChange } }) => (
+            <Select
+              options={existingLabels}
+              isMulti
+              onChange={(selectedOptions) => {
+                onChange(selectedOptions ? selectedOptions.map((option) => option.label) : []);
+              }}
+            />
+          )}
+        />
       </details>
-      <button key="start" className="btn btn-primary me-2 mt-2" disabled={isComputing}>
+      <button key="start" className="btn-submit" disabled={isComputing}>
         Train the model
       </button>
     </form>

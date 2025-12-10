@@ -358,8 +358,8 @@ export const AnnotationManagement: FC = () => {
   if (!projectName || !currentScheme) return;
 
   return (
-    <div className="container-fluid">
-      <div className="row mt-2">
+    <>
+      <div>
         {
           // annotation mode
           <div>
@@ -367,23 +367,15 @@ export const AnnotationManagement: FC = () => {
               settingChanged={settingChanged}
               setSettingChanged={setSettingChanged}
             />
-            {/* <div
-              className={`d-flex align-items-center mb-3 ${phase !== 'train' ? 'alert alert-warning' : ''}`}
-            > */}
-            <div className="text-center my-2">
+            <div className="horizontal center">
               {statistics ? (
-                <span className="ms-2" style={{ fontSize: '12px', color: 'gray' }}>
-                  <span className="d-none d-md-inline">Annotated: </span>
-                  {statisticsDataset(phase)} -{' '}
-                  <span className="d-none d-md-inline">Selected: </span>
-                  {nSample || 'na'}
-                  {/* <Tooltip anchorSelect=".currentstatistics" place="top">
-                        statistics for the current scheme
-                      </Tooltip> */}
+                <span className="explanations">
+                  {/* NOTE: Axel Not too much customisation cause it's gonna be refactored soon */}
+                  Annotated: {statisticsDataset(phase)} - Selected: {nSample || 'na'}
                 </span>
               ) : (
                 'na'
-              )}{' '}
+              )}
               <button
                 className={cx('getelement', settingChanged ? 'setting-changed' : '')}
                 onClick={() => {
@@ -392,6 +384,7 @@ export const AnnotationManagement: FC = () => {
                 }}
                 title="Get next element with the selection mode"
               >
+                {/* NOTE: Axel Not too much customisation cause it's gonna be refactored soon */}
                 <LuRefreshCw size={20} /> Get
                 {/* <Tooltip anchorSelect=".getelement" place="top">
                   Get next element with the selection mode
@@ -402,16 +395,14 @@ export const AnnotationManagement: FC = () => {
                   <GiTigerHead
                     size={30}
                     onClick={() => setActiveMenu(!activeMenu)}
-                    className="cursor-pointer ms-2 activelearning"
-                    style={{ color: activeModel ? 'green' : 'grey' }}
+                    className="activelearning"
+                    style={{ color: activeModel ? 'green' : 'grey', cursor: 'pointer' }}
                     title="Active learning"
                   />
                   <Tooltip anchorSelect=".activelearning" place="top">
                     Active learning
                   </Tooltip>
-                  <span className="badge rounded-pill bg-light text-dark opacity-50 small">
-                    {activeModel ? activeModel.value : 'inactive'}
-                  </span>
+                  <span className="badge info">{activeModel ? activeModel.value : 'inactive'}</span>
                 </>
               )}
             </div>
@@ -420,22 +411,23 @@ export const AnnotationManagement: FC = () => {
       </div>
       {kindScheme !== 'span' ? (
         <>
-          {elementId === 'noelement' && (
-            <div className="alert alert-warning text-center">
-              <div className="m-2">No element available</div>
-              <button className="btn btn-primary btn-sm" onClick={refetchElement}>
-                <LuRefreshCw size={20} /> Get element
-              </button>
-            </div>
-          )}
-
-          {
-            // display content
-          }
-
-          {!isValidRegex(selectionConfig.filter || '') && (
-            <div className="alert alert-danger">Regex not valid</div>
-          )}
+          {elementId === 'noelement' ||
+            (true && (
+              <div className="alert horizontal center">
+                <div>
+                  No element available
+                  <button onClick={refetchElement}>
+                    <LuRefreshCw size={20} /> Get element
+                  </button>
+                </div>
+              </div>
+            ))}
+          {!isValidRegex(selectionConfig.filter || '') ||
+            (true && (
+              <div className="horizontal center">
+                <span className="badge danger">Regex not valid</span>
+              </div>
+            ))}
           {elementId !== 'noelement' && (
             <TextClassificationPanel
               element={element as ElementOutModel}
@@ -507,8 +499,7 @@ export const AnnotationManagement: FC = () => {
                   onClick={() => {
                     postAnnotation(null, elementId);
                   }}
-                  title="Erase current tag
-"
+                  title="Erase current tag"
                 >
                   <PiEraser />
                   <Tooltip anchorSelect=".clearannotation" place="top">
@@ -623,6 +614,6 @@ export const AnnotationManagement: FC = () => {
           )}
         </Modal.Body>
       </Modal>
-    </div>
+    </>
   );
 };

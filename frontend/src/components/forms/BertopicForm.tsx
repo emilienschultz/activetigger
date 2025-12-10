@@ -46,13 +46,9 @@ export const BertopicForm: FC<BertopicCreationFormProps> = ({
   return (
     <div>
       <form onSubmit={handleSubmitNewModel(onSubmitNewModel)}>
-        <div className="d-flex items-center gap-2">
-          <label className="form-label" htmlFor="name">
-            Name
-          </label>
-          <input className="form-control" id="name" type="text" {...register('name')} />
-        </div>
-        <label className="form-label" htmlFor="embedding_model">
+        <label htmlFor="name">Name</label>
+        <input id="name" type="text" {...register('name')} />
+        <label htmlFor="embedding_model">
           Embedding model
           <a className="embedding_model">
             <HiOutlineQuestionMarkCircle />
@@ -62,15 +58,15 @@ export const BertopicForm: FC<BertopicCreationFormProps> = ({
             <br />
             model if the results are unsatisfactory.
           </Tooltip>
-          <select className="form-select" {...register('embedding_model')}>
-            {availableModels.map((model) => (
-              <option key={model} value={model}>
-                {model}
-              </option>
-            ))}
-          </select>
         </label>
-        <label className="form-label" htmlFor="umap_n_neighbors">
+        <select {...register('embedding_model')}>
+          {availableModels.map((model) => (
+            <option key={model} value={model}>
+              {model}
+            </option>
+          ))}
+        </select>
+        <label htmlFor="umap_n_neighbors">
           Number of neighnors (dimension reduction parameter)
           <a className="umap_n_neighbors">
             <HiOutlineQuestionMarkCircle />
@@ -82,14 +78,14 @@ export const BertopicForm: FC<BertopicCreationFormProps> = ({
             <br />
             <i>This value depends on how many elements you have in your corpus</i>
           </Tooltip>
-          <input
-            className="form-control"
-            id="umap_n_neighbors"
-            type="number"
-            {...register('umap_n_neighbors')}
-          />
         </label>
-        <label className="form-label" htmlFor="min_topic_size">
+        <input
+          className="form-control"
+          id="umap_n_neighbors"
+          type="number"
+          {...register('umap_n_neighbors')}
+        />
+        <label htmlFor="min_topic_size">
           Min topic size (clustering parameter)
           <a className="min_topic_size">
             <HiOutlineQuestionMarkCircle />
@@ -105,47 +101,27 @@ export const BertopicForm: FC<BertopicCreationFormProps> = ({
             <br />
             <i>This value depends on how many elements you have in your corpus</i>
           </Tooltip>
-          <input
-            className="form-control"
-            id="minTopicSize"
-            type="number"
-            {...register('hdbscan_min_cluster_size')}
-          />
         </label>
-        <details className="custom-details">
+        <input id="minTopicSize" type="number" {...register('hdbscan_min_cluster_size')} />
+        <details>
           <summary>Advanced parameters</summary>
           <div className="explanations">Using UMAP (reduction) and HDBSCAN (clustering)</div>
-          <label className="form-label" htmlFor="outlier_reduction">
+          <div>
             <input id="outlier_reduction" type="checkbox" {...register('outlier_reduction')} />
-            Outlier reduction
-          </label>
-          <label className="form-label" htmlFor="force_compute_embeddings">
+            <label htmlFor="outlier_reduction">Outlier reduction</label>
+          </div>
+
+          <div>
             <input
               id="force_compute_embeddings"
               type="checkbox"
               {...register('force_compute_embeddings')}
             />
-            Force compute embeddings
-          </label>
-          <label className="form-label" htmlFor="filter_text_length">
-            Filter out texts of length lower than
-            <input
-              className="form-control"
-              id="filter_text_length"
-              type="number"
-              {...register('filter_text_length')}
-            />
-          </label>
-          {/* <label className="form-label" htmlFor="nr_topics">
-            Number of topics (auto if null)
-            <input
-            className="form-control"
-            id="nr_topics"
-            type="number"
-            {...register('nr_topics')}
-            />
-          </label> */}
-          <label className="form-label" htmlFor="umap_n_components">
+            <label htmlFor="force_compute_embeddings">Force compute embeddings</label>
+          </div>
+          <label htmlFor="filter_text_length">Filter out texts of length lower than</label>
+          <input id="filter_text_length" type="number" {...register('filter_text_length')} />
+          <label htmlFor="umap_n_components">
             Number of components (dimension reduction parameter)
             <a className="umap_n_components">
               <HiOutlineQuestionMarkCircle />
@@ -158,30 +134,15 @@ export const BertopicForm: FC<BertopicCreationFormProps> = ({
               embedding will lose information, however increasing this value does not guarantee
               <br />
               better results. Try changing the embedding model first.
-              {/* waiting for better input on that matter - Axel */}
             </Tooltip>
-            <input
-              className="form-control"
-              id="umap_n_components"
-              type="number"
-              {...register('umap_n_components')}
-            />
           </label>
-          {/* <label className="form-label" htmlFor="umap_min_dist">
-            Min distance between points
-            <input
-              className="form-control"
-              id="umap_min_dist"
-              type="number"
-              step="any"
-              {...register('umap_min_dist')}
-            />
-          </label> */}
+          <input id="umap_n_components" type="number" {...register('umap_n_components')} />
         </details>
 
-        {!isComputing && <button className="btn btn-primary">Compute Bertopic</button>}
+        {!isComputing && <button className="btn-submit">Compute Bertopic</button>}
       </form>
       {isComputing && (
+        // TODO: AXEL refactor this button
         <button className="btn btn-primary w-100" onClick={() => stopProcesses('all')}>
           Stop computation
         </button>

@@ -56,84 +56,71 @@ export const AnnotationDisagreementManagement: FC<AnnotationDisagreementManageme
   };
 
   return (
-    <div className="container-fluid">
-      <div className="row">
-        <div className="col-12">
-          <div className="explanations">
-            Disagreements between users on annotations (for trainset). Abitrate for the correct
-            label.
-          </div>
-          <div>
-            <div>
-              <span>{users?.length}</span> user(s) involved in annotation
-            </div>
-            <div>
-              <b>{tableDisagreement?.length} disagreements</b>
-            </div>
-          </div>
-          {Object.entries(changes).length > 0 && (
-            <button className="btn btn-warning my-3" onClick={validateChanges}>
-              Validate changes
-            </button>
-          )}
-        </div>
+    <>
+      <div className="explanations">
+        Disagreements between users on annotations. Abitrate for the correct label.
       </div>
+      <div>{users?.length} user(s) involved in annotation</div>
+      <div>
+        <b>{tableDisagreement?.length} disagreements</b>
+      </div>
+      {Object.entries(changes).length > 0 && (
+        <button className="btn btn-warning my-3" onClick={validateChanges}>
+          Validate changes
+        </button>
+      )}
+
       {tableDisagreement?.map((element, index) => (
         <div className="alert alert-info" role="alert" key={index}>
-          <div className="row">
-            <div>
-              <details>
-                <summary>
-                  <span className="badge bg-light text-dark">
-                    {element.id as string} - {element.current_label as string}
+          <details>
+            <summary>
+              <span className="badge">
+                {element.id as string} - {element.current_label as string}
+              </span>
+            </summary>
+            <span>{element.text as string}</span>
+          </details>
+
+          {element.annotations && (
+            <div className="horizontal wrap">
+              {Object.entries(element.annotations).map(([key, value], _) => (
+                <div key={key}>
+                  <span className="badge info">
+                    {key}
+                    <span className="badge hotkey">{value}</span>
                   </span>
-                </summary>
-                <span>{element.text as string}</span>
-              </details>
+                </div>
+              ))}
+
+              {kindScheme === 'multiclass' && (
+                <select
+                  style={{ flex: '1 0 200px' }}
+                  onChange={(event) =>
+                    setChanges({ ...changes, [element.id as string]: event.target.value })
+                  }
+                >
+                  <option>Arbitation</option>
+                  {(availableLabels || []).map((e) => (
+                    <option key={e}>{e}</option>
+                  ))}
+                </select>
+              )}
+              {kindScheme === 'multilabel' && (
+                <Select
+                  isMulti
+                  options={(availableLabels || []).map((e) => ({ value: e, label: e }))}
+                  onChange={(e) => {
+                    setChanges({
+                      ...changes,
+                      [element.id as string]: e.map((e) => e.value).join('|'),
+                    });
+                  }}
+                />
+              )}
             </div>
-
-            {element.annotations && (
-              <div className="d-inline-flex align-items-center  mt-2">
-                {Object.entries(element.annotations).map(([key, value], _) => (
-                  <div key={key}>
-                    <span className="badge bg-info text-dark me-2">
-                      {key}
-                      <span className="badge rounded-pill bg-light text-dark m-1">{value}</span>
-                    </span>
-                  </div>
-                ))}
-
-                {kindScheme === 'multiclass' && (
-                  <select
-                    className="form-select w-25"
-                    onChange={(event) =>
-                      setChanges({ ...changes, [element.id as string]: event.target.value })
-                    }
-                  >
-                    <option>Select a label to arbitrage</option>
-                    {(availableLabels || []).map((e) => (
-                      <option key={e}>{e}</option>
-                    ))}
-                  </select>
-                )}
-                {kindScheme === 'multilabel' && (
-                  <Select
-                    isMulti
-                    className="flex-grow-1"
-                    options={(availableLabels || []).map((e) => ({ value: e, label: e }))}
-                    onChange={(e) => {
-                      setChanges({
-                        ...changes,
-                        [element.id as string]: e.map((e) => e.value).join('|'),
-                      });
-                    }}
-                  />
-                )}
-              </div>
-            )}
-          </div>
+          )}
         </div>
       ))}
-    </div>
+    </>
   );
 };

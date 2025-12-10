@@ -1,6 +1,6 @@
 import { Dispatch, FC, SetStateAction, useState } from 'react';
 
-import { IoIosRefresh } from 'react-icons/io';
+import { IoIosRefresh, IoIosCheckmark } from 'react-icons/io';
 import { PiEmptyBold } from 'react-icons/pi';
 import Select from 'react-select';
 import { useRetrainQuickModel } from '../core/api';
@@ -44,57 +44,51 @@ export const ActiveLearningManagement: FC<ActiveLearningManagementProps> = ({
   const { retrainQuickModel } = useRetrainQuickModel(projectName || null, currentScheme || null);
 
   return (
-    <div>
-      <div>
-        Current active learning model :{' '}
-        <b>
-          {activeModel ? (
-            <span>
-              {activeModel.value}
-              <PiEmptyBold
-                className="mx-2"
-                size={20}
-                style={{ color: 'red', cursor: 'pointer' }}
-                onClick={() => setActiveQuickModel(null)}
-              />
-              {activeModel.type === 'quickmodel' && (
-                <IoIosRefresh
-                  size={20}
-                  style={{ color: 'green', cursor: 'pointer' }}
-                  onClick={() => {
-                    retrainQuickModel(activeModel.value);
-                    console.log('retrain');
-                  }}
-                />
-              )}
-            </span>
-          ) : (
-            'no model selected'
-          )}
-        </b>
-      </div>
-      <div>
-        <div className="d-flex align-items-center my-2">
-          <Select
-            options={availableModels}
-            value={currentModel ? currentModel : null}
-            onChange={(selectedOption) => {
-              setCurrentModel(selectedOption ? selectedOption : null);
-            }}
-            isSearchable
-            placeholder="Select a model for active learning"
-          />
-          <button
-            className="btn btn-primary mx-2"
-            onClick={() => setActiveQuickModel(currentModel)}
-          >
-            Select
-          </button>
-        </div>
+    <>
+      {/* TODO: Axel Refactor */}
+      <div className="horizontal">
+        <div>Current active learning model : </div>
+        <Select
+          options={availableModels}
+          value={currentModel ? currentModel : null}
+          onChange={(selectedOption) => {
+            setCurrentModel(selectedOption ? selectedOption : null);
+          }}
+          isSearchable
+          placeholder="Select a model for active learning"
+        />
+        <IoIosCheckmark
+          size={40}
+          style={{ color: 'green', cursor: 'pointer', margin: '0px 2px' }}
+          onClick={() => setActiveQuickModel(currentModel)}
+        />
+        <PiEmptyBold
+          size={20}
+          style={{ color: 'red', cursor: 'pointer', margin: '0px 2px' }}
+          onClick={() => {
+            setCurrentModel(null);
+            setActiveQuickModel(null);
+          }}
+        />
+        {activeModel?.type === 'quickmodel' && (
+          <div>
+            Retrain now{' '}
+            <IoIosRefresh
+              size={20}
+              style={{ color: 'green', cursor: 'pointer' }}
+              onClick={() => {
+                retrainQuickModel(activeModel.value);
+                console.log('retrain');
+              }}
+            />
+          </div>
+        )}
       </div>
       {activeModel?.type === 'quickmodel' && (
-        <div className="d-flex align-items-center">
-          <label htmlFor="frequencySlider">Retrain model every</label>
+        <div className="horizontal">
+          <label htmlFor="frequencySlider" style={{ flex: '1 1 30%', border: '1px solid black' }}>
+            Retrain model every
+          </label>
           <input
             type="number"
             id="frequencySlider"
@@ -105,11 +99,10 @@ export const ActiveLearningManagement: FC<ActiveLearningManagementProps> = ({
               refreshFreq(Number(e.currentTarget.value));
             }}
             step="5"
-            className="mx-2"
+            style={{ flex: '1 1 30%' }}
           />
-          annotations (0 for no refreshing)
         </div>
       )}
-    </div>
+    </>
   );
 };
