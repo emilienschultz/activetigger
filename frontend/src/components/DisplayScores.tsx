@@ -86,17 +86,12 @@ export const DisplayScores: FC<DisplayScoresProps> = ({
       </span>
       <DisplayTableStatistics scores={scores} title={title} />
       {scores['false_predictions'] && (
-        <button
-          className="btn btn-outline-secondary btn-sm me-2 "
-          id="false-predictions"
-          onClick={() => setShowFalsePredictions(true)}
-        >
+        <button className="btn-secondary-action " onClick={() => setShowFalsePredictions(true)}>
           Show false predictions
         </button>
       )}
       <button
-        className="btn btn-outline-secondary btn-sm me-2"
-        id="download-params"
+        className="btn-secondary-action"
         onClick={(e) => {
           e.preventDefault();
           downloadModel();
