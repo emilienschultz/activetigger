@@ -31,26 +31,6 @@ form {
     padding: 0px;
 }
 
-#tag-parameters-div {
-    width: 100%;
-    display: flex;
-    align-items: start;
-    flex-wrap: wrap;
-    margin-bottom: 10px;
-
-    .parameter-div {
-        min-width: 50px;
-        margin: 3px 7px;
-        flex: 1 1 200px;
-    }
-
-    .parameter-div-small {
-        width: 20px;
-        margin: 3px 7px;
-        flex: 1 1 30px;
-    }
-}
-
 // Project Creation form upload progress
 #upload-progress,
 #upload-progress[value]::-webkit-progress-bar {
