@@ -37,7 +37,7 @@ export const CodebookManagement: FC<CodebookManagementProps> = ({
           rehypePlugins: [[rehypeSanitize]],
         }}
       />
-      <button className="btn btn-secondary btn-sm mt-3" onClick={saveCodebook}>
+      <button className="btn-submit" onClick={saveCodebook}>
         Save
       </button>
     </div>
