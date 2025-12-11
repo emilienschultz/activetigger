@@ -1,5 +1,5 @@
 import { FC, useState } from 'react';
-import { Button, Modal } from 'react-bootstrap';
+import { Modal } from 'react-bootstrap';
 import { MdRunningWithErrors } from 'react-icons/md';
 
 export const ModalErrors: FC<{
@@ -14,7 +14,7 @@ export const ModalErrors: FC<{
 
   return (
     <>
-      <div onClick={handleShow} className="badge text-bg-danger" style={{ cursor: 'pointer' }}>
+      <div onClick={handleShow} className="badge danger" style={{ cursor: 'pointer' }}>
         <MdRunningWithErrors /> Errors
       </div>
 
@@ -28,9 +28,9 @@ export const ModalErrors: FC<{
           ))}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>
+          <button className="btn-submit" onClick={handleClose}>
             Close
-          </Button>
+          </button>
         </Modal.Footer>
       </Modal>
     </>
