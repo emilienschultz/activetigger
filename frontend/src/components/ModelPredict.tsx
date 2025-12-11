@@ -48,39 +48,47 @@ export const ModelPredict: FC<{ currentModel: string | null; batchSize?: number 
     false;
 
   return (
-    <div>
-      <DisplayTrainingProcesses
-        projectSlug={projectSlug || null}
-        processes={project?.languagemodels.training}
-        processStatus="predicting"
-        displayStopButton={isComputing}
-      />
-      <div>
+    <>
+      <div className="horizontal">
         {model && (
           <button
-            className="btn btn-info mt-2 me-2"
-            onClick={() => setDisplayExternalForm(!displayExternalForm)}
+            className="btn-primary-action"
+            onClick={() => {
+              console.log('clickedd');
+              setDisplayExternalForm(true);
+            }}
+            disabled={isComputing}
           >
             Prediction external dataset
           </button>
         )}
         {model && !availablePrediction && (
           <button
-            className="btn btn-info mt-2"
-            onClick={() => computeModelPrediction(currentModel, 'all', currentScheme || '', 'bert')}
+            className="btn-primary-action"
+            onClick={() => {
+              setDisplayExternalForm(false);
+              computeModelPrediction(currentModel, 'all', currentScheme || '', 'bert');
+            }}
+            disabled={isComputing}
           >
             Prediction complete dataset
           </button>
         )}
-        {model && displayExternalForm && (
-          <ImportPredictionDataset
-            projectSlug={projectSlug || ''}
-            modelName={currentModel || ''}
-            scheme={currentScheme || ''}
-            availablePredictionExternal={availablePredictionExternal || false}
-          />
-        )}
       </div>
-    </div>
+      {model && displayExternalForm && (
+        <ImportPredictionDataset
+          projectSlug={projectSlug || ''}
+          modelName={currentModel || ''}
+          scheme={currentScheme || ''}
+          availablePredictionExternal={availablePredictionExternal || false}
+        />
+      )}
+      <DisplayTrainingProcesses
+        projectSlug={projectSlug || null}
+        processes={project?.languagemodels.training}
+        processStatus="predicting"
+        displayStopButton={isComputing}
+      />
+    </>
   );
 };
