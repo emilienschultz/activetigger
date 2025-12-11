@@ -35,10 +35,11 @@ export const MultilabelInput: FC<MulticlassInputProps> = ({
   }, [handleKeyboardEvents]);
 
   return (
-    <div className="col-8 d-flex justify-content-center align-items-center">
+    <div className="horizontal" style={{ width: '50%', minWidth: '300px' }}>
+      {/* NOTE: Axel: Need to be reconsidered */}
       <Select
         isMulti
-        className="flex-grow-1"
+        className="flex-grow-1" // Axel: ugghhhhh
         options={labels.map((e) => ({ value: e, label: e }))}
         onChange={(e) => {
           setSelectedLabels(e.map((e) => e.value));
@@ -46,7 +47,7 @@ export const MultilabelInput: FC<MulticlassInputProps> = ({
         value={selectedLabels.map((e) => ({ value: e, label: e }))}
       />
       <button
-        className="btn"
+        className="btn-primary-action"
         onClick={() => {
           postAnnotation(selectedLabels.join('|'), elementId);
           setSelectedLabels([]);
