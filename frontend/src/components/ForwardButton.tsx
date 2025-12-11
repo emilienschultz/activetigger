@@ -52,6 +52,8 @@ export const ForwardButton: FC<ForwardButtonProps> = ({
   }, [shouldRefetch, refetchElement]);
 
   return (
+    // NOTE: Axel: Theres an inconcistency between the forward and backward button,
+    // I've not changed it cause it is gonna be refactored
     <button
       onClick={() => {
         setAppContext((prev) => ({ ...prev, history: [...prev.history, elementId] }));
