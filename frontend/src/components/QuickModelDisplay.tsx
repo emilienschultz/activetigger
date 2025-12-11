@@ -6,6 +6,7 @@ interface QuickModelDisplayProps {
   currentModel?: Record<string, never>;
 }
 
+// NOTE: Axel; Not used
 export const QuickModelDisplay: FC<QuickModelDisplayProps> = ({ currentModel, projectSlug }) => {
   // if no model, return nothing
   if (!currentModel) return null;
