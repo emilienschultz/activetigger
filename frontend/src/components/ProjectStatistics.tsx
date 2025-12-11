@@ -35,6 +35,7 @@ interface StatisticsProps {
 /**
  * Component to display statistics
  */
+// NOTE: Axel: Not used
 export const ProjectStatistics: FC<StatisticsProps> = ({ projectSlug, scheme }) => {
   // get the statistics of the project from the API
   const { statistics } = useStatistics(projectSlug, scheme);
