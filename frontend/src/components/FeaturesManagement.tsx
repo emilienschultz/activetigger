@@ -10,33 +10,19 @@ import { sortDatesAsStrings } from '../core/utils';
 import { FeatureDescriptionModelOut } from '../types';
 import { CreateNewFeature } from './forms/CreateNewFeature';
 import { ModelsPillDisplay } from './ModelsPillDisplay';
+import { ModelParametersTab } from './ModelParametersTab';
 
 export default function SimpleTable(data: FeatureDescriptionModelOut) {
   return (
-    <table id="parameter-tables-large">
-      <tbody>
-        <tr>
-          <td className="key">Name</td>
-          <td className="value">{data.name}</td>
-        </tr>
-        <tr>
-          <td className="key">User</td>
-          <td className="value">{data.user}</td>
-        </tr>
-        <tr>
-          <td className="key">Time</td>
-          <td className="value">{data.time}</td>
-        </tr>
-        <tr>
-          <td className="key">Kind</td>
-          <td className="value">{data.kind}</td>
-        </tr>
-        <tr>
-          <td className="key last-row">Parameters</td>
-          <td className="value last-row">{JSON.stringify(data.parameters, null, 2)}</td>
-        </tr>
-      </tbody>
-    </table>
+    <ModelParametersTab
+      params={{
+        Name: data.name,
+        User: data.user,
+        Time: data.time,
+        Kind: data.kind,
+        ...data.parameters,
+      }}
+    />
   );
 }
 
