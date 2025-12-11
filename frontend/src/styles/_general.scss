@@ -94,6 +94,14 @@ table {
     width: 100%;
 }
 
+.btn-submit-danger{
+    font-size: larger;
+    color: white;
+    background-color: $danger-color;
+    margin: 10px 0px;
+    width: 100%;
+}
+
 .btn-primary-action{
     background-color: $primary;
     border: 2px solid $primary;

@@ -6,7 +6,6 @@ import { useAddLabel, useDeleteLabel, useRenameLabel, useStatistics } from '../c
 import { useNotifications } from '../core/notifications';
 
 import { Modal } from 'react-bootstrap';
-import { FaCheck } from 'react-icons/fa';
 import { ReactSortable } from 'react-sortablejs';
 import { AppContextValue } from '../core/context';
 
@@ -51,70 +50,66 @@ export const LabelCard: FC<LabelCardProps> = ({
   const [showDelete, setShowDelete] = useState(false);
   const [newLabel, setNewLabel] = useState(label);
   return (
-    <tr key={label}>
-      <td className="px-4 py-3">{label}</td>
-      <td className="px-4 py-3 text-center">{countTrain ? countTrain : 0}</td>
-      <td className="px-4 py-3 text-center">{countValid ? countValid : 0}</td>
-      <td className="px-4 py-3 text-center">{countTest ? countTest : 0}</td>
+    <tr key={label} className="content">
+      <td className="label-col">{label}</td>
+      <td className="dataset-col">{countTrain ? countTrain : 0}</td>
+      <td className="dataset-col">{countValid ? countValid : 0}</td>
+      <td className="dataset-col">{countTest ? countTest : 0}</td>
       {canEdit && (
         <>
-          <td className="flex justify-center gap-4">
-            <div
+          <td className="edit-col">
+            <button
+              className="transparent-background"
               title="Delete"
               onClick={() => setShowDelete(true)}
-              className="cursor-pointer trash-wrapper"
             >
               <FaRegTrashAlt />
-            </div>
-          </td>
-          <td className="flex justify-center gap-4">
-            <div
+            </button>
+            <button
+              className="transparent-background"
               title="Rename"
               onClick={() => setShowRename(!showRename)}
-              className="cursor-pointer"
             >
               <FaEdit />
-            </div>
+            </button>
           </td>
         </>
       )}
-      {showRename && (
-        <td>
-          <div className="d-flex align-items-center">
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Enter new label"
-              onChange={(e) => setNewLabel(e.target.value)}
-            />
-            <button
-              onClick={() => {
-                renameLabel(label, newLabel);
-                setShowRename(false);
-              }}
-              className="btn btn p-0"
-            >
-              <FaCheck size={20} className="m-2" />
-            </button>
-          </div>
-        </td>
-      )}
-      <Modal show={showDelete} id="deletescheme" onHide={() => setShowDelete(false)}>
+      <Modal show={showDelete} onHide={() => setShowDelete(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Delete a label</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>
-            Are you sure you want to delete the label <b>{label}</b>?
-          </p>
+          Are you sure you want to delete the label <b>{label}</b>?
           <button
-            className="btn btn-danger"
+            className="btn-submit-danger"
             onClick={() => {
               removeLabel(label);
               setShowDelete(false);
             }}
           >
             Delete
+          </button>
+        </Modal.Body>
+      </Modal>
+      <Modal show={showRename} onHide={() => setShowRename(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Rename {label}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <input
+            type="text"
+            placeholder="Enter new label"
+            onChange={(e) => setNewLabel(e.target.value)}
+          />
+          <button
+            onClick={() => {
+              renameLabel(label, newLabel);
+              setShowRename(false);
+            }}
+            className="btn-submit"
+          >
+            Rename
           </button>
         </Modal.Body>
       </Modal>
@@ -191,113 +186,85 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
   };
 
   return (
-    <div className="row">
-      <div className="col-12 rounded-2xl bg-white">
-        <table className="table">
-          <thead>
-            <tr>
-              <th scope="col" className="px-4 py-3">
-                Label <span className="badge rounded-pill bg-light text-dark">{kindScheme}</span>
-              </th>
-              <th scope="col" className="px-4 py-3 text-center">
-                Train
-              </th>
-              <th scope="col" className="px-4 py-3 text-center">
-                Valid
-              </th>
-              <th scope="col" className="px-4 py-3 text-center">
-                Test
-              </th>
-              <th scope="col" className="px-4 py-3 text-center"></th>
-              <th scope="col" className="px-4 py-3 text-center"></th>
-            </tr>
-          </thead>
-
-          <ReactSortable list={labels} setList={updateLabels} tag="tbody">
-            {labels.map((label) => (
-              <LabelCard
-                key={label.label}
-                label={label.label}
-                removeLabel={() => {
-                  deleteLabel(label.label);
-                }}
-                renameLabel={renameLabel}
-                countTrain={
-                  statistics ? Number(statistics['train_annotated_distribution'][label.label]) : 0
-                }
-                countValid={
-                  statistics && statistics['valid_annotated_distribution']
-                    ? Number(statistics['valid_annotated_distribution'][label.label])
-                    : 0
-                }
-                countTest={
-                  statistics && statistics['test_annotated_distribution']
-                    ? Number(statistics['test_annotated_distribution'][label.label])
-                    : 0
-                }
-                canEdit={canEdit}
-              />
-            ))}
-          </ReactSortable>
-
-          <tbody>
-            <tr>
-              <td className="px-4 py-3">
-                <b>Annotated</b>
-              </td>
-              <td className="px-4 py-3 text-center">
-                {statistics ? statistics['train_annotated_n'] : ''}
-              </td>
-              <td className="px-4 py-3 text-center">
-                {statistics ? statistics['valid_annotated_n'] : ''}
-              </td>
-              <td className="px-4 py-3 text-center">
-                {statistics ? statistics['test_annotated_n'] : ''}
-              </td>
-            </tr>
-            <tr>
-              <td className="px-4 py-3">
-                <b>Total</b>
-              </td>
-              <td className="px-4 py-3 text-center">
-                {statistics ? statistics['train_set_n'] : ''}
-              </td>
-              <td className="px-4 py-3 text-center">
-                {statistics ? statistics['valid_set_n'] : ''}
-              </td>
-              <td className="px-4 py-3 text-center">
-                {statistics ? statistics['test_set_n'] : ''}
-              </td>
-            </tr>
-          </tbody>
+    <>
+      <table id="label-table">
+        <thead>
           <tr>
-            <th>
-              <div className="d-flex align-items-center">
-                {canEdit && (
-                  <>
-                    <input
-                      type="text"
-                      id="new-label"
-                      value={createLabelValue}
-                      onChange={handleCreateLabelChange}
-                      placeholder="Enter new label"
-                      className="form-control"
-                    />{' '}
-                    <button onClick={createLabel} className="btn btn">
-                      <FaPlusCircle size={20} />
-                    </button>
-                  </>
-                )}
-              </div>
+            <th scope="col" className="label-col">
+              <span className="explanations">({kindScheme})</span> Label
             </th>
-            <th className="px-4 py-3 text-center"></th>
-            <th> </th>
-            <th> </th>
-            <th> </th>
-            <th> </th>
+            <th scope="col" className="dataset-col">
+              Train
+            </th>
+            <th scope="col" className="dataset-col">
+              Valid
+            </th>
+            <th scope="col" className="dataset-col">
+              Test
+            </th>
+            <th scope="col" className="empty-col"></th>
           </tr>
-        </table>
-      </div>
-    </div>
+        </thead>
+        <ReactSortable list={labels} setList={updateLabels} tag="tbody">
+          {labels.map((label) => (
+            <LabelCard
+              key={label.label}
+              label={label.label}
+              removeLabel={() => {
+                deleteLabel(label.label);
+              }}
+              renameLabel={renameLabel}
+              countTrain={
+                statistics ? Number(statistics['train_annotated_distribution'][label.label]) : 0
+              }
+              countValid={
+                statistics && statistics['valid_annotated_distribution']
+                  ? Number(statistics['valid_annotated_distribution'][label.label])
+                  : 0
+              }
+              countTest={
+                statistics && statistics['test_annotated_distribution']
+                  ? Number(statistics['test_annotated_distribution'][label.label])
+                  : 0
+              }
+              canEdit={canEdit}
+            />
+          ))}
+        </ReactSortable>
+        <tbody>
+          <tr>
+            <td className="label-col">
+              <b>Annotated</b>
+            </td>
+            <td className="dataset-col">{statistics ? statistics['train_annotated_n'] : ''}</td>
+            <td className="dataset-col">{statistics ? statistics['valid_annotated_n'] : ''}</td>
+            <td className="dataset-col">{statistics ? statistics['test_annotated_n'] : ''}</td>
+          </tr>
+          <tr>
+            <td className="label-col">
+              <b>Total</b>
+            </td>
+            <td className="dataset-col">{statistics ? statistics['train_set_n'] : ''}</td>
+            <td className="dataset-col">{statistics ? statistics['valid_set_n'] : ''}</td>
+            <td className="dataset-col">{statistics ? statistics['test_set_n'] : ''}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      {canEdit && (
+        <div className="horizontal" style={{ width: '420px' }}>
+          <input
+            type="text"
+            id="new-label"
+            value={createLabelValue}
+            onChange={handleCreateLabelChange}
+            placeholder="Enter new label"
+          />{' '}
+          <button onClick={createLabel} className="btn btn">
+            <FaPlusCircle size={20} />
+          </button>
+        </div>
+      )}
+    </>
   );
 };
