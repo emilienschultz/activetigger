@@ -92,13 +92,17 @@ export async function loadExcelFile(file: File): Promise<DataType> {
   const worksheet = workbook.Sheets[sheetName];
 
   // Convert the sheet to JSON format with headers
-  const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+  const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null });
 
   // Extract headers (first row)
   const headers = jsonData[0] as string[];
 
-  // Extract data (subsequent rows)
-  const data = jsonData.slice(1).map((row) => fromPairs(zip(headers, row as string[])));
+  // Extract data (subsequent rows) removing empty rows
+  const data = jsonData
+    .slice(1)
+    .filter((row) => (row as string[]).some((cell) => cell !== null && cell !== '')) // keeps at least one non-empty cell
+    .map((row) => fromPairs(zip(headers, row as string[])));
+  console.log('Excel data loaded:', data);
 
   // Return a DataType object with the data, headers, and filename
   return { data, headers, filename: file.name };
