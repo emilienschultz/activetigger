@@ -4,9 +4,9 @@ import { FC, useEffect, useState } from 'react';
 import DataTable from 'react-data-table-component';
 import { SubmitHandler, useForm, useWatch } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-import { usePostAnnotationsFile } from '../core/api';
-import { useNotifications } from '../core/notifications';
-import { loadFile } from '../core/utils';
+import { usePostAnnotationsFile } from '../../core/api';
+import { useNotifications } from '../../core/notifications';
+import { loadFile } from '../../core/utils';
 
 interface ImportPropos {
   projectName: string | null;
