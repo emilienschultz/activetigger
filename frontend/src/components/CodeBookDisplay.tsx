@@ -72,15 +72,7 @@ export const CodebookDisplay: FC<CodebookDisplayProps> = ({
     <>
       <div id="codebook">
         {/* Header fin et discret */}
-        <div
-          id="header"
-          // className="card-header bg-white text-primary d-flex justify-content-between align-items-center border-bottom border-primary"
-          // style={{
-          //   padding: '4px 8px', // header plus fin
-          //   fontSize: '0.9rem',
-          //   fontWeight: 600,
-          // }}
-        >
+        <div id="header">
           {' '}
           <span style={{ fontWeight: 'bold' }}>📘 Guidelines</span>
           {canEdit && (
