@@ -3,11 +3,11 @@ import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
-import PulseLoader from 'react-spinners/PulseLoader';
 
 import chroma from 'chroma-js';
 import { Modal } from 'react-bootstrap';
 import { FaLock, FaPlusCircle } from 'react-icons/fa';
+import { FaGear } from 'react-icons/fa6';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
 import {
@@ -25,6 +25,8 @@ import { MulticlassInput } from './MulticlassInput';
 import { MultilabelInput } from './MultilabelInput';
 import { ProjectionVizSigma } from './ProjectionVizSigma';
 import { MarqueBoundingBox } from './ProjectionVizSigma/MarqueeController';
+import { ModelParametersTab } from '../components/ModelParametersTab';
+import { StopProcessButton } from './StopProcessButton';
 
 interface ProjectionManagementProps {
   projectName: string | null;
@@ -223,32 +225,25 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
 
   const [showComputeNewProjection, setShowComputeNewProjection] = useState<boolean>(false);
 
+  const [showParameters, setShowParameters] = useState<boolean>(false);
   return (
-    <div>
-      {!projectionTraining ? (
-        <button
-          onClick={() => setShowComputeNewProjection(true)}
-          className="create-new-element"
-          disabled={isComputing}
-        >
+    <>
+      {/* NOTE: Axel: This page is broken //FIXME */}
+      {!isComputing ? (
+        <button onClick={() => setShowComputeNewProjection(true)} className="btn-primary-action">
           <FaPlusCircle size={20} className="me-1" /> Compute new projection
         </button>
       ) : (
-        <div className="col-8 d-flex justify-content-center">
-          <div className="d-flex align-items-center gap-2">
-            <PulseLoader /> Computing a projection, please wait
-          </div>
-        </div>
+        <StopProcessButton />
       )}
       {projectionData && labelColorMapping && (
-        <div>
-          <details className="m-2">
-            <summary>Parameters of the current vizualisation</summary>
-            {JSON.stringify(projectionData?.parameters, null, 2)}
-          </details>
-          <div className="row align-items-start" style={{ height: '400px', marginBottom: '50px' }}>
+        <>
+          <button className="btn-secondary-action" onClick={() => setShowParameters(true)}>
+            <FaGear size={18} />
+            Parameters
+          </button>
+          <div className="horizontal wrap">
             <ProjectionVizSigma
-              className={`col-8 border h-100`}
               data={projectionData}
               selectedId={currentElementId}
               setSelectedId={setSelectedId}
@@ -264,11 +259,12 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
               }}
               labelColorMapping={labelColorMapping}
             />
-            <div className="col-4 overflow-y-auto h-100">
+
+            <div style={{ flex: '1 1 auto' }}>
               {selectedElement ? (
-                <div>
+                <div style={{ padding: '15px' }}>
                   <a
-                    className="badge bg-light text-dark"
+                    className="badge"
                     onClick={() =>
                       navigate(`/projects/${projectName}/tag/${selectedElement.element_id}?tab=tag`)
                     }
@@ -276,12 +272,10 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                   >
                     Element {selectedElement.element_id}
                   </a>
-                  <div className="mt-2">{selectedElement.text}</div>
-                  <div className="mt-2">
-                    Previous annotations : {JSON.stringify(selectedElement.history)}
-                  </div>
+                  <div>{selectedElement.text}</div>
+                  <div>Previous annotations : {JSON.stringify(selectedElement.history)}</div>
+                  <h5 className="subsection">Annotate this element</h5>
                   <div>
-                    <h5 className="mt-2 subsection">Annotate this element</h5>
                     {kindScheme == 'multiclass' && (
                       <MulticlassInput
                         elementId={selectedElement.element_id}
@@ -300,15 +294,17 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                   </div>
                 </div>
               ) : (
-                <div className="explanations">Click on an element to display its content</div>
+                <div className="explanations horizontal center" style={{ flex: '1 1 auto' }}>
+                  Click on an element to display its content
+                </div>
               )}
             </div>
           </div>
+
           <label style={{ display: 'block' }}>
             <input
               type="checkbox"
               checked={selectionConfig.frameSelection}
-              className="mx-2"
               onChange={(_) => {
                 setAppContext((prev) => ({
                   ...prev,
@@ -319,9 +315,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                 }));
               }}
             />
-            <span className="lock">
-              <FaLock /> Lock on selection
-            </span>
+            <FaLock /> Lock on selection
             <a className="lockhelp">
               <HiOutlineQuestionMarkCircle />
             </a>
@@ -331,7 +325,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
               selected area will be available for annoation.
             </Tooltip>
           </label>
-        </div>
+        </>
       )}
       <Modal
         show={showComputeNewProjection}
@@ -345,38 +339,40 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
         <Modal.Body>
           <form onSubmit={handleSubmit(onSubmit)}>
             {' '}
-            <div>
-              <label htmlFor="features">Select features</label>
+            <label htmlFor="features">Select features</label>
+            <div className="horizontal wrap">
+              <div style={{ flex: '1 1 auto' }}>
+                <Controller
+                  name="features"
+                  control={control}
+                  defaultValue={defaultFeatures.map((e) => e.value)}
+                  render={({ field: { onChange, value } }) => (
+                    <Select
+                      options={features}
+                      isMulti
+                      value={features.filter((option) => value.includes(option.value))}
+                      onChange={(selectedOptions) => {
+                        onChange(
+                          selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                        );
+                      }}
+                    />
+                  )}
+                />
+              </div>
               <button
                 type="button"
-                className="btn btn-outline-secondary d-flex align-items-center my-1"
+                className="btn-secondary-action"
+                style={{ flex: '1 1 auto' }}
                 onClick={() => setDisplayNewFeature(true)}
               >
                 <FaPlusCircle size={18} className="me-1" /> Add a new feature
               </button>
-              <Controller
-                name="features"
-                control={control}
-                defaultValue={defaultFeatures.map((e) => e.value)}
-                render={({ field: { onChange, value } }) => (
-                  <Select
-                    options={features}
-                    isMulti
-                    value={features.filter((option) => value.includes(option.value))}
-                    onChange={(selectedOptions) => {
-                      onChange(
-                        selectedOptions ? selectedOptions.map((option) => option.value) : [],
-                      );
-                    }}
-                  />
-                )}
-              />
             </div>
-            <details className="custom-details">
+            <details>
               <summary>Advanced parameters</summary>
               <label htmlFor="model">Select a model</label>
               <select id="model" {...register('method')}>
-                <option value=""></option>
                 {Object.keys(availableProjections?.options || {}).map((e) => (
                   <option key={e} value={e}>
                     {e}
@@ -384,7 +380,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                 ))}{' '}
               </select>
               {availableProjections?.options && selectedMethod == 'tsne' && (
-                <div>
+                <>
                   <label htmlFor="perplexity">perplexity</label>
                   <input
                     type="number"
@@ -404,10 +400,10 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                       random
                     </option>
                   </select>
-                </div>
+                </>
               )}
               {availableProjections?.options && selectedMethod == 'umap' && (
-                <div>
+                <>
                   <label htmlFor="n_neighbors">n_neighbors</label>
                   <input
                     type="number"
@@ -422,14 +418,13 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                     step="0.01"
                     {...register('parameters.min_dist', { valueAsNumber: true })}
                   ></input>
-                </div>
+                </>
               )}
             </details>
-            <button className="btn btn-primary btn-validation">Compute</button>
+            <button className="btn-submit">Compute</button>
           </form>
         </Modal.Body>
       </Modal>
-
       <Modal
         show={displayNewFeature}
         id="features-modal"
@@ -446,6 +441,24 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
           />
         </Modal.Body>
       </Modal>
-    </div>
+      <Modal show={showParameters} id="parameters-modal" onHide={() => setShowParameters(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Parameters of the current visualisation</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <ModelParametersTab
+            params={
+              projectionData?.parameters
+                ? {
+                    method: projectionData.parameters.method,
+                    features: projectionData.parameters.features,
+                    ...projectionData.parameters.parameters,
+                  }
+                : ({} as Record<string, unknown>)
+            }
+          />
+        </Modal.Body>
+      </Modal>
+    </>
   );
 };

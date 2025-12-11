@@ -117,7 +117,7 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
             <>
               <div className="horizontal wrap">
                 <button className="btn-secondary-action" onClick={() => setShowParameters(true)}>
-                  <FaGear size={18} className="me-1" />
+                  <FaGear size={18} />
                   Parameters
                 </button>
                 <button className="btn-secondary-action" onClick={() => setShowRename(true)}>

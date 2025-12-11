@@ -65,7 +65,8 @@ table {
 .badge{
     border: 0px;
     border-radius: $border-radius;
-    background-color: $dark-grey-color;
+    background-color: $light-grey-color;
+    color: black;
     padding: 5px 10px;
     margin: 2px 5px;
 }

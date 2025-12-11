@@ -1,7 +1,7 @@
 import { FC } from 'react';
-import PulseLoader from 'react-spinners/PulseLoader';
 import { useStopProcesses } from '../core/api';
 import { LossChart } from './vizualisation/lossChart';
+import { StopProcessButton } from './StopProcessButton';
 
 export interface DisplayTrainingProcessesProps {
   projectSlug: string | null;
@@ -55,11 +55,7 @@ export const DisplayTrainingProcesses: FC<DisplayTrainingProcessesProps> = ({
 
   return (
     <div className="overflow-x-auto">
-      {Object.keys(processes || {}).length > 0 && displayStopButton && (
-        <button key="stop" className="btn-stop-process" onClick={() => stopProcesses('bert')}>
-          <PulseLoader color={'white'} /> Stop process
-        </button>
-      )}
+      {Object.keys(processes || {}).length > 0 && displayStopButton && <StopProcessButton />}
       {Object.keys(processes || {}).length > 0 && (
         <div>
           Process running:
