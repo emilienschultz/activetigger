@@ -9,6 +9,7 @@ import { useNotifications } from '../core/notifications';
 
 interface FileUploadProps {}
 
+//NOTE: Unused??
 export const FilesManagement: FC<FileUploadProps> = () => {
   const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500 MB in bytes
   const { notify } = useNotifications();
