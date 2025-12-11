@@ -32,7 +32,7 @@ button:active {
 }
 
 input::placeholder{
-    color: $grey-color;
+    color: $dark-grey-color;
     opacity: .5;
     font-style: italic;
 }
@@ -65,7 +65,7 @@ table {
 .badge{
     border: 0px;
     border-radius: $border-radius;
-    background-color: $grey-color;
+    background-color: $dark-grey-color;
     padding: 5px 10px;
     margin: 2px 5px;
 }
@@ -136,4 +136,56 @@ table {
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+#project-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    background: $light-grey-color;
+    border: 0px;
+    border-radius: $border-radius;
+    padding: 16px 20px;
+    transition:
+        background-color 0.2s,
+        color 0.2s,
+        box-shadow 0.2s;
+    cursor: pointer;
+
+    .clickable-zone{
+        .projecttitle {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 0 0 8px;
+        }
+        width: 80%;
+        .projectdetails{
+            font-size: smaller;
+            display: flex;
+            justify-content: start;
+            #key{
+                width: 80px;
+            }
+            margin: 5px 0px;
+        }
+        .badge.info{
+            margin-left: 0px;
+        }
+    }
+
+    .trash-wrapper {
+        color: black;
+        cursor: pointer;
+    }
+    
+    .trash-wrapper:hover {
+        color: red;
+    }
+}
+
+#project-card:hover {
+    box-shadow: 0px 0px 15px color(from $primary srgb r g b / 50%);
+    background: color(from $primary srgb r g b / 50%);
+    color: white;
 }

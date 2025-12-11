@@ -4,12 +4,14 @@ $secondary: #b04302;
 $tertiary: rgb(239, 239, 239);
 $quaternary: #faf9f8;
 $label-color: #64809d;
-$grey-color: rgb(160, 160, 160);
+$dark-grey-color: rgb(160, 160, 160);
+$light-grey-color: rgba(235, 235, 235,80);
 $danger-color: #e60000;
 $info-color: #64809d;
 $transparent: rgba(0,0,0,0);
 // Variables
 $border-radius: 5px;
+$transition: color 0.4s ease;
 
 .project-link {
   display: block;
@@ -20,7 +22,6 @@ $border-radius: 5px;
   background-color: #f9f9f9;
   text-decoration: none;
   color: black;
-  transition: background-color 0.3s;
   margin-bottom: 10px;
   text-align: center;
 }
@@ -240,47 +241,6 @@ $border-radius: 5px;
   flex-direction: column;
   gap: 16px;
   padding: 20px;
-}
-
-/* Project Card */
-.project-card {
-  background: #e7e5e5;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 16px 20px;
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.project-card:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  background: #ffa866;
-}
-
-/* Project Title */
-.project-title {
-  font-size: 20px;
-  font-weight: bold;
-  margin: 0 0 8px;
-}
-
-/* Project Details */
-.project-details {
-  font-size: 14px;
-  color: #666;
-  display: flex;
-  justify-content: space-between;
-}
-
-.trash-wrapper {
-  color: inherit;
-  cursor: pointer;
-  margin-left: 1rem;
-  transition: color 0.2s ease;
-}
-
-.trash-wrapper:hover {
-  color: red;
 }
 
 .sidemenulabel {
