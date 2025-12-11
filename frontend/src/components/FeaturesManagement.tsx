@@ -13,34 +13,30 @@ import { ModelsPillDisplay } from './ModelsPillDisplay';
 
 export default function SimpleTable(data: FeatureDescriptionModelOut) {
   return (
-    <div>
-      <table className="table-auto border-collapse border border-gray-300 w-full">
-        <tbody>
-          <tr>
-            <td className="border border-gray-300 px-4 py-2 font-medium">Name</td>
-            <td className="border border-gray-300 px-4 py-2">{data.name}</td>
-          </tr>
-          <tr>
-            <td className="border border-gray-300 px-4 py-2 font-medium">User</td>
-            <td className="border border-gray-300 px-4 py-2">{data.user}</td>
-          </tr>
-          <tr>
-            <td className="border border-gray-300 px-4 py-2 font-medium">Time</td>
-            <td className="border border-gray-300 px-4 py-2">{data.time}</td>
-          </tr>
-          <tr>
-            <td className="border border-gray-300 px-4 py-2 font-medium">Kind</td>
-            <td className="border border-gray-300 px-4 py-2">{data.kind}</td>
-          </tr>
-          <tr>
-            <td className="border border-gray-300 px-4 py-2 font-medium">Parameters</td>
-            <td className="border border-gray-300 px-4 py-2">
-              {JSON.stringify(data.parameters, null, 2)}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <table id="parameter-tables">
+      <tbody>
+        <tr>
+          <td className="key">Name</td>
+          <td className="value">{data.name}</td>
+        </tr>
+        <tr>
+          <td className="key">User</td>
+          <td className="value">{data.user}</td>
+        </tr>
+        <tr>
+          <td className="key">Time</td>
+          <td className="value">{data.time}</td>
+        </tr>
+        <tr>
+          <td className="key">Kind</td>
+          <td className="value">{data.kind}</td>
+        </tr>
+        <tr>
+          <td className="key last-row">Parameters</td>
+          <td className="value last-row">{JSON.stringify(data.parameters, null, 2)}</td>
+        </tr>
+      </tbody>
+    </table>
   );
 }
 

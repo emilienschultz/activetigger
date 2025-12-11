@@ -169,3 +169,29 @@
     }
   }
 }
+
+#parameter-tables{
+  margin: 10px 0px;
+  tr{
+    display: flex;
+  }
+  td{
+    border: 1px solid $grey-color;
+    padding: 8px;
+    border-bottom: 0px;
+  }
+  .key{
+    width: 12%;
+    font-weight: bold;
+    border-right: 0px;
+    display: flex;
+    justify-content: end;
+    align-items: center;
+  }
+  .value{
+    width: 88%;
+  }
+  .last-row{
+    border-bottom: 1px solid $grey-color;
+  }
+}
