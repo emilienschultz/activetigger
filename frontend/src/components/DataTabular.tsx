@@ -225,7 +225,7 @@ export const DataTabular: FC<DataTabularModel> = ({
 
   return (
     <>
-      <div className="horizontal wrap" id="tabualar-view-control-panel">
+      <div className="horizontal wrap" id="tabular-view-control-panel">
         <div>
           <label>Dataset</label>
           <select
