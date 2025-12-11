@@ -11,6 +11,7 @@ import yaml  # type: ignore[import]
 from pandas import DataFrame, Series
 
 from activetigger.config import config
+from activetigger.data import Data
 from activetigger.datamodels import (
     FeatureComputing,
     FeatureDescriptionModelOut,
@@ -34,9 +35,8 @@ class Features:
     """
 
     project_slug: str
-    path_features: Path
+    data: Data
     path_model: Path
-    path_all: Path
     queue: Queue
     computing: list
     informations: dict
@@ -50,11 +50,7 @@ class Features:
     def __init__(
         self,
         project_slug: str,
-        path_features: Path,
-        path_all: Path,
-        path_train: Path,
-        path_valid: Path,
-        path_test: Path,
+        data: Data,
         models_path: Path,
         queue: Any,
         computing: list,
@@ -66,11 +62,9 @@ class Features:
         """
         self.project_slug = project_slug
         self.projects_service = db_manager.projects_service
-        self.path_features = path_features
-        self.path_all = path_all
-        self.path_train = path_train
-        self.path_valid = path_valid
-        self.path_test = path_test
+        self.data = data
+        self.path_features = data.path_features
+        self.path_all = data.path_data_all
         self.path_models = models_path
         self.queue = queue
         self.informations = {}
@@ -133,20 +127,17 @@ class Features:
         self.projects_service.delete_project_features(self.project_slug)
 
         # read file to create the structure
-        train = pd.read_parquet(self.path_train, columns=[])
-        train = pd.DataFrame(index=train.index)
+        train = pd.DataFrame(index=self.data.train.index)
         train["dataset"] = "train"
 
         to_concat = [train]
 
-        if self.path_valid.exists():
-            valid = pd.read_parquet(self.path_valid, columns=[])
-            valid = pd.DataFrame(index=valid.index)
+        if self.data.valid is not None:
+            valid = pd.DataFrame(index=self.data.valid.index)
             valid["dataset"] = "valid"
             to_concat.append(valid)
-        if self.path_test.exists():
-            test = pd.read_parquet(self.path_test, columns=[])
-            test = pd.DataFrame(index=test.index)
+        if self.data.test is not None:
+            test = pd.DataFrame(index=self.data.test.index)
             test["dataset"] = "test"
             to_concat.append(test)
 
@@ -322,7 +313,7 @@ class Features:
         return self.projects_service.get_project_features(self.project_slug)
 
     def get_column_raw(
-        self, column_name: str, index: str = "train", add_real_index: bool = True
+        self, column_name: str, index: str = "annotable", add_real_index: bool = True
     ) -> Series:
         """
         Get column raw dataset
@@ -332,9 +323,9 @@ class Features:
         if column_name not in list(column_names):
             raise Exception("Column doesn't exist")
         df = pd.read_parquet(self.path_all, columns=[column_name])
-        if index == "train":  # filter only train id
-            df_train = pd.read_parquet(self.path_features, columns=[])  # only the index
-            return df.loc[df_train.index][column_name]
+        if index == "annotable":  # filter only train id
+            df_annotable = pd.read_parquet(self.path_features, columns=[])  # only the index
+            return df.loc[df_annotable.index][column_name]
         elif index == "all":
             return df[column_name]
         else:

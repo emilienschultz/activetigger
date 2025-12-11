@@ -4,6 +4,7 @@ import { Modal } from 'react-bootstrap';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { FaPlusCircle } from 'react-icons/fa';
 import { FaGear } from 'react-icons/fa6';
+import { IoIosRefresh } from 'react-icons/io';
 import { MdDriveFileRenameOutline } from 'react-icons/md';
 import Select from 'react-select';
 import PulseLoader from 'react-spinners/PulseLoader';
@@ -11,6 +12,7 @@ import {
   useDeleteQuickModel,
   useGetQuickModel,
   useRenameQuickModel,
+  useRetrainQuickModel,
   useTrainQuickModel,
 } from '../core/api';
 import { useNotifications } from '../core/notifications';
@@ -20,6 +22,7 @@ import { CreateNewFeature } from './forms/CreateNewFeature';
 import { DisplayScores } from './DisplayScores';
 import { ModelsPillDisplay } from './ModelsPillDisplay';
 import { ValidateButtons } from './validateButton';
+
 // TODO: default values + avoid generic parameters
 
 interface Options {
@@ -109,6 +112,9 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
   const [currentQuickModelName, setCurrentQuickModelName] = useState<string | null>(
     availableQuickModels.length > 0 ? availableQuickModels[0].name : null,
   );
+
+  const { retrainQuickModel } = useRetrainQuickModel(projectName || null, currentScheme || null);
+
   // Modal rename and form to rename
   const [showRename, setShowRename] = useState(false);
   const { renameQuickModel } = useRenameQuickModel(projectName || null);
@@ -152,25 +158,27 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
   // delete quickmodel
   const { deleteQuickModel } = useDeleteQuickModel(projectName);
 
-  // create form
-  const { register, handleSubmit, control, watch, setValue } = useForm<QuickModelInModel>({
-    defaultValues: {
-      name: getRandomName('QuickModel'),
-      model: 'logistic-l1',
-      scheme: currentScheme || undefined,
-      params: {
-        costLogL1: 1,
-        costLogL2: 1,
-        n_neighbors: 3,
-        alpha: 1,
-        n_estimators: 500,
-        max_features: null,
-      },
-      balance_classes: false,
-      cv10: false,
-      dichotomize: kindScheme == 'multilabel' ? availableLabels[0] : undefined,
-      features: defaultFeatures.map((e) => e.value),
+  const createDefaultValues = () => ({
+    name: getRandomName('QuickModel'),
+    model: 'logistic-l1',
+    scheme: currentScheme || undefined,
+    params: {
+      costLogL1: 1,
+      costLogL2: 1,
+      n_neighbors: 3,
+      alpha: 1,
+      n_estimators: 500,
+      max_features: null,
     },
+    balance_classes: false,
+    cv10: false,
+    dichotomize: kindScheme == 'multilabel' ? availableLabels[0] : undefined,
+    features: defaultFeatures.map((e) => e.value),
+  });
+
+  // create form
+  const { register, handleSubmit, control, watch, setValue, reset } = useForm<QuickModelInModel>({
+    defaultValues: createDefaultValues(),
   });
 
   // update the values from the current model if it exists
@@ -263,7 +271,10 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
         deleteModelFunction={deleteQuickModel}
       >
         <button
-          onClick={() => setDisplayNewModel(true)}
+          onClick={() => {
+            reset(createDefaultValues());
+            setDisplayNewModel(true);
+          }}
           className={cx('model-pill ', isComputing ? 'disabled' : '')}
           id="create-new"
         >
@@ -285,6 +296,16 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
             >
               <FaGear size={18} className="me-1" />
               Parameters
+            </button>
+            <button
+              className="btn btn-outline-secondary btn-sm me-2 d-flex align-items-center"
+              onClick={() => {
+                retrainQuickModel(currentQuickModelName);
+                console.log('retrain');
+              }}
+            >
+              <IoIosRefresh size={18} className="me-1" />
+              Retrain
             </button>
             <button
               className="btn btn-outline-secondary btn-sm me-2 d-flex align-items-center"

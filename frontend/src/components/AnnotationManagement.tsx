@@ -134,14 +134,17 @@ export const AnnotationManagement: FC = () => {
         }
       });
     } else {
-      getElementById(elementId, phase).then((element) => {
-        if (element) setElement(element);
-        else {
-          navigate(`/projects/${projectName}/tag/noelement`);
-          setElement(null);
-        }
-      });
-      reFetchStatistics();
+      // only if id changed compared to the previous one (otherwise, a change in phase would trigger a reload)
+      if (element?.element_id !== elementId) {
+        getElementById(elementId, phase).then((element) => {
+          if (element) setElement(element);
+          else {
+            navigate(`/projects/${projectName}/tag/noelement`);
+            setElement(null);
+          }
+        });
+        reFetchStatistics();
+      }
     }
   }, [
     elementId,
@@ -154,6 +157,7 @@ export const AnnotationManagement: FC = () => {
     selectionConfig,
     setAppContext,
     notify,
+    element,
   ]);
 
   // post an annotation

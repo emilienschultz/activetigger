@@ -288,6 +288,8 @@ class Project:
         # Tabular data management
         self.data = Data(
             self.params.dir,
+            self.params.dir.joinpath(config.data_all),
+            self.params.dir.joinpath(config.features_file),
             self.params.dir.joinpath(config.train_file),
             self.params.dir.joinpath(config.valid_file) if self.params.valid else None,
             self.params.dir.joinpath(config.test_file) if self.params.test else None,
@@ -301,11 +303,7 @@ class Project:
         )
         self.features = Features(
             project_slug,
-            self.params.dir.joinpath(config.features_file),
-            self.params.dir.joinpath(config.data_all),
-            self.params.dir.joinpath(config.train_file),
-            self.params.dir.joinpath(config.valid_file),
-            self.params.dir.joinpath(config.test_file),
+            self.data,
             self.path_models,
             self.queue,
             cast(list[FeatureComputing], self.computing),
@@ -497,7 +495,7 @@ class Project:
             standardize=model.standardize,
             dichotomize=model.model_params.get("dichotomize", None),
             cv10=model.cv10,
-            balance_classes=model.balance_classes
+            balance_classes=model.balance_classes,
         )
         self.train_quickmodel(quickmodel, username, retrain=True)
 
@@ -630,13 +628,13 @@ class Project:
         if next.dataset == "test":
             if self.data.test is None:
                 raise ValueError("No test dataset available")
-            df = self.schemes.get_scheme(next.scheme, complete=True, kind=["test"])
+            df = self.schemes.get_scheme(next.scheme, complete=True, datasets=["test"])
         elif next.dataset == "valid":
             if self.data.valid is None:
                 raise ValueError("No valid dataset available")
-            df = self.schemes.get_scheme(next.scheme, complete=True, kind=["valid"])
+            df = self.schemes.get_scheme(next.scheme, complete=True, datasets=["valid"])
         else:
-            df = self.schemes.get_scheme(next.scheme, complete=True, kind=["train"])
+            df = self.schemes.get_scheme(next.scheme, complete=True, datasets=["train"])
 
         # the filter for the sample
         if next.sample == "untagged":
@@ -761,12 +759,10 @@ class Project:
         )
 
         if next.dataset in ["test", "valid"]:
-            limit = 1200
             context = {}
         else:
             if self.data.train is None:
                 raise Exception("Train dataset is not defined")
-            limit = int(self.data.train.loc[element_id, "limit"])
             # get context
             context = dict(
                 self.data.train.fillna("NA").loc[element_id, self.params.cols_context].apply(str)
@@ -780,7 +776,7 @@ class Project:
             info=indicator,
             predict=predict,
             frame=next.frame,
-            limit=limit,
+            limit=None,
             history=previous,
             n_sample=n_sample,
         )
@@ -813,7 +809,7 @@ class Project:
                 info="",
                 predict=PredictedLabel(label=None, proba=None, entropy=None),
                 frame=None,
-                limit=1200,
+                limit=None,
                 history=history,
             )
 
@@ -832,7 +828,7 @@ class Project:
                 info="",
                 predict=PredictedLabel(label=None, proba=None, entropy=None),
                 frame=None,
-                limit=1200,
+                limit=None,
                 history=history,
             )
 
@@ -871,7 +867,7 @@ class Project:
                 predict=predict,
                 info="get specific",
                 frame=None,
-                limit=cast(int, self.data.train.loc[element.element_id, "limit"]),
+                limit=None,
                 history=history,
             )
 
@@ -916,12 +912,12 @@ class Project:
 
         # part train
         users = self.db_manager.users_service.get_coding_users(scheme, self.params.project_slug)
-        df_train = self.schemes.get_scheme(scheme, kind=["train"])
+        df_train = self.schemes.get_scheme(scheme, datasets=["train"])
         train_annotated_distribution = self.compute_annotations_distribution(df_train, kind)
 
         # part valid
         if self.params.valid and (self.data.valid is not None):
-            df_valid = self.schemes.get_scheme(scheme, kind=["valid"])
+            df_valid = self.schemes.get_scheme(scheme, datasets=["valid"])
             valid_set_n = len(self.data.valid)
             valid_annotated_n = len(df_valid.dropna(subset=["labels"]))
             valid_annotated_distribution = self.compute_annotations_distribution(df_valid, kind)
@@ -932,7 +928,7 @@ class Project:
 
         # part test
         if self.params.test and (self.data.test is not None):
-            df_test = self.schemes.get_scheme(scheme, kind=["test"])
+            df_test = self.schemes.get_scheme(scheme, datasets=["test"])
             test_set_n = len(self.data.test)
             test_annotated_n = len(df_test.dropna(subset=["labels"]))
             test_annotated_distribution = self.compute_annotations_distribution(df_test, kind)
@@ -965,7 +961,7 @@ class Project:
         if projection is None:
             return None
         # get annotations
-        df = self.schemes.get_scheme(scheme, complete=True, kind=["train"])
+        df = self.schemes.get_scheme(scheme, complete=True, datasets=["train"])
         data = projection.data
         data["labels"] = df["labels"].fillna("NA")
 
@@ -1040,61 +1036,51 @@ class Project:
     ) -> FileResponse:
         """
         Export annotation data in different formats
-        - for a scheme
-        - for all schemes
+        - for a scheme & dataset
+        - for all schemes & every annotation
         """
+
         path = self.params.dir  # path of the data
         if path is None:
             raise ValueError("Problem of filesystem for project")
 
-        # test or train
-        if dataset == "test":
+        # test dataset availability
+        if dataset == "valid":
             if not self.params.test:
                 raise Exception("No test data available")
-            if scheme == "all":
-                schemes = self.schemes.available()
-                if len(schemes) == 0:
-                    raise Exception("No scheme available")
-                data = pd.concat(
-                    {
-                        s: self.schemes.get_scheme(s, complete=True, kind=["test"])["labels"]
-                        for s in schemes
-                    },
-                    axis=1,
-                )
-                file_name = f"data_test_{self.name}_all_schemes.{format}"
-                dropna = False
-            else:
-                data = self.schemes.get_scheme(scheme=scheme, complete=True, kind=["test"])
-                file_name = f"data_test_{self.name}_{scheme}.{format}"
-        else:
-            if scheme == "all":
-                schemes = self.schemes.available()
-                if len(schemes) == 0:
-                    raise Exception("No scheme available")
-                data = pd.concat(
-                    {
-                        s: self.schemes.get_scheme(s, complete=True, kind=["train"])["labels"]
-                        for s in schemes
-                    },
-                    axis=1,
-                )
-                file_name = f"data_train_{self.name}_all_schemes.{format}"
-                dropna = False
-            else:
-                data = self.schemes.get_scheme(scheme=scheme, complete=True, kind=["train"])
-                file_name = f"data_train_{self.name}_{scheme}.{format}"
+        if dataset == "test":
+            if self.data.train is None:
+                raise Exception("No train data available")
 
-        # transformation
+        # for a specific scheme and dataset
+        if scheme != "all" and dataset in ["train", "test", "valid"]:
+            data = self.schemes.get_scheme(
+                scheme=scheme, complete=True, datasets=[dataset], id_external=True
+            )
+            file_name = f"data_test_{self.name}_{scheme}.{format}"
+        elif scheme == "all":
+            schemes = self.schemes.available()
+            data = pd.concat(
+                {
+                    s: self.schemes.get_scheme(
+                        s, complete=True, datasets=["train", "valid", "test"], id_external=True
+                    )
+                    for s in schemes
+                },
+                axis=1,
+            )
+            file_name = f"data_{self.name}_all.{format}"
+            dropna = False
+        else:
+            raise Exception("Scheme or dataset not recognized")
+
+        # transformation of the data
         if dropna:
             data = data.dropna(subset=["labels"])
-        data = (
-            data.rename(columns={"labels": scheme, "id": "at_id"})
-            .drop(columns=["limit"], errors="ignore")
-            .reset_index()
-        )
 
-        # Create files
+        # data = data.rename(columns={"labels": scheme})
+
+        # Create files and send
         if format == "csv":
             data.to_csv(path.joinpath(file_name))
         if format == "parquet":
@@ -1270,7 +1256,7 @@ class Project:
                 "User already has a process launched, please wait before launching another one"
             )
         # get data
-        df = self.schemes.get_scheme(bert.scheme, kind=["train"], complete=True)
+        df = self.schemes.get_scheme(bert.scheme, datasets=["train"], complete=True)
         df = df[["text", "labels"]].dropna()
 
         # management for multilabels / dichotomize
@@ -1410,6 +1396,7 @@ class Project:
                         [datetime.now(config.timezone), "Error in project creation", str(ex)]
                     )
                     logging.error("Error in project creation", ex)
+                    raise ex
                 finally:
                     self.computing.remove(e)
                     self.queue.delete(e.unique_id)

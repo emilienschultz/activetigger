@@ -104,7 +104,7 @@ async def delete_bertopic_model(
 
 
 @router.post("/bertopic/export-to-scheme", dependencies=[Depends(verified_user)])
-async def export_bertopoc_to_scheme(
+async def export_bertopic_to_scheme(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     topic_model_name: str = Query(...),

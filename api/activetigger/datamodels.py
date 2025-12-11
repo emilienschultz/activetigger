@@ -182,7 +182,7 @@ class ElementOutModel(BaseModel):
     info: str | None
     predict: PredictedLabel
     frame: list | None
-    limit: int | None
+    limit: int | None  # TO REMOVE
     history: list | None = None
     n_sample: int | None = None
 
@@ -658,7 +658,7 @@ class QuickModelOutModel(BaseModel):
     statistics_train: MLStatisticsModel | None = None
     statistics_test: MLStatisticsModel | None = None
     statistics_cv10: MLStatisticsModel | None = None
-    balance_classes: bool  = False
+    balance_classes: bool = False
 
 
 class GenerationComputingOut(BaseModel):

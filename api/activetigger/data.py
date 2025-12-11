@@ -13,20 +13,31 @@ class Data:
     - add methodes for data operations rather than using directly the DataFrame
     """
 
-    project_dir: Path
-    datasets_dir: Path
+    path_project: Path
+    path_data_all: Path
+    path_datasets: Path
     train: DataFrame
     valid: DataFrame | None
     test: DataFrame | None
     formats_supported = [".csv", ".parquet", ".xlsx"]
+    index: DataFrame | None = None
 
     def __init__(
-        self, project_dir: Path, path_train: Path, path_valid: Path | None, path_test: Path | None
+        self,
+        path_project: Path,
+        path_data_all: Path,
+        path_features: Path,
+        path_train: Path,
+        path_valid: Path | None,
+        path_test: Path | None,
     ):
-        self.project_dir = project_dir
-        self.datasets_dir = self.project_dir.joinpath("data")
-        if not self.datasets_dir.exists():
-            self.datasets_dir.mkdir(parents=True, exist_ok=True)
+        self.path_project = path_project
+        self.path_data_all = path_data_all
+        self.path_features = path_features
+        self.path_datasets = self.path_project.joinpath("data")
+
+        if not self.path_datasets.exists():
+            self.path_datasets.mkdir(parents=True, exist_ok=True)
         if not path_train.exists():
             raise FileNotFoundError(f"Training data file not found: {path_train}")
         if path_valid and not path_valid.exists():
@@ -37,6 +48,7 @@ class Data:
         self.train = pd.read_parquet(path_train)
         self.valid = pd.read_parquet(path_valid) if path_valid else None
         self.test = pd.read_parquet(path_test) if path_test else None
+        self.index = None
 
     def check_format(self, filename: str) -> bool:
         """
@@ -51,13 +63,13 @@ class Data:
         """
         Check if a dataset exists
         """
-        return (self.datasets_dir / dataset_name).exists()
+        return (self.path_datasets / dataset_name).exists()
 
     def read_dataset(self, filename: str) -> DataFrame:
         """
         Read a data file and return a DataFrame
         """
-        file_path = self.datasets_dir.joinpath(filename)
+        file_path = self.path_datasets.joinpath(filename)
         if not file_path.exists():
             raise FileNotFoundError(f"Data file not found: {file_path}")
         if filename.endswith(".csv"):
@@ -68,3 +80,17 @@ class Data:
             return pd.read_excel(file_path)
         else:
             raise ValueError(f"Unsupported file format: {filename}")
+
+    def get_full_id(self) -> DataFrame:
+        """
+        Get the full list of IDs from the raw file
+        """
+        if self.index is None:
+            self.index = pd.read_parquet(self.path_data_all, columns=["id_external"])
+        return self.index
+
+    def get_external_id(self, element_id: str) -> str:
+        """
+        Get the external ID for a given internal element ID
+        """
+        return str(self.get_full_id().loc[element_id, "id_external"])
