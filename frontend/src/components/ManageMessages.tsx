@@ -7,49 +7,59 @@ export const ManageMessages: FC = () => {
   const { messages, reFetchMessages } = useGetMessages(kind, null);
   const { deleteMessage } = useDeleteMessage();
 
+  const displayTime = (time: string) => {
+    // 2025-12-11 10:50:57.786644 -> 2025-12-11 10:50
+    return time.slice(0, time.indexOf(':') + 3);
+  };
   return (
-    <div className="container">
-      <div className="row">
-        <label className="d-flex align-items-center">
-          Kind
-          <select onChange={(e) => setKind(e.target.value)} className="form-select w-25 mx-3">
-            <option value="system">System</option>
-          </select>
-        </label>
-        <table className="table table-hover">
-          <thead>
-            <tr>
-              <th scope="col">Time</th>
-              <th scope="col">User</th>
-              <th scope="col">Kind</th>
-              <th scope="col">Message</th>
-              <th scope="col">Delete</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(messages || []).map((message) => (
-              <tr key={message.id}>
-                <td>{message.time}</td>
-                <td>{message.created_by}</td>
-                <td>{message.kind}</td>
-                <td>{message.content}</td>
-                <td>
-                  <div
-                    title="Delete"
-                    className="cursor-pointer trash-wrapper"
-                    onClick={() => {
-                      deleteMessage(message.id);
-                      reFetchMessages();
-                    }}
-                  >
-                    <FaRegTrashAlt />
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <>
+      <div className="horizontal">
+        <div style={{ margin: '0px 20px' }}>Kind</div>
+        <select onChange={(e) => setKind(e.target.value)} style={{ maxWidth: '300px' }}>
+          <option value="system">System</option>
+        </select>
       </div>
-    </div>
+      <table id="message-table">
+        <thead>
+          <tr>
+            <th scope="col" style={{ minWidth: '150px' }}>
+              Time
+            </th>
+            <th scope="col" style={{ minWidth: '80px' }}>
+              User
+            </th>
+            <th scope="col" style={{ minWidth: '80px' }}>
+              Kind
+            </th>
+            <th scope="col">Message</th>
+            <th scope="col" style={{ minWidth: '50px' }}>
+              Delete
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {(messages || []).map((message) => (
+            <tr key={message.id}>
+              <td>{displayTime(message.time)}</td>
+              <td>{message.created_by}</td>
+              <td>{message.kind}</td>
+              <td>{message.content}</td>
+              <td>
+                <div
+                  title="Delete"
+                  className="cursor-pointer trash-wrapper"
+                  onClick={() => {
+                    deleteMessage(message.id);
+                    reFetchMessages();
+                  }}
+                >
+                  <FaRegTrashAlt />
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
   );
 };

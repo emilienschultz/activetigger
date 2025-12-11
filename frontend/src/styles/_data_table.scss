@@ -234,3 +234,18 @@
     background-color: $grey-color;
   }
 }
+
+#message-table{
+  width: 100%;
+
+  td, th{
+    padding: 5px 10px;
+    vertical-align:top;
+  }
+
+  thead{
+    tr{
+      border-bottom: 1px $grey-color solid;;
+    }
+  }
+}
