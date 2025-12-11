@@ -170,7 +170,7 @@
   }
 }
 
-#parameter-tables{
+#parameter-tables-large{
   margin: 10px 0px;
   tr{
     display: flex;
@@ -194,6 +194,26 @@
   .last-row{
     border-bottom: 1px solid $grey-color;
   }
+}
+
+#parameter-tables-thin{
+  margin: 10px 0px;
+
+  td, th{
+    min-width: 50%;
+    border-bottom: 1px $grey-color solid;
+    padding: 8px;
+  }
+
+  tr.dark{
+    background-color: $grey-color;
+  }
+  tbody{
+    tr:hover{
+      background-color: $grey-color;
+    }
+  }
+
 }
 
 #label-table{

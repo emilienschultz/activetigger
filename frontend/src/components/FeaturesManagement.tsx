@@ -13,7 +13,7 @@ import { ModelsPillDisplay } from './ModelsPillDisplay';
 
 export default function SimpleTable(data: FeatureDescriptionModelOut) {
   return (
-    <table id="parameter-tables">
+    <table id="parameter-tables-large">
       <tbody>
         <tr>
           <td className="key">Name</td>
