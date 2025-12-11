@@ -418,3 +418,8 @@ export const sortDatesAsStrings = (
   }
   return 0;
 };
+
+export const displayTime = (time: string) => {
+  // 2025-12-11 10:50:57.786644 -> 2025-12-11 10:50
+  return time.slice(0, time.indexOf(':') + 3);
+};

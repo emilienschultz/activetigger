@@ -269,3 +269,51 @@
     }
   }
 }
+
+#history-table{
+  width: 100%;
+
+  td{
+    padding: 5px 10px;
+    vertical-align:top;
+    height: 60px;
+    overflow-y: scroll;
+  }
+  th{
+    padding: 5px 10px;
+    vertical-align: bottom;
+  }
+  thead{
+    tr{
+      border-bottom: 2px $dark-grey-color solid;
+    }
+  }
+  tbody{
+    tr{
+      border-bottom: .5px $dark-grey-color solid;
+    }
+    tr.darker{
+      background-color: $light-grey-color;
+    }
+  }
+  #time{
+    width: 20%;
+    min-width: 170px;
+    text-align: right;
+  }
+  #user{
+    width: 10%;
+    min-width: 50px;
+    text-align: center;
+  }
+  #project{
+    width: 20%;
+    min-width: 100px;
+    text-align: center;
+  }
+  #action{
+    width: 50%;
+    min-width: 200px;
+  }
+
+}

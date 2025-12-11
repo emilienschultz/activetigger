@@ -1,16 +1,13 @@
 import { FC, useState } from 'react';
 import { FaRegTrashAlt } from 'react-icons/fa';
 import { useDeleteMessage, useGetMessages } from '../core/api';
+import { displayTime } from '../core/utils';
 
 export const ManageMessages: FC = () => {
   const [kind, setKind] = useState<string>('system');
   const { messages, reFetchMessages } = useGetMessages(kind, null);
   const { deleteMessage } = useDeleteMessage();
 
-  const displayTime = (time: string) => {
-    // 2025-12-11 10:50:57.786644 -> 2025-12-11 10:50
-    return time.slice(0, time.indexOf(':') + 3);
-  };
   return (
     <>
       <div className="horizontal">
