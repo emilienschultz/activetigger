@@ -89,88 +89,57 @@ export const ImportAnnotations: FC<ImportPropos> = ({ projectName, currentScheme
   ));
 
   return (
-    <div className="container">
-      <div className="row">
-        <h4 className="subsection">Import annotations</h4>
-        <div className="alert alert-info">
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <div>
-              You can import annotations for existing elements in the train set. Be sure to have
-              exactly the same id for the elements. If elements are already labelled, this
-              annotation will prevail. Labels are not checked for existance.
-              <label className="form-label" htmlFor="csvFile">
-                File to upload
-              </label>
-              <input className="form-control" id="csvFile" type="file" {...register('files')} />
-              {
-                // display datable if data available
-                data !== null && (
-                  <div>
-                    <div>Preview</div>
-                    <div className="m-3">
-                      Size of the dataset : <b>{data.data.length - 1}</b>
-                    </div>
-                    <DataTable<Record<DataType['headers'][number], string | number>>
-                      columns={data.headers.map((h) => ({
-                        name: h,
-                        selector: (row) => row[h],
-                        format: (row) => {
-                          const v = row[h];
-                          return typeof v === 'bigint' ? Number(v) : v;
-                        },
-                        width: '200px',
-                      }))}
-                      data={
-                        data.data.slice(0, 5) as Record<
-                          keyof DataType['headers'],
-                          string | number
-                        >[]
-                      }
-                    />
-                  </div>
-                )
-              }
-            </div>
-
-            {
-              // only display if data
-              data != null && (
-                <div>
-                  <div>
-                    <label className="form-label" htmlFor="col_id">
-                      Column for id (they need to match exactly the original data)
-                    </label>
-                    <select
-                      className="form-control"
-                      id="col_id"
-                      disabled={data === null}
-                      {...register('col_id')}
-                    >
-                      {columns}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="form-label" htmlFor="col_label">
-                      Column for label to import (empty will be droped)
-                    </label>
-                    <select
-                      className="form-control"
-                      id="col_label"
-                      disabled={data === null}
-                      {...register('col_label')}
-                    >
-                      {columns}
-                    </select>
-                  </div>
-                  <button type="submit" className="btn btn-primary form-button">
-                    Import annotations
-                  </button>
-                </div>
-              )
-            }
-          </form>
+    <>
+      <h4 className="subsection">Import annotations</h4>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <div>
+          You can import annotations for existing elements in the train set. Make sure to maintain a
+          consistent identification system of the elements. If elements are already labelled, this
+          annotation will prevail. Labels are not checked for existance.
+          {/* TODO: Axel: Precise what happens: are unexisting labels created? are they skipped? */}
         </div>
-      </div>
-    </div>
+        <label htmlFor="csvFile">File to upload</label>
+        <input className="form-control" id="csvFile" type="file" {...register('files')} />
+        {
+          // display datable if data available
+          data !== null && (
+            <>
+              <div className="explanations">Preview</div>
+              <div>
+                Size of the dataset : <b>{data.data.length - 1}</b>
+              </div>
+              <DataTable<Record<DataType['headers'][number], string | number>>
+                columns={data.headers.map((h) => ({
+                  name: h,
+                  selector: (row) => row[h],
+                  format: (row) => {
+                    const v = row[h];
+                    return typeof v === 'bigint' ? Number(v) : v;
+                  },
+                  width: '200px',
+                }))}
+                data={data.data.slice(0, 5) as Record<keyof DataType['headers'], string | number>[]}
+              />
+
+              <label htmlFor="col_id">
+                Column for id (they need to match exactly the original data)
+              </label>
+              <select id="col_id" disabled={data === null} {...register('col_id')}>
+                {columns}
+              </select>
+
+              <label htmlFor="col_label">Column for label to import (empty will be droped)</label>
+              <select id="col_label" disabled={data === null} {...register('col_label')}>
+                {columns}
+              </select>
+
+              <button type="submit" className="btn-submit">
+                Import annotations
+              </button>
+            </>
+          )
+        }
+      </form>
+    </>
   );
 };
