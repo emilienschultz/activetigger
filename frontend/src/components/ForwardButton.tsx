@@ -53,16 +53,12 @@ export const ForwardButton: FC<ForwardButtonProps> = ({
 
   return (
     <button
-      className="btn nextelement"
       onClick={() => {
         setAppContext((prev) => ({ ...prev, history: [...prev.history, elementId] }));
         setShouldRefetch(true);
       }}
     >
       <IoMdSkipForward title="Skip" />
-      {/* <Tooltip anchorSelect=".nextelement" place="top">
-        Skip
-      </Tooltip> */}
     </button>
   );
 };
