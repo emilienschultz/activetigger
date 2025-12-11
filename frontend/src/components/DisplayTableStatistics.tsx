@@ -213,7 +213,7 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
               <div className="row">
                 {table.columns.map((col, colIndex) => (
                   <div key={colIndex} className="table-cell label-name recall" title={col}>
-                    {col !== 'Total' ? LabelSize(col, 'vertical') : ''}
+                    {col !== 'Total' ? limitLabelSize(col, 'vertical') : ''}
                   </div>
                 ))}
               </div>
