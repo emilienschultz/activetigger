@@ -190,3 +190,17 @@ table {
     background: color(from $primary srgb r g b / 50%);
     color: white;
 }
+
+#current-scheme-badge{
+    height: 38px;
+    width: 150px;
+    background-color: $primary;
+    border-radius: $border-radius 0px 0px $border-radius;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    color: white;
+    font-weight: bold;
+}

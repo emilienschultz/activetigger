@@ -12,6 +12,7 @@ import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
 import { getRandomName } from '../core/utils';
 import { SchemeModel } from '../types';
+import styled from 'styled-components';
 /*
  * Select current scheme
  */
@@ -82,11 +83,9 @@ export const SelectCurrentScheme: FC<{ username?: string | null }> = ({ username
   };
 
   return (
-    <div className="row">
-      <div className="input-group mb-3">
-        <span className="input-group-text d-none d-md-inline bg-primary" style={{ color: 'white' }}>
-          Current Scheme
-        </span>
+    <div className="horizontal center" style={{ width: 'fit-content' }}>
+      <span id="current-scheme-badge">Current Scheme</span>
+      <div style={{ width: '200px' }}>
         <Select
           id="scheme-selected"
           className="flex-grow-1"
@@ -172,43 +171,42 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
   };
 
   return (
-    <div>
-      <div className="mt-3 col-12 d-flex">
+    <>
+      <div
+        className="horizontal center wrap"
+        style={{ width: '80%', minWidth: '420', margin: '20px 0px' }}
+      >
+        {/* BUG: the box slides out of the screen for small screens */}
         <SelectCurrentScheme username={username} />
         {canEdit && (
-          <div className="mx-2">
+          <div className="horizontal">
             <button
               onClick={() => setShowCreateNewScheme(!showCreateNewScheme)}
-              className="btn btn-sm p-1 addscheme"
+              className="transparent-background"
+              title="New scheme"
             >
               <FaPlusCircle size={20} />
-              <Tooltip anchorSelect=".addscheme" place="top">
-                Add empty scheme
-              </Tooltip>
             </button>
             <button
               onClick={() => setShowRename(!showRename)}
-              className="btn btn-sm p-1 renamescheme"
+              className="transparent-background"
+              title="Rename current scheme"
             >
               <MdDriveFileRenameOutline size={20} />
-              <Tooltip anchorSelect=".renamescheme" place="top">
-                Rename current scheme
-              </Tooltip>
             </button>
-            <button onClick={() => duplicateScheme()} className="btn btn-sm p-1 duplicatescheme">
+            <button
+              onClick={() => duplicateScheme()}
+              className="transparent-background"
+              title="Duplicate current scheme"
+            >
               <IoDuplicate size={20} />
-              <Tooltip anchorSelect=".duplicatescheme" place="top">
-                Duplicate current scheme
-              </Tooltip>
             </button>
             <button
               onClick={() => setShowDelete(!showDelete)}
-              className="btn btn-sm p-1 deletescheme"
+              className="transparent-background"
+              title="Delete current scheme"
             >
               <FaRegTrashAlt size={20} />
-              <Tooltip anchorSelect=".deletescheme" place="top">
-                Delete current scheme
-              </Tooltip>
             </button>
           </div>
         )}
@@ -224,23 +222,20 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
         <Modal.Body>
           <form onSubmit={handleSubmit(createNewScheme)}>
             <input
-              className="form-control"
               id="scheme_name"
               type="text"
               {...register('name')}
               placeholder="Enter new scheme name"
             />
-            <label htmlFor="scheme-selected" style={{ whiteSpace: 'nowrap', marginRight: '10px' }}>
-              Type
-            </label>
-            <select id="scheme_kind" className="form-select" {...register('kind')}>
+            <label htmlFor="scheme-selected">Type</label>
+            <select id="scheme_kind" {...register('kind')}>
               <option value="multiclass">Multiclass</option>
               <option value="multilabel">
                 Multilabel (experimental - only some features implemented)
               </option>
               <option value="span">Span (experimental - only annotation)</option>
             </select>
-            <button className="btn btn-primary btn-validation">Create</button>
+            <button className="btn-submit">Create</button>
           </form>
         </Modal.Body>
       </Modal>
@@ -250,7 +245,6 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
         </Modal.Header>
         <Modal.Body>
           <input
-            className="form-control my-2"
             id="scheme_rename"
             type="text"
             placeholder="Enter new scheme name"
@@ -259,7 +253,7 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
             onFocus={(e) => e.target.select()}
           />
           <button
-            className="btn btn-primary"
+            className="btn-submit"
             onClick={() => {
               renameScheme(newSchemeName);
               setShowRename(false);
@@ -274,11 +268,9 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
           <Modal.Title>Delete the current scheme</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>
-            Are you sure you want to delete the scheme <b>{currentScheme}</b>?
-          </p>
+          Are you sure you want to delete the scheme <b>{currentScheme}</b>?
           <button
-            className="btn btn-danger"
+            className="btn-submit-danger"
             onClick={() => {
               deleteSelectedScheme();
               setShowDelete(false);
@@ -288,6 +280,6 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
           </button>
         </Modal.Body>
       </Modal>
-    </div>
+    </>
   );
 };
