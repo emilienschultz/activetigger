@@ -205,6 +205,8 @@ class Orchestrator:
                         project.update_processes()
                         if project.status == "created":
                             to_del.append(p)
+                        if project.status == "error":
+                            to_del.append(p)
                     except Exception as e:
                         print(f"Error while updating project {p}: {e}")
                         to_del.append(p)

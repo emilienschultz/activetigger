@@ -1384,6 +1384,7 @@ class Project:
 
                 # specific case for project creation
                 if e.kind == "create_project":
+                    print("Error in project creation")
                     self.status = "error"
                 continue
 

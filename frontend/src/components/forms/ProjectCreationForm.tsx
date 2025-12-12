@@ -203,6 +203,21 @@ export const ProjectCreationForm: FC = () => {
           try {
             // watch the status of the project
             const status = await getProjectStatus(slug);
+            console.log('Project status:', status);
+
+            // if an error happened or the process failed
+            if (status === 'error' || status === 'not existing') {
+              clearInterval(intervalId);
+              notify({
+                type: 'error',
+                message:
+                  'Project creation failed. Try to change the data format. If it happens several times, please contact support',
+              });
+              navigate(`/projects`);
+              return;
+            }
+
+            // if the project has been created
             if (status === 'existing') {
               clearInterval(intervalId);
               if (computeFeatures) addFeature(slug, 'sbert', 'sbert', { model: 'generic' });
@@ -210,7 +225,8 @@ export const ProjectCreationForm: FC = () => {
               navigate(`/projects/${slug}?fromProjectPage=true`);
               return;
             }
-            // set a timeout just in case
+
+            // set a timeout just in case to abort the waiting
             const elapsedTime = Date.now() - startTime;
             if (elapsedTime >= maxDuration) {
               clearInterval(intervalId);

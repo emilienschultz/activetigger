@@ -229,7 +229,7 @@ export function useCreateProject() {
         body: project,
       });
       if (!res.error) {
-        notify({ type: 'success', message: 'Project created' });
+        notify({ type: 'warning', message: 'Project in creation' });
         return res['data'];
       } else
         throw new Error(
