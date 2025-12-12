@@ -449,6 +449,7 @@ export const AnnotationManagement: FC = () => {
         <>
           <TextSpanPanel
             elementId={elementId || 'noelement'}
+            displayConfig={displayConfig}
             postAnnotation={postAnnotation}
             labels={availableLabels}
             text={element?.text as string}
