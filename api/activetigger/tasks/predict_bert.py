@@ -49,7 +49,7 @@ class PredictBert(BaseTask):
         df: DataFrame,
         col_text: str,
         col_label: str | None = None,
-        col_id: str | None = None,
+        col_id_external: str | None = None,
         col_datasets: str | None = None,
         file_name: str = "predict.parquet",
         batch: int = 32,
@@ -63,7 +63,7 @@ class PredictBert(BaseTask):
         self.df = df
         self.col_text = col_text
         self.col_label = col_label
-        self.col_id = col_id
+        self.col_id_external = col_id_external
         self.col_datasets = col_datasets
         self.event = event
         self.unique_id = unique_id
@@ -80,8 +80,8 @@ class PredictBert(BaseTask):
         if col_datasets is not None and col_datasets not in self.df.columns:
             raise ValueError(f"Column datasets {col_datasets} not in dataframe")
 
-        if col_id is not None and col_id not in self.df.columns:
-            raise ValueError(f"Column id {col_id} not in dataframe")
+        if col_id_external is not None and col_id_external not in self.df.columns:
+            raise ValueError(f"Column id {col_id_external} not in dataframe")
 
         if statistics is not None and col_label is None:
             raise ValueError("Column label must be provided to compute statistics")
@@ -176,8 +176,8 @@ class PredictBert(BaseTask):
             # add columns if available
             if self.col_datasets:
                 pred[self.col_datasets] = self.df[self.col_datasets]
-            if self.col_id:
-                pred[self.col_id] = self.df[self.col_id]
+            if self.col_id_external:
+                pred[self.col_id_external] = self.df[self.col_id_external]
             if self.col_label:
                 pred["label"] = self.df[self.col_label]
 

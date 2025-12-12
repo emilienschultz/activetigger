@@ -251,7 +251,7 @@ async def predict(
                 df=df,
                 col_text="text",
                 col_label=col_label,
-                col_id="id",
+                col_id_external="id",
                 col_datasets="dataset",
                 dataset=dataset,
                 batch_size=batch_size,

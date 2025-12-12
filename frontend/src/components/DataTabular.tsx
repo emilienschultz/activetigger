@@ -13,7 +13,8 @@ import { AppContextValue } from '../core/context';
 import { AnnotationModel } from '../types';
 
 interface Row {
-  id: string;
+  id_internal: string;
+  id_external: string;
   timestamp: string;
   labels: string;
   text: string;
@@ -99,8 +100,10 @@ export const DataTabular: FC<DataTabularModel> = ({
       resizable: true,
       width: 180,
       renderCell: (props) => (
-        <div className={props.row.id in modifiedRows ? 'modified-cell' : ''}>
-          <Link to={`/projects/${projectSlug}/tag/${props.row.id}`}>{props.row.id}</Link>
+        <div className={props.row.id_internal in modifiedRows ? 'modified-cell' : ''}>
+          <Link to={`/projects/${projectSlug}/tag/${props.row.id_internal}`}>
+            {props.row.id_external}
+          </Link>
         </div>
       ),
     },
@@ -182,8 +185,8 @@ export const DataTabular: FC<DataTabularModel> = ({
           onRowChange({ ...row, labels: event.target.value }, true);
           setModifiedRows((prevState) => ({
             ...prevState,
-            [row.id]: {
-              element_id: row.id,
+            [row.id_internal]: {
+              element_id: row.id_internal,
               label: event.target.value,
               scheme: currentScheme as string,
               project_slug: projectSlug as string,
