@@ -40,19 +40,19 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
   // };
 
   return (
-    <div className="row">
+    <>
       <div
-        className="col-11 annotation-frame"
+        className="annotation-frame"
         style={{ height: `${displayConfig.frameSize}vh` }}
         ref={frameRef as unknown as LegacyRef<HTMLDivElement>}
       >
         <motion.div
-          animate={elementId ? { backgroundColor: ['#e8e9ff', '#f9f9f9'] } : {}}
+          animate={elementId ? { backgroundColor: ['#ea6b1f70', '#ffffff00'] } : {}}
           transition={{ duration: 1 }}
         >
           {lastTag && (
             <div>
-              <span className="badge bg-info  ">
+              <span className="badge info  ">
                 {displayConfig.displayAnnotation ? `Last tag: ${lastTag}` : 'Already annotated'}
               </span>
             </div>
@@ -66,7 +66,7 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
             highlightStyle={{
               backgroundColor: 'yellow',
               margin: '0px',
-              padding: '0px',
+              padding: '2px 1px',
             }}
             caseSensitive={true}
           />
@@ -80,7 +80,7 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
               highlightStyle={{
                 backgroundColor: 'yellow',
                 margin: '0px',
-                padding: '0px',
+                padding: '2px 1px',
               }}
               caseSensitive={true}
             />
@@ -113,21 +113,38 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
       {
         //display context
         phase != 'test' && displayConfig.displayContext && (
-          <div className="d-flex mb-2 justify-content-center display-prediction">
+          <div>
             Context{' '}
-            {Object.entries(element?.context || { None: 'None' }).map(([k, v]) => `[${k} - ${v}]`)}
+            <ul>
+              {Object.entries(element?.context || { None: 'None' }).map(([k, v]) => {
+                return (
+                  <li>
+                    {k}: {v as string}
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         )
       }
       {
         //display history
         phase != 'test' && displayConfig.displayHistory && (
-          <div className="d-flex mb-2 justify-content-center display-prediction">
+          <div>
             {/* History : {JSON.stringify(element?.history)} */}
-            History : {((element?.history as string[]) || []).map((h) => `[${h[0]} - ${h[2]}]`)}
+            History :{' '}
+            <ul>
+              {((element?.history as string[]) || []).map((h) => {
+                return (
+                  <li>
+                    {h[0]} — {h[2]}
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         )
       }
-    </div>
+    </>
   );
 };
