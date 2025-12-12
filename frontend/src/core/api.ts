@@ -2141,13 +2141,14 @@ export function useGetCompareSchemes(
 /**
  * Stop all process for a user
  */
-export function useStopProcesses() {
+export function useStopProcesses(projectSlug: string | null) {
   const { notify } = useNotifications();
   const stopProcesses = useCallback(
     async (kind: string = 'all', uniqueId: string | null = null) => {
       const res = await api.POST('/stop', {
         params: {
           query: {
+            project_slug: projectSlug,
             unique_id: uniqueId,
             kind: kind,
           },
@@ -2156,7 +2157,7 @@ export function useStopProcesses() {
       if (!res.error) notify({ type: 'success', message: 'Processes ended' });
       return true;
     },
-    [notify],
+    [notify, projectSlug],
   );
 
   return { stopProcesses };

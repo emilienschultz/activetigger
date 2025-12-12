@@ -249,7 +249,6 @@ def get_metrics(
         f1_weighted=round(f1_score(Y_true, Y_pred, average="weighted"), decimals),
         f1_macro=round(f1_score(Y_true, Y_pred, average="macro"), decimals),
         f1_micro=round(f1_score(Y_true, Y_pred, average="micro"), decimals),
-        accuracy=round(accuracy_score(Y_true, Y_pred), decimals),
         precision=round(
             precision_score(list(Y_true), list(Y_pred), average="micro", zero_division=1),
             decimals,
@@ -270,6 +269,7 @@ def get_metrics(
         false_predictions=false_prediction,
         table=cast(dict[str, Any], table.to_dict(orient="split")),
     )
+    print(statistics)
     return statistics
 
 

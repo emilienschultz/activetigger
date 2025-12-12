@@ -29,7 +29,9 @@ export const StatusNotch: FC<{
     appContext: { currentProject },
   } = useAppContext();
   const { authenticatedUser } = useAuth();
-  const { stopProcesses } = useStopProcesses();
+  const { stopProcesses } = useStopProcesses(
+    projectState ? projectState.params.project_slug : null,
+  );
   // const nbUsers = projectState ? projectState.users.length : 0;
 
   // display the number of current processes on the server

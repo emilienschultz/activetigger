@@ -442,30 +442,45 @@ class Orchestrator:
         self.queue.kill(process_id)
         self.log_action(username, f"KILL PROCESS: {process_id}", "all")
 
-    def stop_user_processes(self, kind: str | list, username: str):
+    def stop_user_processes(
+        self, username: str, project_slug: str | None = None, kind: str | list[str] | None = None
+    ) -> None:
         """
         Stop all the processes of a user
         """
 
-        # kill all the process of a user
+        # define the processes to kill
         if kind == "all":
             kind = ["train_bert", "predict_bert", "generation", "feature", "bertopic"]
         if kind == "bert":
             kind = ["train_bert", "predict_bert"]
+        if kind is None:
+            kind = "all"
         if isinstance(kind, str) and kind != "all":
             kind = [kind]
 
-        # get all processes associated to the user for the specified kind
-        processes = {p: self.projects[p].get_process(kind, username) for p in self.projects}
-
-        # kill all processes associated
-        for project in processes:
-            for process in processes[project]:
+        # kill all the processes of the user
+        if project_slug is None:
+            processes = {p: self.projects[p].get_process(kind, username) for p in self.projects}
+            for project in processes:
+                for process in processes[project]:
+                    self.queue.kill(process.unique_id)
+                    if process.kind == "train_bert":
+                        process = cast(LMComputing, process)
+                        self.db_manager.language_models_service.delete_model(
+                            project, process.model_name
+                        )
+        # kill all the processes of the user for a specific project
+        else:
+            if project_slug not in self.projects:
+                raise Exception("This project is not loaded in memory")
+            processes_project = self.projects[project_slug].get_process(kind, username)
+            for process in processes_project:
                 self.queue.kill(process.unique_id)
                 if process.kind == "train_bert":
                     process = cast(LMComputing, process)
                     self.db_manager.language_models_service.delete_model(
-                        project, process.model_name
+                        project_slug, process.model_name
                     )
 
     def set_project_parameters(self, project: ProjectModel, username: str) -> None:

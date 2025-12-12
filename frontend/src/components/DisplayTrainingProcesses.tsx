@@ -32,11 +32,12 @@ interface LossData {
 }
 
 export const DisplayTrainingProcesses: FC<DisplayTrainingProcessesProps> = ({
+  projectSlug,
   processes,
   processStatus,
   displayStopButton = false,
 }) => {
-  const { stopProcesses } = useStopProcesses();
+  const { stopProcesses } = useStopProcesses(projectSlug);
 
   const displayAdvancement = (val: number | string | null) => {
     if (!val) return 'process in the queue waiting to start';
