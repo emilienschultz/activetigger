@@ -81,166 +81,158 @@ export const SelectionManagement: FC<SelectionManagementProps> = ({
   const isTest = project?.params.test;
 
   return (
-    <div className="w-100">
-      <div id="tag-parameters-div">
-        <div className="parameter-div">
-          <label className="form-label label-small-gray">Dataset</label>
-          <select
-            className="form-select"
-            value={phase}
-            onChange={(e) => {
-              if (!settingChanged) setSettingChanged(true);
-              changeDataSet(e);
-            }}
-          >
-            <option value="train">train</option>
-            {isValid && <option value="valid">validation</option>}
-            {isTest && <option value="test">test</option>}
-          </select>
-        </div>
-        <div className="parameter-div">
-          <label className="form-label label-small-gray">Selection</label>
-          <select
-            className="form-select"
-            onChange={(e: ChangeEvent<HTMLSelectElement>) => {
-              if (!settingChanged) setSettingChanged(true);
-              setAppContext((prev) => ({
-                ...prev,
-                selectionConfig: { ...selectionConfig, mode: e.target.value },
-              }));
-            }}
-            value={selectionConfig.mode}
-          >
-            {(availableModes || []).map((e, i) => (
-              <option key={i}>{e}</option>
-            ))}
-          </select>
-          {
-            // label selection for maxprob
-            selectionConfig.mode == 'maxprob' && (
-              <label className="form-label label-small-gray">
-                Maxprob on
+    // NOTE: Axel: Not much refactor cause more is coming
+    <>
+      <div>
+        <label className="label-small-gray">Dataset</label>
+        <select
+          value={phase}
+          onChange={(e) => {
+            if (!settingChanged) setSettingChanged(true);
+            changeDataSet(e);
+          }}
+        >
+          <option value="train">train</option>
+          {isValid && <option value="valid">validation</option>}
+          {isTest && <option value="test">test</option>}
+        </select>
+      </div>
+      <div>
+        <label className="label-small-gray">Selection</label>
+        <select
+          onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+            if (!settingChanged) setSettingChanged(true);
+            setAppContext((prev) => ({
+              ...prev,
+              selectionConfig: { ...selectionConfig, mode: e.target.value },
+            }));
+          }}
+          value={selectionConfig.mode}
+        >
+          {(availableModes || []).map((e, i) => (
+            <option key={i}>{e}</option>
+          ))}
+        </select>
+        {
+          // label selection for maxprob
+          selectionConfig.mode == 'maxprob' && (
+            <label className="label-small-gray">
+              Maxprob on
+              <select
+                onChange={(e) => {
+                  if (!settingChanged) setSettingChanged(true);
+                  setAppContext((prev) => ({
+                    ...prev,
+                    selectionConfig: { ...selectionConfig, label_maxprob: e.target.value },
+                  }));
+                }}
+                value={selectionConfig.label_maxprob}
+              >
+                {availableLabels.map((e, i) => (
+                  <option key={i}>{e}</option>
+                ))}{' '}
+              </select>
+            </label>
+          )
+        }
+      </div>
+
+      <div className="parameter-div">
+        <label className="label-small-gray">Tagged</label>
+        <select
+          onChange={(e) => {
+            if (!settingChanged) setSettingChanged(true);
+            changeSample(e);
+          }}
+          value={selectionConfig.sample}
+        >
+          {availableSamples.map((e, i) => (
+            <option key={i}>{e}</option>
+          ))}{' '}
+        </select>
+      </div>
+      {
+        // label selection for tagged elemnts
+        selectionConfig.sample == 'tagged' && (
+          <>
+            <div className="parameter-div">
+              <label className="label-small-gray">
+                On label
                 <select
                   onChange={(e) => {
                     if (!settingChanged) setSettingChanged(true);
                     setAppContext((prev) => ({
                       ...prev,
-                      selectionConfig: { ...selectionConfig, label_maxprob: e.target.value },
+                      selectionConfig: { ...selectionConfig, label: e.target.value },
                     }));
                   }}
-                  className="form-select"
-                  value={selectionConfig.label_maxprob}
+                  value={selectionConfig.label}
                 >
+                  {selectionConfig.sample == 'tagged' && <option key="">All</option>}
                   {availableLabels.map((e, i) => (
                     <option key={i}>{e}</option>
                   ))}{' '}
                 </select>
               </label>
-            )
-          }
-        </div>
+            </div>
+            <div className="parameter-div">
+              <label htmlFor="select_user" className="label-small-gray">
+                By user
+                <select
+                  id="select_user"
+                  onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+                    if (!settingChanged) setSettingChanged(true);
+                    setAppContext((prev) => ({
+                      ...prev,
+                      selectionConfig: { ...selectionConfig, user: e.target.value },
+                    }));
+                  }}
+                  value={selectionConfig.user}
+                >
+                  <option key={null} value={''}>
+                    All
+                  </option>
+                  {availableUsers.map((e, i) => (
+                    <option key={i}>{e}</option>
+                  ))}
+                </select>
+              </label>{' '}
+            </div>
+          </>
+        )
+      }
 
-        <div className="parameter-div">
-          <label className="form-label label-small-gray">Tagged</label>
-          <select
-            className="form-select"
-            onChange={(e) => {
-              if (!settingChanged) setSettingChanged(true);
-              changeSample(e);
-            }}
-            value={selectionConfig.sample}
-          >
-            {availableSamples.map((e, i) => (
-              <option key={i}>{e}</option>
-            ))}{' '}
-          </select>
-        </div>
-        {
-          // label selection for tagged elemnts
-          selectionConfig.sample == 'tagged' && (
-            <>
-              <div className="parameter-div">
-                <label className="form-label label-small-gray">
-                  On label
-                  <select
-                    onChange={(e) => {
-                      if (!settingChanged) setSettingChanged(true);
-                      setAppContext((prev) => ({
-                        ...prev,
-                        selectionConfig: { ...selectionConfig, label: e.target.value },
-                      }));
-                    }}
-                    className="form-select"
-                    value={selectionConfig.label}
-                  >
-                    {selectionConfig.sample == 'tagged' && <option key="">All</option>}
-                    {availableLabels.map((e, i) => (
-                      <option key={i}>{e}</option>
-                    ))}{' '}
-                  </select>
-                </label>
-              </div>
-              <div className="parameter-div">
-                <label htmlFor="select_user" className="form-label label-small-gray">
-                  By user
-                  <select
-                    className="form-select"
-                    id="select_user"
-                    onChange={(e: ChangeEvent<HTMLSelectElement>) => {
-                      if (!settingChanged) setSettingChanged(true);
-                      setAppContext((prev) => ({
-                        ...prev,
-                        selectionConfig: { ...selectionConfig, user: e.target.value },
-                      }));
-                    }}
-                    value={selectionConfig.user}
-                  >
-                    <option key={null} value={''}>
-                      All
-                    </option>
-                    {availableUsers.map((e, i) => (
-                      <option key={i}>{e}</option>
-                    ))}
-                  </select>
-                </label>{' '}
-              </div>
-            </>
-          )
-        }
-
-        {
-          // input validated on deselect
-        }
-        <div id="regex" className="parameter-div">
-          <label htmlFor="select_regex" className="form-label label-small-gray">
-            Filter
-            <HiOutlineQuestionMarkCircle id="regex-tooltip" />
-          </label>
-          <input
-            className="form-control searchhelp"
-            type="text"
-            id="select_regex"
-            placeholder="Enter a regex"
-            value={selectionConfig.filter}
-            onChange={(e) => {
-              if (!settingChanged) setSettingChanged(true);
-              setAppContext((prev) => ({
-                ...prev,
-                selectionConfig: { ...selectionConfig, filter: e.target.value },
-              }));
-            }}
-          />
-          <Tooltip anchorSelect="#regex-tooltip">
-            Use CONTEXT= or QUERY= for specific requests
-          </Tooltip>
-        </div>
-        <div>
-          {selectionConfig.frameSelection && <FaLock className="mx-2 lock" size={20} />}
-          <Tooltip anchorSelect=".lock" place="top">
-            A frame is locked, go to projection to change
-          </Tooltip>
-        </div>
+      {
+        // input validated on deselect
+      }
+      <div id="regex" className="parameter-div">
+        <label htmlFor="select_regex" className="label-small-gray">
+          Filter
+          <HiOutlineQuestionMarkCircle id="regex-tooltip" />
+        </label>
+        <input
+          type="text"
+          id="select_regex"
+          placeholder="Enter a regex"
+          value={selectionConfig.filter}
+          onChange={(e) => {
+            if (!settingChanged) setSettingChanged(true);
+            setAppContext((prev) => ({
+              ...prev,
+              selectionConfig: { ...selectionConfig, filter: e.target.value },
+            }));
+          }}
+        />
+        <Tooltip anchorSelect="#regex-tooltip" style={{ zIndex: '99' }}>
+          Use CONTEXT= or QUERY= for specific requests
+        </Tooltip>
       </div>
-    </div>
+      <div>
+        {selectionConfig.frameSelection && <FaLock className="mx-2 lock" size={20} />}
+        <Tooltip anchorSelect=".lock" place="top">
+          A frame is locked, go to projection to change
+        </Tooltip>
+      </div>
+    </>
   );
 };
