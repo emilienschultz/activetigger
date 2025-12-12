@@ -7,7 +7,6 @@ import { FaGear } from 'react-icons/fa6';
 import { IoIosRefresh } from 'react-icons/io';
 import { MdDriveFileRenameOutline } from 'react-icons/md';
 import Select from 'react-select';
-import PulseLoader from 'react-spinners/PulseLoader';
 import {
   useDeleteQuickModel,
   useGetQuickModel,
@@ -22,6 +21,8 @@ import { CreateNewFeature } from './forms/CreateNewFeature';
 import { DisplayScores } from './DisplayScores';
 import { ModelsPillDisplay } from './ModelsPillDisplay';
 import { ValidateButtons } from './validateButton';
+import { StopProcessButton } from './StopProcessButton';
+import { ModelParametersTab } from './ModelParametersTab';
 
 // TODO: default values + avoid generic parameters
 
@@ -50,41 +51,6 @@ interface QuickModelManagementProps {
 
 interface renameModel {
   new_name: string;
-}
-
-export default function ModelsTable(
-  name: string | null,
-  availableQuickModels: ModelDescriptionModel[],
-) {
-  const model = availableQuickModels.filter((e) => e.name == name)[0];
-  if (!model) return null;
-  return (
-    <>
-      <table className="table table-striped table-hover w-50 mt-2">
-        <thead>
-          <tr>
-            <th scope="col">Key</th>
-            <th scope="col">Value</th>
-          </tr>
-        </thead>
-        <tbody>
-          {model.parameters &&
-            Object.entries(model.parameters || {}).map(([key, value], i) => (
-              <tr key={i}>
-                <td>{key}</td>
-                <td>
-                  {Array.isArray(value)
-                    ? (value as string[]).join(', ') // or use bullets if you prefer
-                    : typeof value === 'object' && value !== null
-                      ? JSON.stringify(value, null, 2)
-                      : String(value)}
-                </td>
-              </tr>
-            ))}
-        </tbody>
-      </table>
-    </>
-  );
 }
 
 export const QuickModelManagement: FC<QuickModelManagementProps> = ({
@@ -259,7 +225,7 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
     return balance_classes ? 'true' : 'false';
   };
   return (
-    <div className="w-100">
+    <>
       <ModelsPillDisplay
         modelNames={availableQuickModels
           .sort((quickModelA, quickModelB) =>
@@ -282,23 +248,17 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
         </button>
       </ModelsPillDisplay>
 
-      {isComputing && (
-        <div className="btn btn-primary mt-3 d-flex align-items-center">
-          <PulseLoader color={'white'} /> Computing
-        </div>
-      )}
+      {isComputing && <StopProcessButton />}
+
       {currentModelInformations && currentQuickModelName && (
-        <div>
-          <div className="d-flex my-4">
-            <button
-              className="btn btn-outline-secondary btn-sm me-2 d-flex align-items-center"
-              onClick={() => setShowParameters(true)}
-            >
+        <>
+          <div className="horizontal wrap">
+            <button className="btn-secondary-action" onClick={() => setShowParameters(true)}>
               <FaGear size={18} className="me-1" />
               Parameters
             </button>
             <button
-              className="btn btn-outline-secondary btn-sm me-2 d-flex align-items-center"
+              className="btn-secondary-action"
               onClick={() => {
                 retrainQuickModel(currentQuickModelName);
                 console.log('retrain');
@@ -307,10 +267,7 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
               <IoIosRefresh size={18} className="me-1" />
               Retrain
             </button>
-            <button
-              className="btn btn-outline-secondary btn-sm me-2 d-flex align-items-center"
-              onClick={() => setShowRename(true)}
-            >
+            <button className="btn-secondary-action" onClick={() => setShowRename(true)}>
               <MdDriveFileRenameOutline size={18} className="me-1" />
               Rename
             </button>
@@ -323,6 +280,7 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
               buttonLabel="Compute predictions"
             />
           </div>
+
           <DisplayScores
             title={'Validation scores from the training data (internal validation)'}
             scores={currentModelInformations.statistics_test as MLStatisticsModel}
@@ -330,9 +288,9 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
           />
           {currentModelInformations.statistics_cv10 && (
             <>
-              <div className="subsection">
+              <h4 className="subsection">
                 Validation scores from the training data (internal validation)
-              </div>
+              </h4>
               <DisplayScores
                 title="Cross validation CV10"
                 scores={
@@ -341,7 +299,7 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
               />
             </>
           )}
-        </div>
+        </>
       )}
 
       <Modal
@@ -355,87 +313,106 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
           <Modal.Title>Train a new quick model</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <div>
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <div>
-                <label htmlFor="name">Model name</label>
-                <input
-                  type="text"
-                  id="name"
-                  placeholder="Model name"
-                  className="form-control"
-                  {...register('name')}
-                />
-              </div>
-              <div>
-                <div>
-                  <label htmlFor="features">Features used to predict (X)</label>
-                  <button
-                    type="button"
-                    className="btn btn-outline-secondary d-flex align-items-center my-1"
-                    onClick={() => setDisplayNewFeature(true)}
-                  >
-                    <FaPlusCircle size={18} className="me-1" /> Add a new feature
-                  </button>
-                  <Controller
-                    name="features"
-                    control={control}
-                    render={({ field: { onChange, value } }) => (
-                      <>
-                        {' '}
-                        <Select
-                          options={features}
-                          isMulti
-                          value={features.filter((option) => value.includes(option.value))}
-                          onChange={(selectedOptions) => {
-                            onChange(
-                              selectedOptions ? selectedOptions.map((option) => option.value) : [],
-                            );
-                            setFormSelectedFeatures(
-                              selectedOptions ? selectedOptions.map((option) => option.value) : [],
-                            );
-                          }}
-                        />
-                      </>
-                    )}
-                  />
-                  {selectedFeaturesContainsBERTFeatures() && (
-                    <a className="explanations">
-                      ⚠️ Warning: using BERT predictions as features results in strongly
-                      upward-biased quality metrics on the train set.
-                    </a>
-                  )}
-                </div>
-              </div>
-              <details className="custom-details">
-                <summary>Advanced parameters</summary>
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <label htmlFor="name">Model name</label>
+            <input type="text" id="name" placeholder="Model name" {...register('name')} />
 
-                <label htmlFor="model">Select a model</label>
-                <select id="model" {...register('model')}>
-                  {Object.keys(baseQuickModels).map((e) => (
-                    <option key={e}>{e}</option>
-                  ))}{' '}
-                </select>
-                {kindScheme == 'multilabel' && (
-                  <>
-                    <label htmlFor="dichotomize">Dichotomize on the label</label>
-                    <select id="dichotomize" {...register('dichotomize')}>
-                      {Object.values(availableLabels).map((e) => (
-                        <option key={e}>{e}</option>
-                      ))}{' '}
-                    </select>
-                  </>
-                )}
-                {
-                  //generate_config(selectedQuickModel)
-                  (selectedModel == 'logistic-l2' && (
-                    <div key="logistic-l2">
-                      <label htmlFor="costLogL2">Cost</label>
+            <label htmlFor="features">Features used to predict (X)</label>
+            <button
+              type="button"
+              className="btn-secondary-action"
+              onClick={() => setDisplayNewFeature(true)}
+            >
+              <FaPlusCircle size={18} /> Add a new feature
+            </button>
+            <Controller
+              name="features"
+              control={control}
+              render={({ field: { onChange, value } }) => (
+                <>
+                  {' '}
+                  <Select
+                    options={features}
+                    isMulti
+                    value={features.filter((option) => value.includes(option.value))}
+                    onChange={(selectedOptions) => {
+                      onChange(
+                        selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                      );
+                      setFormSelectedFeatures(
+                        selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                      );
+                    }}
+                  />
+                </>
+              )}
+            />
+            {selectedFeaturesContainsBERTFeatures() && (
+              <a className="explanations">
+                ⚠️ Warning: using BERT predictions as features results in strongly upward-biased
+                quality metrics on the train set.
+              </a>
+            )}
+
+            <details>
+              <summary>Advanced parameters</summary>
+
+              <label htmlFor="model">Select a model</label>
+              <select id="model" {...register('model')}>
+                {Object.keys(baseQuickModels).map((e) => (
+                  <option key={e}>{e}</option>
+                ))}{' '}
+              </select>
+              {kindScheme == 'multilabel' && (
+                <>
+                  <label htmlFor="dichotomize">Dichotomize on the label</label>
+                  <select id="dichotomize" {...register('dichotomize')}>
+                    {Object.values(availableLabels).map((e) => (
+                      <option key={e}>{e}</option>
+                    ))}{' '}
+                  </select>
+                </>
+              )}
+              {
+                //generate_config(selectedQuickModel)
+                (selectedModel == 'logistic-l2' && (
+                  <div key="logistic-l2">
+                    <label htmlFor="costLogL2">Cost</label>
+                    <input
+                      type="number"
+                      step="1"
+                      id="logistic-l2"
+                      {...register('params.costLogL2', { valueAsNumber: true })}
+                    ></input>
+                    <label htmlFor="balance_classes">
+                      <input
+                        type="checkbox"
+                        id="balance_classes"
+                        {...register('balance_classes')}
+                      />
+                      Automatically balance classes
+                    </label>
+                  </div>
+                )) ||
+                  (selectedModel == 'knn' && (
+                    <div key="knn">
+                      <label htmlFor="n_neighbors">Number of neighbors</label>
                       <input
                         type="number"
                         step="1"
-                        id="logistic-l2"
-                        {...register('params.costLogL2', { valueAsNumber: true })}
+                        id="n_neighbors"
+                        {...register('params.n_neighbors', { valueAsNumber: true })}
+                      ></input>
+                    </div>
+                  )) ||
+                  (selectedModel == 'logistic-l1' && (
+                    <div key="logistic-l1">
+                      <label htmlFor="costLogL1">Cost</label>
+                      <input
+                        type="number"
+                        step="1"
+                        id="logistic-l1"
+                        {...register('params.costLogL1', { valueAsNumber: true })}
                       ></input>
                       <label htmlFor="balance_classes">
                         <input
@@ -447,92 +424,61 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
                       </label>
                     </div>
                   )) ||
-                    (selectedModel == 'knn' && (
-                      <div key="knn">
-                        <label htmlFor="n_neighbors">Number of neighbors</label>
+                  (selectedModel == 'multi_naivebayes' && (
+                    <div key="multi_naivebayes">
+                      <label htmlFor="alpha">Alpha</label>
+                      <input
+                        type="number"
+                        id="alpha"
+                        {...register('params.alpha', { valueAsNumber: true })}
+                      ></input>
+                      <label htmlFor="fit_prior">
                         <input
-                          type="number"
-                          step="1"
-                          id="n_neighbors"
-                          {...register('params.n_neighbors', { valueAsNumber: true })}
-                        ></input>
-                      </div>
-                    )) ||
-                    (selectedModel == 'logistic-l1' && (
-                      <div key="logistic-l1">
-                        <label htmlFor="costLogL1">Cost</label>
+                          type="checkbox"
+                          id="fit_prior"
+                          {...register('params.fit_prior')}
+                          checked
+                        />
+                        Fit prior
+                      </label>
+                    </div>
+                  )) ||
+                  (selectedModel == 'randomforest' && (
+                    <div key="randomforest">
+                      <label htmlFor="n_estimators">Number of estimators</label>
+                      <input
+                        type="number"
+                        step="1"
+                        id="n_estimators"
+                        {...register('params.n_estimators', { valueAsNumber: true })}
+                      ></input>
+                      <label htmlFor="max_features">Max features</label>
+                      <input
+                        type="number"
+                        step="1"
+                        id="max_features"
+                        {...register('params.max_features', { valueAsNumber: true })}
+                      ></input>
+                      <label htmlFor="balance_classes">
                         <input
-                          type="number"
-                          step="1"
-                          id="logistic-l1"
-                          {...register('params.costLogL1', { valueAsNumber: true })}
-                        ></input>
-                        <label htmlFor="balance_classes">
-                          <input
-                            type="checkbox"
-                            id="balance_classes"
-                            {...register('balance_classes')}
-                          />
-                          Automatically balance classes
-                        </label>
-                      </div>
-                    )) ||
-                    (selectedModel == 'multi_naivebayes' && (
-                      <div key="multi_naivebayes">
-                        <label htmlFor="alpha">Alpha</label>
-                        <input
-                          type="number"
-                          id="alpha"
-                          {...register('params.alpha', { valueAsNumber: true })}
-                        ></input>
-                        <label htmlFor="fit_prior">
-                          <input
-                            type="checkbox"
-                            id="fit_prior"
-                            {...register('params.fit_prior')}
-                            checked
-                          />
-                          Fit prior
-                        </label>
-                      </div>
-                    )) ||
-                    (selectedModel == 'randomforest' && (
-                      <div key="randomforest">
-                        <label htmlFor="n_estimators">Number of estimators</label>
-                        <input
-                          type="number"
-                          step="1"
-                          id="n_estimators"
-                          {...register('params.n_estimators', { valueAsNumber: true })}
-                        ></input>
-                        <label htmlFor="max_features">Max features</label>
-                        <input
-                          type="number"
-                          step="1"
-                          id="max_features"
-                          {...register('params.max_features', { valueAsNumber: true })}
-                        ></input>
-                        <label htmlFor="balance_classes">
-                          <input
-                            type="checkbox"
-                            id="balance_classes"
-                            {...register('balance_classes')}
-                          />
-                          Automatically balance classes
-                        </label>
-                      </div>
-                    ))
-                }
+                          type="checkbox"
+                          id="balance_classes"
+                          {...register('balance_classes')}
+                        />
+                        Automatically balance classes
+                      </label>
+                    </div>
+                  ))
+              }
 
-                <label htmlFor="cv10">
-                  <input type="checkbox" id="cv10" {...register('cv10')} />
-                  10-fold cross validation
-                </label>
-              </details>
+              <label htmlFor="cv10">
+                <input type="checkbox" id="cv10" {...register('cv10')} />
+                10-fold cross validation
+              </label>
+            </details>
 
-              <button className="btn btn-primary btn-validation">Train quick model</button>
-            </form>
-          </div>
+            <button className="btn btn-primary btn-validation">Train quick model</button>
+          </form>
         </Modal.Body>
       </Modal>
       <Modal
@@ -558,39 +504,18 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
         </Modal.Header>
         <Modal.Body>
           {currentModelInformations && (
-            <table className="table table-striped table-hover w-100 mt-2">
-              <tbody>
-                <tr>
-                  <td>Model type</td>
-                  <td>{currentModelInformations?.model}</td>
-                </tr>
-                <tr>
-                  <td>Input features</td>
-                  <td>
-                    {cleanDisplay(
-                      JSON.stringify(currentModelInformations?.features) as unknown as string,
-                      ', ',
-                    )}
-                  </td>
-                </tr>
-                {Object.entries(currentModelInformations?.params || {}).map(([key, value], i) => (
-                  <tr key={i}>
-                    <td>{key}</td>
-                    <td>
-                      {Array.isArray(value)
-                        ? (value as string[]).join(', ') // or use bullets if you prefer
-                        : typeof value === 'object' && value !== null
-                          ? JSON.stringify(value, null, 2)
-                          : String(value)}
-                    </td>
-                  </tr>
-                ))}
-                <tr>
-                  <td>Balance classes</td>
-                  <td>{displayBalanceClasses(currentModelInformations?.balance_classes)}</td>
-                </tr>
-              </tbody>
-            </table>
+            <ModelParametersTab
+              params={
+                {
+                  'Model type': currentModelInformations?.model,
+                  'Input features': cleanDisplay(
+                    JSON.stringify(currentModelInformations?.features) as unknown as string,
+                    ', ',
+                  ),
+                  ...currentModelInformations?.params,
+                } as Record<string, unknown>
+              }
+            />
           )}
         </Modal.Body>
       </Modal>
@@ -602,15 +527,14 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
           <form onSubmit={handleSubmitRename(onSubmitRename)}>
             <input
               id="new_name"
-              className="form-control me-2 mt-2"
               type="text"
               placeholder="New name of the model"
               {...registerRename('new_name')}
             />
-            <button className="btn btn-primary me-2 mt-2">Rename</button>
+            <button className="btn-submit">Rename</button>
           </form>
         </Modal.Body>
       </Modal>
-    </div>
+    </>
   );
 };
