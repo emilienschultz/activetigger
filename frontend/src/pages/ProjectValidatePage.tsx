@@ -5,7 +5,7 @@ import { DisplayScoresMenu } from '../components/DisplayScoresMenu';
 import { DisplayTrainingProcesses } from '../components/DisplayTrainingProcesses';
 import { ProjectPageLayout } from '../components/layout/ProjectPageLayout';
 import { ModelsPillDisplay } from '../components/ModelsPillDisplay';
-import { ValidateButtons } from '../components/validateButton';
+import { ValidateButtons } from '../components/ValidateButton';
 import { useDeleteBertModel, useDeleteQuickModel, useModelInformations } from '../core/api';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';

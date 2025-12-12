@@ -8,7 +8,7 @@ import { LossChart } from '../components/vizualisation/lossChart';
 import { ModelDescriptionModel, ProjectStateModel } from '../types';
 import { DisplayScores } from './DisplayScores';
 import { ModelsPillDisplay } from './ModelsPillDisplay';
-import { ValidateButtons } from './validateButton';
+import { ValidateButtons } from './ValidateButton';
 
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { FaPlusCircle } from 'react-icons/fa';

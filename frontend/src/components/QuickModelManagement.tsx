@@ -20,7 +20,7 @@ import { MLStatisticsModel, ModelDescriptionModel, QuickModelInModel } from '../
 import { CreateNewFeature } from './forms/CreateNewFeature';
 import { DisplayScores } from './DisplayScores';
 import { ModelsPillDisplay } from './ModelsPillDisplay';
-import { ValidateButtons } from './validateButton';
+import { ValidateButtons } from './ValidateButton';
 import { StopProcessButton } from './StopProcessButton';
 import { ModelParametersTab } from './ModelParametersTab';
 
