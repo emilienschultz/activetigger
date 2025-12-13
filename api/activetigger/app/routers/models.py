@@ -223,27 +223,33 @@ async def predict(
                 df = project.data.read_dataset(external_dataset.filename)
                 df["text"] = df[external_dataset.text]
                 df["index"] = df[external_dataset.id].apply(str)
-                df["id"] = df["index"]
+                df["id_external"] = df["index"]
                 df["dataset"] = "external"
                 df.set_index("index", inplace=True)
-                df = df[["id", "dataset", "text"]].dropna()
+                df = df[["id_external", "dataset", "text"]].dropna()
                 col_label = None
                 datasets = None
             # case the prediction is done on all the data
             elif dataset == "all":
                 df = pd.DataFrame(project.features.get_column_raw("text", index="all"))
                 if project.params.col_id != "dataset_row_number":
-                    df["id"] = project.features.get_column_raw(project.params.col_id, index="all")
+                    df["id_external"] = project.features.get_column_raw(
+                        project.params.col_id, index="all"
+                    )
                 else:
-                    df["id"] = df.index
+                    df["id_external"] = df.index
                 df["dataset"] = "all"
                 col_label = None
             # case the prediction is done on annotable data
             else:
                 if datasets is None:
                     raise Exception("Datasets variable should be defined for annotable dataset")
-                df = project.schemes.get_scheme(scheme=scheme, complete=True, datasets=datasets)
+                df = project.schemes.get_scheme(
+                    scheme=scheme, complete=True, datasets=datasets, id_external=True
+                )
                 col_label = "labels"
+            print("STARTING PREDICTION BERT MODEL")
+            print(df.head())
             project.languagemodels.start_predicting_process(
                 project_slug=project.name,
                 name=model_name,
@@ -251,7 +257,7 @@ async def predict(
                 df=df,
                 col_text="text",
                 col_label=col_label,
-                col_id_external="id",
+                col_id_external="id_external",
                 col_datasets="dataset",
                 dataset=dataset,
                 batch_size=batch_size,

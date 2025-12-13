@@ -269,7 +269,6 @@ def get_metrics(
         false_predictions=false_prediction,
         table=cast(dict[str, Any], table.to_dict(orient="split")),
     )
-    print(statistics)
     return statistics
 
 
