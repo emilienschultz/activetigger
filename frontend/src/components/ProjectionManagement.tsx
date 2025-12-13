@@ -229,7 +229,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
           <FaPlusCircle size={20} className="me-1" /> Compute new projection
         </button>
       ) : (
-        <StopProcessButton />
+        <StopProcessButton projectSlug={projectName} />
       )}
       {projectionData && labelColorMapping && (
         <>

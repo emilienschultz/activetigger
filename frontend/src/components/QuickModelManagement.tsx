@@ -245,7 +245,7 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
         </button>
       </ModelsPillDisplay>
 
-      {isComputing && <StopProcessButton />}
+      {isComputing && <StopProcessButton projectSlug={projectName} />}
 
       {currentModelInformations && currentQuickModelName && (
         <>
