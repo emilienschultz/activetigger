@@ -146,7 +146,7 @@ export const GenPage: FC = () => {
   );
 
   // to stop generation
-  const { stopProcesses } = useStopProcesses();
+  const { stopProcesses } = useStopProcesses(projectName);
 
   // to get a sample of elements
   const { generated, reFetchGenerated } = useGeneratedElements(

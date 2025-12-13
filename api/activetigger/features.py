@@ -167,7 +167,13 @@ class Features:
             matching_strings = [s for s in strings if re.match(pattern, s)]
             return matching_strings
 
-        var = set([i.split("__")[0] for i in column_names if "__index" not in i and i != "id"])
+        var = set(
+            [
+                i.split("__")[0]
+                for i in column_names
+                if "__index" not in i and i not in ["id_internal", "id_external"]
+            ]
+        )
         dic = {i: find_strings_with_pattern(column_names, i) for i in var}
         num_rows = parquet_file.metadata.num_rows
         return dic, num_rows

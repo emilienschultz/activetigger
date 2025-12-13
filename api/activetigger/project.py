@@ -1046,10 +1046,10 @@ class Project:
 
         # test dataset availability
         if dataset == "valid":
-            if not self.params.test:
-                raise Exception("No test data available")
+            if self.data.valid is None:
+                raise Exception("No valid data available")
         if dataset == "test":
-            if self.data.train is None:
+            if self.data.test is None:
                 raise Exception("No train data available")
 
         # for a specific scheme and dataset
@@ -1057,7 +1057,8 @@ class Project:
             data = self.schemes.get_scheme(
                 scheme=scheme, complete=True, datasets=[dataset], id_external=True
             )
-            file_name = f"data_test_{self.name}_{scheme}.{format}"
+            file_name = f"export_tags_{self.name}_{scheme}.{format}"
+        # for all the annotated data in the project, need to concate
         elif scheme == "all":
             schemes = self.schemes.available()
             data = pd.concat(
@@ -1069,7 +1070,7 @@ class Project:
                 },
                 axis=1,
             )
-            file_name = f"data_{self.name}_all.{format}"
+            file_name = f"export_tags_{self.name}_all.{format}"
             dropna = False
         else:
             raise Exception("Scheme or dataset not recognized")
@@ -1078,9 +1079,15 @@ class Project:
         if dropna:
             data = data.dropna(subset=["labels"])
 
-        # data = data.rename(columns={"labels": scheme})
+        # select columns + order
+        cols = ["id_external"] + [
+            c for c in data.columns if c not in ["id_internal", "id_external"]
+        ]
+        data = data[cols]
+        if self.params.col_id is not None:
+            data.rename(columns={"id_external": self.params.col_id}, inplace=True)
 
-        # Create files and send
+        # write file in the folder
         if format == "csv":
             data.to_csv(path.joinpath(file_name))
         if format == "parquet":
@@ -1377,6 +1384,7 @@ class Project:
 
                 # specific case for project creation
                 if e.kind == "create_project":
+                    print("Error in project creation")
                     self.status = "error"
                 continue
 

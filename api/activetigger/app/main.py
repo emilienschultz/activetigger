@@ -169,6 +169,7 @@ async def get_logs(
 async def stop_process(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     unique_id: str | None = None,
+    project_slug: str | None = None,
     kind: str | None = None,
 ) -> None:
     """
@@ -182,8 +183,8 @@ async def stop_process(
         if unique_id is not None:
             test_rights(ServerAction.MANAGE_SERVER, current_user.username)
             orchestrator.stop_process(unique_id, current_user.username)
-        if kind is not None:
-            orchestrator.stop_user_processes(kind, current_user.username)
+        if project_slug is not None:
+            orchestrator.stop_user_processes(current_user.username, project_slug, kind)
         orchestrator.log_action(
             current_user.username,
             f"STOP PROCESS: {kind if kind is not None else unique_id}",

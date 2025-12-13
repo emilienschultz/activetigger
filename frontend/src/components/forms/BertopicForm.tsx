@@ -20,7 +20,7 @@ export const BertopicForm: FC<BertopicCreationFormProps> = ({
   setStatusDisplay,
 }) => {
   const { computeBertopic } = useComputeBertopic(projectSlug);
-  const { stopProcesses } = useStopProcesses();
+  const { stopProcesses } = useStopProcesses(projectSlug);
 
   const { handleSubmit: handleSubmitNewModel, register } = useForm<ComputeBertopicModel>({
     defaultValues: {

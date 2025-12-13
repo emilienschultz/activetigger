@@ -182,7 +182,7 @@ class Schemes:
                         content.append(self.data.train[cols])
             df_text = pd.concat(content)
             df = df.join(df_text, rsuffix="_content", how="right")
-        df["id"] = df.index
+        df["id_internal"] = df.index
         return df
 
     def get_reconciliation_table(
@@ -350,6 +350,7 @@ class Schemes:
             batch.scheme,
             complete=True,
             datasets=["test"] if batch.dataset == "test" else [batch.dataset],
+            id_external=True,
         )
         # manage NaT to avoid problems with json
         df["timestamp"] = df["timestamp"].apply(lambda x: str(x) if pd.notna(x) else "")
@@ -361,7 +362,7 @@ class Schemes:
             )
             df_r = df.loc[list(list_ids)].fillna(" ")
             table = df_r.sort_index().fillna("")[
-                ["id", "timestamp", "labels", "text", "comment", "user"]
+                ["id_internal", "id_external", "timestamp", "labels", "text", "comment", "user"]
             ]
             return TableOutModel(
                 items=table.to_dict(orient="records"),
@@ -400,7 +401,9 @@ class Schemes:
         table = (
             df.sort_index()
             .iloc[int(batch.min) : int(batch.max)]
-            .fillna("")[["id", "timestamp", "labels", "text", "comment", "user"]]
+            .fillna("")[
+                ["id_internal", "id_external", "timestamp", "labels", "text", "comment", "user"]
+            ]
         )
 
         return TableOutModel(

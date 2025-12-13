@@ -37,7 +37,7 @@ export const MonitorPage: FC = () => {
   const { authenticatedUser } = useAuth();
   const { activeProjects, gpu, cpu, memory, disk, reFetchQueueState } = useGetServer(null);
   const { restartQueue } = useRestartQueue();
-  const { stopProcesses } = useStopProcesses();
+  const { stopProcesses } = useStopProcesses(null);
   const { logs } = useGetLogs('all', 500);
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const { userStatistics, reFetchStatistics } = useGetUserStatistics(currentUser);

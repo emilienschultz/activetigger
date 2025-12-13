@@ -57,8 +57,12 @@ class CreateProject(BaseTask):
         # Step 1 : load all data, rename columns and define index
         # Only for new file: if data from a previous project, no need to reprocess it
         if self.params.filename is not None:
-            # load the file
+            # load the uploaded file
             file_path = self.params.dir.joinpath(self.params.filename)
+
+            if not file_path.exists():
+                raise Exception("File not found, problem when uploading")
+
             if self.params.filename.endswith(".csv"):
                 content = pd.read_csv(file_path, low_memory=False, on_bad_lines="skip")
             elif self.params.filename.endswith(".parquet"):
@@ -98,7 +102,7 @@ class CreateProject(BaseTask):
                 content["id_internal"] = [str(i) for i in range(len(content))]
                 content["id_external"] = content["id_internal"]
 
-            # case the index is a column, use slugify for internal if possible (unique after slugify)
+            # case the index is a column, use slugify for internal if unique after slugify
             else:
                 content["id_external"] = content[self.params.col_id].astype(str)
                 col_slugified = content["id_external"].apply(slugify)
@@ -221,7 +225,6 @@ class CreateProject(BaseTask):
             )
         # default with random selection in the remaining elements
         else:
-            print("random selection of the trainset")
             trainset = content.sample(self.params.n_train, random_state=42)
 
         # write the trainset
@@ -251,7 +254,5 @@ class CreateProject(BaseTask):
         # delete the initial file
         if self.params.filename is not None:
             self.params.dir.joinpath(self.params.filename).unlink()
-
-        print("CREATE PROJECT - END")
 
         return ProjectModel(**project), import_trainset, import_validset, import_testset
