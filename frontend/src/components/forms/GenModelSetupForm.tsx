@@ -8,7 +8,7 @@ type FormValues = { model: string; name?: string; endpoint?: string; credentials
 export const GenModelSetupForm: FC<{
   add: (model: Omit<GenModel & { api: SupportedAPI }, 'id'>) => void;
   cancel: () => void;
-}> = ({ add, cancel }) => {
+}> = ({ add }) => {
   const [availableAPIs, setAvailableAPIs] = useState<GenerationModelApi[]>([]);
   const [selectedAPI, setSelectedAPI] = useState<GenerationModelApi>(availableAPIs[0]);
   const [modelName, setModelName] = useState<string>('');

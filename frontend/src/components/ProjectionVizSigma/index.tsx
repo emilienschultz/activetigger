@@ -149,8 +149,8 @@ export const ProjectionVizSigma: FC<Props> = ({
   return (
     <div
       style={{
-        width: containerWidth ? `${containerWidth}px` : '400px',
-        height: containerHeight ? `${containerHeight}px` : '400px',
+        width: containerWidth ? `${containerWidth}px` : '100%',
+        height: containerHeight ? `${containerHeight}px` : '100%',
       }}
     >
       <div>

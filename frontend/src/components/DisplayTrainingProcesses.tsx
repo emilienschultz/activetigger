@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { useStopProcesses } from '../core/api';
+// import { useStopProcesses } from '../core/api';
 import { LossChart } from './vizualisation/lossChart';
 import { StopProcessButton } from './StopProcessButton';
 
@@ -37,8 +37,6 @@ export const DisplayTrainingProcesses: FC<DisplayTrainingProcessesProps> = ({
   processStatus,
   displayStopButton = false,
 }) => {
-  const { stopProcesses } = useStopProcesses(projectSlug);
-
   const displayAdvancement = (val: number | string | null) => {
     if (!val) return 'process in the queue waiting to start';
     const v = Math.round(Number(val));

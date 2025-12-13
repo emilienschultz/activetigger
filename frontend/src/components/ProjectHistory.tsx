@@ -3,7 +3,7 @@ import { Dispatch, FC, SetStateAction } from 'react';
 import { useGetLogs } from '../core/api';
 import { displayTime } from '../core/utils';
 
-import DataGrid, { Column } from 'react-data-grid';
+// import DataGrid, { Column } from 'react-data-grid';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
 import { AppContextValue } from '../core/context';
@@ -34,26 +34,26 @@ export const ProjectHistory: FC<ProjectHistoryProps> = ({
     setAppContext((prev) => ({ ...prev, history: [] }));
   };
 
-  const columns: readonly Column<Row>[] = [
-    {
-      name: 'Time',
-      key: 'time',
-      resizable: true,
-    },
-    {
-      name: 'User',
-      key: 'user',
-      resizable: true,
-    },
-    {
-      name: 'Project',
-      key: 'project',
-    },
-    {
-      name: 'Action',
-      key: 'action',
-    },
-  ];
+  // const columns: readonly Column<Row>[] = [
+  //   {
+  //     name: 'Time',
+  //     key: 'time',
+  //     resizable: true,
+  //   },
+  //   {
+  //     name: 'User',
+  //     key: 'user',
+  //     resizable: true,
+  //   },
+  //   {
+  //     name: 'Project',
+  //     key: 'project',
+  //   },
+  //   {
+  //     name: 'Action',
+  //     key: 'action',
+  //   },
+  // ];
   return (
     <>
       <div className="horizontal">

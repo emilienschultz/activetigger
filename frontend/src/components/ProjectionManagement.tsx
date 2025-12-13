@@ -179,11 +179,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
     [getElementById, setSelectedElement],
   );
 
-  const projectionTraining =
-    authenticatedUser && project
-      ? authenticatedUser?.username in project.projections.training
-      : false;
-
   // const [formNewProjection, setFormNewProjection] = useState<boolean>(false);
 
   type Feature = {
@@ -340,35 +335,33 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
           <form onSubmit={handleSubmit(onSubmit)}>
             {' '}
             <label htmlFor="features">Select features</label>
-            <div className="horizontal wrap">
-              <div style={{ flex: '1 1 auto' }}>
-                <Controller
-                  name="features"
-                  control={control}
-                  defaultValue={defaultFeatures.map((e) => e.value)}
-                  render={({ field: { onChange, value } }) => (
-                    <Select
-                      options={features}
-                      isMulti
-                      value={features.filter((option) => value.includes(option.value))}
-                      onChange={(selectedOptions) => {
-                        onChange(
-                          selectedOptions ? selectedOptions.map((option) => option.value) : [],
-                        );
-                      }}
-                    />
-                  )}
-                />
-              </div>
-              <button
-                type="button"
-                className="btn-secondary-action"
-                style={{ flex: '1 1 auto' }}
-                onClick={() => setDisplayNewFeature(true)}
-              >
-                <FaPlusCircle size={18} className="me-1" /> Add a new feature
-              </button>
+            <div style={{ flex: '1 1 auto' }}>
+              <Controller
+                name="features"
+                control={control}
+                defaultValue={defaultFeatures.map((e) => e.value)}
+                render={({ field: { onChange, value } }) => (
+                  <Select
+                    options={features}
+                    isMulti
+                    value={features.filter((option) => value.includes(option.value))}
+                    onChange={(selectedOptions) => {
+                      onChange(
+                        selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                      );
+                    }}
+                  />
+                )}
+              />
             </div>
+            <button
+              type="button"
+              className="btn-secondary-action"
+              style={{ flex: '1 1 auto' }}
+              onClick={() => setDisplayNewFeature(true)}
+            >
+              <FaPlusCircle size={18} /> Add a new feature
+            </button>
             <details>
               <summary>Advanced parameters</summary>
               <label htmlFor="model">Select a model</label>

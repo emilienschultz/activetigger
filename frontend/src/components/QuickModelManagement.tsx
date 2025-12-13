@@ -221,9 +221,6 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
     }
   };
 
-  const displayBalanceClasses = (balance_classes: boolean) => {
-    return balance_classes ? 'true' : 'false';
-  };
   return (
     <>
       <ModelsPillDisplay

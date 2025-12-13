@@ -6,13 +6,11 @@ import { Modal } from 'react-bootstrap';
 import { IoDuplicate } from 'react-icons/io5';
 import { MdDriveFileRenameOutline } from 'react-icons/md';
 import Select from 'react-select';
-import { Tooltip } from 'react-tooltip';
 import { useAddScheme, useDeleteScheme, useDuplicateScheme, useRenameScheme } from '../core/api';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
 import { getRandomName } from '../core/utils';
 import { SchemeModel } from '../types';
-import styled from 'styled-components';
 /*
  * Select current scheme
  */
