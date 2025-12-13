@@ -5,7 +5,7 @@ export interface DisplayMatrixProps {
   matrix: number[][];
   f1Labels?: Record<string, string>;
 }
-
+// NOTE: Axel: I believe it is not used. Delete?
 export const DisplayMatrix: FC<DisplayMatrixProps> = ({ matrix, labels }) => {
   // Calculate row totals
   const rowTotals = matrix.map((row) => row.reduce((sum, val) => sum + val, 0));

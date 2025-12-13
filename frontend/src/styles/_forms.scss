@@ -3,18 +3,6 @@ form {
   flex-direction: column;
   flex-wrap: nowrap;
 
-  label{
-    margin-top: 10px;
-    font-style: italic;
-    color: $label-color;
-    font-weight: bolder;
-  
-    a{
-      // tooltips
-      margin: 0px 4px;
-    }
-  }
-
   details {
     background-color: $tertiary;
     margin: 5px 0px;
@@ -25,37 +13,22 @@ form {
     flex-direction: column;
   }
 
-  .btn-submit{
-    font-size: larger;
-    color: white;
-    background-color: $primary;
-    margin: 10px 0px;
-    width: 100%;
+}
+
+label{
+  margin-top: 10px;
+  font-style: italic;
+  color: $label-color;
+  font-weight: bolder;
+
+  a{
+    // tooltips
+    margin: 0px 4px;
   }
 }
 
 .form-frame {
     padding: 0px;
-}
-
-#tag-parameters-div {
-    width: 100%;
-    display: flex;
-    align-items: start;
-    flex-wrap: wrap;
-    margin-bottom: 10px;
-
-    .parameter-div {
-        min-width: 50px;
-        margin: 3px 7px;
-        flex: 1 1 200px;
-    }
-
-    .parameter-div-small {
-        width: 20px;
-        margin: 3px 7px;
-        flex: 1 1 30px;
-    }
 }
 
 // Project Creation form upload progress

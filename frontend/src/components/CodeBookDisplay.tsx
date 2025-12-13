@@ -69,70 +69,40 @@ export const CodebookDisplay: FC<CodebookDisplayProps> = ({
   };
 
   return (
-    <div>
-      <div className="d-flex justify-content-center my-3">
-        <div
-          className="card border-primary shadow-sm w-100"
-          style={{ maxWidth: '100%', minWidth: '350px', maxHeight: '50vh' }}
-        >
-          {/* Header fin et discret */}
-          <div
-            className="card-header bg-white text-primary d-flex justify-content-between align-items-center border-bottom border-primary"
-            style={{
-              padding: '4px 8px', // header plus fin
-              fontSize: '0.9rem',
-              fontWeight: 600,
-            }}
-          >
-            {' '}
-            <span className="fw-bold d-flex align-items-center">
-              📘 <span className="ms-2">Guidelines</span>
-            </span>
-            {canEdit && (
-              <div className="btn-group btn-group-sm" role="group">
-                <button
-                  type="button"
-                  className="btn btn-light text-primary border-0"
-                  onClick={() => setShowCodebookModal(true)}
-                  title="Edit codebook"
-                >
-                  <MdDriveFileRenameOutline size={16} />
-                </button>
-                <button
-                  className="btn btn-light text-primary border-0"
-                  onClick={openAsHTML}
-                  title="Open"
-                >
-                  <FaBookOpen size={16} />
-                </button>
-                <button
-                  className="btn btn-light text-primary border-0"
-                  onClick={downloadMarkdown}
-                  title="Download"
-                >
-                  <FaCloudDownloadAlt size={16} />
-                </button>
-              </div>
-            )}
-          </div>
+    <>
+      <div id="codebook">
+        {/* Header fin et discret */}
+        <div id="header">
+          {' '}
+          <span style={{ fontWeight: 'bold' }}>📘 Guidelines</span>
+          {canEdit && (
+            <div id="edit-buttons-group" role="group">
+              <button onClick={() => setShowCodebookModal(true)} title="Edit codebook">
+                <MdDriveFileRenameOutline size={16} />
+              </button>
+              <button onClick={openAsHTML} title="Open">
+                <FaBookOpen size={16} />
+              </button>
+              <button onClick={downloadMarkdown} title="Download">
+                <FaCloudDownloadAlt size={16} />
+              </button>
+            </div>
+          )}
+        </div>
 
-          {/* Corps du codebook avec scroll */}
-          <div
-            className="card-body overflow-auto"
-            style={{ height: '100%', maxHeight: 'calc(50vh - 50px)' }} // -50px pour compenser le header
-            data-color-mode="light"
-          >
-            <MDEditor.Markdown
-              source={codebook}
-              style={{
-                backgroundColor: 'transparent',
-                fontSize: '0.95rem',
-                lineHeight: '1.6',
-              }}
-            />
-          </div>
+        {/* Corps du codebook avec scroll */}
+        <div id="content" data-color-mode="light">
+          <MDEditor.Markdown
+            source={codebook}
+            style={{
+              backgroundColor: 'transparent',
+              fontSize: '0.95rem',
+              lineHeight: '1.6',
+            }}
+          />
         </div>
       </div>
+
       <Modal
         show={showCodebookModal}
         onHide={() => {
@@ -155,6 +125,6 @@ export const CodebookDisplay: FC<CodebookDisplayProps> = ({
           />
         </Modal.Body>
       </Modal>
-    </div>
+    </>
   );
 };

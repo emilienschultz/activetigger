@@ -39,17 +39,14 @@ export const BackButton: FC<BackButtonProps> = ({ projectName, history, setAppCo
   }, [handleKeyboardEvents]);
 
   return (
+    /* NOTE: Axel Not too much customisation cause it's gonna be refactored soon */
     <Link
       to={`/projects/${projectName}/tag/${history[history.length - 1]}`}
-      className="btn previouselement"
       onClick={() => {
         setAppContext((prev) => ({ ...prev, history: prev.history.slice(0, -1) }));
       }}
     >
       <IoMdSkipBackward title="Back" />
-      {/* <Tooltip anchorSelect=".previouselement" place="top">
-        Previous
-      </Tooltip> */}
     </Link>
   );
 };

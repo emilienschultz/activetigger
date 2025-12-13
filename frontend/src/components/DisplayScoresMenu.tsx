@@ -38,13 +38,16 @@ export const DisplayScoresMenu: FC<DisplayScoresMenuPropos> = ({
   }
 
   return (
-    <div>
-      <label htmlFor="statistics">
-        Scores{' '}
+    <>
+      <div className="horizontal">
+        <label htmlFor="statistics" style={{ marginRight: '10px' }}>
+          Scores{' '}
+        </label>
         <select
           id="statistics"
           value={currentScore}
           onChange={(e) => setCurrentScore(e.target.value)}
+          style={{ maxWidth: '200px' }}
         >
           {allowedScores.map(([key]) => (
             <option key={key} value={key}>
@@ -52,7 +55,7 @@ export const DisplayScoresMenu: FC<DisplayScoresMenuPropos> = ({
             </option>
           ))}
         </select>
-      </label>
+      </div>
       {scores && (
         <DisplayScores
           title={displayTitle ? currentScore : null}
@@ -61,6 +64,6 @@ export const DisplayScoresMenu: FC<DisplayScoresMenuPropos> = ({
           projectSlug={projectSlug}
         />
       )}
-    </div>
+    </>
   );
 };

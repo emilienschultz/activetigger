@@ -20,7 +20,6 @@ button{
     border: 0px;
     border-radius: $border-radius;
     padding: 2px 10px;
-    font-size: larger;
     cursor: pointer;
 }
 
@@ -33,7 +32,7 @@ button:active {
 }
 
 input::placeholder{
-    color: $grey-color;
+    color: $dark-grey-color;
     opacity: .5;
     font-style: italic;
 }
@@ -66,12 +65,14 @@ table {
 .badge{
     border: 0px;
     border-radius: $border-radius;
-    background-color: $grey-color;
+    background-color: $light-grey-color;
+    color: black;
     padding: 5px 10px;
     margin: 2px 5px;
 }
 
 .badge.info{
+    color:white;
     background-color: $info-color;
 }
 
@@ -82,3 +83,144 @@ table {
 .badge.hotkey{
     background-color: rgba(0,0,0,0.2);
 }
+
+.transparent-background{
+    background-color: $transparent;
+}
+
+.btn-submit{
+    font-size: larger;
+    color: white;
+    background-color: $primary;
+    margin: 10px 0px;
+    width: 100%;
+}
+
+.btn-submit-danger{
+    font-size: larger;
+    color: white;
+    background-color: $danger-color;
+    margin: 10px 0px;
+    width: 100%;
+}
+
+.btn-primary-action{
+    background-color: $primary;
+    border: 2px solid $primary;
+    color: white;
+}
+
+.btn-secondary-action{
+    background-color: $transparent;
+    border: 2px solid $secondary;
+    color: $secondary;
+}
+
+.btn-annotate-action{
+    background-color: $primary;
+    color: white;
+    padding: 5px 10px;
+}
+
+.btn-annotate-predicted-action{
+    background-color: $secondary;
+    color: white;
+    padding: 5px 10px;
+}
+
+.btn-stop-process{
+    background-color: $primary;
+    border: 2px solid $primary;
+    color: white;
+
+    width: 200px;
+    height: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#project-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    background: $light-grey-color;
+    border: 0px;
+    border-radius: $border-radius;
+    padding: 16px 20px;
+    transition:
+        background-color 0.2s,
+        color 0.2s,
+        box-shadow 0.2s;
+    cursor: pointer;
+
+    .clickable-zone{
+        .projecttitle {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 0 0 8px;
+        }
+        width: 80%;
+        .projectdetails{
+            font-size: smaller;
+            display: flex;
+            justify-content: start;
+            #key{
+                width: 80px;
+            }
+            margin: 5px 0px;
+        }
+        .badge.info{
+            margin-left: 0px;
+        }
+    }
+
+    .trash-wrapper {
+        color: black;
+        cursor: pointer;
+    }
+    
+    .trash-wrapper:hover {
+        color: red;
+    }
+}
+
+#project-card:hover {
+    box-shadow: 0px 0px 15px color(from $primary srgb r g b / 50%);
+    background: color(from $primary srgb r g b / 50%);
+    color: white;
+}
+
+#current-scheme-badge{
+    height: 38px;
+    width: 150px;
+    background-color: $primary;
+    border-radius: $border-radius 0px 0px $border-radius;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    color: white;
+    font-weight: bold;
+}
+
+.user-info {
+    margin-top: 20px;
+    //padding: 5px;
+    font-size: 1rem;
+    background-color: #f8f9fa;
+    border: 0px solid #343a40;
+    color: #343a40;
+    text-align: center;
+  }
+  
+  .user-info span {
+    color: #007bff;
+  }
+  
+  .user-info .status {
+    color: #28a745;
+    font-weight: bold;
+  }

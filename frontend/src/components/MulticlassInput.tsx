@@ -1,3 +1,4 @@
+import cx from 'classnames';
 import { FC, useCallback, useEffect, useState } from 'react';
 import { ReactSortable } from 'react-sortablejs';
 import { Tooltip } from 'react-tooltip';
@@ -97,21 +98,22 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
       {
         //display proba
         phase == 'train' && displayConfig.displayPrediction && element?.predict.label && (
-          <div className="d-flex mb-2 justify-content-center display-prediction">
+          <>
             <button
               type="button"
               value={element?.predict.label as unknown as string}
-              className={`btn ${small ? 'btn-sm' : ''} btn-secondary grow-1 gap-2 justify-content-center m-1 elementpredicted`}
+              className={cx('btn-annotate-predicted-action', small ? ' icon-small' : '')}
+              // WARNING: Axel: icon-small not yet implemented
               onClick={(e) => {
                 postAnnotation(e.currentTarget.value, elementId);
               }}
             >
-              Predicted : {element?.predict.label} <span className="badge text-bg-primary">p</span>
+              Predicted : {element?.predict.label} <span className="badge hotkey">p</span>
             </button>
             <Tooltip anchorSelect=".elementpredicted" place="top">
               {`proba: ${predict_proba}, entropy: ${predict_entropy}`}
             </Tooltip>
-          </div>
+          </>
         )
       }
       <ReactSortable list={availableLabels} setList={updateLabels} tag="div">
@@ -122,12 +124,12 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
               type="button"
               key={e.label}
               value={e.label}
-              className={`btn ${small ? 'btn-sm' : ''} btn-primary grow-1 gap-2 justify-content-center m-1`}
+              className="btn-annotate-action"
               onClick={(v) => {
                 postAnnotation(v.currentTarget.value, elementId);
               }}
             >
-              {e.label} <span className="badge text-bg-secondary">{i + 1}</span>
+              {e.label} <span className="badge hotkey">{i + 1}</span>
             </button>
           ))
         }

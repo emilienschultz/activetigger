@@ -31,7 +31,6 @@ export const ModelsPillDisplay: FC<ModelsNameInput> = ({
           {name}
 
           <span
-            className="delete-icon"
             onClick={(e) => {
               e.stopPropagation();
               setModelToDelete(name);
@@ -55,7 +54,7 @@ export const ModelsPillDisplay: FC<ModelsNameInput> = ({
           </p>
 
           <button
-            className="btn btn-danger"
+            className="btn-submit-danger"
             onClick={async () => {
               setCurrentModelName(null);
               if (modelToDelete) {

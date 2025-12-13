@@ -124,3 +124,196 @@
     }
   }
 }
+
+#tabular-view-control-panel{
+  div{
+    flex: 1 1 auto;
+    min-width: 200px;
+    margin: 2px 5px;
+    
+    label{
+      font-style: italic;
+      color: $dark-grey-color;
+      font-size: smaller;
+      padding-left: 2px;
+    }
+  }
+  div.smaller{
+    flex: 0 2 auto;
+    min-width: 100px;
+  }
+}
+
+#tabular-view-page-control{
+  justify-content: end;
+  div{
+    display: flex;
+    align-items: center;
+    min-width: 50px;
+    margin: 2px 5px;
+    
+    label{
+      flex: 1 1 auto;
+      min-width:fit-content;
+      text-align: right;
+      margin-right: 2px;
+      font-style: italic;
+      color: $dark-grey-color;
+      font-size: smaller;
+      padding-left: 2px;
+    }
+    select{
+      height: 35px;
+      font-size: smaller;
+      width: 70px;
+    }
+  }
+}
+
+#parameter-tables-large{
+  margin: 10px 0px;
+  tr{
+    display: flex;
+  }
+  td{
+    border: 1px solid $dark-grey-color;
+    padding: 8px;
+    border-bottom: 0px;
+  }
+  .key{
+    width: 12%;
+    font-weight: bold;
+    border-right: 0px;
+    display: flex;
+    justify-content: end;
+    align-items: center;
+  }
+  .value{
+    width: 88%;
+  }
+  .last-row{
+    border-bottom: 1px solid $dark-grey-color;
+  }
+}
+
+#parameter-tables-thin{
+  margin: 10px 0px;
+
+  td, th{
+    min-width: 50%;
+    border-bottom: 1px $dark-grey-color solid;
+    padding: 8px;
+  }
+
+  tr.dark{
+    background-color: $light-grey-color;
+  }
+  tbody{
+    tr:hover{
+      background-color: $light-grey-color;
+    }
+  }
+
+}
+
+#label-table{
+  width: 100%;
+  min-width: 420px;
+
+  td, th{
+    padding: 5px 10px;
+  }
+
+  th.label-col, th.dataset-col{
+    border-bottom: 1px $dark-grey-color solid;
+  }
+  
+  .label-col{
+    text-align: right;
+    width: 40%;
+    min-width: 150px;
+    border-bottom: 0.2px $dark-grey-color solid;
+  }
+  
+  .dataset-col{
+    text-align: center;
+    width: 10%;
+    min-width: 60px;
+    border-bottom: 0.2px $dark-grey-color solid;
+  }
+
+  .edit-col{
+    text-align: left;
+    min-width: 15px;
+    padding:5px 0px;
+    display: flex;
+    justify-content: space-around;
+  }
+
+  tr.content:hover{
+    background-color: $light-grey-color;
+  }
+}
+
+#message-table{
+  width: 100%;
+
+  td, th{
+    padding: 5px 10px;
+    vertical-align:top;
+  }
+
+  thead{
+    tr{
+      border-bottom: 1px $dark-grey-color solid;;
+    }
+  }
+}
+
+#history-table{
+  width: 100%;
+
+  td{
+    padding: 5px 10px;
+    vertical-align:top;
+    height: 60px;
+    overflow-y: scroll;
+  }
+  th{
+    padding: 5px 10px;
+    vertical-align: bottom;
+  }
+  thead{
+    tr{
+      border-bottom: 2px $dark-grey-color solid;
+    }
+  }
+  tbody{
+    tr{
+      border-bottom: .5px $dark-grey-color solid;
+    }
+    tr.darker{
+      background-color: $light-grey-color;
+    }
+  }
+  #time{
+    width: 20%;
+    min-width: 170px;
+    text-align: right;
+  }
+  #user{
+    width: 10%;
+    min-width: 50px;
+    text-align: center;
+  }
+  #project{
+    width: 20%;
+    min-width: 100px;
+    text-align: center;
+  }
+  #action{
+    width: 50%;
+    min-width: 200px;
+  }
+
+}

@@ -20,7 +20,8 @@ interface Props {
     labels?: string[] | null;
     predictions?: unknown[] | null;
   };
-  className?: string;
+  containerHeight?: number;
+  containerWidth?: number;
   // bbox
   // frameBbox?: MarqueBoundingBox;
   frame?: number[];
@@ -61,7 +62,8 @@ const getPointSize = (n: number) => {
 // Create the Component that listen to all events
 export const ProjectionVizSigma: FC<Props> = ({
   data,
-  className,
+  containerHeight,
+  containerWidth,
   // get/set frame from/to app state
   frame,
   setFrameBbox,
@@ -145,7 +147,12 @@ export const ProjectionVizSigma: FC<Props> = ({
   );
 
   return (
-    <div className={className}>
+    <div
+      style={{
+        width: containerWidth ? `${containerWidth}px` : '100%',
+        height: containerHeight ? `${containerHeight}px` : '100%',
+      }}
+    >
       <div>
         <label className="mx-2">Color by: </label>
         <select

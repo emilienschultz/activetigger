@@ -1,15 +1,19 @@
 // Colors
+$light:white;
+$dark: black;
 $primary: #ea6b1f;
 $secondary: #b04302;
 $tertiary: rgb(239, 239, 239);
 $quaternary: #faf9f8;
 $label-color: #64809d;
-$grey-color: rgb(160, 160, 160);
+$dark-grey-color: rgb(160, 160, 160);
+$light-grey-color: rgba(235, 235, 235,80);
 $danger-color: #e60000;
 $info-color: #64809d;
 $transparent: rgba(0,0,0,0);
 // Variables
 $border-radius: 5px;
+$transition: color 0.4s ease;
 
 .project-link {
   display: block;
@@ -20,7 +24,6 @@ $border-radius: 5px;
   background-color: #f9f9f9;
   text-decoration: none;
   color: black;
-  transition: background-color 0.3s;
   margin-bottom: 10px;
   text-align: center;
 }
@@ -119,23 +122,6 @@ $border-radius: 5px;
   padding: 10px;
 }
 
-.annotation-frame {
-  height: 200px;
-  font-family: 'Arial', sans-serif;
-  font-size: 16px;
-  line-height: 1.6;
-  color: #333;
-  background-color: #f9f9f9;
-  border: 1px solid $primary;
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  max-width: 800px;
-  margin: 25px auto;
-  white-space: pre-wrap;
-  overflow-y: auto;
-}
-
 .display-prediction {
   color: #737373;
 }
@@ -168,12 +154,6 @@ $border-radius: 5px;
   color: orange;
 }
 
-.text-out-context {
-  color: $secondary;
-  opacity: 0.7;
-  font-style: italic;
-}
-
 .table-auth {
   width: 100%;
   margin-top: 30px;
@@ -204,25 +184,6 @@ $border-radius: 5px;
   block-size: 100%;
 }
 
-.user-info {
-  margin-top: 20px;
-  //padding: 5px;
-  font-size: 1rem;
-  background-color: #f8f9fa;
-  border: 0px solid #343a40;
-  color: #343a40;
-  text-align: center;
-}
-
-.user-info span {
-  color: #007bff;
-}
-
-.user-info .status {
-  color: #28a745;
-  font-weight: bold;
-}
-
 .modified-cell {
   color: #e60000;
   font-weight: bold;
@@ -240,47 +201,6 @@ $border-radius: 5px;
   flex-direction: column;
   gap: 16px;
   padding: 20px;
-}
-
-/* Project Card */
-.project-card {
-  background: #e7e5e5;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 16px 20px;
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.project-card:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  background: #ffa866;
-}
-
-/* Project Title */
-.project-title {
-  font-size: 20px;
-  font-weight: bold;
-  margin: 0 0 8px;
-}
-
-/* Project Details */
-.project-details {
-  font-size: 14px;
-  color: #666;
-  display: flex;
-  justify-content: space-between;
-}
-
-.trash-wrapper {
-  color: inherit;
-  cursor: pointer;
-  margin-left: 1rem;
-  transition: color 0.2s ease;
-}
-
-.trash-wrapper:hover {
-  color: red;
 }
 
 .sidemenulabel {

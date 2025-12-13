@@ -12,8 +12,8 @@ export const TagDisplayParameters: FC<TagDisplayParametersProps> = ({
   setAppContext,
 }) => {
   return (
-    <div className="mt-2">
-      <label style={{ display: 'block', marginBottom: '10px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <label>
         <input
           type="checkbox"
           checked={displayConfig.displayAnnotation}
@@ -29,7 +29,8 @@ export const TagDisplayParameters: FC<TagDisplayParametersProps> = ({
         />
         Existing annotation
       </label>
-      <label style={{ display: 'block', marginBottom: '10px' }}>
+
+      <label>
         <input
           type="checkbox"
           checked={displayConfig.displayPrediction}
@@ -45,7 +46,8 @@ export const TagDisplayParameters: FC<TagDisplayParametersProps> = ({
         />
         Prediction
       </label>
-      <label style={{ display: 'block', marginBottom: '10px' }}>
+
+      <label>
         <input
           type="checkbox"
           checked={displayConfig.displayContext}
@@ -61,7 +63,8 @@ export const TagDisplayParameters: FC<TagDisplayParametersProps> = ({
         />
         Contextual information
       </label>
-      <label style={{ display: 'block', marginBottom: '10px' }}>
+
+      <label>
         <input
           type="checkbox"
           checked={displayConfig.displayHistory}
@@ -77,34 +80,32 @@ export const TagDisplayParameters: FC<TagDisplayParametersProps> = ({
         />
         Element history
       </label>
-      <label style={{ display: 'block', marginBottom: '10px' }}>
-        <span>Tokens approximation (4 c / token)</span>
-        <input
-          type="number"
-          min="100"
-          max="10000"
-          className="form-input mx-2"
-          value={displayConfig.numberOfTokens}
-          onChange={(e) => {
-            setAppContext((prev) => ({
-              ...prev,
-              displayConfig: {
-                ...displayConfig,
-                numberOfTokens: Number(e.target.value),
-              },
-            }));
-          }}
-          style={{ marginRight: '10px' }}
-        />
-      </label>
-      <label style={{ display: 'block', marginBottom: '10px' }}>
-        Text frame size
-        <span className="m-2">Min: 25%</span>
+
+      <label>Tokens approximation (4 c / token)</label>
+      <input
+        type="number"
+        min="100"
+        max="10000"
+        value={displayConfig.numberOfTokens}
+        onChange={(e) => {
+          setAppContext((prev) => ({
+            ...prev,
+            displayConfig: {
+              ...displayConfig,
+              numberOfTokens: Number(e.target.value),
+            },
+          }));
+        }}
+        style={{ marginRight: '10px' }}
+      />
+
+      <label>Text frame size</label>
+      <div className="horizontal">
+        <span style={{ minWidth: '100px' }}>Min: 25%</span>
         <input
           type="range"
           min="25"
           max="100"
-          className="form-input"
           onChange={(e) => {
             setAppContext((prev) => ({
               ...prev,
@@ -116,27 +117,24 @@ export const TagDisplayParameters: FC<TagDisplayParametersProps> = ({
           }}
           style={{ marginRight: '10px' }}
         />
-        <span>Max: 100%</span>
-      </label>
-      <div className="flex flex-col gap-2">
-        <label className="explanations">Highlight words in the text</label>
-        <br></br>
-        <textarea
-          className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          placeholder="Line break to separate"
-          // onChange={(e) => setWordsToHighlight(e.target.value)}
-          value={displayConfig.highlightText}
-          onChange={(e) => {
-            setAppContext((prev) => ({
-              ...prev,
-              displayConfig: {
-                ...displayConfig,
-                highlightText: String(e.target.value),
-              },
-            }));
-          }}
-        />
+        <span style={{ minWidth: '100px' }}>Max: 100%</span>
       </div>
+
+      <label>Highlight words in the text</label>
+      <textarea
+        placeholder="Line break to separate"
+        // onChange={(e) => setWordsToHighlight(e.target.value)}
+        value={displayConfig.highlightText}
+        onChange={(e) => {
+          setAppContext((prev) => ({
+            ...prev,
+            displayConfig: {
+              ...displayConfig,
+              highlightText: String(e.target.value),
+            },
+          }));
+        }}
+      />
     </div>
   );
 };
