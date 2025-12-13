@@ -381,7 +381,10 @@ export const AnnotationManagement: FC = () => {
                 'na'
               )}
               <button
-                className={cx('getelement', settingChanged ? 'setting-changed' : '')}
+                className={cx(
+                  'btn-primary-action getelement',
+                  settingChanged ? 'setting-changed' : '',
+                )}
                 onClick={() => {
                   refetchElement();
                   setSettingChanged(false);
@@ -419,7 +422,7 @@ export const AnnotationManagement: FC = () => {
             <div className="alert horizontal center">
               <div>
                 No element available
-                <button onClick={refetchElement}>
+                <button className="btn-primary-action" onClick={refetchElement}>
                   <LuRefreshCw size={20} /> Get element
                 </button>
               </div>
