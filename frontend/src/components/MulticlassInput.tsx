@@ -1,3 +1,4 @@
+import cx from 'classnames';
 import { FC, useCallback, useEffect, useState } from 'react';
 import { ReactSortable } from 'react-sortablejs';
 import { Tooltip } from 'react-tooltip';
@@ -101,7 +102,8 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
             <button
               type="button"
               value={element?.predict.label as unknown as string}
-              className="btn-annotate-predicted-action"
+              className={cx('btn-annotate-predicted-action', small ? ' icon-small' : '')}
+              // WARNING: Axel: icon-small not yet implemented
               onClick={(e) => {
                 postAnnotation(e.currentTarget.value, elementId);
               }}
