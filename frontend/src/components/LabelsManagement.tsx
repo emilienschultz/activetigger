@@ -185,6 +185,8 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
     }));
   };
 
+  console.log(statistics);
+
   return (
     <>
       <table id="label-table">

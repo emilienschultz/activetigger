@@ -183,7 +183,7 @@ class Schemes:
             df_text = pd.concat(content)
             df = df.join(df_text, rsuffix="_content", how="right")
         df["id_internal"] = df.index
-        return df
+        return df[df["dataset"].isin(datasets)]
 
     def get_reconciliation_table(
         self, scheme: str, dataset: str = "train", no_label: str = "-----"
