@@ -176,7 +176,7 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
             <div id="horizontal-labels-container" style={{ height: '60px' }}>
               <div style={{ height: '60px' }}>
                 <div className="table-cell label-column-left">
-                  {limitLabelSize('Accuracy', 'horizontal')}
+                  {limitLabelSize('Precision', 'horizontal')}
                 </div>
                 <div className="table-cell label-column-left">
                   {limitLabelSize('F1-score', 'horizontal')}
@@ -188,7 +188,7 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
               <div className="row">
                 {table.columns.map((col, colIndex) => (
                   <div key={colIndex} className="table-cell number-cell">
-                    {scores.f1_label && displayScore(scores.f1_label[col])}
+                    {scores.precision_label && displayScore(scores.precision_label[col])}
                   </div>
                 ))}
               </div>
