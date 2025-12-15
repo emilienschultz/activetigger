@@ -80,7 +80,6 @@ async def create_user(
     password: str = Query(),
     status: str = Query(),
     mail: str = Query(),
-    dummy: bool = Query(False),
 ) -> None:
     """
     Create user
@@ -90,9 +89,6 @@ async def create_user(
         orchestrator.users.add_user(
             username_to_create, password, status, current_user.username, mail
         )
-        # if dummy:
-        #     # as a background task
-        #     background_tasks.add_task(orchestrator.create_dummy_project, username_to_create)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
@@ -169,6 +165,7 @@ async def get_auth(username: str) -> list:
     """
     Get all user auth
     """
+
     try:
         return orchestrator.users.get_auth(username, "all")
     except Exception as e:
@@ -176,11 +173,15 @@ async def get_auth(username: str) -> list:
 
 
 @router.get("/users/statistics", dependencies=[Depends(verified_user)], tags=["users"])
-async def get_statistics(username: str) -> UserStatistics:
+async def get_statistics(
+    current_user: Annotated[UserInDBModel, Depends(verified_user)], username: str
+) -> UserStatistics:
     """
     Get statistics for specific user
     """
     try:
+        if current_user.username != username:
+            test_rights(ServerAction.MANAGE_USERS, current_user.username)
         return orchestrator.users.get_statistics(username)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e

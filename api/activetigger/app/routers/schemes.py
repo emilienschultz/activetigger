@@ -111,12 +111,14 @@ async def post_codebook(
 
 @router.get("/schemes/codebook", dependencies=[Depends(verified_user)])
 async def get_codebook(
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project: Annotated[Project, Depends(get_project)],
     scheme: str,
 ) -> CodebookModel:
     """
     Get the codebook of a scheme for a project
     """
+    test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
         return project.schemes.get_codebook(scheme)
     except Exception as e:
@@ -170,6 +172,7 @@ async def duplicate_scheme(
 
 @router.get("/schemes/compare", dependencies=[Depends(verified_user)])
 async def compare_schemes(
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project: Annotated[Project, Depends(get_project)],
     schemeA: str,
     schemeB: str,
@@ -177,6 +180,7 @@ async def compare_schemes(
     """
     Compare two schemes
     """
+    test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
         return project.schemes.compare(schemeA, schemeB)
     except Exception as e:

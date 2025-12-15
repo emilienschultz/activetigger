@@ -137,6 +137,7 @@ class ProjectAction(str, Enum):
     UPDATE_ANNOTATION = "modify annotation"
     EXPORT_DATA = "export data"
     MANAGE_FILES = "manage files"
+    MONITOR = "access specific project information"
 
 
 def test_rights(
@@ -187,6 +188,11 @@ def test_rights(
     if not project_slug:
         raise HTTPException(500, "Project name missing")
     auth = orchestrator.users.auth(username, project_slug)
+    if auth is None:
+        raise HTTPException(
+            status_code=408,
+            detail=f"Forbidden: User {username} has no rights to perform action {action} on project {project_slug}",
+        )
 
     match action:
         # only manager can delete/modify elements
@@ -200,7 +206,7 @@ def test_rights(
             if auth in ["manager"]:
                 return True
         # only manager and contributor can create
-        case ProjectAction.ADD:
+        case ProjectAction.ADD | ProjectAction.MONITOR:
             if auth in ["manager", "contributor"]:
                 return True
         # everyone can get info or add annotation

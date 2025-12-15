@@ -73,9 +73,6 @@ class Project:
     data: Data
     db_manager: DatabaseManager
     params: ProjectModel
-    train: DataFrame | None
-    valid: DataFrame | None
-    test: DataFrame | None
     schemes: Schemes
     features: Features
     languagemodels: LanguageModels
@@ -1154,6 +1151,7 @@ class Project:
         Update project parameters
 
         For text/contexts/expand, it needs to draw from raw data
+        TODO : put it in queue for data manipulation
         """
 
         if not self.params.dir:

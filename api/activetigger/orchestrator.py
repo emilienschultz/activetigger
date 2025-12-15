@@ -294,7 +294,7 @@ class Orchestrator:
 
     def get_auth_datasets(self, username: str) -> list[DatasetModel]:
         """
-        Get datasets authorized for the user
+        Get datasets authorized for the user (projects where is manager)
         """
         projects = self.users.get_auth_projects(username, auth="manager")
         return [

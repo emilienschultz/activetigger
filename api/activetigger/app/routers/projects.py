@@ -56,6 +56,7 @@ async def get_project_statistics(
     """
     Statistics for a scheme and a user
     """
+    test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
         return project.get_statistics(scheme=scheme)
     except Exception as e:
@@ -63,12 +64,15 @@ async def get_project_statistics(
 
 
 @router.get("/projects/auth", dependencies=[Depends(verified_user)])
-async def get_project_auth(project_slug: str) -> ProjectAuthsModel:
+async def get_project_auth(
+    current_user: Annotated[UserInDBModel, Depends(verified_user)], project_slug: str
+) -> ProjectAuthsModel:
     """
     Users auth on a project
     """
     if not orchestrator.exists(project_slug):
         raise HTTPException(status_code=404, detail="Project doesn't exist")
+    test_rights(ProjectAction.MONITOR, current_user.username, project_slug)
     try:
         return ProjectAuthsModel(auth=orchestrator.users.get_project_auth(project_slug))
     except Exception as e:
@@ -247,6 +251,7 @@ async def get_project_state(
     """
     Get the state of a specific project
     """
+    test_rights(ProjectAction.GET, project.name)
     try:
         return project.state()
     except Exception as e:
