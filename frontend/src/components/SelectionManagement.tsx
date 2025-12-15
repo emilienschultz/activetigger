@@ -1,9 +1,11 @@
+import classNames from 'classnames';
 import { ChangeEvent, Dispatch, FC, SetStateAction, useEffect, useState } from 'react';
 import { FaLock } from 'react-icons/fa';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
 import { useGetQuickModel } from '../core/api';
 import { useAppContext } from '../core/context';
+import { isValidRegex } from '../core/utils';
 
 interface SelectionManagementProps {
   settingChanged: boolean;
@@ -81,7 +83,6 @@ export const SelectionManagement: FC<SelectionManagementProps> = ({
   const isTest = project?.params.test;
 
   return (
-    // NOTE: Axel: Not much refactor cause more is coming
     <div className="d-flex align-items-center justify-content-between">
       <div>
         <label className="label-small-gray">Dataset</label>
@@ -206,11 +207,15 @@ export const SelectionManagement: FC<SelectionManagementProps> = ({
         // input validated on deselect
       }
       <div id="regex" className="parameter-div">
-        <label htmlFor="select_regex" className="label-small-gray">
+        <label htmlFor="select_regex" className="form-label label-small-gray">
           Filter
           <HiOutlineQuestionMarkCircle id="regex-tooltip" />
         </label>
         <input
+          className={classNames(
+            'form-control searchhelp',
+            selectionConfig.filter && !isValidRegex(selectionConfig.filter) ? 'is-invalid' : '',
+          )}
           type="text"
           id="select_regex"
           placeholder="Enter a regex"
@@ -223,7 +228,8 @@ export const SelectionManagement: FC<SelectionManagementProps> = ({
             }));
           }}
         />
-        <Tooltip anchorSelect="#regex-tooltip" style={{ zIndex: '99' }}>
+        <div className="invalid-feedback">Regex not valid</div>
+        <Tooltip anchorSelect="#regex-tooltip">
           Use CONTEXT= or QUERY= for specific requests
         </Tooltip>
       </div>
