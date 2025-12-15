@@ -1,11 +1,9 @@
-import cx from 'classnames';
 import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FaPencilAlt } from 'react-icons/fa';
 import { FiRefreshCcw } from 'react-icons/fi';
 import { LuRefreshCw } from 'react-icons/lu';
 import { PiEraser } from 'react-icons/pi';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Tooltip } from 'react-tooltip';
 import { BackButton } from '../components/BackButton';
 import { ForwardButton } from '../components/ForwardButton';
 import {
@@ -21,17 +19,16 @@ import { ElementOutModel } from '../types';
 
 import { Modal } from 'react-bootstrap';
 import { FaMapMarkedAlt } from 'react-icons/fa';
-import { GiTigerHead } from 'react-icons/gi';
 import { MdDisplaySettings } from 'react-icons/md';
 import { ActiveLearningManagement } from '../components/ActiveLearningManagement';
 import { MulticlassInput } from '../components/MulticlassInput';
 import { MultilabelInput } from '../components/MultilabelInput';
-import { SelectionManagement } from '../components/SelectionManagement';
 import { TagDisplayParameters } from '../components/TagDisplayParameters';
 import { TextClassificationPanel } from '../components/TextClassificationPanel';
 import { TextSpanPanel } from '../components/TextSpanPanel';
 import { useNotifications } from '../core/notifications';
 import { isValidRegex } from '../core/utils';
+import { AnnotationModeForm } from './AnnotationMode';
 import { DisplayProjection } from './vizualisation/DisplayProjection';
 
 export const AnnotationManagement: FC = () => {
@@ -255,12 +252,12 @@ export const AnnotationManagement: FC = () => {
   // display active menu
   const [activeMenu, setActiveMenu] = useState<boolean>(false);
 
-  const statisticsDataset = (dataset: string) => {
-    if (dataset === 'train') return `${statistics?.train_annotated_n}/${statistics?.train_set_n}`;
-    if (dataset === 'valid') return `${statistics?.valid_annotated_n}/${statistics?.valid_set_n}`;
-    if (dataset === 'test') return `${statistics?.test_annotated_n}/${statistics?.test_set_n}`;
+  const statisticsDataset = useMemo(() => {
+    if (phase === 'train') return `${statistics?.train_annotated_n}/${statistics?.train_set_n}`;
+    if (phase === 'valid') return `${statistics?.valid_annotated_n}/${statistics?.valid_set_n}`;
+    if (phase === 'test') return `${statistics?.test_annotated_n}/${statistics?.test_set_n}`;
     return '';
-  };
+  }, [phase, statistics]);
 
   // train a quick model
   const { trainQuickModel } = useTrainQuickModel(projectName || null, currentScheme || null);
@@ -362,59 +359,26 @@ export const AnnotationManagement: FC = () => {
 
   return (
     <>
+      {/**
+       * Annotation mode form
+       * **/}
+      <AnnotationModeForm
+        settingChanged={settingChanged}
+        setSettingChanged={setSettingChanged}
+        refetchElement={refetchElement}
+        setActiveMenu={setActiveMenu}
+      />
       <div>
-        {
-          // annotation mode
-          <div>
-            <SelectionManagement
-              settingChanged={settingChanged}
-              setSettingChanged={setSettingChanged}
-            />
-            <div className="horizontal center">
-              {statistics ? (
-                <span className="explanations">
-                  {/* NOTE: Axel Not too much customisation cause it's gonna be refactored soon */}
-                  Annotated: {statisticsDataset(phase)} - Selected: {nSample || 'na'}
-                </span>
-              ) : (
-                'na'
-              )}
-              <button
-                className={cx(
-                  'btn-primary-action getelement',
-                  settingChanged ? 'setting-changed' : '',
-                )}
-                onClick={() => {
-                  refetchElement();
-                  setSettingChanged(false);
-                }}
-                title="Get next element with the selection mode"
-              >
-                {/* NOTE: Axel Not too much customisation cause it's gonna be refactored soon */}
-                <LuRefreshCw size={20} /> Get
-                {/* <Tooltip anchorSelect=".getelement" place="top">
-                  Get next element with the selection mode
-                </Tooltip> */}
-              </button>
-              {phase === 'train' && (
-                <>
-                  <GiTigerHead
-                    size={30}
-                    onClick={() => setActiveMenu(!activeMenu)}
-                    className="activelearning"
-                    style={{ color: activeModel ? 'green' : 'grey', cursor: 'pointer' }}
-                    title="Active learning"
-                  />
-                  <Tooltip anchorSelect=".activelearning" place="top">
-                    Active learning
-                  </Tooltip>
-                  <span className="badge info">{activeModel ? activeModel.value : 'inactive'}</span>
-                </>
-              )}
-            </div>
-          </div>
-        }
+        {/* TODO: find a design for this */}
+        {statistics ? (
+          <span className="explanations">
+            Annotated: {statisticsDataset} - Selected: {nSample || 'na'}
+          </span>
+        ) : (
+          'na'
+        )}
       </div>
+
       {/**
        *  ANNOTATION BLOCK
        * */}
