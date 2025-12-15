@@ -1,5 +1,5 @@
 import cx from 'classnames';
-import { FC, useCallback, useEffect, useRef, useState } from 'react';
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FaPencilAlt } from 'react-icons/fa';
 import { FiRefreshCcw } from 'react-icons/fi';
 import { LuRefreshCw } from 'react-icons/lu';
@@ -223,8 +223,14 @@ export const AnnotationManagement: FC = () => {
   const validHighlightText = highlightText.filter(isValidRegex);
 
   // existing models
-  const availableQuickModels = project?.quickmodel.available[currentScheme || ''] || [];
-  const availableBertModels = project?.languagemodels.available[currentScheme || ''] || {};
+  const availableQuickModels = useMemo(
+    () => project?.quickmodel.available[currentScheme || ''] || [],
+    [project?.quickmodel, currentScheme],
+  );
+  const availableBertModels = useMemo(
+    () => project?.languagemodels.available[currentScheme || ''] || {},
+    [project?.languagemodels, currentScheme],
+  );
   const availableBertModelsWithPrediction = Object.entries(availableBertModels || {})
     .filter(([_, v]) => v && v.predicted)
     .map(([k, _]) => k);
