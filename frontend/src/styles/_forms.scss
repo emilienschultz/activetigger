@@ -12,23 +12,22 @@ form {
     display: flex;
     flex-direction: column;
   }
-
 }
 
-label{
+label {
   margin-top: 10px;
   font-style: italic;
   color: $label-color;
   font-weight: bolder;
 
-  a{
+  a {
     // tooltips
     margin: 0px 4px;
   }
 }
 
 .form-frame {
-    padding: 0px;
+  padding: 0px;
 }
 
 // Project Creation form upload progress
@@ -54,7 +53,7 @@ label{
 }
 
 .label-small-gray {
-    font-size: 0.8rem;
-    color: #9ca3af; // Tailwind's neutral gray tone (lighter)
-    margin-bottom: -5px;
-  }
+  font-size: 0.8rem;
+  color: #9ca3af; // Tailwind's neutral gray tone (lighter)
+  margin-bottom: -5px;
+}
