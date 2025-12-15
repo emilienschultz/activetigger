@@ -56,7 +56,7 @@ async def get_project_statistics(
     """
     Statistics for a scheme and a user
     """
-    test_rights(ProjectAction.GET, current_user.username, project.name)
+    test_rights(ProjectAction.GET, current_user.username, project.project_slug)
     try:
         return project.get_statistics(scheme=scheme)
     except Exception as e:
@@ -119,13 +119,15 @@ async def update_project(
     - change text cols
     - expand the number of elements in the trainset
     """
-    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
+    test_rights(ProjectAction.UPDATE, current_user.username, project.project_slug)
     try:
         project.update_project(update)
         orchestrator.log_action(
-            current_user.username, f"INFO UPDATE PROJECT: {project.name}", project.name
+            current_user.username,
+            f"INFO UPDATE PROJECT: {project.project_slug}",
+            project.project_slug,
         )
-        del orchestrator.projects[project.name]
+        del orchestrator.projects[project.project_slug]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -182,10 +184,12 @@ async def delete_evalset(
     """
     Delete an existing eval dataset
     """
-    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
+    test_rights(ProjectAction.UPDATE, current_user.username, project.project_slug)
     try:
         project.drop_evalset(dataset=dataset)
-        orchestrator.log_action(current_user.username, f"DELETE EVALSET {dataset}", project.name)
+        orchestrator.log_action(
+            current_user.username, f"DELETE EVALSET {dataset}", project.project_slug
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
@@ -201,12 +205,14 @@ async def add_testdata(
     Delete existing eval/test dataset or
     Add a dataset for eval/test when there is none available
     """
-    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
+    test_rights(ProjectAction.UPDATE, current_user.username, project.project_slug)
     try:
         if evalset is None:
             raise Exception("No evalset sent")
-        project.add_evalset(dataset, evalset, current_user.username, project.name)
-        orchestrator.log_action(current_user.username, f"ADD EVALSET {dataset}", project.name)
+        project.add_evalset(dataset, evalset, current_user.username, project.project_slug)
+        orchestrator.log_action(
+            current_user.username, f"ADD EVALSET {dataset}", project.project_slug
+        )
         return None
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
@@ -246,12 +252,13 @@ async def get_project_datasets(
     dependencies=[Depends(verified_user), Depends(check_auth_exists)],
 )
 async def get_project_state(
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project: Annotated[Project, Depends(get_project)],
 ) -> ProjectStateModel:
     """
     Get the state of a specific project
     """
-    test_rights(ProjectAction.GET, project.name)
+    test_rights(ProjectAction.GET, current_user.username, project.project_slug)
     try:
         return project.state()
     except Exception as e:

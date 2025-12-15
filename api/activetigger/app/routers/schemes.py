@@ -31,7 +31,7 @@ async def rename_label(
     """
     Rename a a label
     """
-    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
+    test_rights(ProjectAction.UPDATE, current_user.username, project.project_slug)
 
     try:
         project.schemes.rename_label(former_label, new_label, scheme, current_user.username)

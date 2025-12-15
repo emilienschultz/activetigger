@@ -1,28 +1,27 @@
 import cx from 'classnames';
-import { FC, useEffect, useState } from 'react';
+import { FC, useState } from 'react';
 import { Modal } from 'react-bootstrap';
-import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { SubmitHandler, useForm } from 'react-hook-form';
 import { FaPlusCircle } from 'react-icons/fa';
 import { FaGear } from 'react-icons/fa6';
 import { IoIosRefresh } from 'react-icons/io';
 import { MdDriveFileRenameOutline } from 'react-icons/md';
-import Select from 'react-select';
 import {
   useDeleteQuickModel,
   useGetQuickModel,
   useRenameQuickModel,
   useRetrainQuickModel,
-  useTrainQuickModel,
 } from '../core/api';
 import { useNotifications } from '../core/notifications';
-import { getRandomName, sortDatesAsStrings } from '../core/utils';
-import { MLStatisticsModel, ModelDescriptionModel, QuickModelInModel } from '../types';
-import { CreateNewFeature } from './forms/CreateNewFeature';
+import { sortDatesAsStrings } from '../core/utils';
+import { MLStatisticsModel, ModelDescriptionModel } from '../types';
 import { DisplayScores } from './DisplayScores';
-import { ModelsPillDisplay } from './ModelsPillDisplay';
-import { ValidateButtons } from './ValidateButton';
-import { StopProcessButton } from './StopProcessButton';
 import { ModelParametersTab } from './ModelParametersTab';
+import { ModelsPillDisplay } from './ModelsPillDisplay';
+import { StopProcessButton } from './StopProcessButton';
+import { ValidateButtons } from './ValidateButton';
+import { CreateNewFeature } from './forms/CreateNewFeature';
+import { QuickModelForm } from './forms/QuickModelForm';
 
 // TODO: default values + avoid generic parameters
 
@@ -61,15 +60,11 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
   availableFeatures,
   availableLabels,
   kindScheme,
-  currentModel,
   featuresOption,
   columns,
   isComputing,
 }) => {
   const { notify } = useNotifications();
-
-  // hooks to update
-  const { trainQuickModel } = useTrainQuickModel(projectName, currentScheme);
 
   // available features
   const features = availableFeatures.map((e) => ({ value: e, label: e }));
@@ -104,107 +99,15 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
     currentQuickModelName,
     currentQuickModelName,
   );
-  const filterFeatures = (features: Feature[]) => {
-    const filtered = features.filter((e) => /sbert|fasttext/i.test(e.label));
-    const predictFeature = features.find((e) => /predict/i.test(e.label)); // Trouve le premier "predict"
-    const sbertFeature = features.find((e) => /sbert/i.test(e.label)); // Trouve le premier "sbert"
-
-    if (sbertFeature) {
-      filtered.push(sbertFeature);
-    } else if (predictFeature) {
-      filtered.push(predictFeature);
-    }
-
-    return filtered;
-  };
-
-  const predictions = filterFeatures(features);
-  const defaultFeatures = predictions.length > 0 ? [predictions[predictions.length - 1]] : [];
 
   // delete quickmodel
   const { deleteQuickModel } = useDeleteQuickModel(projectName);
-
-  const createDefaultValues = () => ({
-    name: getRandomName('QuickModel'),
-    model: 'logistic-l1',
-    scheme: currentScheme || undefined,
-    params: {
-      costLogL1: 1,
-      costLogL2: 1,
-      n_neighbors: 3,
-      alpha: 1,
-      n_estimators: 500,
-      max_features: null,
-    },
-    balance_classes: false,
-    cv10: false,
-    dichotomize: kindScheme == 'multilabel' ? availableLabels[0] : undefined,
-    features: defaultFeatures.map((e) => e.value),
-  });
-
-  // create form
-  const { register, handleSubmit, control, watch, setValue, reset } = useForm<QuickModelInModel>({
-    defaultValues: createDefaultValues(),
-  });
-
-  // update the values from the current model if it exists
-  useEffect(() => {
-    if (currentModel?.params) {
-      const filteredParams = Object.entries(currentModel.params)
-        .filter(([key]) => key !== 'features') // key is the param name
-        .reduce(
-          (acc, [key, value]) => {
-            if (
-              typeof value === 'string' ||
-              typeof value === 'number' ||
-              typeof value === 'boolean'
-            ) {
-              acc[key] = value;
-            }
-            return acc;
-          },
-          {} as Record<string, string | number | boolean>,
-        );
-
-      setValue('params', filteredParams as QuickModelInModel['params']);
-    }
-  }, [currentModel, setValue]);
-
-  // state for the model selected to modify parameters
-  const selectedModel = watch('model');
-
-  // action when form validated
-  const onSubmit: SubmitHandler<QuickModelInModel> = async (formData) => {
-    const watchedFeatures = watch('features');
-    if (watchedFeatures.length == 0) {
-      notify({ type: 'error', message: 'Please select at least one feature' });
-      return;
-    }
-    await trainQuickModel(formData);
-    setDisplayNewModel(false);
-  };
-
-  // build default features selected
-  type Feature = {
-    label: string;
-    value: string;
-  };
-
-  const [formSelectedFeatures, setFormSelectedFeatures] = useState<string[]>(
-    defaultFeatures.map((e) => e.value),
-  );
 
   // state for new feature
   const [displayNewFeature, setDisplayNewFeature] = useState<boolean>(false);
   const [displayNewModel, setDisplayNewModel] = useState<boolean>(false);
 
   const [showParameters, setShowParameters] = useState(false);
-
-  const selectedFeaturesContainsBERTFeatures = () => {
-    return formSelectedFeatures
-      .map((feature) => feature?.slice(0, 8) === 'predict_')
-      .includes(true);
-  };
 
   const cleanDisplay = (listOfFeatures: string, sep?: string) => {
     if (!sep) {
@@ -235,7 +138,6 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
       >
         <button
           onClick={() => {
-            reset(createDefaultValues());
             setDisplayNewModel(true);
           }}
           className={cx('model-pill ', isComputing ? 'disabled' : '')}
@@ -310,172 +212,16 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
           <Modal.Title>Train a new quick model</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <label htmlFor="name">Model name</label>
-            <input type="text" id="name" placeholder="Model name" {...register('name')} />
-
-            <label htmlFor="features">Features used to predict (X)</label>
-            <button
-              type="button"
-              className="btn-secondary-action"
-              onClick={() => setDisplayNewFeature(true)}
-            >
-              <FaPlusCircle size={18} /> Add a new feature
-            </button>
-            <Controller
-              name="features"
-              control={control}
-              render={({ field: { onChange, value } }) => (
-                <>
-                  {' '}
-                  <Select
-                    options={features}
-                    isMulti
-                    value={features.filter((option) => value.includes(option.value))}
-                    onChange={(selectedOptions) => {
-                      onChange(
-                        selectedOptions ? selectedOptions.map((option) => option.value) : [],
-                      );
-                      setFormSelectedFeatures(
-                        selectedOptions ? selectedOptions.map((option) => option.value) : [],
-                      );
-                    }}
-                  />
-                </>
-              )}
-            />
-            {selectedFeaturesContainsBERTFeatures() && (
-              <a className="explanations">
-                ⚠️ Warning: using BERT predictions as features results in strongly upward-biased
-                quality metrics on the train set.
-              </a>
-            )}
-
-            <details>
-              <summary>Advanced parameters</summary>
-
-              <label htmlFor="model">Select a model</label>
-              <select id="model" {...register('model')}>
-                {Object.keys(baseQuickModels).map((e) => (
-                  <option key={e}>{e}</option>
-                ))}{' '}
-              </select>
-              {kindScheme == 'multilabel' && (
-                <>
-                  <label htmlFor="dichotomize">Dichotomize on the label</label>
-                  <select id="dichotomize" {...register('dichotomize')}>
-                    {Object.values(availableLabels).map((e) => (
-                      <option key={e}>{e}</option>
-                    ))}{' '}
-                  </select>
-                </>
-              )}
-              {
-                //generate_config(selectedQuickModel)
-                (selectedModel == 'logistic-l2' && (
-                  <div key="logistic-l2">
-                    <label htmlFor="costLogL2">Cost</label>
-                    <input
-                      type="number"
-                      step="1"
-                      id="logistic-l2"
-                      {...register('params.costLogL2', { valueAsNumber: true })}
-                    ></input>
-                    <label htmlFor="balance_classes">
-                      <input
-                        type="checkbox"
-                        id="balance_classes"
-                        {...register('balance_classes')}
-                      />
-                      Automatically balance classes
-                    </label>
-                  </div>
-                )) ||
-                  (selectedModel == 'knn' && (
-                    <div key="knn">
-                      <label htmlFor="n_neighbors">Number of neighbors</label>
-                      <input
-                        type="number"
-                        step="1"
-                        id="n_neighbors"
-                        {...register('params.n_neighbors', { valueAsNumber: true })}
-                      ></input>
-                    </div>
-                  )) ||
-                  (selectedModel == 'logistic-l1' && (
-                    <div key="logistic-l1">
-                      <label htmlFor="costLogL1">Cost</label>
-                      <input
-                        type="number"
-                        step="1"
-                        id="logistic-l1"
-                        {...register('params.costLogL1', { valueAsNumber: true })}
-                      ></input>
-                      <label htmlFor="balance_classes">
-                        <input
-                          type="checkbox"
-                          id="balance_classes"
-                          {...register('balance_classes')}
-                        />
-                        Automatically balance classes
-                      </label>
-                    </div>
-                  )) ||
-                  (selectedModel == 'multi_naivebayes' && (
-                    <div key="multi_naivebayes">
-                      <label htmlFor="alpha">Alpha</label>
-                      <input
-                        type="number"
-                        id="alpha"
-                        {...register('params.alpha', { valueAsNumber: true })}
-                      ></input>
-                      <label htmlFor="fit_prior">
-                        <input
-                          type="checkbox"
-                          id="fit_prior"
-                          {...register('params.fit_prior')}
-                          checked
-                        />
-                        Fit prior
-                      </label>
-                    </div>
-                  )) ||
-                  (selectedModel == 'randomforest' && (
-                    <div key="randomforest">
-                      <label htmlFor="n_estimators">Number of estimators</label>
-                      <input
-                        type="number"
-                        step="1"
-                        id="n_estimators"
-                        {...register('params.n_estimators', { valueAsNumber: true })}
-                      ></input>
-                      <label htmlFor="max_features">Max features</label>
-                      <input
-                        type="number"
-                        step="1"
-                        id="max_features"
-                        {...register('params.max_features', { valueAsNumber: true })}
-                      ></input>
-                      <label htmlFor="balance_classes">
-                        <input
-                          type="checkbox"
-                          id="balance_classes"
-                          {...register('balance_classes')}
-                        />
-                        Automatically balance classes
-                      </label>
-                    </div>
-                  ))
-              }
-
-              <label htmlFor="cv10">
-                <input type="checkbox" id="cv10" {...register('cv10')} />
-                10-fold cross validation
-              </label>
-            </details>
-
-            <button className="btn btn-primary btn-validation">Train quick model</button>
-          </form>
+          <QuickModelForm
+            projectSlug={projectName || ''}
+            currentScheme={currentScheme || ''}
+            kindScheme={kindScheme}
+            baseQuickModels={baseQuickModels}
+            features={features}
+            availableLabels={availableLabels}
+            setDisplayNewModel={setDisplayNewModel}
+            setDisplayNewFeature={setDisplayNewFeature}
+          />
         </Modal.Body>
       </Modal>
       <Modal
