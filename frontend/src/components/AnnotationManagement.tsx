@@ -569,11 +569,13 @@ export const AnnotationManagement: FC = () => {
           <Modal.Title>Current projection</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <DisplayProjection
-            projectName={projectName}
-            currentScheme={currentScheme}
-            elementId={elementId}
-          />
+          <div className="horizontal center" style={{ overflowY: 'scroll' }}>
+            <DisplayProjection
+              projectName={projectName}
+              currentScheme={currentScheme}
+              elementId={elementId}
+            />
+          </div>
         </Modal.Body>
       </Modal>
       <Modal show={showDisplayConfig} onHide={handleCloseConfig} size="xl" id="config-modal">

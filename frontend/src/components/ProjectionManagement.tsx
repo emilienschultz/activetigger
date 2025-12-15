@@ -223,7 +223,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
   const [showParameters, setShowParameters] = useState<boolean>(false);
   return (
     <>
-      {/* NOTE: Axel: This page is broken //FIXME */}
       {!isComputing ? (
         <button onClick={() => setShowComputeNewProjection(true)} className="btn-primary-action">
           <FaPlusCircle size={20} className="me-1" /> Compute new projection
@@ -255,9 +254,9 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
               labelColorMapping={labelColorMapping}
             />
 
-            <div style={{ flex: '1 1 auto' }}>
+            <div style={{ flex: '1 1 200px' }}>
               {selectedElement ? (
-                <div style={{ padding: '15px' }}>
+                <div style={{ width: '100%', padding: '15px' }}>
                   <a
                     className="badge"
                     onClick={() =>
