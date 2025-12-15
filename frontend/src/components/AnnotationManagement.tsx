@@ -31,6 +31,7 @@ import { TagDisplayParameters } from '../components/TagDisplayParameters';
 import { TextClassificationPanel } from '../components/TextClassificationPanel';
 import { TextSpanPanel } from '../components/TextSpanPanel';
 import { useNotifications } from '../core/notifications';
+import { isValidRegex } from '../core/utils';
 import { DisplayProjection } from './vizualisation/DisplayProjection';
 
 export const AnnotationManagement: FC = () => {
@@ -206,14 +207,6 @@ export const AnnotationManagement: FC = () => {
     });
   };
 
-  const isValidRegex = (pattern: string) => {
-    try {
-      new RegExp(pattern);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  };
   const highlightTextRaw = [selectionConfig.filter, ...displayConfig.highlightText.split('\n')];
   const highlightText = highlightTextRaw.filter(
     (text): text is string => typeof text === 'string' && text.trim() !== '',
@@ -422,37 +415,32 @@ export const AnnotationManagement: FC = () => {
           </div>
         }
       </div>
-      {kindScheme !== 'span' ? (
+      {/**
+       *  ANNOTATION BLOCK
+       * */}
+      {elementId === 'noelement' ? (
+        <div className="alert horizontal center">
+          <div>
+            No element available
+            <button className="btn-primary-action" onClick={refetchElement}>
+              <LuRefreshCw size={20} /> Get element
+            </button>
+          </div>
+        </div>
+      ) : kindScheme !== 'span' ? (
         <>
-          {elementId === 'noelement' && (
-            <div className="alert horizontal center">
-              <div>
-                No element available
-                <button className="btn-primary-action" onClick={refetchElement}>
-                  <LuRefreshCw size={20} /> Get element
-                </button>
-              </div>
-            </div>
-          )}
-          {!isValidRegex(selectionConfig.filter || '') && (
-            <div className="horizontal center">
-              <span className="badge danger">Regex not valid</span>
-            </div>
-          )}
-          {elementId !== 'noelement' && (
-            <TextClassificationPanel
-              element={element as ElementOutModel}
-              displayConfig={displayConfig}
-              textInFrame={textInFrame}
-              textOutFrame={textOutFrame}
-              validHighlightText={validHighlightText}
-              elementId={elementId as string}
-              lastTag={lastTag as string}
-              phase={phase}
-              frameRef={frameRef as unknown as HTMLDivElement}
-              postAnnotation={postAnnotation}
-            />
-          )}
+          <TextClassificationPanel
+            element={element as ElementOutModel}
+            displayConfig={displayConfig}
+            textInFrame={textInFrame}
+            textOutFrame={textOutFrame}
+            validHighlightText={validHighlightText}
+            elementId={elementId as string}
+            lastTag={lastTag as string}
+            phase={phase}
+            frameRef={frameRef as unknown as HTMLDivElement}
+            postAnnotation={postAnnotation}
+          />
         </>
       ) : (
         <>
