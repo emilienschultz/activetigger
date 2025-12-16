@@ -960,7 +960,7 @@ export function useGetQuickModel(
 
   const getQuickModel = useAsyncMemo(async () => {
     if (name && project_slug) {
-      const res = await api.GET('/models/quickmodel', {
+      const res = await api.GET('/models/quick', {
         params: {
           query: {
             project_slug: project_slug,

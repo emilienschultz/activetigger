@@ -1,4 +1,3 @@
-import io
 from typing import Annotated
 
 import pandas as pd  # type: ignore[import]
@@ -38,6 +37,7 @@ async def train_quickmodel(
     """
     Compute quickmodel
     """
+    test_rights(ProjectAction.ADD, current_user.username, project.name)
     try:
         project.train_quickmodel(quickmodel, current_user.username)
         orchestrator.log_action(
@@ -57,6 +57,7 @@ async def retrain_quickmodel(
     """
     Retrain quickmodel
     """
+    test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
         project.retrain_quickmodel(name, scheme, current_user.username)
         orchestrator.log_action(current_user.username, f"RETRAIN SIMPLE MODEL {name}", project.name)
@@ -73,8 +74,8 @@ async def delete_quickmodel(
     """
     Delete quickmodel
     """
+    test_rights(ProjectAction.DELETE, current_user.username, project.name)
     try:
-        test_rights(ProjectAction.DELETE, current_user.username, project.name)
         project.quickmodels.delete(name)
         orchestrator.log_action(
             current_user.username, f"DELETE SIMPLE MODEL + FEATURES: {name}", project.name
@@ -105,7 +106,7 @@ async def save_bert(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/models/quickmodel", dependencies=[Depends(verified_user)])
+@router.get("/models/quick", dependencies=[Depends(verified_user)])
 async def get_quickmodel(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
@@ -114,40 +115,27 @@ async def get_quickmodel(
     """
     Get available quickmodel by a name
     """
+    test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
         sm = project.quickmodels.get(name)
-        # AM : transition measure, #TODELETE
-        if "balance_classes" in sm.dict():
-            return QuickModelOutModel(
-                name=sm.name,
-                model=sm.model_type,
-                params=sm.model_params,
-                features=sm.features,
-                statistics_train=sm.statistics_train,
-                statistics_test=sm.statistics_test,
-                statistics_cv10=sm.statistics_cv10,
-                balance_classes=sm.balance_classes,
-                scheme=sm.scheme,
-                username=sm.user,
-            )
-        else:
-            return QuickModelOutModel(
-                name=sm.name,
-                model=sm.model_type,
-                params=sm.model_params,
-                features=sm.features,
-                statistics_train=sm.statistics_train,
-                statistics_test=sm.statistics_test,
-                statistics_cv10=sm.statistics_cv10,
-                scheme=sm.scheme,
-                username=sm.user,
-            )
+        return QuickModelOutModel(
+            name=sm.name,
+            model=sm.model_type,
+            params=sm.model_params,
+            features=sm.features,
+            statistics_train=sm.statistics_train,
+            statistics_test=sm.statistics_test,
+            statistics_cv10=sm.statistics_cv10,
+            balance_classes=sm.balance_classes,
+            scheme=sm.scheme,
+            username=sm.user,
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/models/information", dependencies=[Depends(verified_user)])
-async def get_bert(
+async def get_model_information(
     project: Annotated[Project, Depends(get_project)], name: str, kind: str
 ) -> ModelInformationsModel:
     """
@@ -242,14 +230,10 @@ async def predict(
                 col_label = None
             # case the prediction is done on annotable data
             else:
-                if datasets is None:
-                    raise Exception("Datasets variable should be defined for annotable dataset")
                 df = project.schemes.get_scheme(
                     scheme=scheme, complete=True, datasets=datasets, id_external=True
                 )
                 col_label = "labels"
-            print("STARTING PREDICTION BERT MODEL")
-            print(df.head())
             project.languagemodels.start_predicting_process(
                 project_slug=project.name,
                 name=model_name,
@@ -289,7 +273,7 @@ async def predict(
                 cols_features=cols_features,
                 col_label="labels",
                 statistics=datasets,
-                col_text="text",  # TODO : fx bug
+                col_text="text",
             )
 
         orchestrator.log_action(
@@ -309,7 +293,6 @@ async def post_bert(
 ) -> None:
     """
     Compute bertmodel
-    TODO : move the methods to specific class
     """
     test_rights(ProjectAction.ADD, current_user.username, project.name)
     try:
@@ -333,6 +316,7 @@ async def delete_bert(
 ) -> None:
     """
     Delete trained bert model
+    # TODO : check the replace
     """
     test_rights(ProjectAction.DELETE, current_user.username, project.name)
     try:
