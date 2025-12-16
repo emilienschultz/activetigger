@@ -122,25 +122,30 @@ class Schemes:
         """
         Get complete current label for a scheme
         Use the cache if possible
+
+        TODO : replace the index structure by an index/corpus structure to replace the dataset information
+
         """
 
         df = self.cache.get(scheme)
         # if no cache, get from database
         if df is None:
             # complete index of the current element
-            idx = self.data.train.index
-            if self.data.valid is not None:
-                idx = idx.append(self.data.valid.index)
-            if self.data.test is not None:
-                idx = idx.append(self.data.test.index)
-            df = pd.DataFrame(index=idx)
+            # idx = self.data.train.index
+            # if self.data.valid is not None:
+            #     idx = idx.append(self.data.valid.index)
+            # if self.data.test is not None:
+            #     idx = idx.append(self.data.test.index)
+            # df = pd.DataFrame(index=idx)
+            df = self.data.get_datasets()
 
             # annotations from the database
             results = self.projects_service.get_scheme_elements(
                 self.project_slug, scheme, ["train", "test", "valid"]
             )
             results_df = pd.DataFrame(
-                results, columns=["id", "dataset", "labels", "user", "timestamp", "comment"]
+                results,
+                columns=["id", "dataset_annotation", "labels", "user", "timestamp", "comment"],
             ).set_index("id")
             df = df.join(results_df, how="left")
             self.cache.put(scheme, df)

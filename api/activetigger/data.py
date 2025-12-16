@@ -46,8 +46,17 @@ class Data:
             raise FileNotFoundError(f"Test data file not found: {path_test}")
 
         self.train = pd.read_parquet(path_train)
-        self.valid = pd.read_parquet(path_valid) if path_valid else None
-        self.test = pd.read_parquet(path_test) if path_test else None
+        self.train["dataset"] = "train"
+        if path_valid is not None:
+            self.valid = pd.read_parquet(path_valid)
+            self.valid["dataset"] = "valid"
+        else:
+            self.valid = None
+        if path_test is not None:
+            self.test = pd.read_parquet(path_test)
+            self.test["dataset"] = "test"
+        else:
+            self.test = None
         self.index = None
 
     def check_format(self, filename: str) -> bool:
@@ -94,3 +103,15 @@ class Data:
         Get the external ID for a given internal element ID
         """
         return str(self.get_full_id().loc[element_id, "id_external"])
+
+    def get_datasets(self) -> DataFrame:
+        """
+        Get the list of available datasets
+        """
+        corpus = [self.train[["dataset"]]]
+        if self.valid is not None:
+            corpus.append(self.valid[["dataset"]])
+        if self.test is not None:
+            corpus.append(self.test[["dataset"]])
+        df = pd.concat(corpus)
+        return df
