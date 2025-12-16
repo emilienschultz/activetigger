@@ -16,11 +16,14 @@ class Data:
     path_project: Path
     path_data_all: Path
     path_datasets: Path
+    path_train: Path
+    path_valid: Path
+    path_test: Path
+    index: DataFrame
     train: DataFrame
     valid: DataFrame | None
     test: DataFrame | None
     formats_supported = [".csv", ".parquet", ".xlsx"]
-    index: DataFrame | None = None
 
     def __init__(
         self,
@@ -28,36 +31,69 @@ class Data:
         path_data_all: Path,
         path_features: Path,
         path_train: Path,
-        path_valid: Path | None,
-        path_test: Path | None,
+        path_valid: Path,
+        path_test: Path,
     ):
+        """
+        Initialize data object
+        """
         self.path_project = path_project
-        self.path_data_all = path_data_all
-        self.path_features = path_features
         self.path_datasets = self.path_project.joinpath("data")
-
         if not self.path_datasets.exists():
             self.path_datasets.mkdir(parents=True, exist_ok=True)
         if not path_train.exists():
             raise FileNotFoundError(f"Training data file not found: {path_train}")
-        if path_valid and not path_valid.exists():
-            raise FileNotFoundError(f"Validation data file not found: {path_valid}")
-        if path_test and not path_test.exists():
-            raise FileNotFoundError(f"Test data file not found: {path_test}")
 
-        self.train = pd.read_parquet(path_train)
-        self.train["dataset"] = "train"
-        if path_valid is not None:
-            self.valid = pd.read_parquet(path_valid)
+        self.path_train = path_train
+        self.path_valid = path_valid
+        self.path_test = path_test
+        self.path_data_all = path_data_all
+        self.path_features = path_features
+        self.train = DataFrame()
+        self.index = DataFrame()
+        self.valid = None
+        self.test = None
+        self.load_dataset("all")
+
+    def load_dataset(self, dataset: str):
+        """
+        Reload dataset in the memory
+        """
+        if dataset == "train":
+            self.train = pd.read_parquet(self.path_train)
+            self.train["dataset"] = "train"
+        elif dataset == "valid":
+            self.valid = pd.read_parquet(self.path_valid)
             self.valid["dataset"] = "valid"
-        else:
-            self.valid = None
-        if path_test is not None:
-            self.test = pd.read_parquet(path_test)
+        elif dataset == "test":
+            self.test = pd.read_parquet(self.path_test)
             self.test["dataset"] = "test"
+        elif dataset == "all":
+            self.train = pd.read_parquet(self.path_train)
+            self.train["dataset"] = "train"
+            if self.path_valid.exists():
+                self.valid = pd.read_parquet(self.path_valid)
+                self.valid["dataset"] = "valid"
+            if self.path_test.exists():
+                self.test = pd.read_parquet(self.path_test)
+                self.test["dataset"] = "test"
         else:
-            self.test = None
-        self.index = None
+            raise ValueError(f"Unknown dataset: {dataset}")
+
+        # update the general index of annotable
+        self.index = self.get_index()
+
+    def get_index(self) -> DataFrame:
+        """
+        Get the list of available datasets
+        """
+        corpus = [self.train[["dataset"]]]
+        if self.valid is not None:
+            corpus.append(self.valid[["dataset"]])
+        if self.test is not None:
+            corpus.append(self.test[["dataset"]])
+        df = pd.concat(corpus)
+        return df
 
     def check_format(self, filename: str) -> bool:
         """
@@ -103,15 +139,3 @@ class Data:
         Get the external ID for a given internal element ID
         """
         return str(self.get_full_id().loc[element_id, "id_external"])
-
-    def get_datasets(self) -> DataFrame:
-        """
-        Get the list of available datasets
-        """
-        corpus = [self.train[["dataset"]]]
-        if self.valid is not None:
-            corpus.append(self.valid[["dataset"]])
-        if self.test is not None:
-            corpus.append(self.test[["dataset"]])
-        df = pd.concat(corpus)
-        return df

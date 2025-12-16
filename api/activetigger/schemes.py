@@ -130,15 +130,6 @@ class Schemes:
         df = self.cache.get(scheme)
         # if no cache, get from database
         if df is None:
-            # complete index of the current element
-            # idx = self.data.train.index
-            # if self.data.valid is not None:
-            #     idx = idx.append(self.data.valid.index)
-            # if self.data.test is not None:
-            #     idx = idx.append(self.data.test.index)
-            # df = pd.DataFrame(index=idx)
-            df = self.data.get_datasets()
-
             # annotations from the database
             results = self.projects_service.get_scheme_elements(
                 self.project_slug, scheme, ["train", "test", "valid"]
@@ -147,7 +138,8 @@ class Schemes:
                 results,
                 columns=["id", "dataset_annotation", "labels", "user", "timestamp", "comment"],
             ).set_index("id")
-            df = df.join(results_df, how="left")
+            # join the general index with the scheme data
+            df = self.data.index.join(results_df, how="left")
             self.cache.put(scheme, df)
         return df
 

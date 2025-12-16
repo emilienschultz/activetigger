@@ -288,8 +288,8 @@ class Project:
             self.params.dir.joinpath(config.data_all),
             self.params.dir.joinpath(config.features_file),
             self.params.dir.joinpath(config.train_file),
-            self.params.dir.joinpath(config.valid_file) if self.params.valid else None,
-            self.params.dir.joinpath(config.test_file) if self.params.test else None,
+            self.params.dir.joinpath(config.valid_file),
+            self.params.dir.joinpath(config.test_file),
         )
 
         # create specific management objets
@@ -461,12 +461,12 @@ class Project:
         # write the dataset
         if dataset == "test":
             df[["text"]].to_parquet(self.params.dir.joinpath(config.test_file))
-            self.data.test = df[["text"]]
             self.params.test = True
+            self.data.load_dataset("test")
         else:
             df[["text"]].to_parquet(self.params.dir.joinpath(config.valid_file))
-            self.data.valid = df[["text"]]
             self.params.valid = True
+            self.data.load_dataset("valid")
 
         # update the database
         self.db_manager.projects_service.update_project(
