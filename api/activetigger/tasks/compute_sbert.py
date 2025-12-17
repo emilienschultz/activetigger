@@ -53,11 +53,9 @@ class ComputeSbert(BaseTask):
                 self.model, trust_remote_code=True
             ).max_position_embeddings
         except Exception:
-            # model_max_length = np.nan
+            print("Cannot retrieve model max length, fallback to user value")
             model_max_length = self.max_tokens
-            # raise ValueError(
-            #     (f"Could not retrieve model's max length. Max length {self.max_tokens} is used.")
-            # )
+
         return model_max_length
 
     def __call__(self) -> DataFrame:

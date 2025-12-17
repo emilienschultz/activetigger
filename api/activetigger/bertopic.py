@@ -51,10 +51,10 @@ class Bertopic:
         self.available_models = [
             "jinaai/jina-embeddings-v3",
             "Qwen/Qwen3-Embedding-0.6B",
-            "multi-qa-mpnet-base-dot-v1",
+            "sentence-transformers/multi-qa-mpnet-base-dot-v1",
             "Alibaba-NLP/gte-multilingual-base",
-            "all-mpnet-base-v2",
-            "all-MiniLM-L6-v2",
+            "sentence-transformers/all-mpnet-base-v2",
+            "sentence-transformers/all-MiniLM-L6-v2",
             "paraphrase-multilingual-mpnet-base-v2",
         ]
         self.models_service = db_manager.language_models_service
