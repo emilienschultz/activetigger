@@ -67,7 +67,7 @@ export const BertopicForm: FC<BertopicCreationFormProps> = ({
           ))}
         </select>
         <label htmlFor="umap_n_neighbors">
-          Number of neighnors (dimension reduction parameter)
+          Number of neighbors (dimension reduction parameter)
           <a className="umap_n_neighbors">
             <HiOutlineQuestionMarkCircle />
           </a>

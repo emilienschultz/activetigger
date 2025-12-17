@@ -55,7 +55,7 @@ class Bertopic:
             "Alibaba-NLP/gte-multilingual-base",
             "sentence-transformers/all-mpnet-base-v2",
             "sentence-transformers/all-MiniLM-L6-v2",
-            "paraphrase-multilingual-mpnet-base-v2",
+            "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
         ]
         self.models_service = db_manager.language_models_service
 

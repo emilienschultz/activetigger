@@ -16,9 +16,9 @@ import torch
 from pandas import DataFrame
 from torch import nn
 from transformers import (  # type: ignore[import]  # type: ignore[import]
+    AutoConfig,
     AutoModelForSequenceClassification,
     AutoTokenizer,
-    AutoConfig,
     Trainer,
     TrainerCallback,
     TrainerControl,
@@ -140,7 +140,7 @@ class TrainBert(BaseTask):
         unique_id: Optional[str] = None,
         loss: Optional[str] = "cross_entropy",
         max_length: int = 512,
-        auto_max_length : bool = False,
+        auto_max_length: bool = False,
         **kwargs,
     ):
         self.path = path
@@ -160,17 +160,15 @@ class TrainBert(BaseTask):
         self.auto_max_length = auto_max_length
 
     def retrieve_model_max_length(self) -> int:
-        try: 
-            model_max_length = (AutoConfig.
-                from_pretrained(self.base_model, trust_remote_code=True)
-                .max_position_embeddings
-            )
+        try:
+            model_max_length = AutoConfig.from_pretrained(
+                self.base_model, trust_remote_code=True
+            ).max_position_embeddings
         except Exception:
             model_max_length = np.nan
-            raise ValueError((
-                f"Could not retrieve model's max length. Max length "
-                f"{self.max_length} is used."
-            ))
+            raise ValueError(
+                (f"Could not retrieve model's max length. Max length {self.max_length} is used.")
+            )
         return model_max_length
 
     def __call__(self) -> None:
@@ -228,35 +226,29 @@ class TrainBert(BaseTask):
 
         # if auto_max_length set max_length to the maximum length of tokenized sentences
         # Tokenize the text column
-        def length_after_tokenizing(text : str):
+        def length_after_tokenizing(text: str):
             try:
                 return len(tokenizer(text).input_ids)
             except:
                 return np.nan
+
         if self.auto_max_length:
             self.max_length = int(
-                self.df
-                .to_pandas()
-                ["text"]
-                .apply(length_after_tokenizing)
-                .dropna()
-                .max()
+                self.df.to_pandas()["text"].apply(length_after_tokenizing).dropna().max()
             )
 
         # cap max_length
-        self.max_length = min(self.max_length,self.retrieve_model_max_length())
+        self.max_length = min(self.max_length, self.retrieve_model_max_length())
         # evaluate the proportion of elements truncated
         percentage_truncated = int(
-                100 * 
-                self.df
-                .to_pandas()
-                ["text"]
-                .apply(length_after_tokenizing)
-                .dropna()
-                .apply(lambda x : x > self.max_length)
-                .mean()
-            )
-        
+            100
+            * self.df.to_pandas()["text"]
+            .apply(length_after_tokenizing)
+            .dropna()
+            .apply(lambda x: x > self.max_length)
+            .mean()
+        )
+
         if self.params.adapt:
             self.df = self.df.map(
                 lambda e: tokenizer(
@@ -398,16 +390,16 @@ class TrainBert(BaseTask):
 
             # compute metrics and write
             metrics_train = get_metrics(
-                Y_true = train["true_label"], 
-                Y_pred = train["predicted_label"], 
-                texts = train["text"], 
-                labels = labels
+                Y_true=train["true_label"],
+                Y_pred=train["predicted_label"],
+                texts=train["text"],
+                labels=labels,
             )
             metrics_test = get_metrics(
-                Y_true = test["true_label"], 
-                Y_pred = test["predicted_label"], 
-                texts = test["text"], 
-                labels = labels
+                Y_true=test["true_label"],
+                Y_pred=test["predicted_label"],
+                texts=test["text"],
+                labels=labels,
             )
             with open(str(current_path.joinpath("metrics_training.json")), "w") as f:
                 json.dump(
