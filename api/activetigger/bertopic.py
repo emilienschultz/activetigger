@@ -50,6 +50,7 @@ class Bertopic:
         self.features = features
         self.available_models = [
             "jinaai/jina-embeddings-v3",
+            "Qwen/Qwen3-Embedding-0.6B",
             "multi-qa-mpnet-base-dot-v1",
             "Alibaba-NLP/gte-multilingual-base",
             "all-mpnet-base-v2",

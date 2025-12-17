@@ -82,7 +82,7 @@ export const SelectionManagement: FC<SelectionManagementProps> = ({
 
   return (
     // NOTE: Axel: Not much refactor cause more is coming
-    <>
+    <div className="d-flex align-items-center justify-content-between">
       <div>
         <label className="label-small-gray">Dataset</label>
         <select
@@ -233,6 +233,6 @@ export const SelectionManagement: FC<SelectionManagementProps> = ({
           A frame is locked, go to projection to change
         </Tooltip>
       </div>
-    </>
+    </div>
   );
 };
