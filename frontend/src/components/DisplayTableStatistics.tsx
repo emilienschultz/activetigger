@@ -54,11 +54,11 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
     return '';
   };
 
-  const limitLabelSize = (label: string, orientation: string) => {
+  const limitLabelSize = (label: string, type: string) => {
     let maxLength = 100;
-    if (orientation == 'vertical') {
+    if (type == 'col') {
       maxLength = widthWindow > 1000 ? 6 : 4;
-    } else if (orientation === 'horizontal') {
+    } else if (type === 'row') {
       maxLength = widthWindow > 1000 ? 15 : 13;
     }
 
@@ -93,7 +93,7 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
                       key={label}
                       title={label}
                     >
-                      {limitLabelSize(label, 'horizontal')}
+                      {limitLabelSize(label, 'row')}
                     </div>
                   ))}
                 </div>
@@ -120,7 +120,7 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
                       key={label}
                       title={label}
                     >
-                      {limitLabelSize(label, 'vertical')}
+                      {limitLabelSize(label, 'col')}
                     </div>
                   ))}
                 </div>
@@ -151,8 +151,8 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
                   </div>
                 </div>
                 <div className="row">
-                  <div className="table-cell">{limitLabelSize('Recall', 'vertical')}</div>
-                  <div className="table-cell">{limitLabelSize('F1', 'vertical')}</div>
+                  <div className="table-cell">{limitLabelSize('Recall', 'col')}</div>
+                  <div className="table-cell">{limitLabelSize('F1', 'col')}</div>
                 </div>
                 {table.data.map((_, rowIndex) => (
                   <div className="row" key={rowIndex}>
@@ -173,7 +173,7 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
                       key={label}
                       title={label}
                     >
-                      {label !== 'Total' ? limitLabelSize(label, 'horizontal') : ''}
+                      {label !== 'Total' ? limitLabelSize(label, 'row') : ''}
                     </div>
                   ))}
                 </div>
@@ -187,11 +187,9 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
             <div id="horizontal-labels-container" style={{ height: '60px' }}>
               <div style={{ height: '60px' }}>
                 <div className="table-cell label-column-left">
-                  {limitLabelSize('Precision', 'horizontal')}
+                  {limitLabelSize('Precision', 'row')}
                 </div>
-                <div className="table-cell label-column-left">
-                  {limitLabelSize('F1', 'horizontal')}
-                </div>
+                <div className="table-cell label-column-left">{limitLabelSize('F1', 'row')}</div>
                 <div className="table-cell label-column-left"></div>
               </div>
             </div>
@@ -213,7 +211,7 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
               <div className="row">
                 {table.columns.map((col, colIndex) => (
                   <div key={colIndex} className="table-cell label-name recall" title={col}>
-                    {col !== 'Total' ? limitLabelSize(col, 'vertical') : ''}
+                    {col !== 'Total' ? limitLabelSize(col, 'col') : ''}
                   </div>
                 ))}
               </div>
