@@ -33,10 +33,13 @@ export const CurrentProjectState: FC = () => {
 
   // reset context if project change
   useEffect(() => {
-    if (projectName != appContext.currentProject?.params.project_slug) {
+    if (
+      appContext.currentProject &&
+      projectName !== appContext.currentProject.params.project_slug
+    ) {
       resetContext();
     }
-  }, [projectName, appContext.currentProject?.params.project_slug, resetContext, setAppContext]);
+  }, [projectName, appContext.currentProject, resetContext]);
 
   // update isComputing context value
   useEffect(() => {
