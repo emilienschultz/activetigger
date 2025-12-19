@@ -5,8 +5,8 @@ import { useParams } from 'react-router-dom';
 import { useAppContext } from '../core/context';
 
 import { useLocation } from 'react-router-dom';
-import { AnnotationDisagreementManagement } from '../components/AnnotationDisagreementManagement';
-import { AnnotationManagement } from '../components/AnnotationManagement';
+import { AnnotationDisagreementManagement } from '../components/Annotation/AnnotationDisagreementManagement';
+import { AnnotationManagement } from '../components/Annotation/AnnotationManagement';
 import { ProjectPageLayout } from '../components/layout/ProjectPageLayout';
 import { SchemesComparisonManagement } from '../components/SchemesComparisonManagement';
 

@@ -1,6 +1,6 @@
 import { FC, useCallback, useEffect, useState } from 'react';
 import { IoMdSkipForward } from 'react-icons/io';
-import { AppContextValue } from '../core/context';
+import { AppContextValue } from '../../core/context';
 
 // This component is used to skip the current element in the annotation session
 
@@ -27,7 +27,7 @@ export const ForwardButton: FC<ForwardButtonProps> = ({
         activeElement?.tagName === 'SELECT';
       if (isFormField) return;
 
-      if (ev.code === 'KeyP') {
+      if (ev.code === 'KeyN') {
         setAppContext((prev) => ({ ...prev, history: [...prev.history, elementId] }));
         setShouldRefetch(true);
       }

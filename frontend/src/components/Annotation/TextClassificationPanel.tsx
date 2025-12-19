@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import Highlighter from 'react-highlight-words';
-import { DisplayConfig, ElementOutModel } from '../types';
+import { DisplayConfig, ElementOutModel } from '../../types';
 
 import { FC, LegacyRef } from 'react';
 import { Tooltip } from 'react-tooltip';
@@ -15,7 +15,6 @@ interface ClassificationPanelProps {
   lastTag: string;
   phase: string;
   frameRef: HTMLDivElement;
-  postAnnotation: (label: string, elementId: string) => void;
 }
 
 export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
@@ -25,39 +24,21 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
   textOutFrame,
   validHighlightText,
   elementId,
-  lastTag,
+
   phase,
   frameRef,
 }) => {
-  // const displayPrediction = (element: ElementOutModel) => {
-  //   const proba = element?.predict.proba ? element.predict.proba.toFixed(2) : 'NA';
-  //   const entropy = element?.predict.entropy ? element.predict.entropy.toFixed(2) : 'NA';
-  //   return (
-  //     <div>
-  //       Predicted : {element?.predict.label} (p:{proba}/e:{entropy})
-  //     </div>
-  //   );
-  // };
-
   return (
     <>
       <div
         className="annotation-frame"
-        style={{ height: `${displayConfig.frameSize}vh` }}
+        style={{ minHeight: `${displayConfig.frameSize}vh`, height: '100%' }}
         ref={frameRef as unknown as LegacyRef<HTMLDivElement>}
       >
         <motion.div
           animate={elementId ? { backgroundColor: ['#ea6b1f70', '#ffffff00'] } : {}}
           transition={{ duration: 1 }}
         >
-          {lastTag && (
-            <div>
-              <span className="badge info  ">
-                {displayConfig.displayAnnotation ? `Last tag: ${lastTag}` : 'Already annotated'}
-              </span>
-            </div>
-          )}
-
           <Highlighter
             highlightClassName="Search"
             searchWords={validHighlightText}
@@ -118,7 +99,7 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
             <ul>
               {Object.entries(element?.context || { None: 'None' }).map(([k, v]) => {
                 return (
-                  <li>
+                  <li key={k}>
                     {k}: {v as string}
                   </li>
                 );
@@ -134,9 +115,9 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
             {/* History : {JSON.stringify(element?.history)} */}
             History :{' '}
             <ul>
-              {((element?.history as string[]) || []).map((h) => {
+              {((element?.history as string[]) || []).map((h, i) => {
                 return (
-                  <li>
+                  <li key={i}>
                     {h[0]} — {h[2]}
                   </li>
                 );
