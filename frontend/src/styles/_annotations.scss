@@ -42,9 +42,31 @@
   line-height: 1.6;
 
   padding: 16px;
-  max-width: 800px;
+  max-width: 50vw;
 
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  .element-text {
+    flex-grow: 1;
+    overflow-y: auto;
+  }
+  dl {
+    display: flex;
+    flex-wrap: wrap;
+    row-gap: map.get($spacers, 0);
+    column-gap: map.get($spacers, 3);
+    .dl-item {
+      * {
+        margin: 0;
+      }
+      @extend .gap-1;
+      display: flex;
+      dt:after {
+        content: ':';
+      }
+    }
+  }
 }
 
 .text-out-context {
