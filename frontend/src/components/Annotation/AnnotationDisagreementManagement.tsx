@@ -1,9 +1,8 @@
 import { FC, useEffect, useState } from 'react';
-
-import { useReconciliate, useTableDisagreement } from '../core/api';
-
 import Select from 'react-select';
-import { useAppContext } from '../core/context';
+
+import { useReconciliate, useTableDisagreement } from '../../core/api';
+import { useAppContext } from '../../core/context';
 
 /*
  * Manage disagreement in annotations

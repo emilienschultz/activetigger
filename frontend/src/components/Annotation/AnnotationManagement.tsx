@@ -1,11 +1,7 @@
 import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FaPencilAlt } from 'react-icons/fa';
 import { FiRefreshCcw } from 'react-icons/fi';
 import { LuRefreshCw } from 'react-icons/lu';
-import { PiEraser } from 'react-icons/pi';
 import { useNavigate, useParams } from 'react-router-dom';
-import { BackButton } from '../components/BackButton';
-import { ForwardButton } from '../components/ForwardButton';
 import {
   useAddAnnotation,
   useGetElementById,
@@ -13,23 +9,24 @@ import {
   useRetrainQuickModel,
   useStatistics,
   useTrainQuickModel,
-} from '../core/api';
-import { useAppContext } from '../core/context';
-import { ElementOutModel } from '../types';
+} from '../../core/api';
+import { useAppContext } from '../../core/context';
+import { ElementOutModel } from '../../types';
 
 import { Modal } from 'react-bootstrap';
 import { FaMapMarkedAlt } from 'react-icons/fa';
 import { MdDisplaySettings } from 'react-icons/md';
-import { ActiveLearningManagement } from '../components/ActiveLearningManagement';
-import { MulticlassInput } from '../components/MulticlassInput';
-import { MultilabelInput } from '../components/MultilabelInput';
-import { TagDisplayParameters } from '../components/TagDisplayParameters';
-import { TextClassificationPanel } from '../components/TextClassificationPanel';
-import { TextSpanPanel } from '../components/TextSpanPanel';
-import { useNotifications } from '../core/notifications';
-import { isValidRegex } from '../core/utils';
+import { useNotifications } from '../../core/notifications';
+import { isValidRegex } from '../../core/utils';
+import { ActiveLearningManagement } from '../ActiveLearningManagement';
+import { TagDisplayParameters } from '../TagDisplayParameters';
+import { DisplayProjection } from '../vizualisation/DisplayProjection';
+import { AnnotationHistoryList } from './AnnotationHistoryList';
 import { AnnotationModeForm } from './AnnotationMode';
-import { DisplayProjection } from './vizualisation/DisplayProjection';
+import { MulticlassInput } from './MulticlassInput';
+import { MultilabelInput } from './MultilabelInput';
+import { TextClassificationPanel } from './TextClassificationPanel';
+import { TextSpanPanel } from './TextSpanPanel';
 
 export const AnnotationManagement: FC = () => {
   const { notify } = useNotifications();
@@ -51,15 +48,13 @@ export const AnnotationManagement: FC = () => {
   const navigate = useNavigate();
   const [element, setElement] = useState<ElementOutModel | null>(null); //state for the current element
   const [nSample, setNSample] = useState<number | null>(null); // specific info
-  const [displayComment, setDisplayComment] = useState(false);
-  const [comment, setComment] = useState('');
+
   const [showDisplayConfig, setShowDisplayConfig] = useState<boolean>(false);
   const [showDisplayViz, setShowDisplayViz] = useState<boolean>(false);
   const [settingChanged, setSettingChanged] = useState<boolean>(false);
   const [selectFirstModelTrained, setSelectFirstModelTrained] = useState<boolean>(false);
   const handleCloseViz = () => setShowDisplayViz(false);
   const handleCloseConfig = () => setShowDisplayConfig(false);
-  const handleCloseComment = () => setDisplayComment(false);
 
   // Reinitialize scroll in frame
   const frameRef = useRef<HTMLDivElement>(null);
@@ -125,7 +120,8 @@ export const AnnotationManagement: FC = () => {
               [res.element_id]: JSON.stringify(selectionConfig),
             },
           }));
-          navigate(`/projects/${projectName}/tag/${res.element_id}`);
+          // redirect to the next element page replacing history
+          navigate(`/projects/${projectName}/tag/${res.element_id}`, { replace: true });
         } else {
           navigate(`/projects/${projectName}/tag/noelement`);
           setElement(null);
@@ -158,24 +154,33 @@ export const AnnotationManagement: FC = () => {
     element,
   ]);
 
-  // post an annotation
+  // post/skip annotation
+  const fetchToNextAnnotation = useCallback(
+    (currentElementId: string) => {
+      //update history
+      setAppContext((prev) => ({ ...prev, history: [...prev.history, currentElementId] }));
+
+      // move to next element
+      navigate(`/projects/${projectName}/tag/`);
+    },
+    [setAppContext, navigate, projectName],
+  );
+
   const postAnnotation = useCallback(
-    (label: string | null, elementId?: string) => {
+    async (label: string | null, elementId?: string, comment?: string) => {
       if (elementId === 'noelement') return; // forbid annotation on noelement
       if (elementId) {
-        addAnnotation(elementId, label, comment, selectionHistory[elementId]).then(() =>
-          // redirect to next element by redirecting wihout any id
-          // thus the getNextElementId query will be dont after the appcontext is reloaded
-          {
-            setAppContext((prev) => ({ ...prev, history: [...prev.history, elementId] }));
-            setComment('');
-            navigate(`/projects/${projectName}/tag/`); // got to next element
-          },
-        );
+        await addAnnotation(elementId, label, comment || null, selectionHistory[elementId]);
+        const newElement = await getElementById(elementId, phase);
+        if (newElement) setElement(newElement);
+        // wait for 500ms before fetch new element to see new button state
+        setTimeout(() => {
+          fetchToNextAnnotation(elementId);
+        }, 500);
         // does not do nothing as we remount through navigate reFetchStatistics();
       }
     },
-    [setAppContext, addAnnotation, navigate, projectName, comment, selectionHistory],
+    [addAnnotation, selectionHistory, fetchToNextAnnotation, getElementById, setElement, phase],
   );
 
   const textInFrame = element?.text.slice(0, displayConfig.numberOfTokens * 4) || '';
@@ -186,7 +191,7 @@ export const AnnotationManagement: FC = () => {
       ? (element?.history[0] as string[])[0]
       : null;
 
-  const refetchElement = () => {
+  const fetchNextElement = () => {
     getNextElementId().then((res) => {
       if (res && res.n_sample) setNSample(res.n_sample);
       if (res && res.element_id) {
@@ -365,7 +370,7 @@ export const AnnotationManagement: FC = () => {
       <AnnotationModeForm
         settingChanged={settingChanged}
         setSettingChanged={setSettingChanged}
-        refetchElement={refetchElement}
+        refetchElement={fetchNextElement}
         setActiveMenu={setActiveMenu}
       />
       <div>
@@ -382,98 +387,65 @@ export const AnnotationManagement: FC = () => {
       {/**
        *  ANNOTATION BLOCK
        * */}
-      {elementId === 'noelement' ? (
-        <div className="alert horizontal center">
-          <div>
-            No element available
-            <button className="btn-primary-action" onClick={refetchElement}>
-              <LuRefreshCw size={20} /> Get element
-            </button>
-          </div>
-        </div>
-      ) : kindScheme !== 'span' ? (
-        <>
-          <TextClassificationPanel
-            element={element as ElementOutModel}
-            displayConfig={displayConfig}
-            textInFrame={textInFrame}
-            textOutFrame={textOutFrame}
-            validHighlightText={validHighlightText}
-            elementId={elementId as string}
-            lastTag={lastTag as string}
-            phase={phase}
-            frameRef={frameRef as unknown as HTMLDivElement}
-            postAnnotation={postAnnotation}
-          />
-        </>
-      ) : (
-        <>
-          <TextSpanPanel
-            elementId={elementId || 'noelement'}
-            displayConfig={displayConfig}
-            postAnnotation={postAnnotation}
-            labels={availableLabels}
-            text={element?.text as string}
-            lastTag={lastTag as string}
-          />
-        </>
-      )}
-      {/* NOTE: Axel Not too much customisation cause it's gonna be refactored soon */}
-      {elementId !== 'noelement' && (
-        <div className="horizontal center">
-          <BackButton
-            projectName={projectName || ''}
-            history={history}
-            setAppContext={setAppContext}
-          />
-
-          {kindScheme == 'multiclass' && (
-            <MulticlassInput
-              elementId={elementId || 'noelement'}
-              postAnnotation={postAnnotation}
-              labels={availableLabels}
-              phase={phase}
-              element={element as ElementOutModel}
-            />
-          )}
-          {kindScheme == 'multilabel' && (
-            <MultilabelInput
-              elementId={elementId || 'noelement'}
-              postAnnotation={postAnnotation}
-              labels={availableLabels}
-            />
-          )}
-
-          <button
-            className="transparent-background"
-            onClick={() => setDisplayComment(!displayComment)}
-            title="Add a comment"
-          >
-            <FaPencilAlt />
-          </button>
-          {
-            // erase button to remove last annotation
-            lastTag && (
-              <button
-                className="transparent-background"
-                onClick={() => {
-                  postAnnotation(null, elementId);
-                }}
-                title="Erase current tag"
-              >
-                <PiEraser />
+      <div className="d-flex flex-column flex-lg-row justify-content-center gap-3 my-3 ">
+        {elementId === 'noelement' ? (
+          <div className="alert horizontal center">
+            <div>
+              No element available
+              <button className="btn-primary-action" onClick={fetchNextElement}>
+                <LuRefreshCw size={20} /> Get element
               </button>
-            )
-          }
-          {elementId && (
-            <ForwardButton
-              setAppContext={setAppContext}
-              elementId={elementId}
-              refetchElement={refetchElement}
+            </div>
+          </div>
+        ) : kindScheme !== 'span' ? (
+          <>
+            <TextClassificationPanel
+              element={element as ElementOutModel}
+              displayConfig={displayConfig}
+              textInFrame={textInFrame}
+              textOutFrame={textOutFrame}
+              validHighlightText={validHighlightText}
+              elementId={elementId as string}
+              lastTag={lastTag as string}
+              phase={phase}
+              frameRef={frameRef as unknown as HTMLDivElement}
             />
-          )}
-        </div>
-      )}
+          </>
+        ) : (
+          <>
+            <TextSpanPanel
+              elementId={elementId || 'noelement'}
+              displayConfig={displayConfig}
+              postAnnotation={postAnnotation}
+              labels={availableLabels}
+              text={element?.text as string}
+              lastTag={lastTag as string}
+            />
+          </>
+        )}
+
+        {elementId !== 'noelement' && (
+          <>
+            {kindScheme == 'multiclass' && (
+              <MulticlassInput
+                elementId={elementId || 'noelement'}
+                postAnnotation={postAnnotation}
+                fetchToNextAnnotation={fetchToNextAnnotation}
+                labels={availableLabels}
+                phase={phase}
+                element={element as ElementOutModel}
+              />
+            )}
+            {kindScheme == 'multilabel' && (
+              <MultilabelInput
+                elementId={elementId || 'noelement'}
+                postAnnotation={postAnnotation}
+                labels={availableLabels}
+              />
+            )}
+          </>
+        )}
+      </div>
       <div className="horizontal center">
         {/* NOTE: Axel Not too much customisation cause it's gonna be refactored soon */}
         <button
@@ -503,25 +475,10 @@ export const AnnotationManagement: FC = () => {
         </button>
       </div>
 
-      <Modal show={displayComment} onHide={handleCloseComment} id="comment-modal">
-        <Modal.Header closeButton>
-          <Modal.Title>Add a comment with your annotation</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Comment"
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-          />
-        </Modal.Body>
-        <Modal.Footer>
-          <button className="btn-submit" onClick={handleCloseComment}>
-            Save
-          </button>
-        </Modal.Footer>
-      </Modal>
+      <div className="horizontal center">
+        <AnnotationHistoryList />
+      </div>
+
       <Modal show={showDisplayViz} onHide={handleCloseViz} size="xl" id="viz-modal">
         <Modal.Header closeButton>
           <Modal.Title>Current projection</Modal.Title>

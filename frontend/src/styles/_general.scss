@@ -129,16 +129,28 @@ table {
   color: $secondary;
 }
 
+.btn-annotate-predicted-action,
 .btn-annotate-action {
-  background-color: $primary;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
   color: white;
-  padding: 5px 10px;
-}
+  width: fit-content;
+  // padding: 5px 10px;
 
+  *:last-child,
+  *:first-child {
+    //icon & key stroke badge
+    flex-shrink: 0;
+  }
+}
+.btn-annotate-action {
+  @extend .btn;
+  @extend .btn-primary;
+}
 .btn-annotate-predicted-action {
-  background-color: $secondary;
-  color: white;
-  padding: 5px 10px;
+  @extend .btn;
+  @extend .btn-secondary;
 }
 
 .btn-stop-process {

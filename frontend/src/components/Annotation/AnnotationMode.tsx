@@ -8,9 +8,9 @@ import Select from 'react-select';
 import { Tooltip } from 'react-tooltip';
 
 import { keys, pickBy, sortBy } from 'lodash';
-import { useGetQuickModel } from '../core/api';
-import { useAppContext } from '../core/context';
-import { isValidRegex } from '../core/utils';
+import { useGetQuickModel } from '../../core/api';
+import { useAppContext } from '../../core/context';
+import { isValidRegex } from '../../core/utils';
 
 interface AnnotationModeFormProps {
   settingChanged: boolean;
@@ -288,7 +288,7 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
           <button
             type="submit"
             className={classNames(
-              'btn-primary-action getelement',
+              'btn-primary-action getelement d-flex align-center',
               settingChanged ? 'setting-changed' : '',
             )}
             onClick={(e) => {

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { FC, useEffect, useState } from 'react';
 import Select from 'react-select';
 import { AnnotateBlendTag, TextAnnotateBlend } from 'react-text-annotate-blend';
-import { DisplayConfig } from '../types';
+import { DisplayConfig } from '../../types';
 
 interface SpanInputProps {
   elementId: string;
