@@ -249,7 +249,7 @@ export const QuickModelForm: FC<QuickModelFormProps> = ({
         </label>
       </details>
 
-      <button className="btn btn-primary btn-validation">Train quick model</button>
+      <button className="btn-submit">Train quick model</button>
     </form>
   );
 };
