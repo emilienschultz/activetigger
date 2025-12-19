@@ -48,7 +48,7 @@ export const AnnotationHistoryList: FC = () => {
   const { history } = appContext;
 
   return (
-    <div className="horizontal center">
+    <div className="horizontal center flex-column">
       <div className="d-flex justify-content-start gap-4 w-100 mb-4 align-items-center">
         <h4 className="m-0">Annotation history</h4>
         <button
