@@ -59,11 +59,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
   const { notify } = useNotifications();
 
   const { authenticatedUser } = useAuth();
-  const { getElementById } = useGetElementById(
-    projectName || null,
-    currentScheme || null,
-    activeModel || null,
-  );
+  const { getElementById } = useGetElementById();
 
   // fetch projection data with the API (null if no model)
   const { projectionData, reFetchProjectionData } = useGetProjectionData(

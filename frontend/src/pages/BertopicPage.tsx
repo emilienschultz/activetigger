@@ -34,7 +34,7 @@ export const BertopicPage: FC = () => {
   const { downloadBertopicReport } = useDownloadBertopicReport(projectName || null);
   const availableBertopic = currentProject ? currentProject.bertopic.available : [];
   const [currentBertopic, setCurrentBertopic] = useState<string | null>(null);
-  const { getElementById } = useGetElementById(projectName || null, null, null);
+  const { getElementById } = useGetElementById();
 
   const { topics, parameters, reFetchTopics } = useGetBertopicTopics(
     projectName || null,

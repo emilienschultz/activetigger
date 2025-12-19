@@ -73,11 +73,7 @@ export const AnnotationManagement: FC = () => {
     phase,
     activeModel || null,
   );
-  const { getElementById } = useGetElementById(
-    projectName || null,
-    currentScheme || null,
-    activeModel || null,
-  );
+  const { getElementById } = useGetElementById();
 
   // hooks to manage annotation
   const { addAnnotation } = useAddAnnotation(projectName || null, currentScheme || null, phase);
