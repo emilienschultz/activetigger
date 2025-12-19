@@ -1,6 +1,7 @@
 import cx from 'classnames';
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { IoIosRadioButtonOff, IoIosRadioButtonOn } from 'react-icons/io';
+import { PiEmptyBold } from 'react-icons/pi';
 import { Tooltip } from 'react-tooltip';
 import { useAppContext } from '../../core/context';
 import { reorderLabels } from '../../core/utils';
@@ -144,7 +145,7 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
           }}
         >
           {lastAnnotation === null ? <IoIosRadioButtonOn /> : <IoIosRadioButtonOff />}
-          No tag <span className="badge hotkey">DEL</span>
+          <PiEmptyBold /> No tag <span className="badge hotkey">DEL</span>
         </button>
         {/* PREDICTION */}
         {phase == 'train' && displayConfig.displayPrediction && element?.predict.label && (
