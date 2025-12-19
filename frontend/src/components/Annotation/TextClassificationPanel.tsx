@@ -33,7 +33,7 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
     <>
       <div
         className="annotation-frame"
-        style={{ minHeight: `${displayConfig.frameSize}vh`, height: '100%' }}
+        style={{ minHeight: `${displayConfig.frameSize}vh` }}
         ref={frameRef as unknown as LegacyRef<HTMLDivElement>}
       >
         <p className="element-text">
