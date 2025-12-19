@@ -459,6 +459,7 @@ class BertopicParamsModel(BaseModel):
     embedding_kind: str = "sentence_transformers"
     embedding_model: str = "all-MiniLM-L6-v2"
     filter_text_length: int = 2
+    input_datasets: str = "train"
 
 
 class ComputeBertopicModel(BertopicParamsModel):
@@ -468,6 +469,17 @@ class ComputeBertopicModel(BertopicParamsModel):
 
     name: str
     force_compute_embeddings: bool = False
+    embedding_model: str
+    language: str|None = None
+    input_datasets: str = "train"
+    umap_n_neighbors: int = 30
+    hdbscan_min_cluster_size: int = 15
+    outlier_reduction: bool = True
+    filter_text_length: int = 50
+    umap_n_components: int = 5
+    top_n_words: int = 15
+    n_gram_range: tuple[int, int] = (1,2)
+    embedding_kind: str = "sentence_transformers"
 
 
 class GenerationAvailableModel(BaseModel):

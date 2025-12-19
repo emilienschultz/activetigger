@@ -17,6 +17,7 @@ from simplemma import lemmatize
 from sklearn.feature_extraction.text import CountVectorizer  # type: ignore[import]
 from slugify import slugify
 
+from activetigger.config import config
 from activetigger.datamodels import BertopicParamsModel
 from activetigger.tasks.base_task import BaseTask
 from activetigger.tasks.compute_sbert import ComputeSbert
@@ -185,8 +186,6 @@ class ComputeBertopic(BaseTask):
         **kwargs,
     ):
         super().__init__()
-        if not path_data.suffix == ".parquet":
-            raise ValueError("File must be a parquet file.")
         if existing_embeddings and not existing_embeddings.suffix == ".parquet":
             raise ValueError("Embeddings file must be a parquet file.")
 
@@ -197,7 +196,7 @@ class ComputeBertopic(BaseTask):
         if name is None:
             name = f"bertopic_{path_data.stem}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
         self.name = slugify(name)
-        self.file_name = slugify(path_data.stem)
+        self.input_datasets = parameters.input_datasets # train, all_sets (ie train+valid+test), complete 
         self.parameters = parameters
         self.existing_embeddings = existing_embeddings
         self.cols_embeddings = cols_embeddings
@@ -219,17 +218,37 @@ class ComputeBertopic(BaseTask):
                 raise Exception("Process interrupted by user")
 
     def __init_run_directory(self) -> tuple[str, str]:
+        def filename(action):
+            return (
+                f"bertopic_{action}_{self.input_datasets}_"
+                f"{slugify(self.parameters.embedding_model)}"
+                f".parquet"
+            )
         self.path_run.mkdir(parents=True, exist_ok=True)
-        path_embeddings = self.path_bertopic.joinpath("embeddings").joinpath(
-            f"bertopic_embeddings_{self.file_name}_{slugify(self.parameters.embedding_model)}.parquet"
+        path_embeddings = (
+            self.path_bertopic
+            .joinpath("embeddings")
+            .joinpath(filename("embeddings"))
         )
-        path_projection = self.path_run.joinpath(
-            f"bertopic_projection_{self.file_name}_{slugify(self.parameters.embedding_model)}.parquet"
+        path_projection = (
+            self.path_run
+            .joinpath(filename("projection"))
         )
         return path_embeddings, path_projection
     
     def __check_text_data(self) -> pd.DataFrame:
-        df = pd.read_parquet(self.path_data)
+        match self.input_datasets:
+            case "train":
+                df = pd.read_parquet(self.path_data.joinpath(config.train_file))
+            case "all_sets":
+                df = pd.concat(
+                    [pd.read_parquet(self.path_data.joinpath(file))
+                     for file in [config.train_file, config.test_file, config.valid_file]
+                     if self.path_data.joinpath(file).is_file()
+                     ]
+                )
+            case "complete":
+                df = pd.read_parquet(self.path_data.joinpath(config.data_all))
         if self.col_text not in df.columns:
             raise ValueError(f"Column {self.col_text} not found in the data.")
         # Set the index if col_id is provided
@@ -405,14 +424,6 @@ class ComputeBertopic(BaseTask):
             if self.parameters.outlier_reduction:
                 try:
                     print("Reducing outliers")
-                    print(
-                        "=" * 100, 
-                        len(df[self.col_text]),
-                        embeddings.shape,
-                        len(topics),
-                        "=" * 100, 
-                        sep = "\n\n"
-                    )
                     topics = topic_model.reduce_outliers(
                         documents = df[self.col_text],
                         topics = topics,
@@ -571,7 +582,6 @@ class ComputeBertopic(BaseTask):
         )
 
         # Create plotly figure for hierarchical representation
-        print("start hierarchy")
         fig_hierarchical = (
             topic_model
             .visualize_hierarchy()

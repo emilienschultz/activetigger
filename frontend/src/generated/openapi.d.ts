@@ -1188,7 +1188,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/models/quickmodel": {
+    "/models/quick": {
         parameters: {
             query?: never;
             header?: never;
@@ -1199,7 +1199,7 @@ export interface paths {
          * Get Quickmodel
          * @description Get available quickmodel by a name
          */
-        get: operations["get_quickmodel_models_quickmodel_get"];
+        get: operations["get_quickmodel_models_quick_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1216,10 +1216,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Bert
+         * Get Model Information
          * @description Get model information
          */
-        get: operations["get_bert_models_information_get"];
+        get: operations["get_model_information_models_information_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1266,7 +1266,6 @@ export interface paths {
         /**
          * Post Bert
          * @description Compute bertmodel
-         *     TODO : move the methods to specific class
          */
         post: operations["post_bert_models_bert_train_post"];
         delete?: never;
@@ -1287,6 +1286,7 @@ export interface paths {
         /**
          * Delete Bert
          * @description Delete trained bert model
+         *     # TODO : check the replace
          */
         post: operations["delete_bert_models_bert_delete_post"];
         delete?: never;
@@ -2173,17 +2173,17 @@ export interface components {
             outlier_reduction: boolean;
             /**
              * Hdbscan Min Cluster Size
-             * @default 10
+             * @default 15
              */
             hdbscan_min_cluster_size: number;
             /**
              * Umap N Neighbors
-             * @default 10
+             * @default 30
              */
             umap_n_neighbors: number;
             /**
              * Umap N Components
-             * @default 2
+             * @default 5
              */
             umap_n_components: number;
             /**
@@ -2191,14 +2191,11 @@ export interface components {
              * @default sentence_transformers
              */
             embedding_kind: string;
-            /**
-             * Embedding Model
-             * @default all-MiniLM-L6-v2
-             */
+            /** Embedding Model */
             embedding_model: string;
             /**
              * Filter Text Length
-             * @default 2
+             * @default 50
              */
             filter_text_length: number;
             /** Name */
@@ -2208,6 +2205,11 @@ export interface components {
              * @default false
              */
             force_compute_embeddings: boolean;
+            /**
+             * Input Datasets
+             * @default train
+             */
+            input_datasets: string;
         };
         /**
          * DatasetModel
@@ -3529,7 +3531,6 @@ export interface operations {
                 password: string;
                 status: string;
                 mail: string;
-                dummy?: boolean;
             };
             header?: never;
             path?: never;
@@ -5356,7 +5357,7 @@ export interface operations {
             };
         };
     };
-    get_quickmodel_models_quickmodel_get: {
+    get_quickmodel_models_quick_get: {
         parameters: {
             query: {
                 name: string;
@@ -5388,7 +5389,7 @@ export interface operations {
             };
         };
     };
-    get_bert_models_information_get: {
+    get_model_information_models_information_get: {
         parameters: {
             query: {
                 name: string;
@@ -6446,6 +6447,7 @@ export interface operations {
         parameters: {
             query?: {
                 unique_id?: string | null;
+                project_slug?: string | null;
                 kind?: string | null;
             };
             header?: never;

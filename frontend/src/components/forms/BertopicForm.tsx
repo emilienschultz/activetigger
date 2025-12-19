@@ -35,6 +35,7 @@ export const BertopicForm: FC<BertopicCreationFormProps> = ({
       embedding_model: availableModels[0],
       force_compute_embeddings: false,
       filter_text_length: 50,
+      input_datasets: 'train',
     },
   });
 
@@ -119,6 +120,19 @@ export const BertopicForm: FC<BertopicCreationFormProps> = ({
             />
             <label htmlFor="force_compute_embeddings">Force compute embeddings</label>
           </div>
+          <label htmlFor="input_datasets">Input dataset</label>
+          <select {...register('input_datasets')}>
+            {/* TODO: Add the number of element in each option */}
+            <option key="train" value="train">
+              Train
+            </option>
+            <option key="all_sets" value="all_sets">
+              All sets (train + test + valid)
+            </option>
+            <option key="complete" value="complete">
+              Complete
+            </option>
+          </select>
           <label htmlFor="filter_text_length">Filter out texts of length lower than</label>
           <input id="filter_text_length" type="number" {...register('filter_text_length')} />
           <label htmlFor="umap_n_components">

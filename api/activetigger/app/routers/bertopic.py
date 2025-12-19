@@ -3,7 +3,6 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from activetigger.app.dependencies import ProjectAction, get_project, test_rights, verified_user
-from activetigger.config import config
 from activetigger.datamodels import (
     BertopicTopicsOutModel,
     ComputeBertopicModel,
@@ -26,7 +25,7 @@ async def compute_bertopic(
     Compute BERTopic model for the project.
     """
     # Force the train dataset
-    path_data = project.params.dir.joinpath(config.train_file)  # type: ignore
+    path_data = project.params.dir  # type: ignore
     # Force the language of the project
     bertopic.language = project.params.language
     if not project.bertopic.name_available(bertopic.name):
