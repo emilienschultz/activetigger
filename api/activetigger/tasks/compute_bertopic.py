@@ -82,6 +82,7 @@ def visualize_documents(
             )
         ],
         layout={
+            "width": 900,
             "plot_bgcolor": "#FCFCFC",
             "margin": {"t": 20, "b": 40},
             "xaxis": {"zerolinecolor": "#ECECEC", "gridcolor": "#ECECEC"},
@@ -212,117 +213,177 @@ class ComputeBertopic(BaseTask):
         if self.path_run.exists():
             raise ValueError(f"Run {self.name} already exists, please chose another name.")
 
+    def __stop_process_opportunity(self):
+        if self.event is not None:
+            if self.event.is_set():
+                raise Exception("Process interrupted by user")
+
+    def __init_run_directory(self) -> tuple[str, str]:
+        self.path_run.mkdir(parents=True, exist_ok=True)
+        path_embeddings = self.path_bertopic.joinpath("embeddings").joinpath(
+            f"bertopic_embeddings_{self.file_name}_{slugify(self.parameters.embedding_model)}.parquet"
+        )
+        path_projection = self.path_run.joinpath(
+            f"bertopic_projection_{self.file_name}_{slugify(self.parameters.embedding_model)}.parquet"
+        )
+        return path_embeddings, path_projection
+    
+    def __check_text_data(self) -> pd.DataFrame:
+        df = pd.read_parquet(self.path_data)
+        if self.col_text not in df.columns:
+            raise ValueError(f"Column {self.col_text} not found in the data.")
+        # Set the index if col_id is provided
+        if self.col_id and self.col_id in df.columns:
+            df.set_index(self.col_id, inplace=True)
+        # Drop rows with a text length too small
+        criterion = df[self.col_text].apply(len) > self.parameters.filter_text_length
+        df = df[criterion]
+        print(f"Data loaded with {len(df)} rows.")
+        if len(df) < 15:
+            raise ValueError(f"Not enough elements ({len(df)}) — after "
+                f"removing elements < {self.parameters.filter_text_length}")
+        return df
+
+
+    def __check_embeddings(
+            self, 
+            path_embeddings: Path,
+            path_projection: Path, 
+            df: pd.DataFrame
+        ) -> np.ndarray:
+        # Make sure the embeddings exist ---
+        if not self.existing_embeddings and path_embeddings.exists():
+            self.existing_embeddings = path_embeddings
+        # Compute embeddings if not provided or if forced
+        if (not self.existing_embeddings) or self.force_compute_embeddings:
+            self.compute_embeddings(df, path_embeddings)
+            self.compute_projection(path_embeddings, path_projection)
+            self.existing_embeddings = path_embeddings
+        # Compute projection if does not exist
+        if not path_projection.exists():
+            self.compute_projection(self.existing_embeddings, path_projection)
+        # Copy the projection to the run directory #NOTE: AM: Why?
+        shutil.copy(path_projection, self.path_run.joinpath("projection2D.parquet"))
+
+        # Load the embeddings ---
+        self.update_progress("Loading embeddings")
+        df_embeddings = pd.read_parquet(self.existing_embeddings)
+        # Test if the embeddings & the texts have the same index
+        if not df.index.equals(df_embeddings.index) or len(df) != len(df_embeddings):
+            raise ValueError(
+                "The index of the embeddings and the texts do not match. "
+                "Please force the computation of embeddings or check your data."
+            )
+        if self.cols_embeddings and not all(
+            col in df_embeddings.columns for col in self.cols_embeddings
+        ):
+            raise ValueError("Some embeddings columns not found in the embeddings data.")
+        if self.cols_embeddings:
+            embeddings = df_embeddings[self.cols_embeddings].values
+        else:
+            embeddings = df_embeddings.values
+        return embeddings
+    
+    def __load_UMAP_HDBSCAN(self):
+        # Dimensionality reduction with UMAP
+        try:
+            umap_model = cuml.UMAP(
+                n_neighbors=self.parameters.umap_n_neighbors,
+                n_components=self.parameters.umap_n_components,
+                # min_dist=self.parameters.umap_min_dist, # Removed because 0.0 is the best value to use for clustering - Axel
+                min_dist=0.0,
+                metric="cosine",
+                random_state=RANDOM_SEED,  # for deterministic behaviour
+            )
+        except Exception as e:
+            print(f"CuML UMAP failed: {e}, using standard UMAP instead.")
+            umap_model = umap.UMAP(
+                n_neighbors=self.parameters.umap_n_neighbors,
+                n_components=self.parameters.umap_n_components,
+                # min_dist=self.parameters.umap_min_dist, # Removed because 0.0 is the best value to use for clustering - Axel
+                min_dist=0.0,
+                metric="cosine",
+                low_memory=False,
+                random_state=RANDOM_SEED,  # for deterministic behaviour
+            )
+
+        # Clustering with HDBSCAN
+        hdbscan_model = hdbscan.HDBSCAN(
+            min_cluster_size=self.parameters.hdbscan_min_cluster_size,
+            metric="euclidean",
+            prediction_data=True,
+        )
+        return umap_model, hdbscan_model
+    
+    def __load_vectorizer(self):
+        try:
+            stopwords = self.get_stopwords()
+            vectorizer_model = CountVectorizer(
+                tokenizer=CustomLemmatizer(self.parameters.language, stopwords)
+            )
+        except ValueError:
+            vectorizer_model = CountVectorizer()
+        return vectorizer_model
+
+    def __save(
+        self, 
+        df: pd.DataFrame, 
+        topic_model: BERTopic, 
+        topics : list[int], 
+        embeddings: np.ndarray,
+        path_projection: Path
+    ):
+        # Add the topics to the DataFrame
+        df["cluster"] = topics
+
+        # Save the topics and documents informations
+        topics_df: pd.DataFrame = topic_model.get_topic_info()
+        if self.parameters.outlier_reduction:
+            topics_df = topics_df.loc[topics_df.Topic != -1, :]
+            # Update the counts
+            topics_df = topics_df.set_index("Topic")
+            topics_df["Count-Bis"] = pd.Series(topics).value_counts()
+            topics_df = topics_df.reset_index()
+
+        topics_df.to_csv(self.path_run.joinpath("bertopic_topics.csv"))
+        df["cluster"].to_csv(self.path_run.joinpath("bertopic_clusters.csv"))
+        parameters = {
+            "bertopic_params": self.parameters.model_dump(),
+            "col_text": self.col_text,
+            "col_id": self.col_id,
+            "name": self.name,
+            "timestamp": self.timestamp,
+            "path_data": str(self.path_data),
+            "path_embeddings": str(self.existing_embeddings),
+            "path_projection": str(path_projection),
+        }
+        with open(self.path_run.joinpath("params.json"), "w") as f:
+            json.dump(parameters, f)
+        # Create a report
+        self.create_report(
+            topic_model=topic_model,
+            topics=topics,
+            topic_info=topics_df,
+            docs=df[self.col_text].to_list(),
+            embeddings=embeddings,
+        )
+
     def __call__(self):
         """
         Compute BERTopic model
         """
         try:
-            # Initialize the run directory
-            self.path_run.mkdir(parents=True, exist_ok=True)
+            path_embeddings, path_projection = self.__init_run_directory()
             self.update_progress("Initializing")
-
-            # Load the data from the file
-            df = pd.read_parquet(self.path_data)
-            if self.col_text not in df.columns:
-                raise ValueError(f"Column {self.col_text} not found in the data.")
-
-            # Drop rows with a text length too small
-            df = df[df[self.col_text].apply(len) > self.parameters.filter_text_length]
-            print(f"Data loaded with {len(df)} rows.")
-
-            # Set the index if col_id is provided
-            if self.col_id and self.col_id in df.columns:
-                df.set_index(self.col_id, inplace=True)
-
-            # Path for existing embeddings
-            path_embeddings = self.path_bertopic.joinpath("embeddings").joinpath(
-                f"bertopic_embeddings_{self.file_name}_{slugify(self.parameters.embedding_model)}.parquet"
-            )
-            # Path for 2D projection
-            path_projection = self.path_run.joinpath(
-                f"bertopic_projection_{self.file_name}_{slugify(self.parameters.embedding_model)}.parquet"
-            )
-
-            # Check if existing embeddings are in the folder
-            if not self.existing_embeddings and path_embeddings.exists():
-                self.existing_embeddings = path_embeddings
-
-            # interrupt if event is set
-            if self.event is not None:
-                if self.event.is_set():
-                    raise Exception("Process interrupted by user")
-
-            # Compute embeddings if not provided or if forced
-            if (not self.existing_embeddings) or self.force_compute_embeddings:
-                self.compute_embeddings(df, path_embeddings)
-                self.compute_projection(path_embeddings, path_projection)
-                self.existing_embeddings = path_embeddings
-
-            # Compute projection if does not exist
-            if not path_projection.exists():
-                self.compute_projection(self.existing_embeddings, path_projection)
-
-            # Copy the projection to the run directory
-            shutil.copy(path_projection, self.path_run.joinpath("projection2D.parquet"))
-
-            # Load embeddings
-            self.update_progress("Loading embeddings")
-            df_embeddings = pd.read_parquet(self.existing_embeddings)
-            if self.cols_embeddings and not all(
-                col in df_embeddings.columns for col in self.cols_embeddings
-            ):
-                raise ValueError("Some embeddings columns not found in the embeddings data.")
-            if self.cols_embeddings:
-                embeddings = df_embeddings[self.cols_embeddings].values
-            else:
-                embeddings = df_embeddings.values
-
-            # Test if the embeddings & the texts have the same index
-            if not df.index.equals(df_embeddings.index) or len(df) != len(df_embeddings):
-                raise ValueError(
-                    "The index of the embeddings and the texts do not match. "
-                    "Please force the computation of embeddings or check your data."
-                )
+            df = self.__check_text_data()
+            embeddings = self.__check_embeddings(path_embeddings, path_projection, df)
+            
+            self.__stop_process_opportunity()
 
             # Initialize BERTopic
             self.update_progress("Initializing BERTopic")
-
-            # Dimensionality reduction with UMAP
-            try:
-                umap_model = cuml.UMAP(
-                    n_neighbors=self.parameters.umap_n_neighbors,
-                    n_components=self.parameters.umap_n_components,
-                    # min_dist=self.parameters.umap_min_dist, # Removed because 0.0 is the best value to use for clustering - Axel
-                    min_dist=0.0,
-                    metric="cosine",
-                    random_state=RANDOM_SEED,  # for deterministic behaviour
-                )
-            except Exception as e:
-                print(f"CuML UMAP failed: {e}, using standard UMAP instead.")
-                umap_model = umap.UMAP(
-                    n_neighbors=self.parameters.umap_n_neighbors,
-                    n_components=self.parameters.umap_n_components,
-                    # min_dist=self.parameters.umap_min_dist, # Removed because 0.0 is the best value to use for clustering - Axel
-                    min_dist=0.0,
-                    metric="cosine",
-                    random_state=RANDOM_SEED,  # for deterministic behaviour
-                )
-
-            # Clustering with HDBSCAN
-            hdbscan_model = hdbscan.HDBSCAN(
-                min_cluster_size=self.parameters.hdbscan_min_cluster_size,
-                metric="euclidean",
-                prediction_data=True,
-            )
-
-            # Vectorizer to manage stopwords
-            try:
-                stopwords = self.get_stopwords()
-                vectorizer_model = CountVectorizer(
-                    tokenizer=CustomLemmatizer(self.parameters.language, stopwords)
-                )
-            except ValueError:
-                vectorizer_model = CountVectorizer()
+            umap_model, hdbscan_model = self.__load_UMAP_HDBSCAN()
+            vectorizer_model = self.__load_vectorizer()
 
             topic_model = BERTopic(
                 language=self.parameters.language,
@@ -341,56 +402,40 @@ class ComputeBertopic(BaseTask):
             )
 
             # Add outlier reduction
-            try:
-                if self.parameters.outlier_reduction:
-                    print("Reducing outliers")
-                    topics = topic_model.reduce_outliers(df[self.col_text], topics)
-            except Exception as e:
-                print(f"Error during outlier reduction: {e}")
-
-            # interrupt if event is set
-            if self.event is not None:
-                if self.event.is_set():
-                    raise Exception("Process interrupted by user")
-
-            # Add the topics to the DataFrame
-            df["cluster"] = topics
-
-            # Save the topics and documents informations
-            topics_df: pd.DataFrame = topic_model.get_topic_info()
             if self.parameters.outlier_reduction:
-                topics_df = topics_df.loc[topics_df.Topic != -1, :]
-                # Update the counts
-                topics_df = topics_df.set_index("Topic")
-                topics_df["Count-Bis"] = pd.Series(topics).value_counts()
-                topics_df = topics_df.reset_index()
+                try:
+                    print("Reducing outliers")
+                    print(
+                        "=" * 100, 
+                        len(df[self.col_text]),
+                        embeddings.shape,
+                        len(topics),
+                        "=" * 100, 
+                        sep = "\n\n"
+                    )
+                    topics = topic_model.reduce_outliers(
+                        documents = df[self.col_text],
+                        topics = topics,
+                        embeddings = embeddings,
+                        strategy="embeddings"
+                    )
+                except Exception as e:
+                    print(f"Error during outlier reduction: {e} — Most likely "
+                          "because there are not enough elements in your dataset")
 
-            topics_df.to_csv(self.path_run.joinpath("bertopic_topics.csv"))
-            df["cluster"].to_csv(self.path_run.joinpath("bertopic_clusters.csv"))
-            parameters = {
-                "bertopic_params": self.parameters.model_dump(),
-                "col_text": self.col_text,
-                "col_id": self.col_id,
-                "name": self.name,
-                "timestamp": self.timestamp,
-                "path_data": str(self.path_data),
-                "path_embeddings": str(self.existing_embeddings),
-                "path_projection": str(path_projection),
-            }
-            with open(self.path_run.joinpath("params.json"), "w") as f:
-                json.dump(parameters, f)
+            self.__stop_process_opportunity()
 
-            # Create a report
-            self.create_report(
-                topic_model=topic_model,
-                topics=topics,
-                topic_info=topics_df,
-                docs=df[self.col_text].to_list(),
+            self.__save(
+                df=df, 
+                topic_model=topic_model, 
+                topics=topics, 
                 embeddings=embeddings,
+                path_projection=path_projection
             )
-
+            
             self.path_run.joinpath("progress").unlink(missing_ok=True)
-            return None
+            return 
+        
         except Exception as e:
             # Case an error happens
             if self.path_run.exists():
@@ -454,12 +499,13 @@ class ComputeBertopic(BaseTask):
                 n_neighbors=self.parameters.umap_n_neighbors,
                 n_components=2,
                 min_dist=0.0,
+                low_memory=False,
                 metric="cosine",
                 random_state=RANDOM_SEED,  # for deterministic behaviour
             )
             print("Using standard UMAP for computation")
-        embeddings = pd.read_parquet(path_embeddings)
-        reduced_embeddings = reducer.fit_transform(embeddings)
+        embeddings : pd.DataFrame = pd.read_parquet(path_embeddings)
+        reduced_embeddings : np.ndarray = reducer.fit_transform(embeddings)
         df_reduced = pd.DataFrame(reduced_embeddings, index=embeddings.index, columns=["x", "y"])
         df_reduced.to_parquet(path_projection)
 
@@ -522,14 +568,19 @@ class ComputeBertopic(BaseTask):
             n_neighbors=self.parameters.umap_n_neighbors,
             min_dist=0.0,
             min_number_of_element=-1,  # Need additional implementation
-        ).update_layout(width=900)
+        )
 
         # Create plotly figure for hierarchical representation
-        fig_hierarchical = topic_model.visualize_hierarchy().update_layout(
-            width=900,
-            title={"text": ""},
-            margin={"t": 20, "b": 40},
-            plot_bgcolor="#FCFCFC",
+        print("start hierarchy")
+        fig_hierarchical = (
+            topic_model
+            .visualize_hierarchy()
+            .update_layout(
+                width=900,
+                title={"text": ""},
+                margin={"t": 20, "b": 40},
+                plot_bgcolor="#FCFCFC",
+            )
         )
         # Export results
         saving_kwargs = {
