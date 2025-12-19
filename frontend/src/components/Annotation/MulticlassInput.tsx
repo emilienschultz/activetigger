@@ -128,12 +128,17 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
                 postAnnotation(v.currentTarget.value, elementId, comment);
               }}
             >
-              {lastAnnotation && lastAnnotation[0] === e.label ? (
-                <IoIosRadioButtonOn />
-              ) : (
-                <IoIosRadioButtonOff />
-              )}{' '}
-              {e.label} <span className="badge hotkey">{i + 1}</span>
+              {displayConfig.displayAnnotation ? (
+                lastAnnotation && lastAnnotation[0] === e.label ? (
+                  <IoIosRadioButtonOn />
+                ) : (
+                  <IoIosRadioButtonOff />
+                )
+              ) : null}
+              <span className="text-truncate" style={{ maxWidth: '20vw' }}>
+                {e.label}
+              </span>{' '}
+              <span className="badge hotkey">{i + 1}</span>
             </button>
           ))
         }

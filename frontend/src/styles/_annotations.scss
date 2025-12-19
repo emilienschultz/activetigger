@@ -1,26 +1,61 @@
 @use 'sass:map';
 
 .annotation-mode {
+  margin-top: map.get($spacers, 1);
+  display: flex;
+  flex-direction: row;
+  @media (max-width: 1800px) {
+    flex-direction: column;
+  }
+  row-gap: map.get($spacers, 2);
+
   .selectors {
     display: flex;
     flex-wrap: wrap;
     width: 100%;
-    justify-content: space-around;
+    column-gap: map.get($spacers, 5);
+    @media (max-width: 1800px) {
+      justify-content: space-between;
+    }
+
+    label {
+      margin: 0;
+    }
 
     > div {
       display: flex;
-      flex-wrap: nowrap;
-      gap: 1rem;
+      flex-wrap: wrap;
+
+      justify-content: flex-start;
+      column-gap: map.get($spacers, 2);
+
       align-items: flex-start;
-      &.submit-container {
-        align-self: center;
-        // to align with labels
-        margin-top: 10px;
-      }
 
       .react-select {
-        width: 300px;
+        width: 100%;
       }
+      .at-input-group:has(.react-select) {
+        flex-grow: 1;
+        //max-width: 300px;
+        min-width: 250px;
+        position: relative;
+      }
+      input {
+        max-width: 45vw;
+      }
+    }
+  }
+
+  .submit-container {
+    @media (max-width: 1800px) {
+      align-self: end;
+    }
+    align-self: center;
+    display: flex;
+    column-gap: map.get($spacers, 1);
+
+    > * {
+      height: fit-content;
     }
   }
 }

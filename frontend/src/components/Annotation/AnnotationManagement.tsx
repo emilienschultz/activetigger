@@ -13,8 +13,6 @@ import { useAppContext } from '../../core/context';
 import { ElementOutModel } from '../../types';
 
 import { Modal } from 'react-bootstrap';
-import { FaMapMarkedAlt } from 'react-icons/fa';
-import { MdDisplaySettings } from 'react-icons/md';
 import { useNotifications } from '../../core/notifications';
 import { isValidRegex } from '../../core/utils';
 import { ActiveLearningManagement } from '../ActiveLearningManagement';
@@ -121,14 +119,18 @@ export const AnnotationManagement: FC = () => {
     } else {
       // only if id changed compared to the previous one (otherwise, a change in phase would trigger a reload)
       if (element?.element_id !== elementId) {
-        getElementById(elementId, phase).then((element) => {
-          if (element) setElement(element);
-          else {
-            navigate(`/projects/${projectName}/tag/noelement`);
-            setElement(null);
-          }
-        });
-        reFetchStatistics();
+        getElementById(elementId, phase)
+          .then((element) => {
+            if (element) setElement(element);
+            else {
+              navigate(`/projects/${projectName}/tag/noelement`);
+              setElement(null);
+            }
+          })
+          .finally(() => {
+            //info: get statistics call returns often outdated data
+            reFetchStatistics();
+          });
       }
     }
   }, [
@@ -248,13 +250,6 @@ export const AnnotationManagement: FC = () => {
   // display active menu
   const [activeMenu, setActiveMenu] = useState<boolean>(false);
 
-  const statisticsDataset = useMemo(() => {
-    if (phase === 'train') return `${statistics?.train_annotated_n}/${statistics?.train_set_n}`;
-    if (phase === 'valid') return `${statistics?.valid_annotated_n}/${statistics?.valid_set_n}`;
-    if (phase === 'test') return `${statistics?.test_annotated_n}/${statistics?.test_set_n}`;
-    return '';
-  }, [phase, statistics]);
-
   // train a quick model
   const { trainQuickModel } = useTrainQuickModel(projectName || null, currentScheme || null);
   const startTrainQuickModel = () => {
@@ -361,24 +356,18 @@ export const AnnotationManagement: FC = () => {
       <AnnotationModeForm
         settingChanged={settingChanged}
         setSettingChanged={setSettingChanged}
-        refetchElement={fetchNextElement}
+        fetchNextElement={fetchNextElement}
         setActiveMenu={setActiveMenu}
+        setShowDisplayViz={setShowDisplayViz}
+        setShowDisplayConfig={setShowDisplayConfig}
+        nSample={nSample}
+        statistics={statistics}
       />
-      <div>
-        {/* TODO: find a design for this */}
-        {statistics ? (
-          <span className="explanations">
-            Annotated: {statisticsDataset} - Selected: {nSample || 'na'}
-          </span>
-        ) : (
-          'na'
-        )}
-      </div>
 
       {/**
        *  ANNOTATION BLOCK
        * */}
-      <div className="d-flex flex-column flex-lg-row justify-content-center gap-3 my-3 ">
+      <div className="d-flex flex-column flex-lg-row justify-content-start gap-3 my-3 ">
         {elementId === 'noelement' ? (
           <div className="alert horizontal center">
             <div>
@@ -436,27 +425,6 @@ export const AnnotationManagement: FC = () => {
             )}
           </>
         )}
-      </div>
-      <div className="horizontal center">
-        {/* NOTE: Axel Not too much customisation cause it's gonna be refactored soon */}
-        <button
-          className="transparent-background"
-          onClick={() => {
-            setShowDisplayConfig(!showDisplayConfig);
-          }}
-          title="Display config menu"
-        >
-          <MdDisplaySettings />
-        </button>
-        <button
-          className="transparent-background"
-          onClick={() => {
-            setShowDisplayViz(!showDisplayConfig);
-          }}
-          title="Display the projection"
-        >
-          <FaMapMarkedAlt />
-        </button>
       </div>
 
       <div className="horizontal center">
