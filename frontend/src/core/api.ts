@@ -27,6 +27,7 @@ import {
 import { HttpError } from './HTTPError';
 import { getAuthHeaders, useAuth } from './auth';
 import config from './config';
+import { useAppContext } from './context';
 import { useNotifications } from './notifications';
 import { getAsyncMemoData, useAsyncMemo } from './useAsyncMemo';
 
@@ -661,24 +662,24 @@ export function useGetNextElementId(
 /**
  * Get element content by specific id
  */
-export function useGetElementById(
-  projectSlug: string | null,
-  currentScheme: string | null,
-  activeModel: ActiveModel | null,
-) {
+export function useGetElementById() {
+  const {
+    appContext: { currentProject, currentScheme, activeModel },
+  } = useAppContext();
+
   const getElementById = useCallback(
-    async (elementId: string, dataset: string) => {
-      if (projectSlug) {
+    async (elementId: string, phase: string) => {
+      if (currentProject?.params?.project_slug) {
         const res = await api.POST('/elements/id', {
           params: {
             query: {
-              project_slug: projectSlug,
+              project_slug: currentProject.params.project_slug,
             },
           },
           body: {
             element_id: elementId,
             scheme: currentScheme,
-            dataset: dataset,
+            dataset: phase,
             active_model: activeModel,
           },
         });
@@ -687,7 +688,7 @@ export function useGetElementById(
       }
       return null;
     },
-    [projectSlug, currentScheme, activeModel],
+    [currentProject?.params?.project_slug, currentScheme, activeModel],
   );
 
   return { getElementById };
