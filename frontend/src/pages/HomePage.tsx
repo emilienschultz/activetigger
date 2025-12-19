@@ -46,7 +46,11 @@ export const HomePage: FC = () => {
           <center>
             <div className="alert alert-warning mt-3">
               ⚠️ This interface is in beta testing. Please save your data.{' '}
-              <a href="https://github.com/emilienschultz/activetigger/issues">
+              <a
+                href="https://github.com/emilienschultz/activetigger/issues"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 Please open a issue for any bug or problem
               </a>
             </div>
@@ -155,6 +159,8 @@ export const HomePage: FC = () => {
               {users?.length} current users • API {version} • Client {__BUILD_DATE__}
               <a
                 href="https://www.css.cnrs.fr/active-tigger/"
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{ all: 'unset', cursor: 'pointer' }}
               >
                 {'\u00A0•\u00A0'}
@@ -162,6 +168,8 @@ export const HomePage: FC = () => {
               </a>
               <a
                 href="https://github.com/emilienschultz/activetigger"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="d-flex align-items-center"
                 style={{ all: 'unset', cursor: 'pointer' }}
               >

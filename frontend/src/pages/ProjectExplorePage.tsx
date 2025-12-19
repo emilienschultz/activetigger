@@ -60,7 +60,13 @@ export const ProjectExplorePage: FC = () => {
               <Tab eventKey="bertopic" title="Topic model">
                 <div className="explanations">
                   Explore the topics in your train data with{' '}
-                  <a href="https://maartengr.github.io/BERTopic/index.html">Bertopic</a>
+                  <a
+                    href="https://maartengr.github.io/BERTopic/index.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Bertopic
+                  </a>
                 </div>
                 <BertopicPage />
               </Tab>

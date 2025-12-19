@@ -1,23 +1,23 @@
 @for $nLabel from 1 through 100 {
   #DisplayTableStatistics-#{$nLabel}{
-    $min-cell-width: 20px;
-    $inter-table-margin: 10px;
+    $min-cell-width: 1.2rem;
+    $inter-table-margin: 0.6rem;
     $grey: rgb(160, 160, 160);
 
     width: 80%;
-    min-width: calc(($nLabel + 4) * $min-cell-width + 200px + $inter-table-margin);
-    max-width: calc(($nLabel + 30) * $min-cell-width + 200px + $inter-table-margin);
+    min-width: calc(($nLabel + 4) * $min-cell-width + $inter-table-margin + 15rem);
+    max-width: calc(($nLabel + 30) * $min-cell-width + $inter-table-margin);
     padding: 0px;
     margin: 0px;
     margin-bottom: 40px;
-    font-size: 10px;
+    font-size: 0.7rem;
     
     // containers
     .row{
       display: flex;
       flex-direction: row;
       flex-wrap: nowrap;
-      justify-content: space-between;
+      justify-content: start;
       align-items: flex-start;
 
       width: 100%;
@@ -90,7 +90,7 @@
     }
 
     .recall{
-      font-size: 8px;
+      font-size: 0.5rem;
       color: $grey;
     }
 
@@ -105,11 +105,11 @@
     }
 
     .number-cell{
-      font-size: 11px;
+      font-size: 0.85rem;
     }
 
     .label-column-left{
-      align-items: flex-end;
+      align-items: center;
     }
     
     .label-column-right{
