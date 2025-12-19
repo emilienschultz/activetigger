@@ -131,11 +131,14 @@ table {
 
 .btn-annotate-predicted-action,
 .btn-annotate-action {
+  margin: 0;
   display: flex;
   gap: 0.5rem;
   align-items: center;
   color: white;
   width: fit-content;
+
+  height: fit-content;
   // padding: 5px 10px;
 
   *:last-child,

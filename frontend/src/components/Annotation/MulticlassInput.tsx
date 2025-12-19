@@ -1,6 +1,7 @@
 import cx from 'classnames';
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { IoIosRadioButtonOff, IoIosRadioButtonOn } from 'react-icons/io';
+import { MdOnlinePrediction } from 'react-icons/md';
 import { PiEmptyBold } from 'react-icons/pi';
 import { Tooltip } from 'react-tooltip';
 import { useAppContext } from '../../core/context';
@@ -40,7 +41,7 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
   const [comment, setComment] = useState<string>('');
 
   //reset comment as for now it's not available in annotation history
-  useEffect(() => setComment(null), [elementId]);
+  useEffect(() => setComment(''), [elementId]);
 
   const availableLabels = useMemo<LabelType[]>(
     () =>
@@ -112,9 +113,9 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
   }, [element?.history]);
 
   return (
-    <div className="d-flex flex-column justify-content-center justify-content-lg-start gap-2">
+    <div className="d-flex flex-column justify-content-center justify-content-lg-start gap-3">
       {/* TAGS ACTIONS */}
-      <div className="d-flex flex-row flex-lg-column justify-content-center justify-content-lg-start flex-wrap">
+      <div className="d-flex flex-row flex-lg-column justify-content-center justify-content-lg-start flex-wrap gap-2 align-items-end align-items-lg-start">
         {
           // display buttons for label from the user
           availableLabels.map((e, i) => (
@@ -149,24 +150,39 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
         </button>
         {/* PREDICTION */}
         {phase == 'train' && displayConfig.displayPrediction && element?.predict.label && (
-          <>
+          <div className="d-flex flex-column align-items-start gap-1">
+            <small className="d-flex align-items-center gap-1">
+              <MdOnlinePrediction size="20" title="Prediction by model" id="prediction-icon" />{' '}
+              <Tooltip anchorSelect="#prediction-icon" place="top">
+                Prediction by model
+              </Tooltip>
+              <span className="badge m-0" id="predict-probability">
+                P. {predict_proba}
+              </span>
+              <Tooltip anchorSelect="#predict-probability" place="top">
+                prediction's probability: {predict_proba}
+              </Tooltip>
+              <span className="badge m-0" id="predict-entropy">
+                E. {predict_entropy}
+              </span>
+              <Tooltip anchorSelect="#predict-entropy" place="top">
+                prediction's entropy: {predict_entropy}
+              </Tooltip>
+            </small>
             <button
               type="button"
               value={element?.predict.label as unknown as string}
               className={cx('btn-annotate-predicted-action', small ? ' icon-small' : '')}
-              // WARNING: Axel: icon-small not yet implemented
               onClick={(e) => {
                 postAnnotation(e.currentTarget.value, elementId);
               }}
             >
-              Predicted : {element?.predict.label} <span className="badge hotkey">P</span>
+              {element?.predict.label} <span className="badge hotkey">P</span>
             </button>
-            <Tooltip anchorSelect=".btn-annotate-predicted-action" place="top">
-              {`proba: ${predict_proba}, entropy: ${predict_entropy}`}
-            </Tooltip>
-          </>
+          </div>
         )}
       </div>
+
       <div>
         <textarea
           className="form-control"
