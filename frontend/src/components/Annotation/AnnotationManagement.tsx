@@ -1,5 +1,4 @@
 import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FiRefreshCcw } from 'react-icons/fi';
 import { LuRefreshCw } from 'react-icons/lu';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -89,10 +88,6 @@ export const AnnotationManagement: FC = () => {
       : 'multiclass',
   );
 
-  // hook to clear history
-  const actionClearHistory = () => {
-    setAppContext((prev) => ({ ...prev, history: [] }));
-  };
   // get statistics to display (TODO : try a way to avoid another request ?)
   const { statistics, reFetchStatistics } = useStatistics(
     projectName || null,
@@ -461,13 +456,6 @@ export const AnnotationManagement: FC = () => {
           title="Display the projection"
         >
           <FaMapMarkedAlt />
-        </button>
-        <button
-          className="transparent-background"
-          onClick={actionClearHistory}
-          title="Clear the history"
-        >
-          <FiRefreshCcw />
         </button>
       </div>
 
