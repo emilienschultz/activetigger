@@ -158,6 +158,8 @@ class UsersService:
                 dataset=r.dataset,
                 comment=r.comment,
                 selection="last annotation",
+                time=r.time,
+                user=r.user_name,
             )
             for r in rows
         }

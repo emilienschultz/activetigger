@@ -165,8 +165,8 @@ class ElementInModel(BaseModel):
     """
 
     element_id: str
+    dataset: str
     scheme: str | None = None
-    dataset: str = "train"
     active_model: ActiveModel | None = None
 
 
