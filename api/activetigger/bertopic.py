@@ -307,3 +307,21 @@ class Bertopic:
                 raise FileNotFoundError(f"Report for model {name} do not exist.")
         else:
             raise FileNotFoundError(f"Model {name} does not exist.")
+
+    def export_to_scheme(self, name: str) -> tuple[list[str], dict[str, int], dict[int, str]]:
+        """
+        Export topics and clusters from a BERTopic model as a scheme.
+        """
+        topics = self.get_topics(name)
+
+        def get_topic_id(t: str) -> int:
+            return int(t.split("_")[0])
+
+        topic_id_to_topic_name = {
+            get_topic_id(topic.Name): topic.Name
+            for topic in topics
+            if get_topic_id(topic.Name) != -1
+        }
+        clusters = self.get_clusters(name)
+        labels = [topic.Name for topic in topics if get_topic_id(topic.Name) != -1]
+        return labels, clusters, topic_id_to_topic_name

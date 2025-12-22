@@ -6,7 +6,6 @@ from activetigger.app.dependencies import ProjectAction, get_project, test_right
 from activetigger.datamodels import (
     BertopicTopicsOutModel,
     ComputeBertopicModel,
-    TopicsOutModel,
     UserInDBModel,
 )
 from activetigger.orchestrator import orchestrator
@@ -24,15 +23,22 @@ async def compute_bertopic(
     """
     Compute BERTopic model for the project.
     """
-    # Force the train dataset
-    path_data = project.params.dir  # type: ignore
-    # Force the language of the project
-    bertopic.language = project.params.language
     if not project.bertopic.name_available(bertopic.name):
         raise HTTPException(
             status_code=400,
             detail=f"BERTopic model with name '{bertopic.name}' already exists (after slugification).",
         )
+    if project.params.dir is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Project dataset path is not set. Cannot compute BERTopic model.",
+        )
+
+    # path to the data
+    path_data = project.params.dir
+    # Force the language of the project
+    bertopic.language = project.params.language
+
     try:
         unique_id = project.bertopic.compute(
             path_data=path_data,
@@ -112,27 +118,21 @@ async def export_bertopic_to_scheme(
     Export the topic model as a scheme for the train set
     """
     try:
-        test_rights(ProjectAction.ADD_ANNOTATION, current_user.username, project.name)
+        test_rights(ProjectAction.ADD, current_user.username, project.name)
 
-        # Retrieve topics and clusters
-        topics = project.bertopic.get_topics(topic_model_name)
-
-        def get_topic_id(t: str) -> int:
-            return int(t.split("_")[0])
-
-        topic_id_to_topic_name = {
-            get_topic_id(topic.Name): topic.Name
-            for topic in topics
-            if get_topic_id(topic.Name) != -1
-        }
-        clusters: dict[str, int] = project.bertopic.get_clusters(topic_model_name)
+        labels, clusters, topic_id_to_topic_name = project.bertopic.export_to_scheme(
+            topic_model_name
+        )
 
         new_scheme_name = f"topic-model-{topic_model_name}"
+
+        # add a new scheme
         project.schemes.add_scheme(
             name=new_scheme_name,
-            labels=[topic.Name for topic in topics if get_topic_id(topic.Name) != -1],
+            labels=labels,
             user=current_user.username,
         )
+
         # Transform the annotation into the right format
         elements = [
             {"element_id": el_id, "annotation": topic_id_to_topic_name[cluster], "comment": ""}

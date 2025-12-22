@@ -74,24 +74,6 @@ async def export_projection(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# @router.get("/export/prediction/quickmodel", dependencies=[Depends(verified_user)])
-# async def export_quickmodel_predictions(
-#     project: Annotated[Project, Depends(get_project)],
-#     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-#     name: str,
-#     format: str = "csv",
-# ) -> StreamingResponse:
-#     """
-#     Export prediction quickmodel for the project/user/scheme if any
-#     """
-#     test_rights(ProjectAction.EXPORT_DATA, current_user.username, project.name)
-#     try:
-#         output, headers = project.quickmodels.export_prediction(name, format)
-#         return StreamingResponse(output, headers=headers)
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-
-
 @router.get("/export/prediction", dependencies=[Depends(verified_user)])
 async def export_prediction(
     project: Annotated[Project, Depends(get_project)],
@@ -259,3 +241,21 @@ async def export_bertopics_report(
         return project.bertopic.export_report(name=name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# @router.get("/export/prediction/quickmodel", dependencies=[Depends(verified_user)])
+# async def export_quickmodel_predictions(
+#     project: Annotated[Project, Depends(get_project)],
+#     current_user: Annotated[UserInDBModel, Depends(verified_user)],
+#     name: str,
+#     format: str = "csv",
+# ) -> StreamingResponse:
+#     """
+#     Export prediction quickmodel for the project/user/scheme if any
+#     """
+#     test_rights(ProjectAction.EXPORT_DATA, current_user.username, project.name)
+#     try:
+#         output, headers = project.quickmodels.export_prediction(name, format)
+#         return StreamingResponse(output, headers=headers)
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
