@@ -1040,6 +1040,7 @@ class TextDatasetModel(BaseModel):
     id: str
     text: str
     filename: str
+    path: Path | None = None
 
 
 class GeneratedElementsIn(BaseModel):

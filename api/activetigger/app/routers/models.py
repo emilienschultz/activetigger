@@ -175,77 +175,69 @@ async def predict(
     """
     test_rights(ProjectAction.ADD, current_user.username, project.name)
     try:
-        datasets = None
-
+        # types of prediction
         if kind not in ["quick", "bert"]:
             raise Exception(f"Model kind {kind} not recognized")
 
+        if dataset not in ["annotable", "external", "all"]:
+            raise Exception(f"Dataset {dataset} not recognized")
+
         # managing the perimeter of the prediction
+        datasets = None
         if dataset == "annotable":
             datasets = ["train"]
             if project.data.valid is not None:
                 datasets.append("valid")
             if project.data.test is not None:
                 datasets.append("test")
-        elif dataset == "external":
+        if dataset == "external":
             if kind != "bert":
                 raise Exception("External dataset prediction is only available for bert models")
-        elif dataset == "all":
-            pass
-        else:
-            raise Exception(f"Dataset {dataset} not recognized")
 
         # case for bert models
         if kind == "bert":
             # case the prediction is done on an external dataset
             if dataset == "external":
-                # TODO : load data in the job rather than in the api
                 if external_dataset is None:
-                    raise HTTPException(status_code=400, detail="External dataset is missing")
-                # load the external dataset
-                if not project.data.check_dataset_exists(external_dataset.filename):
+                    raise Exception("External dataset must be provided for external prediction")
+                if not project.data.get_path(external_dataset.filename).exists():
                     raise HTTPException(
                         status_code=404,
                         detail=f"External dataset file {external_dataset.filename} not found",
                     )
-                df = project.data.read_dataset(external_dataset.filename)
-                df["text"] = df[external_dataset.text]
-                df["index"] = df[external_dataset.id].apply(str)
-                df["id_external"] = df["index"]
-                df["dataset"] = "external"
-                df.set_index("index", inplace=True)
-                df = df[["id_external", "dataset", "text"]].dropna()
+                df = None
                 col_label = None
                 datasets = None
+                path_data = project.data.get_path(external_dataset.filename)
+
             # case the prediction is done on all the data
             elif dataset == "all":
-                df = pd.DataFrame(project.features.get_column_raw("text", index="all"))
-                if project.params.col_id != "dataset_row_number":
-                    df["id_external"] = project.features.get_column_raw(
-                        project.params.col_id, index="all"
-                    )
-                else:
-                    df["id_external"] = df.index
-                df["dataset"] = "all"
+                df = None
                 col_label = None
+                datasets = None
+                path_data = project.data.path_data_all
+
             # case the prediction is done on annotable data
             else:
+                if datasets is None:
+                    raise Exception("No dataset available for prediction")
                 df = project.schemes.get_scheme(
                     scheme=scheme, complete=True, datasets=datasets, id_external=True
                 )
                 col_label = "labels"
+                path_data = None
+
             project.languagemodels.start_predicting_process(
                 project_slug=project.name,
                 name=model_name,
                 user=current_user.username,
                 df=df,
-                col_text="text",
                 col_label=col_label,
-                col_id_external="id_external",
-                col_datasets="dataset",
                 dataset=dataset,
                 batch_size=batch_size,
                 statistics=datasets,
+                path_data=path_data,
+                external_dataset=external_dataset,
             )
 
         # case for quick models

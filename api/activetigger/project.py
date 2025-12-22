@@ -1582,7 +1582,7 @@ class Project:
             try:
                 # load the prediction probabilities minus one
                 df = pd.read_parquet(add_predictions[f])
-                df = df.drop(columns=["entropy", "prediction", "dataset", "id", "label"])
+                df = df.drop(columns=["entropy", "prediction", "dataset", "label"])
                 df = df[df.columns[0:-1]]
                 name = f.replace("__", "_")  # avoid __ in the name for features
                 # if the feature already exists, delete it first

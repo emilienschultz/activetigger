@@ -55,6 +55,28 @@ class Data:
         self.test = None
         self.load_dataset("all")
 
+    @staticmethod
+    def read_dataset(file_path: Path) -> DataFrame:
+        """
+        Read a data file and return a DataFrame
+        """
+        if not file_path.exists():
+            raise FileNotFoundError(f"Data file not found: {file_path}")
+        if file_path.suffix.lower() == ".csv":
+            return pd.read_csv(file_path)
+        elif file_path.suffix.lower() == ".parquet":
+            return pd.read_parquet(file_path)
+        elif file_path.suffix.lower() == ".xlsx":
+            return pd.read_excel(file_path)
+        else:
+            raise ValueError(f"Unsupported file format: {file_path}")
+
+    def get_path(self, filename: str) -> Path:
+        """
+        Get the full path of a dataset file
+        """
+        return self.path_datasets / filename
+
     def load_dataset(self, dataset: str):
         """
         Reload dataset in the memory
@@ -109,22 +131,6 @@ class Data:
         Check if a dataset exists
         """
         return (self.path_datasets / dataset_name).exists()
-
-    def read_dataset(self, filename: str) -> DataFrame:
-        """
-        Read a data file and return a DataFrame
-        """
-        file_path = self.path_datasets.joinpath(filename)
-        if not file_path.exists():
-            raise FileNotFoundError(f"Data file not found: {file_path}")
-        if filename.endswith(".csv"):
-            return pd.read_csv(file_path)
-        elif filename.endswith(".parquet"):
-            return pd.read_parquet(file_path)
-        elif filename.endswith(".xlsx"):
-            return pd.read_excel(file_path)
-        else:
-            raise ValueError(f"Unsupported file format: {filename}")
 
     def get_full_id(self) -> DataFrame:
         """

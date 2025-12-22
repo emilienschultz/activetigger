@@ -16,7 +16,8 @@ from transformers import (  # type: ignore[import]
     AutoTokenizer,
 )
 
-from activetigger.datamodels import MLStatisticsModel, ReturnTaskPredictModel
+from activetigger.data import Data
+from activetigger.datamodels import MLStatisticsModel, ReturnTaskPredictModel, TextDatasetModel
 from activetigger.functions import get_metrics
 from activetigger.tasks.base_task import BaseTask
 
@@ -24,31 +25,19 @@ from activetigger.tasks.base_task import BaseTask
 class PredictBert(BaseTask):
     """
     Class to predict with a bert model
-
-    Parameters:
-    ----------
-    path (Path): path to save the files
-    name (str): name of the model
-    df (DataFrame): labelled data
-    col_text (str): text column
-    col_label (str, Optional): label column
-    base_model (str): model to use
-    params (dict) : training parameters
-    test_size (dict): train/test distribution
-    event : possibility to interrupt
-    unique_id : unique id for the current task
-
-    if statistic & col_label, compute specific statistics
     """
 
     kind = "predict_bert"
 
     def __init__(
         self,
+        dataset: str,
         path: Path,
-        df: DataFrame,
+        df: DataFrame | None,
         col_text: str,
         col_label: str | None = None,
+        path_data: Path | None = None,
+        external_dataset: TextDatasetModel | None = None,
         col_id_external: str | None = None,
         col_datasets: str | None = None,
         file_name: str = "predict.parquet",
@@ -61,6 +50,7 @@ class PredictBert(BaseTask):
         super().__init__()
         self.path = path
         self.df = df
+        self.dataset = dataset
         self.col_text = col_text
         self.col_label = col_label
         self.col_id_external = col_id_external
@@ -70,6 +60,12 @@ class PredictBert(BaseTask):
         self.file_name = file_name
         self.batch = batch
         self.statistics = statistics
+
+        if self.df is None and path_data is not None:
+            self.df = self.__load_external_file(path_data, external_dataset)
+
+        if self.df is None:
+            raise ValueError("Dataframe must be provided for prediction")
 
         if col_text not in self.df.columns:
             raise ValueError(f"Column text {col_text} not in dataframe")
@@ -86,11 +82,36 @@ class PredictBert(BaseTask):
         if statistics is not None and col_label is None:
             raise ValueError("Column label must be provided to compute statistics")
 
+    def __load_external_file(
+        self, path_data: Path, external_dataset: TextDatasetModel | None
+    ) -> DataFrame:
+        """
+        Load file for prediction with specific rules to match the expected format
+        """
+        df = Data.read_dataset(path_data)
+
+        if self.dataset == "external" and external_dataset is not None:
+            df["text"] = df[external_dataset.text]
+            df["index"] = df[external_dataset.id].apply(str)
+            df["id_external"] = df["index"]
+            df["dataset"] = "external"
+            df.set_index("index", inplace=True)
+            df = df[["id_external", "dataset", "text"]].dropna()
+
+        if self.dataset == "all":
+            df["id_external"] = df[self.col_id_external]
+            df["dataset"] = "all"
+
+        return df
+
     def __call__(self) -> ReturnTaskPredictModel:
         """
         Main process to predict
         """
         print("start predicting")
+
+        if self.df is None:
+            raise ValueError("Dataframe is required for prediction")
 
         # empty cache
         torch.cuda.empty_cache()

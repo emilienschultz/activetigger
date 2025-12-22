@@ -143,7 +143,7 @@ export const HomePage: FC = () => {
                 </div>
               )}
 
-              {!n_users && (
+              {n_users === null && n_users === undefined && (
                 <div className="alert alert-alert mt-3">Problem connecting to the server</div>
               )}
             </center>

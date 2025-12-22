@@ -21,6 +21,7 @@ from activetigger.datamodels import (
     ModelInformationsModel,
     ModelScoresModel,
     StaticFileModel,
+    TextDatasetModel,
 )
 from activetigger.db.languagemodels import ModelsService
 from activetigger.db.manager import DatabaseManager
@@ -275,21 +276,24 @@ class LanguageModels:
         project_slug: str,
         name: str,
         user: str,
-        df: DataFrame,
+        df: DataFrame | None,
         dataset: str,
-        col_text: str,
         col_label: str | None = None,
-        col_id_external: str | None = None,
-        col_datasets: str | None = None,
         batch_size: int = 32,
         status: str = "predicting",
         statistics: list | None = None,
+        path_data: Path | None = None,
+        external_dataset: None | TextDatasetModel = None,
     ) -> None:
         """
         Start predicting process
         """
         if not (self.path.joinpath(name)).exists():
             raise Exception("The model does not exist")
+
+        # case of external loading
+        if df is None and dataset not in ["all", "external"]:
+            raise Exception("Dataframe is required for this dataset")
 
         file_name = f"predict_{dataset}.parquet"
 
@@ -299,15 +303,18 @@ class LanguageModels:
             project_slug,
             PredictBert(
                 path=self.path.joinpath(name),
+                dataset=dataset,
                 df=df,
-                col_text=col_text,
+                col_text="text",
                 col_label=col_label,
-                col_id_external=col_id_external,
-                col_datasets=col_datasets,
+                col_id_external="id_external",
+                col_datasets="dataset",
                 basemodel=self.get_base_model(name),
                 file_name=file_name,
                 batch=batch_size,
                 statistics=statistics,
+                path_data=path_data,
+                external_dataset=external_dataset,
             ),
             queue="gpu",
         )
