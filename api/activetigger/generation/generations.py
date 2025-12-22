@@ -2,7 +2,7 @@ import pandas as pd
 from pandas import DataFrame
 
 from activetigger.datamodels import (  # ignore[import]
-    GeneratedElementsIn,
+    ExportGenerationsParams,
     GenerationAvailableModel,
     GenerationComputing,
     GenerationComputingOut,
@@ -101,13 +101,13 @@ class Generations:
         return None
 
     def get_generated(
-        self, project_slug: str, user_name: str, params: GeneratedElementsIn
+        self, project_slug: str, user_name: str, params: ExportGenerationsParams
     ) -> DataFrame:
         """
         Get generated elements from the database
         """
         result = self.generations_service.get_generated(
-            project_slug=project_slug, user_name=user_name, n_elements=params.n_elements
+            project_slug=project_slug, user_name=user_name
         )
         df = pd.DataFrame(result, columns=["time", "index", "prompt", "answer", "model_name"])
         df["time"] = pd.to_datetime(df["time"])

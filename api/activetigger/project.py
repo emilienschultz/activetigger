@@ -1088,6 +1088,7 @@ class Project:
         table = self.generations.get_generated(
             project_slug=project_slug,
             user_name=username,
+            params=params,
         )
 
         # apply filters on the generated

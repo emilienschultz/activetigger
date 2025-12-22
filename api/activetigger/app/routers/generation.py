@@ -15,7 +15,7 @@ from activetigger.app.dependencies import (
     verified_user,
 )
 from activetigger.datamodels import (
-    GeneratedElementsIn,
+    ExportGenerationsParams,
     GenerationCreationModel,
     GenerationModel,
     GenerationModelApi,
@@ -139,7 +139,7 @@ async def postgenerate(
 async def getgenerate(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    params: GeneratedElementsIn,
+    params: ExportGenerationsParams,
 ) -> TableOutModel:
     """
     Get elements generated
