@@ -2035,7 +2035,7 @@ export function useGetActiveUsers() {
 
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
 
-  return { users: getAsyncMemoData(getActiveUsers), reFetchStatistics: reFetch };
+  return { n_users: getAsyncMemoData(getActiveUsers), reFetchStatistics: reFetch };
 }
 
 /**

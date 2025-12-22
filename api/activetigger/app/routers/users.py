@@ -59,22 +59,21 @@ async def existing_users(
     Get existing users
     """
     try:
-        return orchestrator.users.existing_users()
+        return orchestrator.users.existing_users(current_user.username)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/users/recent", tags=["users"])
-async def recent_users() -> list[str]:
+async def recent_users() -> int:
     """
-    Get recently connected users
+    Get the number of recently connected users
     """
-    return orchestrator.db_manager.users_service.get_current_users(300)
+    return len(orchestrator.db_manager.users_service.get_current_users(300))
 
 
 @router.post("/users/create", dependencies=[Depends(verified_user)], tags=["users"])
 async def create_user(
-    background_tasks: BackgroundTasks,
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     username_to_create: str = Query(),
     password: str = Query(),
@@ -115,7 +114,7 @@ async def change_password(
     changepwd: ChangePasswordModel,
 ) -> None:
     """
-    Change password for an account
+    Change our own password for an account
     """
     try:
         orchestrator.users.change_password(
@@ -160,18 +159,6 @@ async def set_auth(
     raise HTTPException(status_code=400, detail="Action not found")
 
 
-@router.get("/users/auth", dependencies=[Depends(verified_user)], tags=["users"])
-async def get_auth(username: str) -> list:
-    """
-    Get all user auth
-    """
-
-    try:
-        return orchestrator.users.get_auth(username, "all")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
-
-
 @router.get("/users/statistics", dependencies=[Depends(verified_user)], tags=["users"])
 async def get_statistics(
     current_user: Annotated[UserInDBModel, Depends(verified_user)], username: str
@@ -179,9 +166,8 @@ async def get_statistics(
     """
     Get statistics for specific user
     """
+    test_rights(ServerAction.MANAGE_USERS, current_user.username)
     try:
-        if current_user.username != username:
-            test_rights(ServerAction.MANAGE_USERS, current_user.username)
         return orchestrator.users.get_statistics(username)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
