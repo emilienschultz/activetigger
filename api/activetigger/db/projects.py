@@ -6,7 +6,7 @@ from sqlalchemy import and_, delete, func, select, update
 from sqlalchemy.orm import Session as SessionType
 from sqlalchemy.orm import sessionmaker
 
-from activetigger.datamodels import FeatureDescriptionModelOut
+from activetigger.datamodels import AnnotationModel, FeatureDescriptionModelOut
 from activetigger.db import DBException
 from activetigger.db.models import Annotations, Auths, Features, Models, Projects, Schemes, Tokens
 
@@ -305,24 +305,36 @@ class ProjectsService:
 
     def get_annotations_by_element(
         self, project_slug: str, scheme: str, element_id: str, limit: int = 10
-    ):
+    ) -> list[AnnotationModel]:
         with self.Session() as session:
-            annotations = session.execute(
-                select(
-                    Annotations.annotation,
-                    Annotations.dataset,
-                    Annotations.user_name,
-                    Annotations.time,
+            annotations = (
+                session.execute(
+                    select(Annotations)
+                    .filter_by(
+                        project_slug=project_slug,
+                        scheme_name=scheme,
+                        element_id=element_id,
+                    )
+                    .order_by(Annotations.time.desc())
+                    .limit(limit)
                 )
-                .filter_by(
+                .scalars()
+                .all()
+            )
+            return [
+                AnnotationModel(
                     project_slug=project_slug,
-                    scheme_name=scheme,
-                    element_id=element_id,
+                    scheme=r.scheme_name,
+                    element_id=r.element_id,
+                    label=r.annotation,
+                    dataset=r.dataset,
+                    comment=r.comment,
+                    selection="by element",
+                    time=r.time,
+                    user=r.user_name,
                 )
-                .order_by(Annotations.time.desc())
-                .limit(limit)
-            ).all()
-            return [[a.annotation, a.dataset, a.user_name, a.time] for a in annotations]
+                for r in annotations
+            ]
 
     def delete_annotations_evalset(self, project_slug: str, dataset: str):
         """
