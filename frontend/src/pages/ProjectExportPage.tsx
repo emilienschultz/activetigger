@@ -191,8 +191,9 @@ export const ProjectExportPage: FC = () => {
                       ))}
                     </select>
                   </div>
-                  <ModelPredict currentModel={model} />
-
+                  <div>
+                    <ModelPredict currentModel={model} />
+                  </div>
                   <div>
                     {availablePredictionAll && (
                       <button

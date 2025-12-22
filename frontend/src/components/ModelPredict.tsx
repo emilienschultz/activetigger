@@ -48,7 +48,7 @@ export const ModelPredict: FC<{ currentModel: string | null; batchSize?: number 
     false;
 
   return (
-    <>
+    <div>
       <div className="horizontal">
         {model && (
           <button
@@ -75,20 +75,22 @@ export const ModelPredict: FC<{ currentModel: string | null; batchSize?: number 
           </button>
         )}
       </div>
-      {model && displayExternalForm && (
-        <ImportPredictionDataset
-          projectSlug={projectSlug || ''}
-          modelName={currentModel || ''}
-          scheme={currentScheme || ''}
-          availablePredictionExternal={availablePredictionExternal || false}
+      <div>
+        {model && displayExternalForm && (
+          <ImportPredictionDataset
+            projectSlug={projectSlug || ''}
+            modelName={currentModel || ''}
+            scheme={currentScheme || ''}
+            availablePredictionExternal={availablePredictionExternal || false}
+          />
+        )}
+        <DisplayTrainingProcesses
+          projectSlug={projectSlug || null}
+          processes={project?.languagemodels.training}
+          processStatus="predicting"
+          displayStopButton={isComputing}
         />
-      )}
-      <DisplayTrainingProcesses
-        projectSlug={projectSlug || null}
-        processes={project?.languagemodels.training}
-        processStatus="predicting"
-        displayStopButton={isComputing}
-      />
-    </>
+      </div>
+    </div>
   );
 };

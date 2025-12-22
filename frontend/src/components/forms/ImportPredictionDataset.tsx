@@ -120,40 +120,43 @@ export const ImportPredictionDataset: FC<ImportPredictionDatasetProps> = ({
             If you continue, it will be replaced.
           </div>
         )}
-        <div>
-          <label htmlFor="csvFile">Import text dataset to predict</label>
-          <input className="form-control" id="csvFile" type="file" {...register('files')} />
-          {
-            // display datable if data available
-            data !== null && (
-              <>
-                <div className="explanations">Preview</div>
-                <div>
-                  Size of the dataset : <b>{data.data.length - 1}</b>
-                </div>
-                <DataTable<Record<DataType['headers'][number], string | number>>
-                  columns={data.headers.map((h) => ({
-                    name: h,
-                    selector: (row) => row[h],
-                    format: (row) => {
-                      const v = row[h];
-                      return typeof v === 'bigint' ? Number(v) : v;
-                    },
-                    width: '200px',
-                  }))}
-                  data={
-                    data.data.slice(0, 5) as Record<keyof DataType['headers'], string | number>[]
-                  }
-                />
-              </>
-            )
-          }
+        <div className="container">
+          <div className="w-75">
+            <label htmlFor="csvFile">Import text dataset to predict</label>
+            <input className="form-control" id="csvFile" type="file" {...register('files')} />
+            {
+              // display datable if data available
+              data !== null && (
+                <>
+                  <div className="explanations">Preview</div>
+                  <div>
+                    Size of the dataset : <b>{data.data.length - 1}</b>
+                  </div>
+                  <DataTable<Record<DataType['headers'][number], string | number>>
+                    responsive
+                    columns={data.headers.map((h) => ({
+                      name: h,
+                      selector: (row) => row[h],
+                      format: (row) => {
+                        const v = row[h];
+                        return typeof v === 'bigint' ? Number(v) : v;
+                      },
+                      grow: 1,
+                    }))}
+                    data={
+                      data.data.slice(0, 5) as Record<keyof DataType['headers'], string | number>[]
+                    }
+                  />
+                </>
+              )
+            }
+          </div>
         </div>
 
         {
           // only display if data
           data != null && (
-            <>
+            <div className="w-50">
               <div>
                 <label htmlFor="col_id">
                   Column for id (they need to be unique, otherwise replaced by a number)
@@ -172,7 +175,7 @@ export const ImportPredictionDataset: FC<ImportPredictionDatasetProps> = ({
               <button type="submit" className="btn-submit">
                 Launch the prediction on the imported dataset
               </button>
-            </>
+            </div>
           )
         }
       </form>
