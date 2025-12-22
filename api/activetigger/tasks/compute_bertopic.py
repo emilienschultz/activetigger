@@ -196,7 +196,9 @@ class ComputeBertopic(BaseTask):
         if name is None:
             name = f"bertopic_{path_data.stem}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
         self.name = slugify(name)
-        self.input_datasets = parameters.input_datasets # train, all_sets (ie train+valid+test), complete 
+        self.input_datasets = (
+            parameters.input_datasets
+        )  # train, all_sets (ie train+valid+test), complete
         self.parameters = parameters
         self.existing_embeddings = existing_embeddings
         self.cols_embeddings = cols_embeddings
@@ -217,35 +219,30 @@ class ComputeBertopic(BaseTask):
             if self.event.is_set():
                 raise Exception("Process interrupted by user")
 
-    def __init_run_directory(self) -> tuple[str, str]:
+    def __init_run_directory(self) -> tuple[Path, Path]:
         def filename(action):
             return (
                 f"bertopic_{action}_{self.input_datasets}_"
                 f"{slugify(self.parameters.embedding_model)}"
                 f".parquet"
             )
+
         self.path_run.mkdir(parents=True, exist_ok=True)
-        path_embeddings = (
-            self.path_bertopic
-            .joinpath("embeddings")
-            .joinpath(filename("embeddings"))
-        )
-        path_projection = (
-            self.path_run
-            .joinpath(filename("projection"))
-        )
+        path_embeddings = self.path_bertopic.joinpath("embeddings").joinpath(filename("embeddings"))
+        path_projection = self.path_run.joinpath(filename("projection"))
         return path_embeddings, path_projection
-    
+
     def __check_text_data(self) -> pd.DataFrame:
         match self.input_datasets:
             case "train":
                 df = pd.read_parquet(self.path_data.joinpath(config.train_file))
             case "all_sets":
                 df = pd.concat(
-                    [pd.read_parquet(self.path_data.joinpath(file))
-                     for file in [config.train_file, config.test_file, config.valid_file]
-                     if self.path_data.joinpath(file).is_file()
-                     ]
+                    [
+                        pd.read_parquet(self.path_data.joinpath(file))
+                        for file in [config.train_file, config.test_file, config.valid_file]
+                        if self.path_data.joinpath(file).is_file()
+                    ]
                 )
             case "complete":
                 df = pd.read_parquet(self.path_data.joinpath(config.data_all))
@@ -259,17 +256,15 @@ class ComputeBertopic(BaseTask):
         df = df[criterion]
         print(f"Data loaded with {len(df)} rows.")
         if len(df) < 15:
-            raise ValueError(f"Not enough elements ({len(df)}) — after "
-                f"removing elements < {self.parameters.filter_text_length}")
+            raise ValueError(
+                f"Not enough elements ({len(df)}) — after "
+                f"removing elements < {self.parameters.filter_text_length}"
+            )
         return df
 
-
     def __check_embeddings(
-            self, 
-            path_embeddings: Path,
-            path_projection: Path, 
-            df: pd.DataFrame
-        ) -> np.ndarray:
+        self, path_embeddings: Path, path_projection: Path, df: pd.DataFrame
+    ) -> np.ndarray:
         # Make sure the embeddings exist ---
         if not self.existing_embeddings and path_embeddings.exists():
             self.existing_embeddings = path_embeddings
@@ -302,7 +297,7 @@ class ComputeBertopic(BaseTask):
         else:
             embeddings = df_embeddings.values
         return embeddings
-    
+
     def __load_UMAP_HDBSCAN(self):
         # Dimensionality reduction with UMAP
         try:
@@ -333,7 +328,7 @@ class ComputeBertopic(BaseTask):
             prediction_data=True,
         )
         return umap_model, hdbscan_model
-    
+
     def __load_vectorizer(self):
         try:
             stopwords = self.get_stopwords()
@@ -345,12 +340,12 @@ class ComputeBertopic(BaseTask):
         return vectorizer_model
 
     def __save(
-        self, 
-        df: pd.DataFrame, 
-        topic_model: BERTopic, 
-        topics : list[int], 
+        self,
+        df: pd.DataFrame,
+        topic_model: BERTopic,
+        topics: list[int],
         embeddings: np.ndarray,
-        path_projection: Path
+        path_projection: Path,
     ):
         # Add the topics to the DataFrame
         df["cluster"] = topics
@@ -396,7 +391,7 @@ class ComputeBertopic(BaseTask):
             self.update_progress("Initializing")
             df = self.__check_text_data()
             embeddings = self.__check_embeddings(path_embeddings, path_projection, df)
-            
+
             self.__stop_process_opportunity()
 
             # Initialize BERTopic
@@ -425,28 +420,30 @@ class ComputeBertopic(BaseTask):
                 try:
                     print("Reducing outliers")
                     topics = topic_model.reduce_outliers(
-                        documents = df[self.col_text],
-                        topics = topics,
-                        embeddings = embeddings,
-                        strategy="embeddings"
+                        documents=df[self.col_text],
+                        topics=topics,
+                        embeddings=embeddings,
+                        strategy="embeddings",
                     )
                 except Exception as e:
-                    print(f"Error during outlier reduction: {e} — Most likely "
-                          "because there are not enough elements in your dataset")
+                    print(
+                        f"Error during outlier reduction: {e} — Most likely "
+                        "because there are not enough elements in your dataset"
+                    )
 
             self.__stop_process_opportunity()
 
             self.__save(
-                df=df, 
-                topic_model=topic_model, 
-                topics=topics, 
+                df=df,
+                topic_model=topic_model,
+                topics=topics,
                 embeddings=embeddings,
-                path_projection=path_projection
+                path_projection=path_projection,
             )
-            
+
             self.path_run.joinpath("progress").unlink(missing_ok=True)
-            return 
-        
+            return
+
         except Exception as e:
             # Case an error happens
             if self.path_run.exists():
@@ -515,8 +512,8 @@ class ComputeBertopic(BaseTask):
                 random_state=RANDOM_SEED,  # for deterministic behaviour
             )
             print("Using standard UMAP for computation")
-        embeddings : pd.DataFrame = pd.read_parquet(path_embeddings)
-        reduced_embeddings : np.ndarray = reducer.fit_transform(embeddings)
+        embeddings: pd.DataFrame = pd.read_parquet(path_embeddings)
+        reduced_embeddings: np.ndarray = reducer.fit_transform(embeddings)
         df_reduced = pd.DataFrame(reduced_embeddings, index=embeddings.index, columns=["x", "y"])
         df_reduced.to_parquet(path_projection)
 
@@ -526,7 +523,7 @@ class ComputeBertopic(BaseTask):
         topics: list[int],
         topic_info: pd.DataFrame,
         docs: list[str],
-        embeddings: list[list[float]],
+        embeddings: np.ndarray,
     ) -> None:
         """Creates an HTML report downloadable by the user"""
         # Creates a table for topic info with great tables
@@ -582,15 +579,11 @@ class ComputeBertopic(BaseTask):
         )
 
         # Create plotly figure for hierarchical representation
-        fig_hierarchical = (
-            topic_model
-            .visualize_hierarchy()
-            .update_layout(
-                width=900,
-                title={"text": ""},
-                margin={"t": 20, "b": 40},
-                plot_bgcolor="#FCFCFC",
-            )
+        fig_hierarchical = topic_model.visualize_hierarchy().update_layout(
+            width=900,
+            title={"text": ""},
+            margin={"t": 20, "b": 40},
+            plot_bgcolor="#FCFCFC",
         )
         # Export results
         saving_kwargs = {
