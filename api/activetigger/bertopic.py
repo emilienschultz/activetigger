@@ -11,6 +11,7 @@ from slugify import slugify
 
 from activetigger.datamodels import (
     BertopicComputing,
+    BERTopicDescriptionModel,
     BertopicOutModelParameters,
     BertopicParamsModel,
     BertopicProjectStateModel,
@@ -22,6 +23,7 @@ from activetigger.features import Features
 from activetigger.queue import Queue
 from activetigger.tasks.compute_bertopic import ComputeBertopic
 
+# TODO : put params in database
 # TODO : Implement the get_topics and get_projection methods
 # TODO : Richer state with defined typemodels
 
@@ -42,12 +44,14 @@ class Bertopic:
         features: Features,
         db_manager: DatabaseManager,
     ) -> None:
+        self.cache: dict[str, BERTopicDescriptionModel] = {}
         self.project_slug = project_slug
         self.queue = queue
         self.computing = computing
         self.path: Path = path.joinpath("bertopic")
         self.path.mkdir(parents=True, exist_ok=True)
         self.features = features
+        self.models_service = db_manager.language_models_service
         self.available_models = [
             "jinaai/jina-embeddings-v3",
             "Qwen/Qwen3-Embedding-0.6B",
@@ -57,7 +61,11 @@ class Bertopic:
             "sentence-transformers/all-MiniLM-L6-v2",
             "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
         ]
-        self.models_service = db_manager.language_models_service
+
+    @staticmethod
+    def get_params(folder_path):
+        with open(folder_path / "params.json", "r") as file:
+            return json.load(file)
 
     def compute(
         self,
@@ -131,27 +139,25 @@ class Bertopic:
             if e.kind == "bertopic"
         }
 
-    def available(self) -> dict[str, str | dict[str, str] | None]:
+    def get_model(self, name: str) -> BERTopicDescriptionModel:
+        """
+        Get a BERTopic model parameters.
+        """
+        if name in self.cache:
+            return self.cache[name]
+        else:
+            model = BERTopicDescriptionModel(
+                name=name, time=self.get_params(self.path.joinpath("runs") / name)["timestamp"]
+            )
+            self.cache[name] = model
+            return model
+
+    def available(self) -> dict[str, BERTopicDescriptionModel]:
         """
         Get available BERTopic models.
         """
 
-        def retrieve_date(folder_path):
-            with open(folder_path / "params.json", "r") as file:
-                p = json.load(file)
-            return p["timestamp"]
-
-        if self.path.exists() and self.path.joinpath("runs").exists():
-            return {
-                folder_name: {
-                    "name": folder_name,
-                    "time": retrieve_date(self.path.joinpath("runs") / folder_name),
-                }
-                for folder_name in os.listdir(self.path.joinpath("runs"))
-                if (self.path.joinpath("runs") / folder_name).is_dir()
-                and (self.path.joinpath("runs") / folder_name / "bertopic_topics.csv").exists()
-            }
-        return {}
+        return {name: self.get_model(name) for name in os.listdir(self.path.joinpath("runs"))}
 
     def name_available(self, name: str) -> bool:
         """
@@ -162,7 +168,7 @@ class Bertopic:
     def state(self) -> BertopicProjectStateModel:
         return BertopicProjectStateModel(
             available=self.available(),
-            training=self.training(),  # type: ignore
+            training=self.training(),
             models=self.available_models,
         )
 
