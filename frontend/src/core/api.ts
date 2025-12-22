@@ -1706,6 +1706,7 @@ export function useUpdateProjection(
             method: formData.method,
             features: formData.features,
             parameters: formData.parameters,
+            normalize_features: formData.normalize_features,
           },
         });
         if (!res.error) notify({ type: 'warning', message: 'Vizualisation is being computed' });

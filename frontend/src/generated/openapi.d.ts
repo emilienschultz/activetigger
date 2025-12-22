@@ -2198,6 +2198,11 @@ export interface components {
              * @default 50
              */
             filter_text_length: number;
+            /**
+             * Input Datasets
+             * @default train
+             */
+            input_datasets: string;
             /** Name */
             name: string;
             /**
@@ -2205,11 +2210,6 @@ export interface components {
              * @default false
              */
             force_compute_embeddings: boolean;
-            /**
-             * Input Datasets
-             * @default train
-             */
-            input_datasets: string;
         };
         /**
          * DatasetModel
@@ -3095,6 +3095,11 @@ export interface components {
             parameters: {
                 [key: string]: (number | string | boolean | unknown[]) | undefined;
             };
+            /**
+             * Normalize Features
+             * @default false
+             */
+            normalize_features: boolean;
         };
         /** ProjectionsProjectStateModel */
         ProjectionsProjectStateModel: {
