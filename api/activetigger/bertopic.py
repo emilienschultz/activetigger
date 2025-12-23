@@ -50,6 +50,8 @@ class Bertopic:
         self.computing = computing
         self.path: Path = path.joinpath("bertopic")
         self.path.mkdir(parents=True, exist_ok=True)
+        if not self.path.joinpath("runs").exists():
+            self.path.joinpath("runs").mkdir(parents=True, exist_ok=True)
         self.features = features
         self.models_service = db_manager.language_models_service
         self.available_models = [
