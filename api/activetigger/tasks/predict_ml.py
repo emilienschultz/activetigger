@@ -93,9 +93,9 @@ class PredictML(BaseTask):
             
             sub_Y_pred_full = Y_pred_full[filter]
             metrics[dataset] = get_metrics(
-                sub_Y_pred_full["predicted_label"],
-                sub_Y_pred_full["prediction"],
-                texts=sub_Y_pred_full["text"] if self.col_text else None,
+                sub_Y_pred_full["predicted_label"].to_numpy(),
+                sub_Y_pred_full["prediction"].to_numpy(),
+                texts=sub_Y_pred_full["text"].to_numpy() if self.col_text else None,
             )
         
         # Compute the statistics on elements of the trainset not used during training ("out of sample")
@@ -108,9 +108,9 @@ class PredictML(BaseTask):
 
         if filter_oos.sum() > 10:
             metrics["outofsample"] = get_metrics(
-                Y_pred_full[filter_oos]["predicted_label"],
-                Y_pred_full[filter_oos]["prediction"],
-                texts=Y_pred_full[filter_oos]["text"] if self.col_text else None,
+                Y_pred_full[filter_oos]["predicted_label"].to_numpy(),
+                Y_pred_full[filter_oos]["prediction"].to_numpy(),
+                texts=Y_pred_full[filter_oos]["text"].to_numpy() if self.col_text else None,
             )
         return metrics
 
