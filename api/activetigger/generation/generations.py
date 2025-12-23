@@ -2,6 +2,7 @@ import pandas as pd
 from pandas import DataFrame
 
 from activetigger.datamodels import (  # ignore[import]
+    ExportGenerationsParams,
     GenerationAvailableModel,
     GenerationComputing,
     GenerationComputingOut,
@@ -100,22 +101,20 @@ class Generations:
         return None
 
     def get_generated(
-        self,
-        project_slug: str,
-        user_name: str,
-        n_elements: int | None = None,
+        self, project_slug: str, user_name: str, params: ExportGenerationsParams
     ) -> DataFrame:
         """
         Get generated elements from the database
         """
         result = self.generations_service.get_generated(
-            project_slug=project_slug, user_name=user_name, n_elements=n_elements
+            project_slug=project_slug, user_name=user_name
         )
         df = pd.DataFrame(result, columns=["time", "index", "prompt", "answer", "model_name"])
         df["time"] = pd.to_datetime(df["time"])
         if df["time"].dt.tz is None:
             df["time"] = df["time"].dt.tz_localize("UTC")
         df["time"] = df["time"].dt.tz_convert("Europe/Paris")
+        df["answer"] = self.filter(df["answer"], params.filters)
         return df
 
     def training(self) -> dict[str, GenerationComputingOut]:
@@ -218,6 +217,8 @@ class Generations:
         """
         Add a GenAI model to the project
         """
+        if self.model_exists(project_slug, model.name):
+            raise Exception("A model with this name already exists")
         return self.generations_service.add_project_gen_model(project_slug, model, user_name)
 
     def delete_model(self, project_slug: str, model_id: int) -> None:

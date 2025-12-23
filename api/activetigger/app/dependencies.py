@@ -138,6 +138,7 @@ class ProjectAction(str, Enum):
     EXPORT_DATA = "export data"
     MANAGE_FILES = "manage files"
     MONITOR = "access specific project information"
+    GENERATE = "use generation features"
 
 
 def test_rights(
@@ -206,7 +207,7 @@ def test_rights(
             if auth in ["manager"]:
                 return True
         # only manager and contributor can create
-        case ProjectAction.ADD | ProjectAction.MONITOR:
+        case ProjectAction.ADD | ProjectAction.MONITOR | ProjectAction.GENERATE:
             if auth in ["manager", "contributor"]:
                 return True
         # everyone can get info or add annotation

@@ -165,9 +165,25 @@ class ElementInModel(BaseModel):
     """
 
     element_id: str
+    dataset: str
     scheme: str | None = None
-    dataset: str = "train"
     active_model: ActiveModel | None = None
+
+
+class AnnotationModel(BaseModel):
+    """
+    Complete information on an annotation
+    """
+
+    project_slug: str
+    dataset: str
+    scheme: str
+    element_id: str
+    label: str | None = None
+    time: datetime.datetime | None = None
+    user: str | None = None
+    comment: str | None = None
+    selection: str | None = None
 
 
 class ElementOutModel(BaseModel):
@@ -183,7 +199,7 @@ class ElementOutModel(BaseModel):
     predict: PredictedLabel
     frame: list | None
     limit: int | None  # TO REMOVE
-    history: list | None = None
+    history: list[AnnotationModel] | None = None
     n_sample: int | None = None
 
 
@@ -228,20 +244,6 @@ class TokenModel(BaseModel):
     access_token: str
     token_type: str
     status: str | None
-
-
-class AnnotationModel(BaseModel):
-    """
-    Specific Annotation
-    """
-
-    project_slug: str
-    scheme: str
-    element_id: str
-    label: str | None
-    dataset: str = "train"
-    comment: str | None = None
-    selection: str | None = None
 
 
 class TableAnnotationsModel(BaseModel):
@@ -471,7 +473,7 @@ class ComputeBertopicModel(BertopicParamsModel):
     name: str
     force_compute_embeddings: bool = False
     embedding_model: str
-    language: str|None = None
+    language: str | None = None
     input_datasets: str = "train"
     umap_n_neighbors: int = 30
     hdbscan_min_cluster_size: int = 15
@@ -479,7 +481,7 @@ class ComputeBertopicModel(BertopicParamsModel):
     filter_text_length: int = 50
     umap_n_components: int = 5
     top_n_words: int = 15
-    n_gram_range: tuple[int, int] = (1,2)
+    n_gram_range: tuple[int, int] = (1, 2)
     embedding_kind: str = "sentence_transformers"
 
 
@@ -1040,6 +1042,7 @@ class TextDatasetModel(BaseModel):
     id: str
     text: str
     filename: str
+    path: Path | None = None
 
 
 class GeneratedElementsIn(BaseModel):

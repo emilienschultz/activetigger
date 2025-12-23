@@ -200,7 +200,6 @@ class Features:
             raise Exception("Feature already exists")
 
         # test length
-        print("New content shape", new_content.shape, self.n)
         if len(new_content) != self.n:
             raise ValueError("Features don't have the right shape")
 

@@ -118,7 +118,8 @@ class Users:
         if username == "root":
             return self.db_manager.users_service.get_users_created_by("all", active)
         else:
-            return self.db_manager.users_service.get_users_created_by(username, active)
+            # TODO : in the future, allows users in project related to the account ?
+            return {}
 
     def add_user(
         self,

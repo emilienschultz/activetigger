@@ -621,7 +621,7 @@ class Project:
         if next.scheme not in self.schemes.available():
             raise ValueError("Scheme doesn't exist")
 
-        # select the current state of annotation
+        # select the current dataset
         if next.dataset == "test":
             if self.data.test is None:
                 raise ValueError("No test dataset available")
@@ -633,7 +633,7 @@ class Project:
         else:
             df = self.schemes.get_scheme(next.scheme, complete=True, datasets=["train"])
 
-        # the filter for the sample
+        # filter based on the labels
         if next.sample == "untagged":
             f = df["labels"].isna()
         elif next.sample == "tagged":
@@ -649,7 +649,7 @@ class Project:
         else:
             f = df["labels"].apply(lambda x: True)
 
-        # add a regex condition to the selection
+        # filter based on the text (field, context)
         if next.filter:
             # sanitize
             df["ID"] = df.index  # duplicate the id column
@@ -673,7 +673,7 @@ class Project:
                 f_regex = df["text"].str.contains(filter_san, regex=True, case=True, na=False)
             f = f & f_regex
 
-        # manage frame selection (if projection, only in the box)
+        # filter with a frame (projection coordinates)
         if next.frame and len(next.frame) == 4:
             if username in self.projections.available:
                 if self.projections.available[username].data is not None:
@@ -694,14 +694,17 @@ class Project:
         if sum(f) == 0:
             raise ValueError("No element available with this selection mode.")
 
-        # Take into account the session history
+        # filter by history
         ss = df[f].drop(next.history, errors="ignore")
         if len(ss) == 0:
-            raise ValueError("No element available with this selection mode.")
+            raise ValueError(
+                "No element available with this selection mode and history. Clear the history to access previous elements."
+            )
         indicator = None
         n_sample = f.sum()  # use len(ss) for adding history
 
-        # select type of selection
+        # select an element based on the method
+
         if next.selection == "fixed":  # next row
             element_id = ss.index[0]
 
@@ -750,7 +753,7 @@ class Project:
         ):
             predict = self.quickmodels.get_prediction_element(next.model_active.value, element_id)
 
-        # get all tags already existing for the element
+        # get all tags already existing for the element selected
         previous = self.schemes.projects_service.get_annotations_by_element(
             self.params.project_slug, next.scheme, element_id
         )
@@ -789,51 +792,38 @@ class Project:
 
         TODO : get next and get element could be merged
         """
-        history = None
 
-        if element.dataset == "valid" and self.data.valid is not None:
+        text = None
+        predict = PredictedLabel(label=None, proba=None, entropy=None)
+        context = {}
+        history = None
+        if element.scheme is not None:
+            history = self.schemes.projects_service.get_annotations_by_element(
+                self.params.project_slug, element.scheme, element.element_id
+            )
+
+        if element.dataset == "valid":
+            if self.data.valid is None:
+                raise Exception("Valid dataset is not defined")
             if element.element_id not in self.data.valid.index:
                 raise Exception("Element does not exist.")
-            if element.scheme is not None:
-                history = self.schemes.projects_service.get_annotations_by_element(
-                    self.params.project_slug, element.scheme, element.element_id
-                )
-            return ElementOutModel(
-                element_id=element.element_id,
-                text=str(self.data.valid.loc[element.element_id, "text"]),
-                context={},
-                selection="valid",
-                info="",
-                predict=PredictedLabel(label=None, proba=None, entropy=None),
-                frame=None,
-                limit=None,
-                history=history,
-            )
+            text = str(self.data.valid.loc[element.element_id, "text"])
 
-        if element.dataset == "test" and self.data.test is not None:
+        if element.dataset == "test":
+            if self.data.test is None:
+                raise Exception("Test dataset is not defined")
             if element.element_id not in self.data.test.index:
                 raise Exception("Element does not exist.")
-            if element.scheme is not None:
-                history = self.schemes.projects_service.get_annotations_by_element(
-                    self.params.project_slug, element.scheme, element.element_id
-                )
-            return ElementOutModel(
-                element_id=element.element_id,
-                text=str(self.data.test.loc[element.element_id, "text"]),
-                context={},
-                selection="test",
-                info="",
-                predict=PredictedLabel(label=None, proba=None, entropy=None),
-                frame=None,
-                limit=None,
-                history=history,
-            )
+            text = str(self.data.test.loc[element.element_id, "text"])
 
+        # case for train with more information
         if element.dataset == "train":
             if self.data.train is None:
                 raise Exception("Train dataset is not defined")
             if element.element_id not in self.data.train.index:
                 raise Exception("Element does not exist.")
+
+            text = str(self.data.train.loc[element.element_id, "text"])
 
             # get prediction if it exists
             predict = PredictedLabel(label=None, proba=None, entropy=None)
@@ -842,12 +832,7 @@ class Project:
                     element.active_model.value, element.element_id
                 )
 
-            # get element tags
-            if element.scheme is not None:
-                history = self.schemes.projects_service.get_annotations_by_element(
-                    self.params.project_slug, element.scheme, element.element_id
-                )
-
+            # extract context
             context = cast(
                 dict[str, Any],
                 self.data.train.loc[element.element_id, self.params.cols_context]  # type: ignore[index]
@@ -856,19 +841,20 @@ class Project:
                 .to_dict(),
             )
 
-            return ElementOutModel(
-                element_id=element.element_id,
-                text=str(self.data.train.loc[element.element_id, "text"]),
-                context=context,
-                selection="request",
-                predict=predict,
-                info="get specific",
-                frame=None,
-                limit=None,
-                history=history,
-            )
+        if text is None:
+            raise Exception("Dataset does not exist.")
 
-        raise Exception("Dataset does not exist.")
+        return ElementOutModel(
+            element_id=element.element_id,
+            text=text,
+            context=context,
+            selection="request",
+            predict=predict,
+            info="get specific",
+            frame=None,
+            limit=None,
+            history=history,
+        )
 
     def get_params(self) -> ProjectModel:
         """
@@ -1102,6 +1088,7 @@ class Project:
         table = self.generations.get_generated(
             project_slug=project_slug,
             user_name=username,
+            params=params,
         )
 
         # apply filters on the generated
@@ -1596,7 +1583,7 @@ class Project:
             try:
                 # load the prediction probabilities minus one
                 df = pd.read_parquet(add_predictions[f])
-                df = df.drop(columns=["entropy", "prediction", "dataset", "id", "label"])
+                df = df.drop(columns=["entropy", "prediction", "dataset", "label"])
                 df = df[df.columns[0:-1]]
                 name = f.replace("__", "_")  # avoid __ in the name for features
                 # if the feature already exists, delete it first

@@ -2036,7 +2036,7 @@ export function useGetActiveUsers() {
 
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
 
-  return { users: getAsyncMemoData(getActiveUsers), reFetchStatistics: reFetch };
+  return { n_users: getAsyncMemoData(getActiveUsers), reFetchStatistics: reFetch };
 }
 
 /**
@@ -2306,45 +2306,6 @@ export function useDeletePrompts(projectSlug: string | null) {
 }
 
 /***** MANAGE Files ******/
-
-/**
- * Get available files
- */
-export function useGetFiles() {
-  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
-
-  const getFiles = useAsyncMemo(async () => {
-    const res = await api.GET('/files');
-
-    return res.data;
-  }, [fetchTrigger]);
-
-  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
-
-  return { files: getAsyncMemoData(getFiles), reFetchFiles: reFetch };
-}
-
-/**
- * Delete a file
- */
-export function useDeleteFile(reFetchFiles: () => void) {
-  const { notify } = useNotifications();
-  const deleteFile = useCallback(
-    async (filename: string | null) => {
-      if (filename) {
-        const res = await api.POST('/files/delete', {
-          params: {
-            query: { filename: filename },
-          },
-        });
-        if (!res.error) notify({ type: 'success', message: 'File deleted' });
-        reFetchFiles();
-      }
-    },
-    [notify, reFetchFiles],
-  );
-  return deleteFile;
-}
 
 /**
  * Test if project name is available

@@ -10,13 +10,12 @@ from fastapi import (
 
 from activetigger.app.dependencies import (
     ProjectAction,
-    ServerAction,
     get_project,
     test_rights,
     verified_user,
 )
 from activetigger.datamodels import (
-    GeneratedElementsIn,
+    ExportGenerationsParams,
     GenerationCreationModel,
     GenerationModel,
     GenerationModelApi,
@@ -35,7 +34,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("/generate/models/available", dependencies=[Depends(verified_user)])
+@router.get("/generate/models/available")
 async def list_generation_models() -> list[GenerationModelApi]:
     """
     Returns the list of the available GenAI models for generation
@@ -49,11 +48,13 @@ async def list_generation_models() -> list[GenerationModelApi]:
 
 @router.get("/generate/models", dependencies=[Depends(verified_user)])
 async def list_project_generation_models(
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project: Annotated[Project, Depends(get_project)],
 ) -> list[GenerationModel]:
     """
     Returns the list of the available GenAI models configure for a project
     """
+    test_rights(ProjectAction.GENERATE, current_user.username, project.name)
     try:
         return project.generations.available_models(project.name)
     except Exception as e:
@@ -71,13 +72,7 @@ async def add_project_generation_models(
     """
     test_rights(ProjectAction.UPDATE, current_user.username, project.name)
     try:
-        # test if the model exists with this name for the project
-        if project.generations.model_exists(project.name, model.name):
-            raise HTTPException(status_code=400, detail="A model with this name already exists")
-
-        # add the model
-        r = project.generations.add_model(project.name, model, current_user.username)
-        return r
+        return project.generations.add_model(project.name, model, current_user.username)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -144,24 +139,14 @@ async def postgenerate(
 async def getgenerate(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    params: GeneratedElementsIn,
+    params: ExportGenerationsParams,
 ) -> TableOutModel:
     """
     Get elements generated
     """
-    test_rights(ProjectAction.GET, current_user.username, project.name)
+    test_rights(ProjectAction.GENERATE, current_user.username, project.name)
     try:
-        # get data
-        table = project.generations.get_generated(
-            project.name, current_user.username, params.n_elements
-        )
-
-        # apply filters
-        table["answer"] = project.generations.filter(table["answer"], params.filters)
-
-        # join with the text
-        # table = table.join(project.content["text"], on="index")
-
+        table = project.generations.get_generated(project.name, current_user.username, params)
         return TableOutModel(items=table.to_dict(orient="records"), total=len(table))
     except Exception as e:
         raise HTTPException(status_code=500, detail="Error in loading generated data" + str(e))
@@ -175,7 +160,7 @@ async def dropgenerate(
     """
     Drop all elements from prediction for a user
     """
-    test_rights(ProjectAction.GET, current_user.username, project.name)
+    test_rights(ProjectAction.GENERATE, current_user.username, project.name)
     try:
         project.generations.drop_generated(project.name, current_user.username)
     except Exception as e:
@@ -188,9 +173,9 @@ async def get_prompts(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
 ) -> list[PromptModel]:
     """
-    Get the list of prompts for the user
+    Get the list of prompts for the project
     """
-    test_rights(ProjectAction.GET, current_user.username, project.name)
+    test_rights(ProjectAction.GENERATE, current_user.username, project.name)
     try:
         return project.generations.get_prompts(project.name)
     except Exception as e:
@@ -206,7 +191,7 @@ async def add_prompt(
     """
     Add a prompt to the project
     """
-    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
+    test_rights(ProjectAction.GENERATE, current_user.username, project.name)
     try:
         project.generations.save_prompt(prompt, current_user.username, project.name)
     except Exception as e:

@@ -25,14 +25,6 @@ from activetigger.project import Project
 router = APIRouter()
 
 
-@router.get("/features", dependencies=[Depends(verified_user)])
-async def get_features(project: Annotated[Project, Depends(get_project)]) -> list[str]:
-    """
-    Available features for the project
-    """
-    return list(project.features.map.keys())
-
-
 @router.post("/features/add", dependencies=[Depends(verified_user)])
 async def post_embeddings(
     project: Annotated[Project, Depends(get_project)],
@@ -45,7 +37,6 @@ async def post_embeddings(
     - specific process : function + temporary file + update
     """
     test_rights(ProjectAction.ADD, current_user.username, project.name)
-
     try:
         # gather all text data to compute features on
         if project.data.train is None:
@@ -66,7 +57,6 @@ async def post_embeddings(
         orchestrator.log_action(
             current_user.username, f"COMPUTE FEATURE: {feature.type}", project.name
         )
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

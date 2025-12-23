@@ -12,7 +12,7 @@ import { LoginParams } from '../types';
 
 export const HomePage: FC = () => {
   const { authenticatedUser, logout } = useAuth();
-  const { users } = useGetActiveUsers();
+  const { n_users } = useGetActiveUsers();
 
   // add a development mode switch
   // const {
@@ -143,7 +143,7 @@ export const HomePage: FC = () => {
                 </div>
               )}
 
-              {!users && (
+              {n_users === null && n_users === undefined && (
                 <div className="alert alert-alert mt-3">Problem connecting to the server</div>
               )}
             </center>
@@ -156,7 +156,7 @@ export const HomePage: FC = () => {
               className="ml-2 d-flex justify-content-center align-items-center"
               style={{ fontSize: '0.8rem' }}
             >
-              {users?.length} current users • API {version} • Client {__BUILD_DATE__}
+              {n_users} current users • API {version} • Client {__BUILD_DATE__}
               <a
                 href="https://www.css.cnrs.fr/active-tigger/"
                 target="_blank"
