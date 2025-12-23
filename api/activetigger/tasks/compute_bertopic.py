@@ -276,7 +276,7 @@ class ComputeBertopic(BaseTask):
         # Compute projection if does not exist
         if not path_projection.exists():
             self.compute_projection(self.existing_embeddings, path_projection)
-        # Copy the projection to the run directory #NOTE: AM: Why?
+        # Copy the projection to the run directory #NOTE: AM: Why? Answer: Generic name, might need refactorisation
         shutil.copy(path_projection, self.path_run.joinpath("projection2D.parquet"))
 
         # Load the embeddings ---
@@ -568,15 +568,18 @@ class ComputeBertopic(BaseTask):
         )
 
         # Create Plotly figure for 2D maps
-        fig_map = visualize_documents(
-            topics=topics,
-            topic_info=topic_info,
-            docs=docs,
-            embeddings=embeddings,
-            n_neighbors=self.parameters.umap_n_neighbors,
-            min_dist=0.0,
-            min_number_of_element=-1,  # Need additional implementation
-        )
+        try: 
+            fig_map = visualize_documents(
+                topics=topics,
+                topic_info=topic_info,
+                docs=docs,
+                embeddings=embeddings,
+                n_neighbors=self.parameters.umap_n_neighbors,
+                min_dist=0.0,
+                min_number_of_element=-1,  # Need additional implementation
+            )
+        except:
+            fig_map = "You don't have enough elements to compute the hierarchy visualisation"
 
         # Create plotly figure for hierarchical representation
         fig_hierarchical = topic_model.visualize_hierarchy().update_layout(
