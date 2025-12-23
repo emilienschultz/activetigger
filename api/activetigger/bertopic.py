@@ -159,7 +159,11 @@ class Bertopic:
         Get available BERTopic models.
         """
 
-        return {name: self.get_model(name) for name in os.listdir(self.path.joinpath("runs"))}
+        return {
+            p.name: self.get_model(p.name)
+            for p in self.path.joinpath("runs").iterdir()
+            if p.is_dir()
+        }
 
     def name_available(self, name: str) -> bool:
         """
