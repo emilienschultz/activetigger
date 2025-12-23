@@ -328,7 +328,7 @@ class QuickModels:
         # data for training
         Y = df[col_label]
         X = df[col_predictors]
-        labels = Y.unique()
+        labels = Y.unique() # NOTE: AM: labels include nan values that may be a problem for downstream pipelines. For now I have patched this later on (in the ML trainer)
 
         return X, Y, labels
 

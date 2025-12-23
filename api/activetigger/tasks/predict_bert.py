@@ -202,9 +202,9 @@ class PredictBert(BaseTask):
             if filter.sum() < 5:
                 continue
             metrics[dataset] = get_metrics(
-                pred[filter]["label"].to_numpy(),
-                pred[filter]["prediction"].to_numpy(),
-                texts=pred[filter]["text"].to_numpy(),
+                pred[filter]["label"],
+                pred[filter]["prediction"],
+                texts=pred[filter]["text"],
             )
 
         # add out of sample (labelled data not in training data)
@@ -214,9 +214,9 @@ class PredictBert(BaseTask):
         )
         if filter_oos.sum() > 10:
             metrics["outofsample"] = get_metrics(
-                pred[filter_oos]["label"].to_numpy(),
-                pred[filter_oos]["prediction"].to_numpy(),
-                texts=pred[filter_oos]["text"].to_numpy(),
+                pred[filter_oos]["label"],
+                pred[filter_oos]["prediction"],
+                texts=pred[filter_oos]["text"],
             )
 
         # write the metrics in a json file
