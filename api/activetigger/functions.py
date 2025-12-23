@@ -9,6 +9,7 @@ from typing import Any, cast
 from urllib.parse import quote
 
 import bcrypt
+import numpy as np
 import pandas as pd  # type: ignore[import]
 import spacy
 import torch
@@ -187,38 +188,46 @@ def decrypt(text: str | None, secret_key: str | None) -> str:
 
 
 def get_metrics(
-    Y_true: Series,
-    Y_pred: Series,
+    Y_true: np.ndarray,
+    Y_pred: np.ndarray,
     labels: list[str] | None = None,
-    texts: Series | None = None,
+    texts: np.ndarray | None = None,
     decimals: int = 3,
 ) -> MLStatisticsModel:
     """
     Compute metrics for a prediction
+    - precision, f1, recall per label
+    - f1 (weighted macro, micro) and precision micro
+    - confusion matrix and table
     """
     if labels is None:
-        labels = list(Y_true.unique())
+        labels = np.unique(Y_true)
 
-    precision = [
-        round(i, decimals)
-        for i in precision_score(
-            list(Y_true),
-            list(Y_pred),
-            average=None,
-            labels=labels,
-            zero_division=1,
-        )
-    ]
-    f1 = [
-        round(i, decimals)
-        for i in f1_score(list(Y_true), list(Y_pred), average=None, labels=labels)
-    ]
+    # Compute scores per label --- --- --- --- --- --- --- --- --- --- --- --- -
+    precision_label = precision_score(Y_true,Y_pred,average=None,labels=labels,zero_division=1)
+    precision_label = [round(score, decimals)for score in precision_label]
+
+    f1_label = f1_score(Y_true, Y_pred, average=None, labels=labels)
+    f1_label = [round(score, decimals) for score in f1_label]
+
+    recall_label = recall_score(Y_true, Y_pred, average=None, labels=labels)
+    recall_label = [round(score, decimals)for score in recall_label]
+
+    # Compute score averaged (micro, macro, weighted) --- --- --- --- --- --- --
+    f1_weighted = f1_score(Y_true, Y_pred, average="weighted")
+    f1_weighted = round(f1_weighted, decimals)
+
+    f1_macro = f1_score(Y_true, Y_pred, average="macro")
+    f1_macro = round(f1_macro, decimals)
+    
+    f1_micro = f1_score(Y_true, Y_pred, average="micro")
+    f1_micro = round(f1_micro, decimals)
+    
+    precision_micro = precision_score(Y_true, Y_pred, average="micro", zero_division=1)
+    precision_micro = round(precision_micro, decimals)
+
+    # Compute confiusion matrix --- --- --- --- --- --- --- --- --- --- --- --- -
     confusion = confusion_matrix(Y_true, Y_pred, labels=labels)
-
-    recall = [
-        round(i, decimals)
-        for i in recall_score(list(Y_true), list(Y_pred), average=None, labels=labels)
-    ]
 
     table = pd.DataFrame(confusion, index=labels, columns=labels)
     table["Total"] = table.sum(axis=1)
@@ -226,46 +235,40 @@ def get_metrics(
     table["Total"] = table.sum(axis=1)
     table = table.T
 
-    # Create a table of false predictions
+    # Create a table of false predictions --- --- --- --- --- --- --- --- --- --
     filter_false_prediction = Y_true != Y_pred
     if texts is not None:
-        tab = pd.concat(
-            [Y_true[filter_false_prediction], Y_pred[filter_false_prediction], texts],
-            axis=1,
-            join="inner",
-        ).reset_index()
+        # Conca
+        tab = (
+            pd.concat(
+                [
+                    pd.Series(Y_true[filter_false_prediction]), 
+                    pd.Series(Y_pred[filter_false_prediction]), 
+                    pd.Series(texts)
+                ],
+                axis=1,
+                join="inner",
+            )
+            .reset_index()
+        )
         tab.columns = pd.Index(["id", "label", "prediction", "text"])
         false_prediction = tab.to_dict(orient="records")
     else:
+        # TODO: explicit or refactor
         false_prediction = filter_false_prediction.loc[lambda x: x].index.tolist()
 
     statistics = MLStatisticsModel(
-        f1_label=dict(
-            zip(
-                labels,
-                f1,
-            )
-        ),
-        f1_weighted=round(f1_score(Y_true, Y_pred, average="weighted"), decimals),
-        f1_macro=round(f1_score(Y_true, Y_pred, average="macro"), decimals),
-        f1_micro=round(f1_score(Y_true, Y_pred, average="micro"), decimals),
-        precision=round(
-            precision_score(list(Y_true), list(Y_pred), average="micro", zero_division=1),
-            decimals,
-        ),
-        precision_label=dict(
-            zip(
-                labels,
-                precision,
-            )
-        ),
-        recall_label=dict(
-            zip(
-                labels,
-                recall,
-            )
-        ),
+        f1_label=dict(zip(labels,f1_label)),
+        precision_label=dict(zip(labels,precision_label)),
+        recall_label=dict(zip(labels,recall_label)),
+
         confusion_matrix=confusion.tolist(),
+
+        f1_weighted=f1_weighted, 
+        f1_macro=f1_macro, 
+        f1_micro=f1_micro, 
+        precision=precision_micro, 
+
         false_predictions=false_prediction,
         table=cast(dict[str, Any], table.to_dict(orient="split")),
     )
@@ -330,3 +333,8 @@ def get_model_metrics(path_model: Path) -> dict | None:
         scores = {**scores, **stats}
 
     return scores
+
+
+def evaluate_entropy(proba : np.ndarray) -> np.ndarray:
+    """Compute the entropy"""
+    return -1 * (proba * np.log(proba)).sum(axis=1)

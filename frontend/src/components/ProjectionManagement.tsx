@@ -93,6 +93,8 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
         n_neighbors: 15,
         min_dist: 0.1,
       },
+      // Normalize
+      normalize_features: false,
     },
   });
   const selectedMethod = watch('method'); // state for the model selected to modify parameters
@@ -412,6 +414,8 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                   ></input>
                 </>
               )}
+              <input type="checkbox" {...register('normalize_features')} />
+              <label>Normalize features</label>
             </details>
             <button className="btn-submit">Compute</button>
           </form>

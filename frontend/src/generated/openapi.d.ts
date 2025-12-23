@@ -2963,6 +2963,11 @@ export interface components {
             parameters: {
                 [key: string]: (number | string | boolean | unknown[]) | undefined;
             };
+            /**
+             * Normalize Features
+             * @default false
+             */
+            normalize_features: boolean;
         };
         /** ProjectionsProjectStateModel */
         ProjectionsProjectStateModel: {

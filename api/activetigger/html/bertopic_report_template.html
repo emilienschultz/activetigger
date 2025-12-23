@@ -60,7 +60,9 @@
                     <span>Topic {{ topic }}</span>
                 </summary>  
                 <ul>
-                    {{ docs }}
+                    {% for doc in docs %}
+                    <li>{{ doc }}</li>
+                    {% endfor %}
                 </ul>
             </details>
             {% endfor %}

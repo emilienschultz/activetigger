@@ -162,7 +162,7 @@ class Bertopic:
         return {
             p.name: self.get_model(p.name)
             for p in self.path.joinpath("runs").iterdir()
-            if p.is_dir()
+            if p.is_dir() & p.joinpath("params.json").exists()
         }
 
     def name_available(self, name: str) -> bool:

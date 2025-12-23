@@ -14,8 +14,8 @@ from sklearn.model_selection import (  # type: ignore[import]
     train_test_split,
 )
 
-from activetigger.datamodels import QuickModelComputed
-from activetigger.functions import get_metrics
+from activetigger.datamodels import QuickModelComputed, MLStatisticsModel
+from activetigger.functions import get_metrics, evaluate_entropy
 from activetigger.tasks.base_task import BaseTask
 
 
@@ -65,54 +65,10 @@ class TrainML(BaseTask):
         self.standardize = standardize
         self.texts = texts
 
-    def __call__(self) -> None:
-        """
-        Fit quickmodel and calculate statistics
-        """
-
-        # drop NA values
-        f = self.Y.notnull()
-        X_train, X_test, Y_train, Y_test = train_test_split(
-            self.X[f], self.Y[f], test_size=0.2, random_state=42
-        )
-
-        # fit model
-        self.model.fit(X_train, Y_train)
-
-        # predict on test data
-        Y_pred_train = pd.Series(self.model.predict(X_train), index=X_train.index)
-        Y_pred_test = pd.Series(self.model.predict(X_test), index=X_test.index)
-
-        # compute probabilities for all data
-        proba = self.model.predict_proba(self.X)
-        proba = pd.DataFrame(proba, columns=self.model.classes_, index=self.X.index)
-        proba["entropy"] = -1 * (proba * np.log(proba)).sum(axis=1)
-        proba["prediction"] = proba.drop(columns="entropy").idxmax(axis=1)
-
-        # compute training metrics and write
-        if self.texts is not None:
-            texts_train = self.texts.loc[Y_train.index]
-            texts_test = self.texts.loc[Y_test.index]
-            metrics_train = get_metrics(Y_train, Y_pred_train, texts=texts_train)
-            metrics_test = get_metrics(Y_test, Y_pred_test, texts=texts_test)
-        else:
-            metrics_train = get_metrics(Y_train, Y_pred_train)
-            metrics_test = get_metrics(Y_test, Y_pred_test)
-            metrics_train.false_predictions = None
-            metrics_test.false_predictions = None
-
-        # compute 10-CV metrics
-        if self.cv10:
-            num_folds = 10
-            kf = KFold(n_splits=num_folds, shuffle=True, random_state=42)
-            Y_pred_10cv = cross_val_predict(self.model, self.X[f], self.Y[f], cv=kf)
-            statistics_cv10 = get_metrics(self.Y[f], Y_pred_10cv)
-            statistics_cv10.false_predictions = None
-        else:
-            statistics_cv10 = None
-
+    def __init_paths(self, retrain: bool) -> None:
+        """Create a directory for the files to be saved"""
         # if retrain, clear the folder
-        if self.retrain:
+        if retrain:
             shutil.rmtree(self.model_path)
             os.mkdir(self.model_path)
         else:
@@ -120,6 +76,58 @@ class TrainML(BaseTask):
                 raise Exception("The model already exists")
             os.mkdir(self.model_path)
 
+    def __split_set(self) -> tuple[pd.Series, pd.Series, pd.Series, pd.Series]:
+        """Remove null elements and return train/test splits"""
+        # drop NA values
+        f = self.Y.notnull()
+        self.X = self.X[f]
+        self.Y = self.Y[f]
+
+        X_train, X_test, Y_train, Y_test = train_test_split(
+            self.X[f], self.Y[f], test_size=0.2, random_state=42
+        )
+        return X_train, X_test, Y_train, Y_test
+
+    def __compute_metrics(self, y_true : pd.Series, y_pred: pd.Series) -> MLStatisticsModel:
+        """Compute metrics"""
+        texts = self.texts.loc[y_true.index]
+        metrics = get_metrics(
+            y_true.to_numpy(), 
+            y_pred.to_numpy(), 
+            texts=texts, 
+            labels=self.labels
+        )
+        return metrics
+
+    def __compute_cv10(self) -> MLStatisticsModel:
+        """Compute cv (predict and compute metrics)"""
+        num_folds = 10
+        kf = KFold(n_splits=num_folds, shuffle=True, random_state=42)
+        Y_pred_10cv : np.ndarray = cross_val_predict(self.model, self.X, self.Y, cv=kf)
+        statistics_cv10 = get_metrics(
+            self.Y, 
+            Y_pred_10cv, 
+            labels=self.labels,
+        )
+        # overwrite false_predictions
+        statistics_cv10.false_predictions = None
+
+        return statistics_cv10
+    
+    def __create_saving_files(self, 
+        proba: pd.DataFrame, 
+        X_train: pd.Series, 
+        Y_train: pd.Series,
+        metrics_train: MLStatisticsModel, 
+        metrics_test: MLStatisticsModel,
+        statistics_cv10: MLStatisticsModel
+    ) -> None:
+        """ Add an entry in the data base and save the following files: 
+            - proba.csv with the probabilities
+            - data using during training (training_data.parquet)
+            - a pickle version of the database entry (#NOTE: AM: Artefact ?)
+            - metrics for the training (train, trainvalid and cv10)
+        """
         # Write the proba
         proba.to_csv(self.model_path / "proba.csv")
 
@@ -147,13 +155,13 @@ class TrainML(BaseTask):
             statistics_test=metrics_test,
             statistics_cv10=statistics_cv10,
         )
+
         with open(self.model_path / "model.pkl", "wb") as file:
             pickle.dump(element, file)
 
         # Write the statistics
-        with open(
-            str(self.path.joinpath(self.name).joinpath("metrics_training.json")), "w"
-        ) as file:
+        path_to_metrics_json = str(self.path.joinpath(self.name).joinpath("metrics_training.json"))
+        with open(path_to_metrics_json, "w") as file:
             json.dump(
                 {
                     "train": metrics_train.model_dump(mode="json"),
@@ -163,4 +171,36 @@ class TrainML(BaseTask):
                 file,
             )
 
-        return None
+
+    def __call__(self) -> None:
+        """
+        Fit quickmodel and calculate statistics
+        """
+        self.__init_paths(self.retrain)
+
+        X_train, X_test, Y_train, Y_test = self.__split_set()
+
+        # Fit model --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- 
+        self.model.fit(X_train, Y_train)
+
+        # predict on test data --- --- --- --- --- --- --- --- --- --- --- --- -
+        Y_pred_train = pd.Series(self.model.predict(X_train), index=X_train.index)
+        Y_pred_test = pd.Series(self.model.predict(X_test), index=X_test.index)
+
+        # compute probabilities for all data
+        proba_values = self.model.predict_proba(self.X)
+        proba = pd.DataFrame(proba_values, columns=self.model.classes_, index=self.X.index)
+        proba["prediction"] = proba.idxmax(axis=1)
+        proba["entropy"] = evaluate_entropy(proba_values)
+
+        # Compute metrics --- --- --- --- --- --- --- --- --- --- --- --- --- --
+        metrics_train = self.__compute_metrics(y_true = Y_train, y_pred = Y_pred_train)
+        metrics_test = self.__compute_metrics(y_true = Y_test, y_pred = Y_pred_test)
+        
+        if self.cv10:
+            statistics_cv10 = self.__compute_cv10()
+        else:
+            statistics_cv10 = None
+
+        self.__create_saving_files(proba, X_train, Y_train, metrics_train, 
+            metrics_test, statistics_cv10)

@@ -92,7 +92,13 @@ async def compute_projection(
         features = project.features.get(
             projection.features, dataset=["train"]
         )  # get features from project
-        project.projections.compute(project.name, current_user.username, projection, features)
+        project.projections.compute(
+            project_slug=project.name, 
+            username=current_user.username, 
+            projection=projection, 
+            features=features, 
+            normalize_features=projection.normalize_features
+        )
         orchestrator.log_action(
             current_user.username,
             f"COMPUTE PROJECTION: {projection.method}",
@@ -100,6 +106,7 @@ async def compute_projection(
         )
         return WaitingModel(detail=f"Projection {projection.method} is computing")
     except Exception as e:
+        print(e)
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 

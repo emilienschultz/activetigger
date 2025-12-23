@@ -27,11 +27,12 @@ class ComputeProjection(BaseTask):
     features: DataFrame
     params: dict
 
-    def __init__(self, kind: str, features: DataFrame, params: dict):
+    def __init__(self, kind: str, features: DataFrame, params: dict, normalize_features: bool = False):
         super().__init__()
         self.kind = kind
         self.features = features
         self.params = params
+        self.normalize_features = normalize_features
 
     def __call__(self) -> DataFrame:
         """
@@ -50,7 +51,10 @@ class ComputeProjection(BaseTask):
         """
         Compute UMAP
         """
-        scaled_features = StandardScaler().fit_transform(self.features)
+        if self.normalize_features:
+            features = StandardScaler().fit_transform(self.features)
+        else:
+            features = self.features.values
 
         # Check if cuML is available for GPU acceleration
         try:
@@ -60,7 +64,7 @@ class ComputeProjection(BaseTask):
             reducer = umap.UMAP(**self.params, metric="cosine")
             print("Using standard UMAP for computation")
 
-        reduced_features = reducer.fit_transform(scaled_features)
+        reduced_features = reducer.fit_transform(features)
         df = pd.DataFrame(reduced_features, index=self.features.index)
         df_scaled = 2 * (df - df.min()) / (df.max() - df.min()) - 1
         return df_scaled
@@ -69,8 +73,12 @@ class ComputeProjection(BaseTask):
         """
         Compute TSNE
         """
-        scaled_features = StandardScaler().fit_transform(self.features)
-        reduced_features = TSNE(**self.params).fit_transform(scaled_features)
+        if self.normalize_features:
+            features = StandardScaler().fit_transform(self.features)
+        else: 
+            features = self.features.values
+
+        reduced_features = TSNE(**self.params).fit_transform(features)
         df = pd.DataFrame(reduced_features, index=self.features.index)
         df_scaled = 2 * (df - df.min()) / (df.max() - df.min()) - 1
         return df_scaled

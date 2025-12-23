@@ -3,11 +3,13 @@ import time
 from pathlib import Path
 from typing import Optional
 
+import numpy as np 
 import pandas as pd
 from sklearn.base import BaseEstimator  # type: ignore[import]
 
 from activetigger.functions import get_metrics
 from activetigger.tasks.base_task import BaseTask
+from activetigger.datamodels import MLStatisticsModel
 
 
 class PredictML(BaseTask):
@@ -41,6 +43,23 @@ class PredictML(BaseTask):
         self.col_label = col_label
         self.col_text = col_text
 
+        
+
+        expected_cols = self.model.feature_names_in_
+        self.__check_data_and_features(col_dataset, expected_cols, col_features)
+        
+        
+        self.X = self.df.reindex(columns=list(expected_cols) + [col_dataset])
+        self.Y = self.df[col_label] if col_label is not None else None
+
+        if self.statistics and self.col_text is None:
+            # NOTE: AM: Artefact?
+            print("There is no full text")
+        
+    def __check_data_and_features(self, col_dataset, expected_cols, col_features):
+        """Check that the dafatrame profided contains the required columns (text 
+        and features) and check that the labels are provided"""
+
         if col_dataset not in self.df.columns:
             raise ValueError(f"Dataset column {col_dataset} not in dataframe")
 
@@ -49,59 +68,81 @@ class PredictML(BaseTask):
 
         if self.statistics is not None and self.col_label is None:
             raise ValueError("Labels must be provided to compute statistics")
-
-        expected_cols = self.model.feature_names_in_
+        
         missing = set(expected_cols) - set(col_features)
         extra = set(col_features) - set(expected_cols)
         if len(missing) > 0 or len(extra) > 0:
             raise ValueError(f"Feature mismatch. Missing: {missing}, Extra: {extra}")
-        self.X = self.df.reindex(columns=list(expected_cols) + [col_dataset])
-        self.Y = self.df[col_label] if col_label is not None else None
-
-        if self.statistics and self.col_text is None:
-            print("There is no full text")
-
-    def __call__(self):
-        """
-        Fit simplemodel and calculate statistics
-        """
-        # Predict
-        Y_pred = self.model.predict(self.X.drop(columns=["dataset"]))
-        Y_proba = self.model.predict_proba(self.X.drop(columns=["dataset"]))
-        proba_cols = [cls for cls in self.model.classes_]
-        Y_full = pd.DataFrame(Y_proba, columns=proba_cols, index=self.X.index)
-        Y_full["prediction"] = Y_pred
-        Y_full["dataset"] = self.X["dataset"]
-        Y_full["label"] = self.df[self.col_label]
-        Y_full.to_parquet(self.path.joinpath(self.file_name), index=True)
-        if self.col_text:
-            Y_full["text"] = self.df[self.col_text]
-
+    
+    def __compute_metrics(self, Y_pred_full: pd.DataFrame) -> dict[str:MLStatisticsModel]:
+        """Compute the metrics for the whole train dataset as well as the 
+        train_valid dataset"""
         # Compute statistics if labels are provided
-        metrics = {}
-
-        filter_label = self.df[self.col_label].notna()  # only non null values
+        metrics : dict[str:MLStatisticsModel] = {}
+        
+        # Compute the statistics for each dataset
+        filter_existing_labels = self.df[self.col_label].notna()  # only non null values
         for dataset in self.statistics:
-            filter_dataset = Y_full["dataset"] == dataset
-            filter = filter_label & filter_dataset
-            if filter.sum() < 5:
-                continue
-            metrics[dataset] = get_metrics(
-                Y_full[filter]["label"],
-                Y_full[filter]["prediction"],
-                texts=Y_full[filter]["text"] if self.col_text else None,
-            )
+            # Select the correct rows
+            filter_dataset = Y_pred_full["dataset"] == dataset
+            filter = filter_existing_labels & filter_dataset
 
-        # add out of sample (labelled data not in training data)
-        index_model = pd.read_parquet(self.path.joinpath("training_data.parquet"), columns=[]).index
-        filter_oos = ~Y_full.index.isin(index_model) & filter_label & Y_full["dataset"] == "train"
+            if filter.sum() < 5:
+                # TODO: Warn user that there are not enough elements to compute statistics
+                continue
+            
+            sub_Y_pred_full = Y_pred_full[filter]
+            metrics[dataset] = get_metrics(
+                sub_Y_pred_full["predicted_label"].to_numpy(),
+                sub_Y_pred_full["prediction"].to_numpy(),
+                texts=sub_Y_pred_full["text"].to_numpy() if self.col_text else None,
+            )
+        
+        # Compute the statistics on elements of the trainset not used during training ("out of sample")
+        index_of_texts_used_during_training = \
+            pd.read_parquet(self.path.joinpath("training_data.parquet"), columns=[]).index
+        
+        not_in_training = ~Y_pred_full.index.isin(index_of_texts_used_during_training)
+        filter_dataset = Y_pred_full["dataset"] == "train"
+        filter_oos =  not_in_training & filter_existing_labels & filter_dataset
+
         if filter_oos.sum() > 10:
             metrics["outofsample"] = get_metrics(
-                Y_full[filter_oos]["label"],
-                Y_full[filter_oos]["prediction"],
-                texts=Y_full[filter_oos]["text"] if self.col_text else None,
+                Y_pred_full[filter_oos]["predicted_label"].to_numpy(),
+                Y_pred_full[filter_oos]["prediction"].to_numpy(),
+                texts=Y_pred_full[filter_oos]["text"].to_numpy() if self.col_text else None,
             )
+        return metrics
 
+    def __create_saving_files(self, Y_pred: pd.DataFrame, metrics : dict[str:MLStatisticsModel]) -> None:
+        """Save the predictions and metrics"""
+        Y_pred.to_parquet(self.path.joinpath(self.file_name), index=True)
         # write the metrics in a json file
         with open(str(self.path.joinpath(f"metrics_predict_{time.time()}.json")), "w") as f:
             json.dump({k: v.model_dump(mode="json") for k, v in metrics.items()}, f)
+
+    def __call__(self):
+        """
+        Predict with simplemodel and calculate statistics
+        """
+
+        # Predict
+        Y_pred: np.ndarray = self.model.predict(self.X.drop(columns=["dataset"]))
+        Y_proba: np.ndarray = self.model.predict_proba(self.X.drop(columns=["dataset"]))
+        labels_list = [label for label in self.model.classes_] 
+
+        # Aggregate data into one DataFrame
+        Y_pred_full  = pd.DataFrame(
+            {
+                **{label : Y_proba[:,ilabel] for ilabel, label in enumerate(labels_list)}, 
+                "prediction": Y_pred, 
+                "dataset": self.X["dataset"],
+                "predicted_label" : self.df[self.col_label]
+            },
+            index=self.X.index
+        )
+        
+        if self.col_text: Y_pred_full["text"] = self.df[self.col_text]
+
+        metrics = self.__compute_metrics(Y_pred_full)
+        self.__create_saving_files(Y_pred_full, metrics)
