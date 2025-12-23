@@ -333,3 +333,8 @@ def get_model_metrics(path_model: Path) -> dict | None:
         scores = {**scores, **stats}
 
     return scores
+
+
+def evaluate_entropy(proba : np.ndarray) -> np.ndarray:
+    """Compute the entropy"""
+    return -1 * (proba * np.log(proba)).sum(axis=1)
