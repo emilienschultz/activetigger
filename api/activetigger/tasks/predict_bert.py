@@ -147,6 +147,9 @@ class PredictBert(BaseTask):
         return tokenizer, model, max_length
 
     def __listen_stop_event(self):
+        """
+        Raise exception if stop event is set
+        """
         if self.event is not None:
             if self.event.is_set():
                 raise Exception("Process interrupted by user")
