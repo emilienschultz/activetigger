@@ -188,10 +188,10 @@ def decrypt(text: str | None, secret_key: str | None) -> str:
 
 
 def get_metrics(
-    Y_true: np.ndarray,
-    Y_pred: np.ndarray,
+    Y_true: pd.Series,
+    Y_pred: pd.Series,
     labels: list[str] | None = None,
-    texts: np.ndarray | None = None,
+    texts: pd.Series | None = None,
     decimals: int = 3,
 ) -> MLStatisticsModel:
     """
@@ -201,7 +201,7 @@ def get_metrics(
     - confusion matrix and table
     """
     if labels is None:
-        labels = np.unique(Y_true)
+        labels = list(Y_true.unique())
 
     # Compute scores per label --- --- --- --- --- --- --- --- --- --- --- --- -
     precision_label = precision_score(Y_true,Y_pred,average=None,labels=labels,zero_division=1)

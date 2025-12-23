@@ -37,7 +37,7 @@ class TrainML(BaseTask):
         model_params: dict,
         scheme: str,
         features: list,
-        labels: list,
+        labels: list[str|int|float],
         model_type: str,
         standardize: bool = False,
         cv10: bool = False,
@@ -60,7 +60,7 @@ class TrainML(BaseTask):
         self.model_params = model_params
         self.scheme = scheme
         self.features = features
-        self.labels = labels
+        self.labels = pd.Series(labels).dropna().to_list() # AM: When the dataset is not fully annotated, the labels variable contains nans which breaks the pipeline. I'd rather sort it now that later.
         self.model_type = model_type
         self.standardize = standardize
         self.texts = texts
@@ -76,24 +76,32 @@ class TrainML(BaseTask):
                 raise Exception("The model already exists")
             os.mkdir(self.model_path)
 
-    def __split_set(self) -> tuple[pd.Series, pd.Series, pd.Series, pd.Series]:
+    def __split_set(self, test_size: float = 0.2) -> tuple[pd.Series, pd.Series, pd.Series, pd.Series]:
         """Remove null elements and return train/test splits"""
         # drop NA values
         f = self.Y.notnull()
         self.X = self.X[f]
         self.Y = self.Y[f]
 
-        X_train, X_test, Y_train, Y_test = train_test_split(
-            self.X[f], self.Y[f], test_size=0.2, random_state=42
-        )
+        index = self.X.copy().index.to_series()
+        index = index.sample(frac = 1.0, random_state=42)
+        n_element_train = int(len(index) * (1 - test_size))
+        index_train = index.head(n_element_train)
+        index_test = index.tail(len(index) - n_element_train)
+
+        X_train = self.X.loc[index_train.index, :] 
+        Y_train = self.Y.loc[index_train.index] 
+        X_test  = self.X.loc[index_test.index, :] 
+        Y_test  = self.Y.loc[index_test.index]
+
         return X_train, X_test, Y_train, Y_test
 
     def __compute_metrics(self, y_true : pd.Series, y_pred: pd.Series) -> MLStatisticsModel:
         """Compute metrics"""
         texts = self.texts.loc[y_true.index]
         metrics = get_metrics(
-            y_true.to_numpy(), 
-            y_pred.to_numpy(), 
+            y_true, 
+            y_pred, 
             texts=texts, 
             labels=self.labels
         )
@@ -103,7 +111,11 @@ class TrainML(BaseTask):
         """Compute cv (predict and compute metrics)"""
         num_folds = 10
         kf = KFold(n_splits=num_folds, shuffle=True, random_state=42)
-        Y_pred_10cv : np.ndarray = cross_val_predict(self.model, self.X, self.Y, cv=kf)
+        Y_pred_10cv = pd.Series(
+            cross_val_predict(self.model, self.X, self.Y, cv=kf), 
+            index = self.Y.index
+        ) 
+        
         statistics_cv10 = get_metrics(
             self.Y, 
             Y_pred_10cv, 
