@@ -50,6 +50,8 @@ class Bertopic:
         self.computing = computing
         self.path: Path = path.joinpath("bertopic")
         self.path.mkdir(parents=True, exist_ok=True)
+        if not self.path.joinpath("runs").exists():
+            self.path.joinpath("runs").mkdir(parents=True, exist_ok=True)
         self.features = features
         self.models_service = db_manager.language_models_service
         self.available_models = [
@@ -157,7 +159,11 @@ class Bertopic:
         Get available BERTopic models.
         """
 
-        return {name: self.get_model(name) for name in os.listdir(self.path.joinpath("runs"))}
+        return {
+            p.name: self.get_model(p.name)
+            for p in self.path.joinpath("runs").iterdir()
+            if p.is_dir()
+        }
 
     def name_available(self, name: str) -> bool:
         """
