@@ -586,7 +586,7 @@ export interface paths {
         put?: never;
         /**
          * Get Element
-         * @description Get specific element
+         * @description Get specific element by id
          */
         post: operations["get_element_elements_id_post"];
         delete?: never;
@@ -3082,6 +3082,22 @@ export interface components {
             };
         };
         /**
+         * ReconciliateElementInModel
+         * @description Reconciliate specific element
+         */
+        ReconciliateElementInModel: {
+            /** Dataset */
+            dataset: string;
+            /** Scheme */
+            scheme: string;
+            /** Element Id */
+            element_id: string;
+            /** Label */
+            label: string;
+            /** Users */
+            users: string[];
+        };
+        /**
          * ReconciliationModel
          * @description list of elements to reconciliate
          */
@@ -4225,18 +4241,17 @@ export interface operations {
     post_reconciliation_annotation_reconciliate_post: {
         parameters: {
             query: {
-                users: unknown[];
-                element_id: string;
-                label: string;
-                scheme: string;
-                dataset?: string;
                 project_slug: string;
             };
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReconciliateElementInModel"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

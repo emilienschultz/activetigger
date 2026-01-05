@@ -29,9 +29,7 @@ from activetigger.generation.generations import Generations
 from activetigger.orchestrator import orchestrator
 from activetigger.project import Project
 
-logger = logging.getLogger(__name__)
-
-router = APIRouter()
+router = APIRouter(tags=["generation"])
 
 
 @router.get("/generate/models/available")

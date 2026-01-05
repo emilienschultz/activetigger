@@ -894,6 +894,18 @@ class ReconciliationModel(BaseModel):
     users: list[str]
 
 
+class ReconciliateElementInModel(BaseModel):
+    """
+    Reconciliate specific element
+    """
+
+    dataset: str
+    scheme: str
+    element_id: str
+    label: str
+    users: list[str]
+
+
 class AuthActions(StrEnum):
     add = "add"
     delete = "delete"

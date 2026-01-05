@@ -29,8 +29,6 @@ from activetigger.datamodels import (
 from activetigger.orchestrator import orchestrator
 from activetigger.project import Project
 
-logger = logging.getLogger(__name__)
-
 router = APIRouter(tags=["files"])
 
 

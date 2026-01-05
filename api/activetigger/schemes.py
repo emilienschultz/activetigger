@@ -11,8 +11,10 @@ from activetigger.datamodels import (
     AnnotationsDataModel,
     CodebookModel,
     CompareSchemesModel,
+    ReconciliateElementInModel,
     SchemeModel,
     SchemesProjectStateModel,
+    TableAnnotationsModel,
     TableBatchInModel,
     TableOutModel,
 )
@@ -234,6 +236,32 @@ class Schemes:
 
         # return the result
         return df, users
+
+    def reconciliate_element(self, element: ReconciliateElementInModel, username: str) -> None:
+        """
+        Reconciliate an element by adding the selected label for all users
+        """
+        for u in element.users:
+            self.push_annotation(
+                element.element_id,
+                element.label,
+                element.scheme,
+                u,
+                element.dataset,
+                "reconciliation",
+                "disagreement",
+            )
+
+        # add a new tag for the reconciliator
+        self.push_annotation(
+            element_id=element.element_id,
+            label=element.label,
+            scheme=element.scheme,
+            user=username,
+            mode=element.dataset,
+            comment="reconciliation",
+            selection="disagreement",
+        )
 
     def rename_label(self, former_label: str, new_label: str, scheme: str, username: str) -> None:
         """
@@ -625,6 +653,29 @@ class Schemes:
 
         # update cache
         self.cache.update(scheme, element_id, label if label is not None else "", user)
+
+    def push_annotations_table(self, table: TableAnnotationsModel, username: str) -> list | None:
+        """
+        Push annotations from a table of elements
+        """
+        errors = []
+        for annotation in table.annotations:
+            if annotation.label is None or annotation.element_id is None:
+                errors.append(annotation)
+                continue
+            try:
+                self.push_annotation(
+                    annotation.element_id,
+                    annotation.label,
+                    annotation.scheme,
+                    username,
+                    table.dataset,
+                    "table",
+                )
+            except Exception:
+                errors.append(annotation)
+                continue
+        return errors if len(errors) > 0 else None
 
     def get_coding_users(self, scheme: str) -> list[str]:
         """

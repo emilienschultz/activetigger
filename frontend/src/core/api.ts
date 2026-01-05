@@ -1834,12 +1834,14 @@ export function useReconciliate(projectSlug: string, scheme: string | null, data
           params: {
             query: {
               project_slug: projectSlug,
-              users: users,
-              scheme: scheme,
-              element_id: element_id,
-              label: label,
-              dataset: dataset,
             },
+          },
+          body: {
+            users: users,
+            scheme: scheme,
+            element_id: element_id,
+            label: label,
+            dataset: dataset,
           },
         });
         if (!res.error) notify({ type: 'success', message: 'Reconciliation done' });
