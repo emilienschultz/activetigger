@@ -11,7 +11,7 @@ from activetigger.datamodels import (
 from activetigger.orchestrator import orchestrator
 from activetigger.project import Project
 
-router = APIRouter()
+router = APIRouter(tags=["BERTopic"])
 
 
 @router.post("/bertopic/compute", dependencies=[Depends(verified_user)])
@@ -34,14 +34,12 @@ async def compute_bertopic(
             detail="Project dataset path is not set. Cannot compute BERTopic model.",
         )
 
-    # path to the data
-    path_data = project.params.dir
     # Force the language of the project
     bertopic.language = project.params.language
 
     try:
         unique_id = project.bertopic.compute(
-            path_data=path_data,
+            path_data=project.params.dir,
             col_id=None,
             col_text="text",
             parameters=bertopic,

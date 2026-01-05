@@ -2,10 +2,8 @@ from typing import Annotated
 
 from fastapi import (
     APIRouter,
-    BackgroundTasks,
     Depends,
     HTTPException,
-    Query,
 )
 
 from activetigger.app.dependencies import (
@@ -17,14 +15,16 @@ from activetigger.app.dependencies import (
 )
 from activetigger.datamodels import (
     AuthActions,
+    AuthUserModel,
     ChangePasswordModel,
+    NewUserModel,
     UserInDBModel,
     UserModel,
     UserStatistics,
 )
 from activetigger.orchestrator import orchestrator
 
-router = APIRouter()
+router = APIRouter(tags=["users"])
 
 
 @router.post("/users/disconnect", dependencies=[Depends(verified_user)], tags=["users"])
@@ -75,19 +75,14 @@ async def recent_users() -> int:
 @router.post("/users/create", dependencies=[Depends(verified_user)], tags=["users"])
 async def create_user(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    username_to_create: str = Query(),
-    password: str = Query(),
-    status: str = Query(),
-    mail: str = Query(),
+    new_user: NewUserModel,
 ) -> None:
     """
     Create user
     """
     test_rights(ServerAction.MANAGE_USERS, current_user.username)
     try:
-        orchestrator.users.add_user(
-            username_to_create, password, status, current_user.username, mail
-        )
+        orchestrator.users.add_user(new_user, current_user.username)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
@@ -128,20 +123,18 @@ async def change_password(
 async def set_auth(
     action: AuthActions,
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    username: str = Query(),
-    project_slug: str = Query(),
-    status: str = Query(None),
+    auth: AuthUserModel,
 ) -> None:
     """
     Modify user auth on a specific project
     """
-    test_rights(ProjectAction.UPDATE, current_user.username, project_slug)
+    test_rights(ProjectAction.UPDATE, current_user.username, auth.project_slug)
     if action == "add":
-        if not status:
+        if not auth.status:
             raise HTTPException(status_code=400, detail="Missing status")
         try:
-            orchestrator.users.set_auth(username, project_slug, status)
-            orchestrator.log_action(current_user.username, f"ADD AUTH USER: {username}", "all")
+            orchestrator.users.set_auth(auth)
+            orchestrator.log_action(current_user.username, f"ADD AUTH USER: {auth.username}", "all")
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e)) from e
 
@@ -149,8 +142,10 @@ async def set_auth(
 
     if action == "delete":
         try:
-            orchestrator.users.delete_auth(username, project_slug)
-            orchestrator.log_action(current_user.username, f"DELETE AUTH USER: {username}", "all")
+            orchestrator.users.delete_auth(auth.username, auth.project_slug)
+            orchestrator.log_action(
+                current_user.username, f"DELETE AUTH USER: {auth.username}", "all"
+            )
         except Exception as e:
             raise HTTPException(status_code=500) from e
 

@@ -1013,8 +1013,8 @@ export function useDeleteUserAuthProject(projectSlug: string | null, reFetchUser
         const res = await api.POST('/users/auth/{action}', {
           params: {
             path: { action: 'delete' },
-            query: { project_slug: projectSlug, username: username },
           },
+          body: { project_slug: projectSlug, username: username },
         });
         if (!res.error) notify({ type: 'success', message: 'Auth deleted for user' });
         reFetchUsersAuth();
@@ -1055,15 +1055,7 @@ export function useCreateUser(reFetchUsers: () => void) {
   const createUser = useCallback(
     async (username: string, password: string, status: string, mail: string) => {
       const res = await api.POST('/users/create', {
-        params: {
-          query: {
-            username_to_create: username,
-            password: password,
-            status: status,
-            mail: mail,
-            dummy: true,
-          },
-        },
+        body: { username: username, password: password, status: status, contact: mail },
       });
       if (!res.error) notify({ type: 'success', message: 'User created' });
       reFetchUsers();
@@ -1112,8 +1104,8 @@ export function useAddUserAuthProject(projectSlug: string | null, reFetchUsersAu
         const res = await api.POST('/users/auth/{action}', {
           params: {
             path: { action: 'add' },
-            query: { project_slug: projectSlug, username: username, status: auth },
           },
+          body: { project_slug: projectSlug, username: username, status: auth },
         });
         if (!res.error) notify({ type: 'success', message: 'Auth added for user' });
         reFetchUsersAuth();

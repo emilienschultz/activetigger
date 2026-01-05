@@ -6,6 +6,8 @@ import yaml  # type: ignore[import]
 
 from activetigger.config import config
 from activetigger.datamodels import (
+    AuthUserModel,
+    NewUserModel,
     UserInDBModel,
     UserModel,
     UsersStateModel,
@@ -72,13 +74,14 @@ class Users:
         """
         return self.db_manager.projects_service.get_project_auth(project_slug)
 
-    def set_auth(self, username: str, project_slug: str, status: str) -> None:
+    def set_auth(self, auth: AuthUserModel) -> None:
         """
         Set user auth for a project
         """
-        self.get_user(username)
-        self.db_manager.projects_service.add_auth(project_slug, username, status)
-        logging.info("Auth successfully to %s", username)
+        if auth.status is None:
+            raise Exception("Missing status")
+        self.get_user(auth.username)
+        self.db_manager.projects_service.add_auth(auth.project_slug, auth.username, auth.status)
 
     def delete_auth(self, username: str, project_slug: str) -> None:
         """
@@ -123,11 +126,8 @@ class Users:
 
     def add_user(
         self,
-        name: str,
-        password: str,
-        role: str = "manager",
-        created_by: str = "NA",
-        mail: str = "NA",
+        new_user: NewUserModel,
+        created_by: str,
     ) -> None:
         """
         Add user to database
@@ -135,11 +135,15 @@ class Users:
             Default, users are managers
         """
         # test if the user doesn't exist, even among deactivated users
-        if name in self.existing_users(active=False):
+        if new_user.username in self.existing_users(active=False):
             raise Exception("Username already exists")
-        hash_pwd = get_hash(password)
+        hash_pwd = get_hash(new_user.password)
         self.db_manager.users_service.add_user(
-            name, hash_pwd.decode("utf8"), role, created_by, contact=mail
+            new_user.username,
+            hash_pwd.decode("utf8"),
+            new_user.status,
+            created_by,
+            contact=new_user.contact,
         )
 
         logging.info("User added to the database")

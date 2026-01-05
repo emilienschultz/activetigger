@@ -1874,6 +1874,18 @@ export interface components {
          */
         AuthActions: "add" | "delete";
         /**
+         * AuthUserModel
+         * @description Information on auth
+         */
+        AuthUserModel: {
+            /** Project Slug */
+            project_slug: string;
+            /** Username */
+            username: string;
+            /** Status */
+            status?: string | null;
+        };
+        /**
          * AvailableProjectsModel
          * @description Response for available projects
          */
@@ -2554,6 +2566,20 @@ export interface components {
             test_scores?: Record<string, never> | null;
             /** Outofsample Scores */
             outofsample_scores?: Record<string, never> | null;
+        };
+        /**
+         * NewUserModel
+         * @description New user definition
+         */
+        NewUserModel: {
+            /** Username */
+            username: string;
+            /** Password */
+            password: string;
+            /** Contact */
+            contact: string;
+            /** Status */
+            status: string;
         };
         /**
          * NextInModel
@@ -3405,17 +3431,16 @@ export interface operations {
     };
     create_user_users_create_post: {
         parameters: {
-            query: {
-                username_to_create: string;
-                password: string;
-                status: string;
-                mail: string;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewUserModel"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -3503,18 +3528,18 @@ export interface operations {
     };
     set_auth_users_auth__action__post: {
         parameters: {
-            query: {
-                username: string;
-                project_slug: string;
-                status?: string;
-            };
+            query?: never;
             header?: never;
             path: {
                 action: components["schemas"]["AuthActions"];
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuthUserModel"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

@@ -203,6 +203,17 @@ class ElementOutModel(BaseModel):
     n_sample: int | None = None
 
 
+class NewUserModel(BaseModel):
+    """
+    New user definition
+    """
+
+    username: str
+    password: str
+    contact: str
+    status: str
+
+
 class UserModel(BaseModel):
     """
     User definition
@@ -1107,3 +1118,13 @@ class DatasetModel(BaseModel):
     project_slug: str
     columns: list[str]
     n_rows: int
+
+
+class AuthUserModel(BaseModel):
+    """
+    Information on auth
+    """
+
+    project_slug: str
+    username: str
+    status: str | None = None

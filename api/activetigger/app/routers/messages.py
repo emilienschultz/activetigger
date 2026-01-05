@@ -14,8 +14,6 @@ from activetigger.app.dependencies import (
 from activetigger.datamodels import MessagesInModel, MessagesOutModel, UserInDBModel
 from activetigger.orchestrator import orchestrator
 
-router = APIRouter()
-
 router = APIRouter(tags=["messages"])
 
 

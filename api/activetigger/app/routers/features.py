@@ -22,7 +22,7 @@ from activetigger.datamodels import (
 from activetigger.orchestrator import orchestrator
 from activetigger.project import Project
 
-router = APIRouter()
+router = APIRouter(tags=["features"])
 
 
 @router.post("/features/add", dependencies=[Depends(verified_user)])
