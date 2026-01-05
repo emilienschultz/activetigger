@@ -106,23 +106,8 @@ async def postgenerate(
     Launch a call to generate from a prompt
     """
 
-    # Check here if all the "[[XXX]]" in the prompt correspond to a column
-    # in the context column or the [[TEXT]] tag. If not, raise an exception.
-    for tag_like in re.findall("[\[]{2}\w{1,}[\]]{2}", request.prompt):
-        tag_name = tag_like[2:-2]  # tag minus "[[" and "]]""
-        if tag_name in ["TEXT", *project.params.cols_context]:
-            continue
-        else:
-            raise HTTPException(
-                status_code=500,
-                detail=(
-                    f"The tag {tag_like} is not part of the "
-                    f"registered context columns nor it is [[TEXT]].Registered "
-                    f"context columns: {project.params.cols_context}"
-                ),
-            )
-
     try:
+        project.generations.check_prompts(request.prompt, project.params.cols_context)
         project.start_generation(request, current_user.username)
         orchestrator.log_action(
             current_user.username,

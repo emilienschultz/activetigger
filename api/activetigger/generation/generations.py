@@ -1,3 +1,5 @@
+import re
+
 import pandas as pd
 from pandas import DataFrame
 
@@ -227,3 +229,16 @@ class Generations:
         """
         self.generations_service.delete_project_gen_model(project_slug, model_id)
         return None
+
+    @staticmethod
+    def check_prompts(prompt: str, cols: list[str]) -> None:
+        """
+        Check if all prompts are valid
+        "[[XXX]]" in the prompt correspond to a column
+        """
+        for tag_like in re.findall("[\[]{2}\w{1,}[\]]{2}", prompt):
+            tag_name = tag_like[2:-2]  # tag minus "[[" and "]]""
+            if tag_name in ["TEXT", *cols]:
+                continue
+            else:
+                raise Exception(f"The tag {tag_like} is not part of the columns")
