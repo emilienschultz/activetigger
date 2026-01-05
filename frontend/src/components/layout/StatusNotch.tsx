@@ -52,7 +52,7 @@ export const StatusNotch: FC<{
 
   const whatComutation = (projectState: ProjectStateModel) => {
     if (currentUser in projectState.languagemodels.training) {
-      return 'BERT computing';
+      return 'BERT';
     } else if (currentUser in projectState.quickmodel.training) {
       return 'Quick model computing';
     } else if (currentUser in projectState.projections.training) {
