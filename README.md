@@ -17,8 +17,8 @@ Designed primarily by researchers in social sciences, its use can extend to all 
 [Presentation of ActiveTigger 🇫🇷](https://emilienschultz.github.io/activetigger-presentation/#/title-slide)
 
 ## Run the app with Docker (recommended)
-
-If you don't already have it installed, install docker/docker compose first.
+ 
+:warning: If you don't already have it installed, install docker/docker compose first :whale:. You need the docker daemon running to proceed.
 
 Clone the current repository.
 

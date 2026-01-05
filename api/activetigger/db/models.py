@@ -88,7 +88,9 @@ class Users(Base):
 
 class Schemes(Base):
     __tablename__ = "schemes"
-    __table_args__ = (PrimaryKeyConstraint("project_slug", "name", name="uq_project_slug_name"),)
+    __table_args__ = (
+        PrimaryKeyConstraint("project_slug", "name", name="uq_project_slug_name_schemes"),
+    )
 
     name: Mapped[str]
     time_created: Mapped[datetime.datetime] = mapped_column(
@@ -241,7 +243,7 @@ class Features(Base):
 class Models(Base):
     __tablename__ = "models"
     __table_args__ = (
-        PrimaryKeyConstraint("project_slug", "name", name="uq_project_slug_name"),
+        PrimaryKeyConstraint("project_slug", "name", name="uq_project_slug_name_models"),
         ForeignKeyConstraint(
             ["project_slug", "scheme_name"],
             ["schemes.project_slug", "schemes.name"],
