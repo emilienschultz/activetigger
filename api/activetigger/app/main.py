@@ -184,6 +184,7 @@ async def stop_process(
             test_rights(ServerAction.MANAGE_SERVER, current_user.username)
             orchestrator.stop_process(unique_id, current_user.username)
         if project_slug is not None:
+            # rights already checked
             orchestrator.stop_user_processes(current_user.username, project_slug, kind)
         orchestrator.log_action(
             current_user.username,

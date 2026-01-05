@@ -411,6 +411,26 @@ class Orchestrator:
         payload = jwt.decode(token, config.secret_key, algorithms=[self.jwt_algorithm])
         return payload
 
+    def manage_fifo_queue(self) -> None:
+        """
+        Manage the current projects in memory for an orchestrator
+        """
+        if len(self.projects) >= self.max_projects:
+            old_element = sorted(
+                [(p, self.projects[p].starting_time) for p in self.projects],
+                key=lambda x: x[1],
+            )[0]
+            if (
+                old_element[1] < time.time() - 600
+            ):  # check if the project has a least ten minutes old to avoid destroying current projects
+                del self.projects[old_element[0]]
+                print(f"Delete project {old_element[0]} to gain memory")
+            else:
+                print("Too many projects in the current memory")
+                raise Exception(
+                    "There is too many projects currently loaded in this server. Please wait"
+                )
+
     def start_project(self, project_slug: str) -> None:
         """
         Load project in server
@@ -609,6 +629,15 @@ class Orchestrator:
 
         # Update the user's password in the database
         self.users.force_change_password(user_name, new_password)
+
+    def available_storage(self, username: str) -> bool:
+        """
+        Check if the user storage is not exceeded
+        """
+        limit = self.users.get_storage_limit(username)
+        if self.users.get_storage(username) > limit * 1000:
+            return False
+        return True
 
 
 # launch the instance

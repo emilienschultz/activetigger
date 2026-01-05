@@ -9,7 +9,6 @@ from fastapi import (
 
 from activetigger.app.dependencies import (
     ProjectAction,
-    check_storage,
     get_project,
     test_rights,
     verified_user,
@@ -288,7 +287,11 @@ async def post_bert(
     """
     test_rights(ProjectAction.ADD, current_user.username, project.name)
     try:
-        check_storage(current_user.username)
+        if not orchestrator.available_storage(current_user.username):
+            raise HTTPException(
+                status_code=403,
+                detail="Storage limit exceeded. Please delete models orcontact the administrator.",
+            )
         project.start_languagemodel_training(
             bert=bert,
             username=current_user.username,
