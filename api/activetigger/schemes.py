@@ -336,19 +336,19 @@ class Schemes:
 
         Choice to order by index.
         """
-        # check for errors
         if batch.mode not in ["tagged", "untagged", "all", "recent"]:
             batch.mode = "all"
         if batch.scheme not in self.available():
             raise Exception(f"Scheme {batch.scheme} is not available")
 
-        # case of the test set, no fancy stuff
+        # get all data
         df: DataFrame = self.get_scheme(
             batch.scheme,
             complete=True,
-            datasets=["test"] if batch.dataset == "test" else [batch.dataset],
+            datasets=[batch.dataset],
             id_external=True,
         )
+
         # manage NaT to avoid problems with json
         df["timestamp"] = df["timestamp"].apply(lambda x: str(x) if pd.notna(x) else "")
 
@@ -357,55 +357,48 @@ class Schemes:
             list_ids = self.projects_service.get_recent_annotations(
                 self.project_slug, user, batch.scheme, batch.max - batch.min, batch.dataset
             )
-            df_r = df.loc[list(list_ids)].fillna(" ")
-            table = df_r.sort_index().fillna("")[
-                ["id_internal", "id_external", "timestamp", "labels", "text", "comment", "user"]
-            ]
-            return TableOutModel(
-                items=table.to_dict(orient="records"),
-                total=len(table),
-            )
+            df_r = df.loc[list(list_ids)]
+            table = df_r
+            total = len(df_r)
+        else:
+            # filters for labels
+            f_labels = pd.Series([True] * len(df), index=df.index)
+            if batch.mode == "tagged":
+                f_labels = df["labels"].notnull()
+            if batch.mode == "untagged":
+                f_labels = df["labels"].isnull()
 
-        # build dataset
-        if batch.mode == "tagged":
-            df = df[df["labels"].notnull()]
+            # filter for patterns
+            f_contains = pd.Series([True] * len(df), index=df.index)
+            if batch.contains:
+                if batch.contains.startswith("ALL:") and len(batch.contains) > 4:
+                    contains_f = batch.contains.replace("ALL:", "")
+                    f_l = df["labels"].str.contains(clean_regex(contains_f)).fillna(False)
+                    f_text = df["text"].str.contains(clean_regex(contains_f)).fillna(False)
+                    f_contains = f_l | f_text
+                else:
+                    f_contains = df["text"].str.contains(clean_regex(batch.contains))
 
-        if batch.mode == "untagged":
-            df = df[df["labels"].isnull()]
+            df = df[f_contains & f_labels]
 
-        # filter for contains
-        if batch.contains:
-            if batch.contains.startswith("ALL:") and len(batch.contains) > 4:
-                contains_f = batch.contains.replace("ALL:", "")
-                f_labels = df["labels"].str.contains(clean_regex(contains_f)).fillna(False)
-                f_text = df["text"].str.contains(clean_regex(contains_f)).fillna(False)
-                f_contains = f_labels | f_text
-            else:
-                f_contains = df["text"].str.contains(clean_regex(batch.contains))
-            df = df[f_contains].fillna(False)
+            # normalize size
+            if batch.max == 0:
+                batch.max = 20
+            if batch.max > len(df):
+                batch.max = len(df)
+            if batch.min > len(df):
+                raise Exception(
+                    f"Minimal value {batch.min} is too high. It should not exced the size of the data ({len(df)})"
+                )
 
-        # normalize size
-        if batch.max == 0:
-            batch.max = 20
-        if batch.max > len(df):
-            batch.max = len(df)
-
-        if batch.min > len(df):
-            raise Exception(
-                f"Minimal value {batch.min} is too high. It should not exced the size of the data ({len(df)})"
-            )
-
-        table = (
-            df.sort_index()
-            .iloc[int(batch.min) : int(batch.max)]
-            .fillna("")[
-                ["id_internal", "id_external", "timestamp", "labels", "text", "comment", "user"]
-            ]
-        )
+            table = df.iloc[int(batch.min) : int(batch.max)]
+            total = len(df)
 
         return TableOutModel(
-            items=table.to_dict(orient="records"),
-            total=len(df),
+            items=table.fillna("")[
+                ["id_internal", "id_external", "timestamp", "labels", "text", "comment", "user"]
+            ].to_dict(orient="records"),
+            total=total,
         )
 
     def add_scheme(

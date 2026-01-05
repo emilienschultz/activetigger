@@ -36,7 +36,7 @@ export const ProjectExplorePage: FC = () => {
           <div className="col-12">
             <Tabs className="mt-3" defaultActiveKey="tabular">
               <Tab eventKey="tabular" title="Tabular view">
-                <div className="explanations">Explore your data as table</div>
+                <div className="explanations">Explore your data as a table</div>
                 <DataTabular
                   projectSlug={projectName || ''}
                   currentScheme={currentScheme || ''}
