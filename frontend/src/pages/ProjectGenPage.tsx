@@ -286,11 +286,13 @@ export const GenPage: FC = () => {
           <>
             <div className="row mt-3">
               <div className="col-6">
-                <div className="form-floating">
+                <div>
+                  <label htmlFor="batch">N elements to annotate </label>
                   <input
                     type="number"
                     id="batch"
                     className="form-control"
+                    placeholder=" "
                     value={generateConfig.n_batch}
                     onChange={(e) => {
                       setAppContext((prev) => ({
@@ -299,11 +301,12 @@ export const GenPage: FC = () => {
                       }));
                     }}
                   />
-                  <label htmlFor="batch">N elements to annotate </label>
                 </div>
               </div>
               <div className="col-6">
-                <div className="form-floating">
+                <div>
+                  <label htmlFor="mode">Select from </label>
+
                   <select
                     id="mode"
                     className="form-select"
@@ -317,7 +320,6 @@ export const GenPage: FC = () => {
                     <option key="all">all</option>
                     <option key="untagged">untagged</option>
                   </select>
-                  <label htmlFor="mode">Select from </label>
                 </div>
               </div>
 
@@ -392,7 +394,10 @@ export const GenPage: FC = () => {
                   <FaRegTrashAlt size={20} />
                 </button>
               </div>
-              <div className="form-floating mt-2">
+              <div className="mt-2">
+                <label htmlFor="prompt" style={{ zIndex: 0 }}>
+                  Prompt
+                </label>
                 <textarea
                   id="prompt"
                   rows={5}
@@ -411,9 +416,6 @@ export const GenPage: FC = () => {
                   The request will send the data to an external API. Be sure you can trust the API
                   provider with respect to the level of privacy you need for you data
                 </span> */}
-                <label htmlFor="prompt" style={{ zIndex: 0 }}>
-                  Prompt
-                </label>
               </div>
 
               {addContextButtons(currentProject?.params.cols_context)}
