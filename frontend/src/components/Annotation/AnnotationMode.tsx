@@ -8,10 +8,11 @@ import { MdDisplaySettings } from 'react-icons/md';
 import Select from 'react-select';
 import { Tooltip } from 'react-tooltip';
 
-import { keys, pickBy, sortBy } from 'lodash';
+import { keys, sortBy } from 'lodash';
 import { useGetQuickModel, useStatistics } from '../../core/api';
 import { useAppContext } from '../../core/context';
 import { isValidRegex } from '../../core/utils';
+import { AnnotationTagFilterSelect } from './AnnotationTagFilterSelect';
 
 interface AnnotationModeFormProps {
   settingChanged: boolean;
@@ -25,9 +26,10 @@ interface AnnotationModeFormProps {
 }
 
 function optionValue(option: Record<string, string | undefined>) {
-  return sortBy(keys(option))
+  const value = sortBy(keys(option))
     .map((k) => option[k])
     .join('|');
+  return value;
 }
 
 // define the component to configure selection mode
@@ -86,16 +88,6 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
     }
   }, [currentModel]);
 
-  // force a default label
-  useEffect(() => {
-    if (!selectionConfig.label && availableLabels && availableLabels.length > 0) {
-      setAppContext((prev) => ({
-        ...prev,
-        selectionConfig: { ...selectionConfig, label: availableLabels[0] },
-      }));
-    }
-  }, [availableLabels, selectionConfig, setAppContext]);
-
   // change dataset : there should be a navigation to reset element id
   const changeDataSet = (e: ChangeEvent<HTMLSelectElement>) => {
     setAppContext((prev) => ({
@@ -122,34 +114,6 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
         : [];
       return [...modes, ...probLabels].map((o) => ({ ...o, value: optionValue(o) }));
     }, [activeModel, project?.next.methods, project?.next.methods_min, availableLabels]);
-
-  const tagFilterOptions: {
-    sample: string | undefined;
-    user?: string | undefined;
-    label?: string | undefined;
-    value: string;
-  }[] = useMemo(() => {
-    const samples = project?.next.sample.map((s) => ({ sample: s })) || [];
-    const labels = availableLabels.map((l) => ({
-      sample: 'tagged',
-      label: l,
-    }));
-    const users =
-      project?.users?.users.map((u) => ({
-        sample: 'tagged',
-        user: u,
-      })) || [];
-    return [...samples, ...labels, ...users].map((o) => ({ ...o, value: optionValue(o) }));
-  }, [project?.next.sample, availableLabels, project?.users?.users]);
-
-  console.log(
-    tagFilterOptions,
-    optionValue({
-      sample: selectionConfig.sample,
-      label: selectionConfig.label,
-      user: selectionConfig.user,
-    }),
-  );
 
   return (
     <form className="annotation-mode">
@@ -233,37 +197,9 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
         <div>
           <div className="at-input-group">
             <label className=" small-gray">Filter by Tag</label>
-            <Select
-              className="react-select"
-              options={tagFilterOptions}
-              value={tagFilterOptions.find(
-                (o) =>
-                  o.value ===
-                  optionValue({
-                    sample: selectionConfig.sample,
-                    label: selectionConfig.label,
-                    user: selectionConfig.user,
-                  }),
-              )}
-              getOptionLabel={(o) =>
-                o.sample === 'tagged' && o.label !== undefined
-                  ? `Tagged as ${o.label}`
-                  : o.sample === 'tagged' && o.user !== undefined
-                    ? `Tagged by ${o.user}`
-                    : o.sample || ''
-              }
-              onChange={(option) => {
-                if (option !== null) {
-                  if (!settingChanged) setSettingChanged(true);
-                  setAppContext((prev) => ({
-                    ...prev,
-                    selectionConfig: {
-                      ...selectionConfig,
-                      ...pickBy(option, (v, k) => v !== undefined && k !== 'value'),
-                    },
-                  }));
-                }
-              }}
+            <AnnotationTagFilterSelect
+              availableLabels={availableLabels}
+              setSettingChanged={setSettingChanged}
             />
           </div>
 
@@ -288,7 +224,7 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
                 if (!settingChanged) setSettingChanged(true);
                 setAppContext((prev) => ({
                   ...prev,
-                  selectionConfig: { ...selectionConfig, filter: e.target.value },
+                  selectionConfig: { ...prev.selectionConfig, filter: e.target.value },
                 }));
               }}
             />

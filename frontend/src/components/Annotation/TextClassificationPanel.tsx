@@ -37,7 +37,7 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
         ref={frameRef as unknown as LegacyRef<HTMLDivElement>}
       >
         <p className="element-text">
-          <motion.div
+          <motion.span
             animate={elementId ? { backgroundColor: ['#ea6b1f70', '#ffffff00'] } : {}}
             transition={{ duration: 1 }}
           >
@@ -73,7 +73,7 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
               <br />
               Go to config menu to change context window according to the model you plan to use
             </Tooltip>
-          </motion.div>
+          </motion.span>
         </p>
 
         <div className="footer">

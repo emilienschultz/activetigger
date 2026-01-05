@@ -12,6 +12,7 @@ import { useGetServer } from '../../core/api';
 import { useAuth } from '../../core/auth';
 import { useNotifications } from '../../core/notifications';
 import { ProjectStateModel } from '../../types';
+import { AnnotationIcon } from '../Icons';
 import { PossibleProjectActions } from './ProjectPageLayout';
 
 /* define a component for project action bar 
@@ -90,7 +91,7 @@ export const ProjectActionsSidebar: FC<{
               aria-current="page"
               title="Tag your data"
             >
-              <PiTagDuotone />
+              <AnnotationIcon />
               <span className="ms-1 sidemenulabel">Annotate</span>
             </Link>
           </li>

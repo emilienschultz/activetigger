@@ -434,3 +434,14 @@ export const displayTime = (time: string) => {
   // 2025-12-11 10:50:57.786644 -> 2025-12-11 10:50
   return time.slice(0, time.indexOf(':') + 3);
 };
+
+export function truncateInMiddle(string: string, maxLength: number, separator: string = '...') {
+  if (string.length <= maxLength) return string;
+
+  const sepLen = separator.length,
+    charsToShow = maxLength - sepLen,
+    frontChars = Math.ceil(charsToShow / 2),
+    backChars = Math.floor(charsToShow / 2);
+
+  return `${string.slice(0, frontChars)}${separator}${string.slice(string.length - backChars)}`;
+}
