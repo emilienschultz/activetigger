@@ -2,8 +2,10 @@ import cx from 'classnames';
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { IoIosRadioButtonOff, IoIosRadioButtonOn } from 'react-icons/io';
 import { MdOnlinePrediction } from 'react-icons/md';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Tooltip } from 'react-tooltip';
 import { useAppContext } from '../../core/context';
+import { useAnnotationSessionHistory } from '../../core/useHistory';
 import { reorderLabels } from '../../core/utils';
 import { ElementOutModel } from '../../types';
 import { NoAnnotationIcon } from '../Icons';
@@ -12,7 +14,7 @@ interface MulticlassInputProps {
   elementId: string;
   labels: string[];
   postAnnotation: (label: string | null, elementId: string, comment?: string) => void;
-  fetchToNextAnnotation?: (elementId: string) => void;
+
   small?: boolean;
   phase?: string;
   element?: ElementOutModel;
@@ -26,7 +28,6 @@ interface LabelType {
 export const MulticlassInput: FC<MulticlassInputProps> = ({
   elementId,
   postAnnotation,
-  fetchToNextAnnotation,
   labels,
   phase,
   element,
@@ -36,12 +37,26 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
   const {
     appContext: { displayConfig, activeModel },
   } = useAppContext();
+  const { projectName } = useParams();
+  const navigate = useNavigate();
 
-  //TODO: grab comment from element history once API has been modified to add this
-  const [comment, setComment] = useState<string>('');
+  const { addElementInAnnotationSessionHistory } = useAnnotationSessionHistory();
+
+  const skipAnnotation = useCallback(() => {
+    //update history
+    if (element) addElementInAnnotationSessionHistory(element.element_id, element.text, undefined);
+
+    // move to next element
+    navigate(`/projects/${projectName}/tag/`);
+  }, [navigate, projectName, addElementInAnnotationSessionHistory, element]);
+
+  //grab comment from element history once API has been modified to add this
+  const [comment, setComment] = useState<string>(
+    element?.history ? element.history[0].comment || '' : '',
+  );
 
   //reset comment as for now it's not available in annotation history
-  useEffect(() => setComment(''), [elementId]);
+  useEffect(() => setComment(element?.history ? element.history[0].comment || '' : ''), [element]);
 
   const availableLabels = useMemo<LabelType[]>(
     () =>
@@ -66,8 +81,8 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
       if (activeModel && ev.code === 'KeyP') {
         postAnnotation(element?.predict.label || '', elementId, comment);
       }
-      if (ev.code === 'KeyS' && fetchToNextAnnotation) {
-        fetchToNextAnnotation(elementId);
+      if (ev.code === 'KeyS' && skipAnnotation) {
+        skipAnnotation();
       }
       if (ev.code === 'Delete') {
         postAnnotation(null, elementId, comment);
@@ -79,15 +94,7 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
         }
       });
     },
-    [
-      availableLabels,
-      postAnnotation,
-      elementId,
-      element,
-      activeModel,
-      fetchToNextAnnotation,
-      comment,
-    ],
+    [availableLabels, postAnnotation, elementId, element, activeModel, skipAnnotation, comment],
   );
 
   useEffect(() => {
@@ -107,9 +114,7 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
   const predict_entropy = element?.predict.entropy ? element.predict.entropy.toFixed(2) : 'NA';
 
   const lastAnnotation = useMemo(() => {
-    return element?.history?.length && element?.history.length > 0
-      ? (element?.history[0] as string[])
-      : null;
+    return element?.history && element.history.length > 0 ? element?.history[0] : null;
   }, [element?.history]);
 
   return (
@@ -125,11 +130,11 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
               value={e.label}
               className="btn-annotate-action"
               onClick={(v) => {
-                postAnnotation(v.currentTarget.value, elementId, comment);
+                if (element) postAnnotation(v.currentTarget.value, elementId, comment);
               }}
             >
               {displayConfig.displayAnnotation ? (
-                lastAnnotation && lastAnnotation[0] === e.label ? (
+                lastAnnotation && lastAnnotation.label === e.label ? (
                   <IoIosRadioButtonOn />
                 ) : (
                   <IoIosRadioButtonOff />
@@ -179,7 +184,7 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
               value={element?.predict.label as unknown as string}
               className={cx('btn-annotate-predicted-action', small ? ' icon-small' : '')}
               onClick={(e) => {
-                postAnnotation(e.currentTarget.value, elementId);
+                postAnnotation(e.currentTarget.value, elementId, comment);
               }}
             >
               {element?.predict.label} <span className="badge hotkey">P</span>
@@ -199,12 +204,12 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
       {/* EXTRA ACTIONS */}
       <div className="d-flex flex-row flex-lg-column justify-content-center justify-content-lg-start flex-wrap flex-lg-nowrap">
         {/* SKIP */}
-        {fetchToNextAnnotation && (
+        {skipAnnotation && (
           <button
             type="button"
             className="btn-annotate-action h-100"
             onClick={() => {
-              fetchToNextAnnotation(elementId);
+              skipAnnotation();
             }}
           >
             Skip <span className="badge hotkey">S</span>

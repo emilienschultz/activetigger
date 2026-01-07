@@ -7,6 +7,7 @@ import { displayTime } from '../core/utils';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
 import { AppContextValue } from '../core/context';
+import { useAnnotationSessionHistory } from '../core/useHistory';
 
 interface ProjectHistoryProps {
   projectSlug: string;
@@ -29,10 +30,7 @@ export const ProjectHistory: FC<ProjectHistoryProps> = ({
   // get logs
   const { logs } = useGetLogs(projectSlug, 100);
 
-  // function to clear history
-  const actionClearHistory = () => {
-    setAppContext((prev) => ({ ...prev, history: [] }));
-  };
+  const { clearAnnotationSessionHistory } = useAnnotationSessionHistory();
 
   // const columns: readonly Column<Row>[] = [
   //   {
@@ -69,7 +67,11 @@ export const ProjectHistory: FC<ProjectHistoryProps> = ({
           <br />
           re-annotate.
         </Tooltip>
-        <button onClick={actionClearHistory} className="btn-danger" style={{ marginLeft: '10px' }}>
+        <button
+          onClick={clearAnnotationSessionHistory}
+          className="btn-danger"
+          style={{ marginLeft: '10px' }}
+        >
           Clear history
         </button>
       </div>

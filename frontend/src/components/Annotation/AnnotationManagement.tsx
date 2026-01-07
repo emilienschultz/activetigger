@@ -14,6 +14,7 @@ import { ElementOutModel } from '../../types';
 
 import { Modal } from 'react-bootstrap';
 import { useNotifications } from '../../core/notifications';
+import { useAnnotationSessionHistory } from '../../core/useHistory';
 import { isValidRegex } from '../../core/utils';
 import { ActiveLearningManagement } from '../ActiveLearningManagement';
 import { TagDisplayParameters } from '../TagDisplayParameters';
@@ -65,7 +66,7 @@ export const AnnotationManagement: FC = () => {
     projectName || null,
     currentScheme || null,
     selectionConfig,
-    history,
+    history.map((h) => h.element_id),
     phase,
     activeModel || null,
   );
@@ -73,6 +74,9 @@ export const AnnotationManagement: FC = () => {
 
   // hooks to manage annotation
   const { addAnnotation } = useAddAnnotation(projectName || null, currentScheme || null, phase);
+
+  //hook to manage history
+  const { addElementInAnnotationSessionHistory } = useAnnotationSessionHistory();
 
   // define parameters for configuration panels
   const availableLabels =
@@ -146,33 +150,33 @@ export const AnnotationManagement: FC = () => {
     element,
   ]);
 
-  // post/skip annotation
-  const fetchToNextAnnotation = useCallback(
-    (currentElementId: string) => {
-      //update history
-      setAppContext((prev) => ({ ...prev, history: [...prev.history, currentElementId] }));
-
-      // move to next element
-      navigate(`/projects/${projectName}/tag/`);
-    },
-    [setAppContext, navigate, projectName],
-  );
-
   const postAnnotation = useCallback(
-    async (label: string | null, elementId?: string, comment?: string) => {
+    async (label: string | null, elementId: string, comment?: string) => {
       if (elementId === 'noelement') return; // forbid annotation on noelement
       if (elementId) {
         await addAnnotation(elementId, label, comment || null, selectionHistory[elementId]);
         const newElement = await getElementById(elementId, phase);
-        if (newElement) setElement(newElement);
-        // wait for 500ms before fetch new element to see new button state
-        setTimeout(() => {
-          fetchToNextAnnotation(elementId);
-        }, 500);
+        if (newElement) {
+          addElementInAnnotationSessionHistory(elementId, newElement.text, label, comment);
+          setElement(newElement);
+          // wait for 500ms before fetch new element to see new button state
+          setTimeout(() => {
+            navigate(`/projects/${projectName}/tag/`);
+          }, 500);
+        }
         // does not do nothing as we remount through navigate reFetchStatistics();
       }
     },
-    [addAnnotation, selectionHistory, fetchToNextAnnotation, getElementById, setElement, phase],
+    [
+      addAnnotation,
+      selectionHistory,
+      projectName,
+      navigate,
+      getElementById,
+      setElement,
+      phase,
+      addElementInAnnotationSessionHistory,
+    ],
   );
 
   const textInFrame = element?.text.slice(0, displayConfig.numberOfTokens * 4) || '';
@@ -361,8 +365,6 @@ export const AnnotationManagement: FC = () => {
   }, [activeModel]);
 
   useEffect(() => {
-    //clear history
-    setAppContext((prev) => ({ ...prev, history: [] }));
     // fetch next element in the new phase
     fetchNextElement();
     // disabling echaustive deps as we only want to track phase to avoid unnecessary fetchNext
@@ -383,7 +385,7 @@ export const AnnotationManagement: FC = () => {
     <>
       {/**
        * Annotation mode form
-       * **/}
+       **/}
       <AnnotationModeForm
         fetchNextElement={fetchNextElement}
         setActiveMenu={setActiveMenu}
@@ -394,8 +396,8 @@ export const AnnotationManagement: FC = () => {
       />
 
       {/**
-       *  ANNOTATION BLOCK
-       * */}
+       * ANNOTATION BLOCK
+       **/}
       <div className="d-flex flex-column flex-lg-row justify-content-start gap-3 my-3 ">
         {elementId === 'noelement' ? (
           <div className="alert horizontal center">
@@ -439,7 +441,6 @@ export const AnnotationManagement: FC = () => {
               <MulticlassInput
                 elementId={elementId || 'noelement'}
                 postAnnotation={postAnnotation}
-                fetchToNextAnnotation={fetchToNextAnnotation}
                 labels={availableLabels}
                 phase={phase}
                 element={element as ElementOutModel}

@@ -78,6 +78,10 @@ export type FeatureDescriptionModelOut = components['schemas']['FeatureDescripti
 
 export type ActiveModel = components['schemas']['ActiveModel'];
 
+export type ElementHistoryPoint = Omit<components['schemas']['AnnotationModel'], 'user'> & {
+  element_text: string;
+};
+
 export interface FeatureDfmParameters {
   dfm_tfidf: string;
   ngrams: number;

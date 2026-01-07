@@ -3,8 +3,8 @@ import Highlighter from 'react-highlight-words';
 import { DisplayConfig, ElementOutModel } from '../../types';
 
 import { FC, LegacyRef } from 'react';
-import { PiEmptyBold } from 'react-icons/pi';
 import { Tooltip } from 'react-tooltip';
+import { AnnotationIcon, NoAnnotationIcon, UserIcon } from '../Icons';
 
 interface ClassificationPanelProps {
   element: ElementOutModel | undefined;
@@ -101,10 +101,20 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
               <details>
                 <summary>History</summary>
                 <div>
-                  {((element?.history as string[]) || []).map((h, i) => {
+                  {(element?.history || []).map((h, i) => {
                     return (
-                      <div className="badge" key={i}>
-                        {h[0] || <PiEmptyBold />} ({h[2]})
+                      <div className="badge" key={i} title={h.comment || ''}>
+                        {h.label ? (
+                          <span className="me-1">
+                            <AnnotationIcon />
+                            {h.label}
+                          </span>
+                        ) : (
+                          <NoAnnotationIcon className="me-1" />
+                        )}{' '}
+                        <span>
+                          <UserIcon /> {h.user}
+                        </span>
                       </div>
                     );
                   })}
