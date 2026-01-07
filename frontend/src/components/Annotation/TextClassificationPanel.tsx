@@ -32,10 +32,16 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
   return (
     <>
       <div
-        className="annotation-frame"
+        className="annotation-frame position-relative"
         style={{ minHeight: `${displayConfig.frameSize}vh` }}
         ref={frameRef as unknown as LegacyRef<HTMLDivElement>}
       >
+        {element?.history && element.history[0] && element.history[0].label && (
+          <span className="position-absolute end-0 top-0 me-1">
+            <AnnotationIcon title={element.history[0].label} />
+          </span>
+        )}
+
         <p className="element-text">
           <motion.span
             animate={elementId ? { backgroundColor: ['#ea6b1f70', '#ffffff00'] } : {}}

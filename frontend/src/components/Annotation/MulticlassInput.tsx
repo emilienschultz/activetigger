@@ -8,7 +8,7 @@ import { useAppContext } from '../../core/context';
 import { useAnnotationSessionHistory } from '../../core/useHistory';
 import { reorderLabels } from '../../core/utils';
 import { ElementOutModel } from '../../types';
-import { NoAnnotationIcon } from '../Icons';
+import { ActiveAnnotationIcon, EmptyAnnotationIcon, NoAnnotationIcon } from '../Icons';
 
 interface MulticlassInputProps {
   elementId: string;
@@ -135,9 +135,9 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
             >
               {displayConfig.displayAnnotation ? (
                 lastAnnotation && lastAnnotation.label === e.label ? (
-                  <IoIosRadioButtonOn />
+                  <ActiveAnnotationIcon />
                 ) : (
-                  <IoIosRadioButtonOff />
+                  <EmptyAnnotationIcon />
                 )
               ) : null}
               <span className="text-truncate" style={{ maxWidth: '20vw' }}>
