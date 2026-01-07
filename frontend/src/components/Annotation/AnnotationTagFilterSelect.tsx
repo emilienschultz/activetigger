@@ -1,4 +1,4 @@
-import { Dispatch, FC, SetStateAction, useCallback, useMemo } from 'react';
+import { FC, useCallback, useMemo } from 'react';
 import Select, { MultiValueGenericProps, OptionProps, components } from 'react-select';
 
 import { identity, omit, sortBy, uniq } from 'lodash';
@@ -15,7 +15,6 @@ export interface TagFilterOption {
 
 interface AnnotationTagFilterSelectProps {
   availableLabels: string[];
-  setSettingChanged: Dispatch<SetStateAction<boolean>>;
 }
 
 function filterOptionValue(option: Omit<TagFilterOption, 'value'>) {
@@ -57,7 +56,6 @@ const Option = ({ children, ...props }: OptionProps<TagFilterOption>) => {
  */
 export const AnnotationTagFilterSelect: FC<AnnotationTagFilterSelectProps> = ({
   availableLabels,
-  setSettingChanged,
 }) => {
   // context data
   const {
@@ -144,8 +142,6 @@ export const AnnotationTagFilterSelect: FC<AnnotationTagFilterSelectProps> = ({
       }}
       onChange={(options) => {
         if (options !== null && options.length > 0) {
-          setSettingChanged(true);
-
           // we transform list of options into one selectionConfig object
           const compactOptions: Omit<TagFilterOption, 'value'> = {
             sample: options[0].sample,

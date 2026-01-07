@@ -48,7 +48,6 @@ export const AnnotationManagement: FC = () => {
 
   const [showDisplayConfig, setShowDisplayConfig] = useState<boolean>(false);
   const [showDisplayViz, setShowDisplayViz] = useState<boolean>(false);
-  const [settingChanged, setSettingChanged] = useState<boolean>(false);
   const [selectFirstModelTrained, setSelectFirstModelTrained] = useState<boolean>(false);
   const handleCloseViz = () => setShowDisplayViz(false);
   const handleCloseConfig = () => setShowDisplayConfig(false);
@@ -179,10 +178,7 @@ export const AnnotationManagement: FC = () => {
   const textInFrame = element?.text.slice(0, displayConfig.numberOfTokens * 4) || '';
   const textOutFrame = element?.text.slice(displayConfig.numberOfTokens * 4) || '';
 
-  const lastTag =
-    element?.history?.length && element?.history.length > 0
-      ? (element?.history[0] as string[])[0]
-      : null;
+  const lastTag = element?.history && element.history.length > 0 ? element.history[0].label : null;
 
   const fetchNextElement = () => {
     getNextElementId().then((res) => {
@@ -346,6 +342,41 @@ export const AnnotationManagement: FC = () => {
     }
   }, [availableQuickModels, activeModel, setAppContext, availableBertModels]);
 
+  /**
+   * Update element if selectionConfig changed :
+   * - refetch if active model is activated
+   * - getNextElement if in noelement page
+   */
+  const refetchElement = useCallback(async () => {
+    if (elementId) {
+      const newElement = await getElementById(elementId, phase);
+      if (newElement) setElement(newElement);
+    }
+  }, [setElement, getElementById, elementId, phase]);
+
+  useEffect(() => {
+    refetchElement();
+    // disabling echaustive deps as we only want to track phase to avoid unnecessary refetch
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeModel]);
+
+  useEffect(() => {
+    //clear history
+    setAppContext((prev) => ({ ...prev, history: [] }));
+    // fetch next element in the new phase
+    fetchNextElement();
+    // disabling echaustive deps as we only want to track phase to avoid unnecessary fetchNext
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+
+  useEffect(() => {
+    if (elementId === 'noelement') {
+      fetchNextElement();
+    }
+    // disabling echaustive deps as we only want to track phase to avoid unnecessary fetchNext
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectionConfig]);
+
   if (!projectName || !currentScheme) return;
 
   return (
@@ -354,8 +385,6 @@ export const AnnotationManagement: FC = () => {
        * Annotation mode form
        * **/}
       <AnnotationModeForm
-        settingChanged={settingChanged}
-        setSettingChanged={setSettingChanged}
         fetchNextElement={fetchNextElement}
         setActiveMenu={setActiveMenu}
         setShowDisplayViz={setShowDisplayViz}

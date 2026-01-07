@@ -15,8 +15,6 @@ import { isValidRegex } from '../../core/utils';
 import { AnnotationTagFilterSelect } from './AnnotationTagFilterSelect';
 
 interface AnnotationModeFormProps {
-  settingChanged: boolean;
-  setSettingChanged: Dispatch<SetStateAction<boolean>>;
   fetchNextElement: () => void;
   setActiveMenu: Dispatch<SetStateAction<boolean>>;
   setShowDisplayViz: Dispatch<SetStateAction<boolean>>;
@@ -34,8 +32,6 @@ function optionValue(option: Record<string, string | undefined>) {
 
 // define the component to configure selection mode
 export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
-  settingChanged,
-  setSettingChanged,
   fetchNextElement,
   setActiveMenu,
   setShowDisplayViz,
@@ -128,7 +124,6 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
             <select
               value={phase}
               onChange={(e) => {
-                if (!settingChanged) setSettingChanged(true);
                 changeDataSet(e);
               }}
             >
@@ -180,7 +175,6 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
               }
               onChange={(option) => {
                 if (option !== null) {
-                  if (!settingChanged) setSettingChanged(true);
                   setAppContext((prev) => ({
                     ...prev,
                     selectionConfig: {
@@ -198,10 +192,7 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
         <div>
           <div className="at-input-group">
             <label className=" small-gray">Filter by Tag</label>
-            <AnnotationTagFilterSelect
-              availableLabels={availableLabels}
-              setSettingChanged={setSettingChanged}
-            />
+            <AnnotationTagFilterSelect availableLabels={availableLabels} />
           </div>
 
           {
@@ -222,7 +213,6 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
               placeholder="Enter a regex"
               value={selectionConfig.filter}
               onChange={(e) => {
-                if (!settingChanged) setSettingChanged(true);
                 setAppContext((prev) => ({
                   ...prev,
                   selectionConfig: { ...prev.selectionConfig, filter: e.target.value },
@@ -285,14 +275,10 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
 
         <button
           type="submit"
-          className={classNames(
-            'btn-primary-action getelement',
-            settingChanged ? 'setting-changed' : '',
-          )}
+          className="btn-primary-action"
           onClick={(e) => {
             e.preventDefault();
             fetchNextElement();
-            setSettingChanged(false);
           }}
           title="Get next element with the selection mode"
         >
