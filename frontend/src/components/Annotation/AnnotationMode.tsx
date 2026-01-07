@@ -102,18 +102,19 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
   const selectionModeOptions: { mode: string; label_maxprob?: string; value: string }[] =
     useMemo(() => {
       const modes = (
-        (activeModel
+        (phase === 'train' && activeModel
           ? project?.next.methods.filter((m) => m !== 'maxprob')
           : project?.next.methods_min) || []
       ).map((mode) => ({ mode, label_maxprob: undefined }));
-      const probLabels = activeModel
-        ? availableLabels.map((l) => ({
-            mode: 'maxprob',
-            label_maxprob: l,
-          }))
-        : [];
+      const probLabels =
+        phase === 'train' && activeModel
+          ? availableLabels.map((l) => ({
+              mode: 'maxprob',
+              label_maxprob: l,
+            }))
+          : [];
       return [...modes, ...probLabels].map((o) => ({ ...o, value: optionValue(o) }));
-    }, [activeModel, project?.next.methods, project?.next.methods_min, availableLabels]);
+    }, [phase, activeModel, project?.next.methods, project?.next.methods_min, availableLabels]);
 
   return (
     <form className="annotation-mode">
