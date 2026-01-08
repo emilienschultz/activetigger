@@ -636,13 +636,13 @@ export function useGetNextElementId(
           scheme: currentScheme,
           selection: selectionConfig.mode,
           sample: selectionConfig.sample,
-          label: selectionConfig.label,
+          on_labels: selectionConfig.label,
           filter: selectionConfig.filter,
           history: history,
           frame: selectionConfig.frameSelection ? selectionConfig.frame : null, // only if frame option selected
           dataset: phase,
           label_maxprob: selectionConfig.label_maxprob,
-          user: selectionConfig.user,
+          on_users: selectionConfig.user,
           model_active: activeModel,
         },
       });

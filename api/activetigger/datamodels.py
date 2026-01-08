@@ -149,13 +149,13 @@ class NextInModel(BaseModel):
     scheme: str
     selection: str = "fixed"
     sample: str = "untagged"
-    label: str | None = None
+    on_labels: str | list[str] | None = None
+    on_users: str | list[str] | None = None
     label_maxprob: str | None = None
     frame: list[Any] | None = None
     history: list[str] = []
     filter: str | None = None
     dataset: str = "train"
-    user: str | None = None
     model_active: ActiveModel | None = None
 
 
