@@ -18,6 +18,7 @@ from activetigger.bertopic import Bertopic
 from activetigger.config import config
 from activetigger.data import Data
 from activetigger.datamodels import (
+    AuthUserModel,
     BertModelModel,
     BertopicComputing,
     ElementInModel,
@@ -238,8 +239,13 @@ class Project:
                     )
 
         # create user authorizations
-        self.users.set_auth(username, project.project_slug, "manager")
-        self.users.set_auth("root", project.project_slug, "manager")
+
+        self.users.set_auth(
+            AuthUserModel(username=username, project_slug=project.project_slug, status="manager")
+        )
+        self.users.set_auth(
+            AuthUserModel(username="root", project_slug=project.project_slug, status="manager")
+        )
         self.status = "created"
 
     def delete(self) -> None:
