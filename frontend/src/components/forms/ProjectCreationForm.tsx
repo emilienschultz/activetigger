@@ -413,6 +413,7 @@ export const ProjectCreationForm: FC = () => {
                 control={control}
                 render={({ field: { onChange } }) => (
                   <Select
+                    id="cols_label"
                     options={availableFields}
                     isMulti
                     isDisabled={creatingProject}
@@ -431,6 +432,7 @@ export const ProjectCreationForm: FC = () => {
                 control={control}
                 render={({ field: { onChange } }) => (
                   <Select
+                    id="cols_context"
                     options={availableFields}
                     isMulti
                     isDisabled={creatingProject}
@@ -572,6 +574,7 @@ export const ProjectCreationForm: FC = () => {
                   control={control}
                   render={({ field: { onChange } }) => (
                     <Select
+                      id="cols_stratify"
                       options={availableFields}
                       isMulti
                       isDisabled={creatingProject}
