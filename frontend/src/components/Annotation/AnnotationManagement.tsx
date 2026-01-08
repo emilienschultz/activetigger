@@ -398,7 +398,7 @@ export const AnnotationManagement: FC = () => {
       {/**
        * ANNOTATION BLOCK
        **/}
-      <div className="d-flex flex-column flex-lg-row justify-content-start gap-3 my-3 ">
+      <div className="d-flex flex-column flex-lg-row justify-content-start gap-3 my-3 annotation-block">
         {elementId === 'noelement' ? (
           <div className="alert horizontal center">
             <div>

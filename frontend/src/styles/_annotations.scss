@@ -71,13 +71,14 @@
 }
 
 .annotation-frame {
+  position: relative;
   white-space: pre-wrap;
   box-shadow: 0px 0px 15px color(from $primary srgb r g b / 50%);
   font-size: 16px;
   line-height: 1.6;
 
   padding: 16px;
-  max-width: 50vw;
+  max-width: 40vw;
   @include media-breakpoint-down(lg) {
     max-width: 100vw;
   }
@@ -148,5 +149,122 @@
       width: fit-content;
       margin: 0;
     }
+  }
+}
+
+.annotation-block {
+  @include media-breakpoint-up(lg) {
+    max-height: 90vh;
+    position: relative;
+  }
+  overflow-y: no;
+  > * {
+    max-height: 100%;
+    overflow-y: auto;
+  }
+}
+
+.tag-action-container {
+  --button-label-width: 25vh;
+  @include media-breakpoint-down(lg) {
+    --button-label-width: 18vh;
+  }
+
+  @extend .d-flex;
+  @extend .mh-100;
+  @extend .flex-lg-column;
+  @extend .justify-content-center;
+  @extend .justify-content-lg-start;
+  @extend .flex-wrap;
+  @extend .gap-2;
+  @extend .align-items-end;
+  @extend .align-items-lg-start;
+  width: fit-content;
+  position: relative;
+
+  .btn-annotate-predicted-action,
+  .btn-annotate-action {
+    margin: 0;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    color: white;
+    width: fit-content;
+
+    height: fit-content;
+    // padding: 5px 10px;
+
+    *:last-child,
+    *:first-child {
+      //icon & key stroke badge
+      flex-shrink: 0;
+    }
+  }
+  .btn-annotate-action {
+    @extend .btn;
+    @extend .btn-primary;
+  }
+  .btn-annotate-predicted-action {
+    @extend .btn;
+    @extend .btn-secondary;
+  }
+
+  .tag-action-button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    @include media-breakpoint-up(lg) {
+      min-width: 100%;
+    }
+    @include media-breakpoint-down(lg) {
+      flex-grow: 1;
+    }
+    .truncate-middle {
+      width: var(--button-label-width);
+
+      @include media-breakpoint-down(lg) {
+        flex-grow: 1;
+      }
+
+      display: flex;
+      justify-content: start;
+      align-items: center;
+      position: relative;
+      text-align: start;
+      span {
+        @extend .text-truncate;
+        display: inline-block;
+        max-width: 50%;
+        white-space: preserve nowrap;
+      }
+      span:first-child {
+        text-overflow: '‥';
+      }
+      span:last-child {
+        text-overflow: '‥';
+        direction: rtl;
+        text-align: end;
+      }
+    }
+    .badge {
+      flex-shrink: 0;
+      flex-grow: 0;
+    }
+  }
+  .no-tag-action {
+    @include media-breakpoint-up(lg) {
+      width: 100%;
+    }
+
+    align-items: center;
+    span.text {
+      display: flex;
+      align-items: center;
+      flex-grow: 1;
+      @extend .gap-1;
+    }
+  }
+  .annotation-comment {
+    width: 100%;
   }
 }

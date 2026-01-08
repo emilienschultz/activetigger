@@ -129,33 +129,6 @@ table {
   color: $secondary;
 }
 
-.btn-annotate-predicted-action,
-.btn-annotate-action {
-  margin: 0;
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  color: white;
-  width: fit-content;
-
-  height: fit-content;
-  // padding: 5px 10px;
-
-  *:last-child,
-  *:first-child {
-    //icon & key stroke badge
-    flex-shrink: 0;
-  }
-}
-.btn-annotate-action {
-  @extend .btn;
-  @extend .btn-primary;
-}
-.btn-annotate-predicted-action {
-  @extend .btn;
-  @extend .btn-secondary;
-}
-
 .btn-stop-process {
   background-color: $primary;
   border: 2px solid $primary;

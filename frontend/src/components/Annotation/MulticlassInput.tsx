@@ -9,6 +9,7 @@ import { useAnnotationSessionHistory } from '../../core/useHistory';
 import { reorderLabels } from '../../core/utils';
 import { ElementOutModel } from '../../types';
 import { ActiveAnnotationIcon, EmptyAnnotationIcon, NoAnnotationIcon } from '../Icons';
+import { MiddleEllipsis } from './MiddleEllipsis';
 
 interface MulticlassInputProps {
   elementId: string;
@@ -87,12 +88,12 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
       if (ev.code === 'Delete') {
         postAnnotation(null, elementId, comment);
       }
-
-      availableLabels.forEach((item, i) => {
-        if (ev.code === `Digit` + (i + 1) || ev.code === `Numpad` + (i + 1)) {
-          postAnnotation(item.label, elementId, comment);
-        }
-      });
+      if (availableLabels.length < 10)
+        availableLabels.forEach((item, i) => {
+          if (ev.code === `Digit` + (i + 1) || ev.code === `Numpad` + (i + 1)) {
+            postAnnotation(item.label, elementId, comment);
+          }
+        });
     },
     [availableLabels, postAnnotation, elementId, element, activeModel, skipAnnotation, comment],
   );
@@ -118,46 +119,21 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
   }, [element?.history]);
 
   return (
-    <div className="d-flex flex-column justify-content-center justify-content-lg-start gap-3">
+    <div className="flex-grow-1 d-flex flex-column justify-content-center justify-content-lg-start gap-3">
       {/* TAGS ACTIONS */}
-      <div className="d-flex flex-row flex-lg-column justify-content-center justify-content-lg-start flex-wrap gap-2 align-items-end align-items-lg-start">
-        {
-          // display buttons for label from the user
-          availableLabels.map((e, i) => (
-            <button
-              type="button"
-              key={e.label}
-              value={e.label}
-              className="btn-annotate-action"
-              onClick={(v) => {
-                if (element) postAnnotation(v.currentTarget.value, elementId, comment);
-              }}
-            >
-              {displayConfig.displayAnnotation ? (
-                lastAnnotation && lastAnnotation.label === e.label ? (
-                  <ActiveAnnotationIcon />
-                ) : (
-                  <EmptyAnnotationIcon />
-                )
-              ) : null}
-              <span className="text-truncate" style={{ maxWidth: '20vw' }}>
-                {e.label}
-              </span>{' '}
-              <span className="badge hotkey">{i + 1}</span>
-            </button>
-          ))
-        }
-        {/* NO TAG OPTION */}
-        <button
-          type="button"
-          className="btn-annotate-action"
-          onClick={() => {
-            postAnnotation(null, elementId, comment);
-          }}
-        >
-          {lastAnnotation === null ? <IoIosRadioButtonOn /> : <IoIosRadioButtonOff />}
-          <NoAnnotationIcon /> No tag <span className="badge hotkey">DEL</span>
-        </button>
+      <div className="tag-action-container ">
+        {/* SKIP */}
+        {skipAnnotation && (
+          <button
+            type="button"
+            className="btn-annotate-action tag-action-button"
+            onClick={() => {
+              skipAnnotation();
+            }}
+          >
+            Skip <span className="badge hotkey">S</span>
+          </button>
+        )}
         {/* PREDICTION */}
         {phase == 'train' && displayConfig.displayPrediction && element?.predict.label && (
           <div className="d-flex flex-column align-items-start gap-1">
@@ -182,39 +158,65 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
             <button
               type="button"
               value={element?.predict.label as unknown as string}
-              className={cx('btn-annotate-predicted-action', small ? ' icon-small' : '')}
+              className={cx(
+                'btn-annotate-predicted-action tag-action-button',
+                small ? ' icon-small' : '',
+              )}
               onClick={(e) => {
                 postAnnotation(e.currentTarget.value, elementId, comment);
               }}
             >
-              {element?.predict.label} <span className="badge hotkey">P</span>
+              <EmptyAnnotationIcon />
+              <MiddleEllipsis label={element?.predict.label} />{' '}
+              <span className="badge hotkey">P</span>
             </button>
           </div>
         )}
-      </div>
+        {
+          // display buttons for label from the user
+          availableLabels.map((e, i) => (
+            <button
+              type="button"
+              key={e.label}
+              value={e.label}
+              className="tag-action-button btn-annotate-action"
+              onClick={(v) => {
+                if (element) postAnnotation(v.currentTarget.value, elementId, comment);
+              }}
+            >
+              {displayConfig.displayAnnotation ? (
+                lastAnnotation && lastAnnotation.label === e.label ? (
+                  <ActiveAnnotationIcon />
+                ) : (
+                  <EmptyAnnotationIcon />
+                )
+              ) : null}
+              <MiddleEllipsis label={e.label} />
+              {availableLabels.length < 10 && <span className="badge hotkey">{i + 1}</span>}
+            </button>
+          ))
+        }
+        {/* NO TAG OPTION */}
+        <button
+          type="button"
+          className="btn-annotate-action no-tag-action"
+          onClick={() => {
+            postAnnotation(null, elementId, comment);
+          }}
+        >
+          {lastAnnotation === null ? <IoIosRadioButtonOn /> : <IoIosRadioButtonOff />}
+          <span className="text">
+            <NoAnnotationIcon /> No tag
+          </span>
+          <span className="badge hotkey">DEL</span>
+        </button>
 
-      <div>
         <textarea
-          className="form-control"
+          className="form-control annotation-comment"
           placeholder="Comment"
           value={comment}
           onChange={(e) => setComment(e.target.value)}
         />
-      </div>
-      {/* EXTRA ACTIONS */}
-      <div className="d-flex flex-row flex-lg-column justify-content-center justify-content-lg-start flex-wrap flex-lg-nowrap">
-        {/* SKIP */}
-        {skipAnnotation && (
-          <button
-            type="button"
-            className="btn-annotate-action h-100"
-            onClick={() => {
-              skipAnnotation();
-            }}
-          >
-            Skip <span className="badge hotkey">S</span>
-          </button>
-        )}
       </div>
     </div>
   );
