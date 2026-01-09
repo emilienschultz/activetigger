@@ -3,7 +3,7 @@ import secrets
 from datetime import datetime
 from pathlib import Path
 
-import yaml  # type: ignore[import]
+import yaml
 
 from activetigger.config import config
 from activetigger.datamodels import (
@@ -165,7 +165,7 @@ class Users:
             raise Exception("Can't delete root user")
         if user_to_delete not in self.existing_users():
             raise Exception("Username does not exist")
-        if user_to_delete not in self.existing_users("root"):
+        if user_to_delete not in self.existing_users(username):
             raise Exception("You don't have the right to delete this user")
 
         # delete the user
@@ -228,7 +228,6 @@ class Users:
         """
         hash_pwd = get_hash(password)
         self.db_manager.users_service.change_password(username, hash_pwd.decode("utf8"))
-        return None
 
     def get_statistics(self, username: str) -> UserStatistics:
         """
