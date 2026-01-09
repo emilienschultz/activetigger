@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, cast
 
-import pandas as pd  # type: ignore[import]
+import pandas as pd
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse
 from pandas import DataFrame
@@ -20,7 +20,6 @@ from activetigger.data import Data
 from activetigger.datamodels import (
     AuthUserModel,
     BertModelModel,
-    BertopicComputing,
     ElementInModel,
     ElementOutModel,
     EvalSetDataModel,
@@ -51,6 +50,7 @@ from activetigger.features import Features
 from activetigger.functions import clean_regex, get_dir_size, slugify
 from activetigger.generation.generations import Generations
 from activetigger.languagemodels import LanguageModels
+from activetigger.messages import Messages
 from activetigger.projections import Projections
 from activetigger.queue import Queue
 from activetigger.quickmodels import QuickModels
@@ -80,6 +80,7 @@ class Project:
     quickmodels: QuickModels
     generations: Generations
     projections: Projections
+    messages: Messages
     errors: list[list]
 
     def __init__(
@@ -88,6 +89,8 @@ class Project:
         queue: Queue,
         db_manager: DatabaseManager,
         path_models: Path,
+        users: Users,
+        messages: Messages,
     ) -> None:
         """
         Load existing project
@@ -101,7 +104,8 @@ class Project:
         self.name = project_slug
         self.project_slug = project_slug
         self.errors = []  # TODO Move to specific class / db in the future
-        self.users = Users(self.db_manager)
+        self.users = users
+        self.messages = messages
 
         # load the project if exist
         if self.exists():
@@ -1579,7 +1583,7 @@ class Project:
             # case for bertopic
             if e.kind == "bertopic":
                 try:
-                    bertmodel = cast(BertopicComputing, e)
+                    # bertmodel = cast(BertopicComputing, e)
                     print("Bertopic trained")
                     # self.bertopic.add(bertmodel)
                     logging.debug("Bertopic trained")

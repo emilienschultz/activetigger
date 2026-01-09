@@ -171,6 +171,6 @@ async def get_statistics(
 @router.post("/users/resetpwd", tags=["users"])
 async def reset_password(mail: str) -> None:
     try:
-        orchestrator.reset_password(mail)
+        orchestrator.users.reset_password(mail)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e

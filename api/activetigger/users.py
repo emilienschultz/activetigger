@@ -1,4 +1,5 @@
 import logging
+import secrets
 from datetime import datetime
 from pathlib import Path
 
@@ -7,7 +8,10 @@ import yaml  # type: ignore[import]
 from activetigger.config import config
 from activetigger.datamodels import (
     AuthUserModel,
+    DatasetModel,
     NewUserModel,
+    ProjectModel,
+    ProjectSummaryModel,
     UserInDBModel,
     UserModel,
     UsersStateModel,
@@ -15,6 +19,7 @@ from activetigger.datamodels import (
 )
 from activetigger.db.manager import DatabaseManager
 from activetigger.functions import compare_to_hash, get_dir_size, get_hash
+from activetigger.messages import Messages
 
 
 class Users:
@@ -25,16 +30,19 @@ class Users:
     db_manager: DatabaseManager
     users: dict
     failed_attemps: dict[str, list[datetime]]
+    messages: Messages
 
     def __init__(
         self,
         db_manager: DatabaseManager,
+        messages: Messages,
         file_users: str = "users.yaml",
     ):
         """
         Init users references
         """
         self.db_manager = db_manager
+        self.messages = messages
 
         # add specific users parameters if they exist
         self.users = {}
@@ -186,7 +194,7 @@ class Users:
             if not compare_to_hash(password, user.hashed_password):
                 raise Exception("Wrong password")
             return user
-        except Exception as e:
+        except Exception:
             self.log_failed_login_attempt(username)
             raise Exception("Wrong username or password")
 
@@ -262,3 +270,70 @@ class Users:
             users=list(r.keys()),
             last_schemes={i: r[i].scheme for i in r},
         )
+
+    def get_auth_datasets(self, username: str) -> list[DatasetModel]:
+        """
+        Get datasets authorized for the user (projects where is manager)
+        """
+        projects = self.get_auth_projects(username, auth="manager")
+        return [
+            DatasetModel(
+                project_slug=p[2]["project_slug"],
+                columns=p[2]["all_columns"],
+                n_rows=p[2]["n_total"],
+            )
+            for p in projects
+        ]
+
+    def get_user_projects(self, username: str) -> list[ProjectSummaryModel]:
+        """
+        Get projects authorized for the user
+        """
+        projects_auth = self.get_auth_projects(username)
+        projects = []
+        for i in list(reversed(projects_auth)):
+            # get the project slug
+            project_slug = i[0]
+            user_right = i[1]
+            parameters = self.db_manager.projects_service.get_project(project_slug)
+            if parameters is None:
+                continue
+            parameters = ProjectModel(**parameters["parameters"])
+            created_by = i[3]
+            created_at = i[4].strftime("%Y-%m-%d %H:%M:%S")
+            try:
+                size = round(get_dir_size(config.data_path + "/projects/" + i[0]), 1)
+            except Exception as e:
+                print(e)
+                size = 0.0
+            last_activity = self.db_manager.logs_service.get_last_activity_project(i[0])
+
+            # create the project summary model
+            projects.append(
+                ProjectSummaryModel(
+                    project_slug=project_slug,
+                    user_right=user_right,
+                    parameters=parameters,
+                    created_by=created_by,
+                    created_at=created_at,
+                    size=size,
+                    last_activity=last_activity,
+                )
+            )
+        return projects
+
+    def reset_password(self, mail: str) -> None:
+        """
+        Reset password for a user with the given email
+        """
+        # Check if mail is connected to a user
+        user_name = self.db_manager.users_service.get_user_by_mail(mail)
+
+        # Generate a random password
+        new_password = secrets.token_hex(16)
+
+        # Send the mail to the user with the new password
+        self.messages.send_mail_reset_password(user_name, mail, new_password)
+
+        # Update the user's password in the database
+        self.force_change_password(user_name, new_password)

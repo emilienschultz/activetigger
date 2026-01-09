@@ -228,7 +228,7 @@ async def get_projects(
     """
     try:
         return AvailableProjectsModel(
-            projects=orchestrator.get_auth_projects(current_user.username)
+            projects=orchestrator.users.get_user_projects(current_user.username)
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -242,7 +242,7 @@ async def get_project_datasets(
     Get all datasets already available for a specific user
     """
     try:
-        return orchestrator.get_auth_datasets(current_user.username)
+        return orchestrator.users.get_auth_datasets(current_user.username)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 

@@ -142,8 +142,8 @@ async def copy_existing_data(
 
         # copy the full dataset
         shutil.copyfile(
-            source_path.joinpath(orchestrator.data_all),
-            project_path.joinpath(orchestrator.data_all),
+            source_path.joinpath(config.data_all),
+            project_path.joinpath(config.data_all),
         )
 
     except Exception as e:
