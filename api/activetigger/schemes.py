@@ -797,7 +797,7 @@ class Schemes:
         """
         return SchemesProjectStateModel(available=self.available())
 
-    def compare(self, schemeA: str, schemeB: str) -> CompareSchemesModel:
+    def compare(self, schemeA: str, schemeB: str, dataset: str) -> CompareSchemesModel:
         """
         Compare two schemes
         """
@@ -819,8 +819,8 @@ class Schemes:
             2,
         )
 
-        df_A = self.get_scheme(schemeA)
-        df_B = self.get_scheme(schemeB)
+        df_A = self.get_scheme(schemeA, datasets=[dataset])
+        df_B = self.get_scheme(schemeB, datasets=[dataset])
 
         # only keeps elements that have been annotated in both schemes
         df = pd.concat({"schemeA": df_A["labels"], "schemeB": df_B["labels"]}, axis=1).dropna()

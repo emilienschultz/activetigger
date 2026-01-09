@@ -176,13 +176,14 @@ async def compare_schemes(
     project: Annotated[Project, Depends(get_project)],
     schemeA: str,
     schemeB: str,
+    dataset: str,
 ) -> CompareSchemesModel:
     """
     Compare two schemes
     """
     test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
-        return project.schemes.compare(schemeA, schemeB)
+        return project.schemes.compare(schemeA, schemeB, dataset)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
