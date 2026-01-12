@@ -93,9 +93,10 @@ class Project:
         messages: Messages,
     ) -> None:
         """
-        Load existing project
+        Initialize the project
+        - load if it exits in database
         """
-        self.status = "initial"
+        self.status = "initialize"
         self.starting_time = time.time()
         self.queue = queue
         self.computing = []
@@ -112,10 +113,6 @@ class Project:
             self.status = "created"
             self.load_project(project_slug)
 
-    def __del__(self):
-        print(f"Project {self.name} deleted")
-        pass
-
     def exists(self) -> bool:
         """
         Check if the project exists
@@ -124,20 +121,86 @@ class Project:
             return True
         return False
 
+    def load_project(self, project_slug: str) -> None:
+        """
+        Load existing project
+        """
+        # get projet parameters
+        existing_project = self.db_manager.projects_service.get_project(project_slug)
+
+        if not existing_project:
+            raise ValueError("This project does not exist")
+
+        self.params = ProjectModel(**existing_project["parameters"])
+
+        # check if directory exists
+        if self.params.dir is None:
+            raise ValueError("No directory exists for this project")
+
+        # Tabular data management
+        self.data = Data(
+            self.params.dir,
+            self.params.dir.joinpath(config.data_all),
+            self.params.dir.joinpath(config.features_file),
+            self.params.dir.joinpath(config.train_file),
+            self.params.dir.joinpath(config.valid_file),
+            self.params.dir.joinpath(config.test_file),
+        )
+
+        # create specific management objets
+        self.schemes = Schemes(
+            project_slug,
+            self.db_manager,
+            self.data,
+        )
+        self.features = Features(
+            project_slug,
+            self.data,
+            self.path_models,
+            self.queue,
+            cast(list[FeatureComputing], self.computing),
+            self.db_manager,
+            self.params.language,
+        )
+        self.languagemodels = LanguageModels(
+            project_slug,
+            self.params.dir,
+            self.queue,
+            self.computing,
+            self.db_manager,
+            config.file_models,
+        )
+        self.quickmodels = QuickModels(
+            project_slug, self.params.dir, self.queue, self.computing, self.db_manager
+        )
+        self.generations = Generations(
+            self.db_manager, cast(list[GenerationComputing], self.computing)
+        )
+        self.projections = Projections(self.params.dir, self.computing, self.queue)
+        self.bertopic = Bertopic(
+            project_slug,
+            self.params.dir,
+            self.queue,
+            self.computing,
+            self.features,
+            self.db_manager,
+        )
+
     def start_project_creation(self, params: ProjectBaseModel, username: str, path: Path) -> None:
         """
         Manage process creation, sending the heavy process to the queue
         """
         self.status = "creating"
+
         # test if the name of the column is specified
         if params.col_id is None or params.col_id == "":
             raise Exception("No column selected for the id")
         if params.cols_text is None or len(params.cols_text) == 0:
             raise Exception("No column selected for the text")
+
         # add the dedicated directory
         params.dir = path.joinpath(self.project_slug)
 
-        print("Adding project to the queue")
         # send the process to the queue
         unique_id = self.queue.add_task(
             "create_project",
@@ -154,6 +217,7 @@ class Project:
             ),
             queue="cpu",
         )
+
         # Update the register
         self.computing.append(
             ProjectCreatingModel(
@@ -181,11 +245,13 @@ class Project:
         self.db_manager.projects_service.add_project(
             project.project_slug, jsonable_encoder(project), username
         )
-        # add the default scheme (basic name or with a random number if the name already exists)
+
+        # add the default scheme if needed
         if import_trainset_labels is None or len(import_trainset_labels.columns) == 0:
             self.db_manager.projects_service.add_scheme(
                 self.project_slug, config.default_scheme, [], "multiclass", "system"
             )
+
         # if labels/schemes to import, add them to the database
         else:
             for col in import_trainset_labels.columns:
@@ -242,8 +308,7 @@ class Project:
                         elements=elements,
                     )
 
-        # create user authorizations
-
+        # add user authorizations
         self.users.set_auth(
             AuthUserModel(username=username, project_slug=project.project_slug, status="manager")
         )
@@ -258,7 +323,7 @@ class Project:
         """
 
         if self.params.dir is None:
-            raise ValueError("No directory exists for this project")
+            raise ValueError("No directory for this project")
 
         # remove from database
         try:
@@ -277,79 +342,6 @@ class Project:
         # remove static files
         if Path(f"{config.data_path}/projects/static/{self.name}").exists():
             shutil.rmtree(f"{config.data_path}/projects/static/{self.name}")
-
-    def load_project(self, project_slug: str) -> None:
-        """
-        Load existing project
-        """
-
-        try:
-            self.params = self.load_params(project_slug)
-        except Exception as e:
-            raise ValueError("This project can be loaded", str(e))
-
-        # check if directory exists
-        if self.params.dir is None:
-            raise ValueError("No directory exists for this project")
-
-        # Tabular data management
-        self.data = Data(
-            self.params.dir,
-            self.params.dir.joinpath(config.data_all),
-            self.params.dir.joinpath(config.features_file),
-            self.params.dir.joinpath(config.train_file),
-            self.params.dir.joinpath(config.valid_file),
-            self.params.dir.joinpath(config.test_file),
-        )
-
-        # create specific management objets
-        self.schemes = Schemes(
-            project_slug,
-            self.db_manager,
-            self.data,
-        )
-        self.features = Features(
-            project_slug,
-            self.data,
-            self.path_models,
-            self.queue,
-            cast(list[FeatureComputing], self.computing),
-            self.db_manager,
-            self.params.language,
-        )
-        self.languagemodels = LanguageModels(
-            project_slug,
-            self.params.dir,
-            self.queue,
-            self.computing,
-            self.db_manager,
-            config.file_models,
-        )
-        self.quickmodels = QuickModels(
-            project_slug, self.params.dir, self.queue, self.computing, self.db_manager
-        )
-        self.generations = Generations(
-            self.db_manager, cast(list[GenerationComputing], self.computing)
-        )
-        self.projections = Projections(self.params.dir, self.computing, self.queue)
-        self.bertopic = Bertopic(
-            project_slug,
-            self.params.dir,
-            self.queue,
-            self.computing,
-            self.features,
-            self.db_manager,
-        )
-
-    def load_params(self, project_slug: str) -> ProjectModel:
-        """
-        Load params from database
-        """
-        existing_project = self.db_manager.projects_service.get_project(project_slug)
-        if existing_project:
-            return ProjectModel(**existing_project["parameters"])
-        else:
-            raise NameError(f"{project_slug} does not exist.")
 
     def drop_evalset(self, dataset: str) -> None:
         """
@@ -982,7 +974,7 @@ class Project:
 
     def state(self) -> ProjectStateModel:
         """
-        Send state of the project
+        State of the project
         Collecting states for submodules
         """
         return ProjectStateModel(
@@ -1632,46 +1624,46 @@ class Project:
 
         return None
 
-    def dump(self, with_files=True) -> None:
-        """
-        Dump the project in a archive
-        - keep the files
-        - do not keep the models
+    # def dump(self, with_files=True) -> None:
+    #     """
+    #     Dump the project in a archive
+    #     - keep the files
+    #     - do not keep the models
 
-        Ideally, to be able to rerun everything
-        """
-        if self.params.dir is None:
-            raise Exception("No directory for project")
-        os.mkdir(self.params.dir.joinpath("dump"))
+    #     Ideally, to be able to rerun everything
+    #     """
+    #     if self.params.dir is None:
+    #         raise Exception("No directory for project")
+    #     os.mkdir(self.params.dir.joinpath("dump"))
 
-        # save the project parameters
-        # - features computed
+    #     # save the project parameters
+    #     # - features computed
 
-        # save the annotations
+    #     # save the annotations
 
-        # save the data (train + test + all)
-        if with_files:
-            shutil.copyfile(
-                self.params.dir.joinpath("data_all.parquet"),
-                self.params.dir.joinpath("dump").joinpath("data_all.parquet"),
-            )
-            shutil.copyfile(
-                self.params.dir.joinpath("train.parquet"),
-                self.params.dir.joinpath("dump").joinpath("data_train.parquet"),
-            )
-            if self.params.test:
-                shutil.copyfile(
-                    self.params.dir.joinpath("test.parquet"),
-                    self.params.dir.joinpath("dump").joinpath("data_test.parquet"),
-                )
+    #     # save the data (train + test + all)
+    #     if with_files:
+    #         shutil.copyfile(
+    #             self.params.dir.joinpath("data_all.parquet"),
+    #             self.params.dir.joinpath("dump").joinpath("data_all.parquet"),
+    #         )
+    #         shutil.copyfile(
+    #             self.params.dir.joinpath("train.parquet"),
+    #             self.params.dir.joinpath("dump").joinpath("data_train.parquet"),
+    #         )
+    #         if self.params.test:
+    #             shutil.copyfile(
+    #                 self.params.dir.joinpath("test.parquet"),
+    #                 self.params.dir.joinpath("dump").joinpath("data_test.parquet"),
+    #             )
 
-        # save the codebook
+    #     # save the codebook
 
-        # create the archive
-        shutil.make_archive(
-            f"dump_{self.project_slug}", "zip", self.params.dir.joinpath("dump"), self.params.dir
-        )
+    #     # create the archive
+    #     shutil.make_archive(
+    #         f"dump_{self.project_slug}", "zip", self.params.dir.joinpath("dump"), self.params.dir
+    #     )
 
-        # delete the dump folder
-        shutil.rmtree(self.params.dir.joinpath("dump"))
-        return None
+    #     # delete the dump folder
+    #     shutil.rmtree(self.params.dir.joinpath("dump"))
+    #     return None
