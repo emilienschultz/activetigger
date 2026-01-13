@@ -121,13 +121,12 @@ async def update_project(
     """
     test_rights(ProjectAction.UPDATE, current_user.username, project.project_slug)
     try:
-        project.update_project(update)
+        project.start_update_project(update, current_user.username)
         orchestrator.log_action(
             current_user.username,
             f"INFO UPDATE PROJECT: {project.project_slug}",
             project.project_slug,
         )
-        del orchestrator.projects[project.project_slug]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

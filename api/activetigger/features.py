@@ -184,6 +184,39 @@ class Features:
         """
         return name in self.map
 
+    def add_predictions(self, predictions: dict) -> list:
+        """
+        Add BERT predictions to features
+        """
+        errors = []
+        for f in predictions:
+            try:
+                # load the prediction probabilities minus one
+                df = pd.read_parquet(predictions[f])
+                df = df.drop(columns=["entropy", "prediction", "dataset", "label"])
+                df = df[df.columns[0:-1]]
+                name = f.replace("__", "_")  # avoid __ in the name for features
+                # if the feature already exists, delete it first
+                if self.exists(name):
+                    self.delete(name)
+                # add it
+                self.add(
+                    name=name,
+                    kind="prediction",
+                    parameters={},
+                    username="system",
+                    new_content=df,
+                )
+            except Exception as ex:
+                errors.append(
+                    [
+                        datetime.now(config.timezone),
+                        "Error in adding prediction",
+                        str(ex),
+                    ]
+                )
+        return errors
+
     def add(
         self,
         name: str,

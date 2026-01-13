@@ -542,6 +542,14 @@ class GenerationRequest(BaseModel):
     mode: str = "all"
 
 
+class ProjectUpdateModel(BaseModel):
+    project_name: str | None = None
+    language: str | None = None
+    cols_text: list[str] | None = None
+    cols_context: list[str] | None = None
+    add_n_train: int | None = None
+
+
 # --------------------
 # CLASS FOR COMPUTING
 # --------------------
@@ -552,6 +560,10 @@ class ProcessComputing(BaseModel):
     unique_id: str
     time: datetime.datetime
     kind: str
+
+
+class UpdateComputing(ProcessComputing):
+    update: ProjectUpdateModel
 
 
 class LMComputing(ProcessComputing):
@@ -1033,14 +1045,6 @@ class ModelInformationsModel(BaseModel):
     params: dict | None = None
     loss: dict | None = None
     scores: ModelScoresModel
-
-
-class ProjectUpdateModel(BaseModel):
-    project_name: str | None = None
-    language: str | None = None
-    cols_text: list[str] | None = None
-    cols_context: list[str] | None = None
-    add_n_train: int | None = None
 
 
 class UserStatistics(BaseModel):
