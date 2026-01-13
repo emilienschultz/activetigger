@@ -125,12 +125,12 @@ export interface FeatureModelExtended {
 export interface SelectionConfig {
   mode: string;
   sample: string;
-  label?: string;
+  labels?: string[];
   label_maxprob?: string; // label to use for maxprob selection
   frame?: number[];
   frameSelection?: boolean; // true/false to use frame to select
   filter?: string;
-  user?: string;
+  users?: string[];
 }
 
 export interface GenerateConfig {

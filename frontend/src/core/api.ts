@@ -20,6 +20,7 @@ import {
   ProjectUpdateModel,
   ProjectionParametersModel,
   QuickModelInModel,
+  SelectionConfig,
   SupportedAPI,
   TextDatasetModel,
   newBertModel,
@@ -614,16 +615,7 @@ export function useGetFeatureInfo(project_slug: string | null, project: unknown)
 export function useGetNextElementId(
   projectSlug: string | null,
   currentScheme: string | null,
-  selectionConfig: {
-    mode: string;
-    sample: string;
-    label?: string;
-    label_maxprob?: string;
-    filter?: string;
-    frameSelection?: boolean;
-    frame?: number[];
-    user?: string;
-  },
+  selectionConfig: SelectionConfig,
   history: string[],
   phase: string,
   activeModel: ActiveModel | null,
@@ -637,13 +629,13 @@ export function useGetNextElementId(
           scheme: currentScheme,
           selection: selectionConfig.mode,
           sample: selectionConfig.sample,
-          on_labels: selectionConfig.label,
+          on_labels: selectionConfig.labels,
           filter: selectionConfig.filter,
           history: history,
           frame: selectionConfig.frameSelection ? selectionConfig.frame : null, // only if frame option selected
           dataset: phase,
           label_maxprob: selectionConfig.label_maxprob,
-          on_users: selectionConfig.user,
+          on_users: selectionConfig.users,
           model_active: activeModel,
         },
       });
@@ -2108,7 +2100,7 @@ export function useGetCompareSchemes(
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
 
   const getCompareSchemes = useAsyncMemo(async () => {
-    if (project_slug && schemeA && schemeB) {
+    if (project_slug && schemeA && schemeB && dataset) {
       const res = await api.GET('/schemes/compare', {
         params: {
           query: {
@@ -2122,7 +2114,7 @@ export function useGetCompareSchemes(
       return res.data;
     }
     return null;
-  }, [schemeA, schemeB, project_slug, fetchTrigger]);
+  }, [schemeA, schemeB, project_slug, fetchTrigger, dataset]);
 
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
 

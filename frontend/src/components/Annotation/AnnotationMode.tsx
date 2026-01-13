@@ -60,11 +60,7 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
     project,
   );
 
-  const [availableLabels, setAvailableLabels] = useState<string[]>(
-    currentScheme && project && project.schemes.available[currentScheme]
-      ? project.schemes.available[currentScheme].labels
-      : [],
-  );
+  const [availableLabels, setAvailableLabels] = useState<string[]>([]);
 
   const statisticsDataset = useMemo(() => {
     if (phase === 'train') return `${statistics?.train_annotated_n}/${statistics?.train_set_n}`;
@@ -73,7 +69,7 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
     return '';
   }, [phase, statistics]);
 
-  // update if new model
+  // keep availableLabels up to date
   useEffect(() => {
     // case where the quick model is dichotomize on a specific label
     if (currentModel && currentModel.params && currentModel.params['dichotomize']) {
@@ -81,8 +77,10 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
         currentModel.params['dichotomize'] as string,
         'not-' + currentModel.params['dichotomize'],
       ]);
-    }
-  }, [currentModel]);
+    } else if (currentScheme && project?.schemes.available[currentScheme])
+      setAvailableLabels(project.schemes.available[currentScheme].labels);
+    else setAvailableLabels([]);
+  }, [currentModel, setAvailableLabels, currentScheme, project?.schemes.available]);
 
   // change dataset : there should be a navigation to reset element id
   const changeDataSet = (e: ChangeEvent<HTMLSelectElement>) => {

@@ -1,9 +1,10 @@
 import { FC, useCallback, useMemo } from 'react';
 import Select, { MultiValueGenericProps, OptionProps, components } from 'react-select';
 
-import { identity, omit, sortBy, uniq } from 'lodash';
+import { omit, sortBy, uniq } from 'lodash';
 import { useAppContext } from '../../core/context';
 import { truncateInMiddle } from '../../core/utils';
+import { SelectionConfig } from '../../types';
 import { AnnotationIcon, NoAnnotationIcon, UserIcon } from '../Icons';
 
 export interface TagFilterOption {
@@ -86,36 +87,40 @@ export const AnnotationTagFilterSelect: FC<AnnotationTagFilterSelectProps> = ({
   // handle option coherence by disabling options depending on current selection Config
   const isTagFilterOptionDisabled = useCallback(
     (option: TagFilterOption) => {
-      return (
-        selectionConfig.sample !== 'all' &&
-        (selectionConfig.sample !== option.sample ||
-          //TODO remove this once we have multiple selection
-          (option.label !== undefined &&
-            selectionConfig.label !== undefined &&
-            option.label !== selectionConfig.label) ||
-          (option.user !== undefined &&
-            selectionConfig.user !== undefined &&
-            option.user !== selectionConfig.user))
-      );
+      return selectionConfig.sample !== 'all' && selectionConfig.sample !== option.sample;
     },
-    [selectionConfig.sample, selectionConfig.label, selectionConfig.user],
+    [selectionConfig.sample],
   );
+
   const tagFilterSelectValue = useMemo(() => {
-    const selectedValues = [
-      filterOptionValue({
-        sample: selectionConfig.sample,
-        label: selectionConfig.label,
-        user: undefined,
-      }),
-      filterOptionValue({
-        sample: selectionConfig.sample,
-        label: undefined,
-        user: selectionConfig.user,
-      }),
-    ];
+    const selectedValues =
+      selectionConfig.labels?.length || selectionConfig.users?.length
+        ? [
+            ...(selectionConfig.labels?.map((l) =>
+              filterOptionValue({
+                sample: selectionConfig.sample,
+                label: l,
+                user: undefined,
+              }),
+            ) || []),
+            ...(selectionConfig.users?.map((u) =>
+              filterOptionValue({
+                sample: selectionConfig.sample,
+                label: undefined,
+                user: u,
+              }),
+            ) || []),
+          ]
+        : [
+            filterOptionValue({
+              sample: selectionConfig.sample,
+              label: undefined,
+              user: undefined,
+            }),
+          ];
     const values = tagFilterOptions.filter((o) => selectedValues.includes(o.value));
     return values;
-  }, [tagFilterOptions, selectionConfig.sample, selectionConfig.label, selectionConfig.user]);
+  }, [tagFilterOptions, selectionConfig.sample, selectionConfig.labels, selectionConfig.users]);
 
   return (
     <Select
@@ -124,7 +129,6 @@ export const AnnotationTagFilterSelect: FC<AnnotationTagFilterSelectProps> = ({
       isClearable
       options={tagFilterOptions}
       isOptionDisabled={isTagFilterOptionDisabled}
-      // TODO: refacto value after multivalue refacto
       value={tagFilterSelectValue}
       getOptionLabel={(o) =>
         truncateInMiddle(
@@ -143,21 +147,22 @@ export const AnnotationTagFilterSelect: FC<AnnotationTagFilterSelectProps> = ({
       onChange={(options) => {
         if (options !== null && options.length > 0) {
           // we transform list of options into one selectionConfig object
-          const compactOptions: Omit<TagFilterOption, 'value'> = {
+          const compactOptions: Pick<SelectionConfig, 'sample' | 'labels' | 'users'> = {
             sample: options[0].sample,
-            label:
-              // TODO remove join after multiple value refacto
-              sortBy(uniq(options.map((o) => o.label).filter(identity))).join('|') || undefined,
-            user:
-              // TODO remove join after multiple value refacto
-              sortBy(uniq(options.map((o) => o.user).filter(identity))).join('|') || undefined,
+            labels:
+              sortBy(
+                uniq(options.map((o) => o.label).filter((l): l is string => l !== undefined)),
+              ) || undefined,
+            users:
+              sortBy(
+                uniq(options.map((o) => o.user).filter((u): u is string => u !== undefined)),
+              ) || undefined,
           };
-          console.log(compactOptions);
           setAppContext((prev) => {
             return {
               ...prev,
               selectionConfig: {
-                ...omit(prev.selectionConfig, ['sample', 'label', 'user']),
+                ...omit(prev.selectionConfig, ['sample', 'labels', 'users']),
                 ...compactOptions,
               },
             };
@@ -168,7 +173,7 @@ export const AnnotationTagFilterSelect: FC<AnnotationTagFilterSelectProps> = ({
           setAppContext((prev) => ({
             ...prev,
             selectionConfig: {
-              ...omit(prev.selectionConfig, ['sample', 'label', 'user']),
+              ...omit(prev.selectionConfig, ['sample', 'labels', 'users']),
               sample: 'all',
             },
           }));

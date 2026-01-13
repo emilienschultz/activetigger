@@ -49,7 +49,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
       currentProject: project,
       currentProjection,
       selectionConfig,
-      activeModel,
       isComputing,
       labelColorMapping,
     },
