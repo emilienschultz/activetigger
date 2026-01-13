@@ -4,6 +4,7 @@ import { DisplayConfig, ElementOutModel } from '../../types';
 
 import { FC, LegacyRef } from 'react';
 import { Tooltip } from 'react-tooltip';
+import { CSSProperties } from 'styled-components';
 import { AnnotationIcon, NoAnnotationIcon, UserIcon } from '../Icons';
 
 interface ClassificationPanelProps {
@@ -33,7 +34,12 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
     <>
       <div
         className="annotation-frame"
-        style={{ minHeight: `${displayConfig.frameSize}vh` }}
+        style={
+          {
+            '--height': `${displayConfig.textFrameHeight}vh`,
+            '--width': `${displayConfig.textFrameWidth}vw`,
+          } as CSSProperties
+        }
         ref={frameRef as unknown as LegacyRef<HTMLDivElement>}
       >
         {element?.history && element.history[0] && element.history[0].label && (

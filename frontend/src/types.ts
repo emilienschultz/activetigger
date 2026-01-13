@@ -148,10 +148,12 @@ export interface DisplayConfig {
   interfaceType: string;
   displayAnnotation: boolean;
   displayPrediction: boolean;
+  displayPredictionStat: boolean;
   displayContext: boolean;
   displayHistory: boolean;
   numberOfTokens: number;
-  frameSize: number;
+  textFrameHeight: number;
+  textFrameWidth: number;
   highlightText: string;
   labelsOrder?: string[];
 }

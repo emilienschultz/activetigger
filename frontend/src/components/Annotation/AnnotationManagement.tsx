@@ -475,12 +475,12 @@ export const AnnotationManagement: FC = () => {
           </div>
         </Modal.Body>
       </Modal>
-      <Modal show={showDisplayConfig} onHide={handleCloseConfig} size="xl" id="config-modal">
+      <Modal show={showDisplayConfig} onHide={handleCloseConfig} size="sm" id="config-modal">
         <Modal.Header closeButton>
           <Modal.Title>Configuration</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <TagDisplayParameters displayConfig={displayConfig} setAppContext={setAppContext} />
+          <TagDisplayParameters />
         </Modal.Body>
       </Modal>
       <Modal show={activeMenu} onHide={() => setActiveMenu(false)} id="active-modal" size="lg">

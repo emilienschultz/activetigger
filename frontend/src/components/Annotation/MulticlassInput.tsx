@@ -53,11 +53,11 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
 
   //grab comment from element history once API has been modified to add this
   const [comment, setComment] = useState<string>(
-    element?.history ? element.history[0].comment || '' : '',
+    element?.history ? element.history[0]?.comment || '' : '',
   );
 
   //reset comment as for now it's not available in annotation history
-  useEffect(() => setComment(element?.history ? element.history[0].comment || '' : ''), [element]);
+  useEffect(() => setComment(element?.history ? element.history[0]?.comment || '' : ''), [element]);
 
   const availableLabels = useMemo<LabelType[]>(
     () =>
@@ -126,7 +126,7 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
         {skipAnnotation && (
           <button
             type="button"
-            className="btn-annotate-action tag-action-button"
+            className="btn-annotate-predicted-action tag-action-button"
             onClick={() => {
               skipAnnotation();
             }}
@@ -137,24 +137,26 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
         {/* PREDICTION */}
         {phase == 'train' && displayConfig.displayPrediction && element?.predict.label && (
           <div className="d-flex flex-column align-items-start gap-1">
-            <small className="d-flex align-items-center gap-1">
-              <MdOnlinePrediction size="20" title="Prediction by model" id="prediction-icon" />{' '}
-              <Tooltip anchorSelect="#prediction-icon" place="top">
-                Prediction by model
-              </Tooltip>
-              <span className="badge m-0" id="predict-probability">
-                P. {predict_proba}
-              </span>
-              <Tooltip anchorSelect="#predict-probability" place="top">
-                prediction's probability: {predict_proba}
-              </Tooltip>
-              <span className="badge m-0" id="predict-entropy">
-                E. {predict_entropy}
-              </span>
-              <Tooltip anchorSelect="#predict-entropy" place="top">
-                prediction's entropy: {predict_entropy}
-              </Tooltip>
-            </small>
+            {displayConfig.displayPredictionStat && (
+              <small className="d-flex align-items-center gap-1">
+                <MdOnlinePrediction size="20" title="Prediction by model" id="prediction-icon" />{' '}
+                <Tooltip anchorSelect="#prediction-icon" place="top">
+                  Prediction by model
+                </Tooltip>
+                <span className="badge m-0" id="predict-probability">
+                  P. {predict_proba}
+                </span>
+                <Tooltip anchorSelect="#predict-probability" place="top">
+                  prediction's probability: {predict_proba}
+                </Tooltip>
+                <span className="badge m-0" id="predict-entropy">
+                  E. {predict_entropy}
+                </span>
+                <Tooltip anchorSelect="#predict-entropy" place="top">
+                  prediction's entropy: {predict_entropy}
+                </Tooltip>
+              </small>
+            )}
             <button
               type="button"
               value={element?.predict.label as unknown as string}
@@ -199,7 +201,7 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
         {/* NO TAG OPTION */}
         <button
           type="button"
-          className="btn-annotate-action no-tag-action"
+          className="btn-annotate-predicted-action no-tag-action"
           onClick={() => {
             postAnnotation(null, elementId, comment);
           }}
