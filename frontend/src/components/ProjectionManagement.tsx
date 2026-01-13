@@ -10,6 +10,7 @@ import { FaLock, FaPlusCircle } from 'react-icons/fa';
 import { FaGear } from 'react-icons/fa6';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
+import { ModelParametersTab } from '../components/ModelParametersTab';
 import {
   useAddAnnotation,
   useGetElementById,
@@ -20,12 +21,11 @@ import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
 import { ElementOutModel, ProjectionParametersModel } from '../types';
+import { MulticlassInput } from './Annotation/MulticlassInput';
+import { MultilabelInput } from './Annotation/MultilabelInput';
 import { CreateNewFeature } from './forms/CreateNewFeature';
-import { MulticlassInput } from './MulticlassInput';
-import { MultilabelInput } from './MultilabelInput';
 import { ProjectionVizSigma } from './ProjectionVizSigma';
 import { MarqueBoundingBox } from './ProjectionVizSigma/MarqueeController';
-import { ModelParametersTab } from '../components/ModelParametersTab';
 import { StopProcessButton } from './StopProcessButton';
 
 interface ProjectionManagementProps {
@@ -49,7 +49,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
       currentProject: project,
       currentProjection,
       selectionConfig,
-      activeModel,
       isComputing,
       labelColorMapping,
     },
@@ -59,11 +58,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
   const { notify } = useNotifications();
 
   const { authenticatedUser } = useAuth();
-  const { getElementById } = useGetElementById(
-    projectName || null,
-    currentScheme || null,
-    activeModel || null,
-  );
+  const { getElementById } = useGetElementById();
 
   // fetch projection data with the API (null if no model)
   const { projectionData, reFetchProjectionData } = useGetProjectionData(
@@ -275,6 +270,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                     {kindScheme == 'multiclass' && (
                       <MulticlassInput
                         elementId={selectedElement.element_id}
+                        element={selectedElement}
                         postAnnotation={postAnnotation}
                         labels={availableLabels}
                         small={true}

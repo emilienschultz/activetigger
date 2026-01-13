@@ -1,17 +1,17 @@
-// generic elements --- 
-.horizontal{
+// generic elements ---
+.horizontal {
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
   align-items: center;
 }
 
-.horizontal.wrap{
+.horizontal.wrap {
   width: 100%;
   flex-wrap: wrap;
 }
 
-.horizontal.center{
+.horizontal.center {
   width: 100%;
   justify-content: center;
 }
@@ -20,7 +20,7 @@
 .subsection {
   font-weight: bold;
   color: $secondary;
-  margin: 10px 0px
+  margin: 10px 0px;
 }
 
 // project sidebar ---
@@ -87,34 +87,38 @@
 }
 
 // Status notch ---
-#status-notch{
+#status-notch {
   position: fixed;
   bottom: 0;
   left: 0;
   width: 100%;
-  border-top:0.5px black solid;
+  border-top: 0.5px black solid;
   background-color: $quaternary;
   display: flex;
   flex-wrap: nowrap;
   // height: 150px;
-  span{
-      font-size: smaller;
-      border-right: 0.5px black solid;
-      padding-right: 10px;
-      margin-right: 5px;
-      margin-left:10px;
-      margin-bottom: 3px;
-      margin-top: 3px;
-      // height: 100px;
+  span {
+    font-size: smaller;
+    border-right: 0.5px black solid;
+    padding-right: 10px;
+    margin-right: 5px;
+    margin-left: 10px;
+    margin-bottom: 3px;
+    margin-top: 3px;
+    // height: 100px;
   }
 }
 
-#computing-span{
-  div{
-      padding: 0px 3px;
+#computing-span {
+  div {
+    padding: 0px 3px;
   }
 }
-@keyframes shimmer { to { background-position: 100% } }
+@keyframes shimmer {
+  to {
+    background-position: 100%;
+  }
+}
 
 // Navbar ---
 #nav-bar-header {
@@ -194,10 +198,6 @@
   align-items: center;
   font-size: smaller;
   cursor: pointer;
-}
-
-.getelement.setting-changed {
-  animation: glow 1.5s ease-in-out infinite alternate;
 }
 
 @-webkit-keyframes glow {

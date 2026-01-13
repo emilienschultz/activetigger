@@ -1,22 +1,279 @@
+@use 'sass:map';
+
+.annotation-mode {
+  margin-top: map.get($spacers, 1);
+  display: flex;
+  flex-direction: row;
+  @media (max-width: 1800px) {
+    flex-direction: column;
+  }
+  row-gap: map.get($spacers, 2);
+
+  .selectors {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    column-gap: map.get($spacers, 5);
+    @media (max-width: 1800px) {
+      justify-content: space-between;
+    }
+
+    label {
+      margin: 0;
+    }
+
+    > div {
+      display: flex;
+      flex-wrap: wrap;
+
+      justify-content: flex-start;
+      column-gap: map.get($spacers, 2);
+
+      align-items: flex-start;
+
+      .react-select {
+        width: 100%;
+      }
+      .at-input-group:has(.react-select) {
+        flex-grow: 1;
+        //max-width: 300px;
+        min-width: 250px;
+        position: relative;
+      }
+      input {
+        max-width: 45vw;
+      }
+    }
+  }
+
+  .submit-container {
+    @media (max-width: 1800px) {
+      align-self: end;
+    }
+    align-self: center;
+    display: flex;
+    column-gap: map.get($spacers, 1);
+
+    > * {
+      height: fit-content;
+    }
+  }
+}
+
+// common style for Element text frame
+.history-element,
 .annotation-frame {
-    color: black;
-    font-family: 'Arial', sans-serif;
-    font-size: 16px;
-    line-height: 1.6;
-    
-    background-color: #f9f9f9;
-    border: 1px solid $primary;
-    border-radius: $border-radius;
-    padding: 16px;
-    box-shadow: 0px 0px 15px color(from $primary srgb r g b / 50%);
-    max-width: 800px;
-    margin: 25px auto;
-    white-space: pre-wrap;
+  color: black;
+  font-family: 'Arial', sans-serif;
+  background-color: #f9f9f9;
+  border: 1px solid $primary;
+  border-radius: $border-radius;
+}
+
+.annotation-frame {
+  position: relative;
+  white-space: pre-wrap;
+  box-shadow: 0px 0px 15px color(from $primary srgb r g b / 50%);
+  font-size: 16px;
+  line-height: 1.6;
+
+  padding: 16px;
+  height: var(--height);
+  width: var(--width);
+  @include media-breakpoint-down(lg) {
+    width: 100%;
+  }
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  .element-text {
+    flex-grow: 1;
     overflow-y: auto;
+    margin: 0;
+  }
+  dl {
+    display: flex;
+    flex-wrap: wrap;
+    row-gap: map.get($spacers, 0);
+    column-gap: map.get($spacers, 3);
+    .dl-item {
+      * {
+        margin: 0;
+      }
+      @extend .gap-1;
+      display: flex;
+      dt:after {
+        content: ':';
+      }
+    }
+  }
 }
 
 .text-out-context {
-    color: $secondary;
-    opacity: 0.7;
-    font-style: italic;
+  color: $secondary;
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.annotation-history {
+  $gapSize: map.get($spacers, 3);
+
+  display: flex;
+
+  flex-wrap: wrap;
+  gap: $gapSize;
+
+  position: relative;
+
+  .history-element {
+    @extend .p-2;
+    width: calc(25% - (3 / 4 * $gapSize));
+    @include media-breakpoint-down(xl) {
+      width: calc(33% - (2 / 3 * $gapSize));
+    }
+
+    @include media-breakpoint-down(lg) {
+      width: calc(50% - (1 / 2 * $gapSize));
+    }
+    @include media-breakpoint-down(sm) {
+      width: calc(100%);
+    }
+
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: start;
+    .badge {
+      max-width: 100%;
+      width: fit-content;
+      margin: 0;
+    }
+  }
+}
+
+.annotation-block {
+  position: relative;
+  width: 100%;
+  @include media-breakpoint-up(lg) {
+    max-height: 90vh;
+    position: relative;
+  }
+  overflow-y: no;
+  > * {
+    max-height: 100%;
+    overflow-y: auto;
+  }
+}
+
+.tag-action-container {
+  --button-label-width: 25vh;
+  @include media-breakpoint-down(lg) {
+    --button-label-width: 18vh;
+  }
+
+  @extend .d-flex;
+  @extend .mh-100;
+  @extend .flex-lg-column;
+  @extend .justify-content-center;
+  @extend .justify-content-lg-start;
+  @extend .flex-wrap;
+  @extend .gap-2;
+  @extend .align-items-end;
+  @extend .align-items-lg-start;
+  width: fit-content;
+  position: relative;
+
+  .btn-annotate-predicted-action,
+  .btn-annotate-action {
+    margin: 0;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    color: white;
+    width: fit-content;
+
+    height: fit-content;
+    // padding: 5px 10px;
+
+    *:last-child,
+    *:first-child {
+      //icon & key stroke badge
+      flex-shrink: 0;
+    }
+  }
+  .btn-annotate-action {
+    @extend .btn;
+    @extend .btn-primary;
+  }
+  .btn-annotate-predicted-action {
+    @extend .btn;
+    @extend .btn-secondary;
+  }
+
+  .tag-action-button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    @include media-breakpoint-up(lg) {
+      min-width: 100%;
+    }
+    @include media-breakpoint-down(lg) {
+      flex-grow: 1;
+    }
+    .truncate-middle {
+      width: var(--button-label-width);
+
+      @include media-breakpoint-down(lg) {
+        flex-grow: 1;
+      }
+    }
+    .badge {
+      flex-shrink: 0;
+      flex-grow: 0;
+    }
+  }
+  .no-tag-action {
+    @include media-breakpoint-up(lg) {
+      width: 100%;
+    }
+
+    align-items: center;
+    span.text {
+      display: flex;
+      align-items: center;
+      flex-grow: 1;
+      @extend .gap-1;
+    }
+  }
+  .annotation-comment {
+    width: 100%;
+  }
+}
+
+.truncate-middle {
+  display: flex;
+  justify-content: start;
+  align-items: center;
+  position: relative;
+  text-align: start;
+
+  min-width: 0;
+  flex-shrink: 1;
+  flex-grow: 1;
+  span {
+    @extend .text-truncate;
+    display: inline-block;
+    max-width: 50%;
+    white-space: preserve nowrap;
+  }
+  span:first-child {
+    text-overflow: '..';
+  }
+  span:last-child {
+    text-overflow: '..';
+    direction: rtl;
+    text-align: end;
+  }
 }

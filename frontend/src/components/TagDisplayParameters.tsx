@@ -1,16 +1,11 @@
-import { FC, SetStateAction } from 'react';
-import { AppContextValue } from '../core/context';
-import { DisplayConfig } from '../types';
+import { FC } from 'react';
+import { useAppContext } from '../core/context';
 
-interface TagDisplayParametersProps {
-  displayConfig: DisplayConfig;
-  setAppContext: (value: SetStateAction<AppContextValue>) => void;
-}
-
-export const TagDisplayParameters: FC<TagDisplayParametersProps> = ({
-  displayConfig,
-  setAppContext,
-}) => {
+export const TagDisplayParameters: FC = () => {
+  const {
+    appContext: { displayConfig },
+    setAppContext,
+  } = useAppContext();
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       <label>
@@ -44,8 +39,26 @@ export const TagDisplayParameters: FC<TagDisplayParametersProps> = ({
             }));
           }}
         />
-        Prediction
+        Show Prediction
       </label>
+      {displayConfig.displayPrediction && (
+        <label>
+          <input
+            type="checkbox"
+            checked={displayConfig.displayPredictionStat}
+            onChange={(_) => {
+              setAppContext((prev) => ({
+                ...prev,
+                displayConfig: {
+                  ...displayConfig,
+                  displayPredictionStat: !displayConfig.displayPredictionStat,
+                },
+              }));
+            }}
+          />
+          Show Prediction Stats
+        </label>
+      )}
 
       <label>
         <input
@@ -101,7 +114,7 @@ export const TagDisplayParameters: FC<TagDisplayParametersProps> = ({
 
       <label>Text frame size</label>
       <div className="horizontal">
-        <span style={{ minWidth: '100px' }}>Min: 25%</span>
+        <span className="text-nowrap me-1">Height {displayConfig.textFrameHeight}%</span>
         <input
           type="range"
           min="25"
@@ -111,13 +124,30 @@ export const TagDisplayParameters: FC<TagDisplayParametersProps> = ({
               ...prev,
               displayConfig: {
                 ...displayConfig,
-                frameSize: Number(e.target.value),
+                textFrameHeight: Number(e.target.value),
               },
             }));
           }}
           style={{ marginRight: '10px' }}
         />
-        <span style={{ minWidth: '100px' }}>Max: 100%</span>
+      </div>
+      <div className="horizontal">
+        <span className="text-nowrap me-1">Width {displayConfig.textFrameWidth}%</span>
+        <input
+          type="range"
+          min="25"
+          max="100"
+          onChange={(e) => {
+            setAppContext((prev) => ({
+              ...prev,
+              displayConfig: {
+                ...displayConfig,
+                textFrameWidth: Number(e.target.value),
+              },
+            }));
+          }}
+          style={{ marginRight: '10px' }}
+        />
       </div>
 
       <label>Highlight words in the text</label>

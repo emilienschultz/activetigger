@@ -1,13 +1,6 @@
-import cx from 'classnames';
-import { FC, useCallback, useEffect, useRef, useState } from 'react';
-import { FaPencilAlt } from 'react-icons/fa';
-import { FiRefreshCcw } from 'react-icons/fi';
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuRefreshCw } from 'react-icons/lu';
-import { PiEraser } from 'react-icons/pi';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Tooltip } from 'react-tooltip';
-import { BackButton } from '../components/BackButton';
-import { ForwardButton } from '../components/ForwardButton';
 import {
   useAddAnnotation,
   useGetElementById,
@@ -15,23 +8,23 @@ import {
   useRetrainQuickModel,
   useStatistics,
   useTrainQuickModel,
-} from '../core/api';
-import { useAppContext } from '../core/context';
-import { ElementOutModel } from '../types';
+} from '../../core/api';
+import { useAppContext } from '../../core/context';
+import { ElementOutModel } from '../../types';
 
 import { Modal } from 'react-bootstrap';
-import { FaMapMarkedAlt } from 'react-icons/fa';
-import { GiTigerHead } from 'react-icons/gi';
-import { MdDisplaySettings } from 'react-icons/md';
-import { ActiveLearningManagement } from '../components/ActiveLearningManagement';
-import { MulticlassInput } from '../components/MulticlassInput';
-import { MultilabelInput } from '../components/MultilabelInput';
-import { SelectionManagement } from '../components/SelectionManagement';
-import { TagDisplayParameters } from '../components/TagDisplayParameters';
-import { TextClassificationPanel } from '../components/TextClassificationPanel';
-import { TextSpanPanel } from '../components/TextSpanPanel';
-import { useNotifications } from '../core/notifications';
-import { DisplayProjection } from './vizualisation/DisplayProjection';
+import { useNotifications } from '../../core/notifications';
+import { useAnnotationSessionHistory } from '../../core/useHistory';
+import { isValidRegex } from '../../core/utils';
+import { ActiveLearningManagement } from '../ActiveLearningManagement';
+import { TagDisplayParameters } from '../TagDisplayParameters';
+import { DisplayProjection } from '../vizualisation/DisplayProjection';
+import { AnnotationHistoryList } from './AnnotationHistoryList';
+import { AnnotationModeForm } from './AnnotationMode';
+import { MulticlassInput } from './MulticlassInput';
+import { MultilabelInput } from './MultilabelInput';
+import { TextClassificationPanel } from './TextClassificationPanel';
+import { TextSpanPanel } from './TextSpanPanel';
 
 export const AnnotationManagement: FC = () => {
   const { notify } = useNotifications();
@@ -53,15 +46,12 @@ export const AnnotationManagement: FC = () => {
   const navigate = useNavigate();
   const [element, setElement] = useState<ElementOutModel | null>(null); //state for the current element
   const [nSample, setNSample] = useState<number | null>(null); // specific info
-  const [displayComment, setDisplayComment] = useState(false);
-  const [comment, setComment] = useState('');
+
   const [showDisplayConfig, setShowDisplayConfig] = useState<boolean>(false);
   const [showDisplayViz, setShowDisplayViz] = useState<boolean>(false);
-  const [settingChanged, setSettingChanged] = useState<boolean>(false);
   const [selectFirstModelTrained, setSelectFirstModelTrained] = useState<boolean>(false);
   const handleCloseViz = () => setShowDisplayViz(false);
   const handleCloseConfig = () => setShowDisplayConfig(false);
-  const handleCloseComment = () => setDisplayComment(false);
 
   // Reinitialize scroll in frame
   const frameRef = useRef<HTMLDivElement>(null);
@@ -76,18 +66,17 @@ export const AnnotationManagement: FC = () => {
     projectName || null,
     currentScheme || null,
     selectionConfig,
-    history,
+    history.map((h) => h.element_id),
     phase,
     activeModel || null,
   );
-  const { getElementById } = useGetElementById(
-    projectName || null,
-    currentScheme || null,
-    activeModel || null,
-  );
+  const { getElementById } = useGetElementById();
 
   // hooks to manage annotation
   const { addAnnotation } = useAddAnnotation(projectName || null, currentScheme || null, phase);
+
+  //hook to manage history
+  const { addElementInAnnotationSessionHistory } = useAnnotationSessionHistory();
 
   // define parameters for configuration panels
   const availableLabels =
@@ -100,10 +89,6 @@ export const AnnotationManagement: FC = () => {
       : 'multiclass',
   );
 
-  // hook to clear history
-  const actionClearHistory = () => {
-    setAppContext((prev) => ({ ...prev, history: [] }));
-  };
   // get statistics to display (TODO : try a way to avoid another request ?)
   const { statistics, reFetchStatistics } = useStatistics(
     projectName || null,
@@ -127,7 +112,8 @@ export const AnnotationManagement: FC = () => {
               [res.element_id]: JSON.stringify(selectionConfig),
             },
           }));
-          navigate(`/projects/${projectName}/tag/${res.element_id}`);
+          // redirect to the next element page replacing history
+          navigate(`/projects/${projectName}/tag/${res.element_id}`, { replace: true });
         } else {
           navigate(`/projects/${projectName}/tag/noelement`);
           setElement(null);
@@ -136,14 +122,18 @@ export const AnnotationManagement: FC = () => {
     } else {
       // only if id changed compared to the previous one (otherwise, a change in phase would trigger a reload)
       if (element?.element_id !== elementId) {
-        getElementById(elementId, phase).then((element) => {
-          if (element) setElement(element);
-          else {
-            navigate(`/projects/${projectName}/tag/noelement`);
-            setElement(null);
-          }
-        });
-        reFetchStatistics();
+        getElementById(elementId, phase)
+          .then((element) => {
+            if (element) setElement(element);
+            else {
+              navigate(`/projects/${projectName}/tag/noelement`);
+              setElement(null);
+            }
+          })
+          .finally(() => {
+            //info: get statistics call returns often outdated data
+            reFetchStatistics();
+          });
       }
     }
   }, [
@@ -160,35 +150,41 @@ export const AnnotationManagement: FC = () => {
     element,
   ]);
 
-  // post an annotation
   const postAnnotation = useCallback(
-    (label: string | null, elementId?: string) => {
+    async (label: string | null, elementId: string, comment?: string) => {
       if (elementId === 'noelement') return; // forbid annotation on noelement
       if (elementId) {
-        addAnnotation(elementId, label, comment, selectionHistory[elementId]).then(() =>
-          // redirect to next element by redirecting wihout any id
-          // thus the getNextElementId query will be dont after the appcontext is reloaded
-          {
-            setAppContext((prev) => ({ ...prev, history: [...prev.history, elementId] }));
-            setComment('');
-            navigate(`/projects/${projectName}/tag/`); // got to next element
-          },
-        );
+        await addAnnotation(elementId, label, comment || null, selectionHistory[elementId]);
+        const newElement = await getElementById(elementId, phase);
+        if (newElement) {
+          addElementInAnnotationSessionHistory(elementId, newElement.text, label, comment);
+          setElement(newElement);
+          // wait for 500ms before fetch new element to see new button state
+          setTimeout(() => {
+            navigate(`/projects/${projectName}/tag/`);
+          }, 500);
+        }
         // does not do nothing as we remount through navigate reFetchStatistics();
       }
     },
-    [setAppContext, addAnnotation, navigate, projectName, comment, selectionHistory],
+    [
+      addAnnotation,
+      selectionHistory,
+      projectName,
+      navigate,
+      getElementById,
+      setElement,
+      phase,
+      addElementInAnnotationSessionHistory,
+    ],
   );
 
   const textInFrame = element?.text.slice(0, displayConfig.numberOfTokens * 4) || '';
   const textOutFrame = element?.text.slice(displayConfig.numberOfTokens * 4) || '';
 
-  const lastTag =
-    element?.history?.length && element?.history.length > 0
-      ? (element?.history[0] as string[])[0]
-      : null;
+  const lastTag = element?.history && element.history.length > 0 ? element.history[0].label : null;
 
-  const refetchElement = () => {
+  const fetchNextElement = () => {
     getNextElementId().then((res) => {
       if (res && res.n_sample) setNSample(res.n_sample);
       if (res && res.element_id) {
@@ -206,14 +202,6 @@ export const AnnotationManagement: FC = () => {
     });
   };
 
-  const isValidRegex = (pattern: string) => {
-    try {
-      new RegExp(pattern);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  };
   const highlightTextRaw = [selectionConfig.filter, ...displayConfig.highlightText.split('\n')];
   const highlightText = highlightTextRaw.filter(
     (text): text is string => typeof text === 'string' && text.trim() !== '',
@@ -223,8 +211,14 @@ export const AnnotationManagement: FC = () => {
   const validHighlightText = highlightText.filter(isValidRegex);
 
   // existing models
-  const availableQuickModels = project?.quickmodel.available[currentScheme || ''] || [];
-  const availableBertModels = project?.languagemodels.available[currentScheme || ''] || {};
+  const availableQuickModels = useMemo(
+    () => project?.quickmodel.available[currentScheme || ''] || [],
+    [project?.quickmodel, currentScheme],
+  );
+  const availableBertModels = useMemo(
+    () => project?.languagemodels.available[currentScheme || ''] || {},
+    [project?.languagemodels, currentScheme],
+  );
   const availableBertModelsWithPrediction = Object.entries(availableBertModels || {})
     .filter(([_, v]) => v && v.predicted)
     .map(([k, _]) => k);
@@ -255,13 +249,6 @@ export const AnnotationManagement: FC = () => {
 
   // display active menu
   const [activeMenu, setActiveMenu] = useState<boolean>(false);
-
-  const statisticsDataset = (dataset: string) => {
-    if (dataset === 'train') return `${statistics?.train_annotated_n}/${statistics?.train_set_n}`;
-    if (dataset === 'valid') return `${statistics?.valid_annotated_n}/${statistics?.valid_set_n}`;
-    if (dataset === 'test') return `${statistics?.test_annotated_n}/${statistics?.test_set_n}`;
-    return '';
-  };
 
   // train a quick model
   const { trainQuickModel } = useTrainQuickModel(projectName || null, currentScheme || null);
@@ -359,81 +346,70 @@ export const AnnotationManagement: FC = () => {
     }
   }, [availableQuickModels, activeModel, setAppContext, availableBertModels]);
 
+  /**
+   * Update element if selectionConfig changed :
+   * - refetch if active model is activated
+   * - getNextElement if in noelement page
+   */
+  const refetchElement = useCallback(async () => {
+    if (elementId) {
+      const newElement = await getElementById(elementId, phase);
+      if (newElement) setElement(newElement);
+    }
+  }, [setElement, getElementById, elementId, phase]);
+
+  useEffect(() => {
+    refetchElement();
+    // disabling echaustive deps as we only want to track phase to avoid unnecessary refetch
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeModel]);
+
+  useEffect(() => {
+    // fetch next element in the new phase
+    fetchNextElement();
+    // disabling echaustive deps as we only want to track phase to avoid unnecessary fetchNext
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+
+  useEffect(() => {
+    if (elementId === 'noelement') {
+      fetchNextElement();
+    }
+    // disabling echaustive deps as we only want to track phase to avoid unnecessary fetchNext
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectionConfig]);
+
   if (!projectName || !currentScheme) return;
 
   return (
     <>
-      <div>
-        {
-          // annotation mode
-          <div>
-            <SelectionManagement
-              settingChanged={settingChanged}
-              setSettingChanged={setSettingChanged}
-            />
-            <div className="horizontal center">
-              {statistics ? (
-                <span className="explanations">
-                  {/* NOTE: Axel Not too much customisation cause it's gonna be refactored soon */}
-                  Annotated: {statisticsDataset(phase)} - Selected: {nSample || 'na'}
-                </span>
-              ) : (
-                'na'
-              )}
-              <button
-                className={cx(
-                  'btn-primary-action getelement',
-                  settingChanged ? 'setting-changed' : '',
-                )}
-                onClick={() => {
-                  refetchElement();
-                  setSettingChanged(false);
-                }}
-                title="Get next element with the selection mode"
-              >
-                {/* NOTE: Axel Not too much customisation cause it's gonna be refactored soon */}
-                <LuRefreshCw size={20} /> Get
-                {/* <Tooltip anchorSelect=".getelement" place="top">
-                  Get next element with the selection mode
-                </Tooltip> */}
+      {/**
+       * Annotation mode form
+       **/}
+      <AnnotationModeForm
+        fetchNextElement={fetchNextElement}
+        setActiveMenu={setActiveMenu}
+        setShowDisplayViz={setShowDisplayViz}
+        setShowDisplayConfig={setShowDisplayConfig}
+        nSample={nSample}
+        statistics={statistics}
+      />
+
+      {/**
+       * ANNOTATION BLOCK
+       **/}
+      <div className="d-flex flex-column flex-lg-row justify-content-start gap-3 my-3 annotation-block">
+        {elementId === 'noelement' ? (
+          <div className="alert horizontal center">
+            <div>
+              No element available
+              <button className="btn-primary-action" onClick={fetchNextElement}>
+                <LuRefreshCw size={20} /> Get element
               </button>
-              {phase === 'train' && (
-                <>
-                  <GiTigerHead
-                    size={30}
-                    onClick={() => setActiveMenu(!activeMenu)}
-                    className="activelearning"
-                    style={{ color: activeModel ? 'green' : 'grey', cursor: 'pointer' }}
-                    title="Active learning"
-                  />
-                  <Tooltip anchorSelect=".activelearning" place="top">
-                    Active learning
-                  </Tooltip>
-                  <span className="badge info">{activeModel ? activeModel.value : 'inactive'}</span>
-                </>
-              )}
             </div>
           </div>
-        }
-      </div>
-      {kindScheme !== 'span' ? (
-        <>
-          {elementId === 'noelement' && (
-            <div className="alert horizontal center">
-              <div>
-                No element available
-                <button className="btn-primary-action" onClick={refetchElement}>
-                  <LuRefreshCw size={20} /> Get element
-                </button>
-              </div>
-            </div>
-          )}
-          {!isValidRegex(selectionConfig.filter || '') && (
-            <div className="horizontal center">
-              <span className="badge danger">Regex not valid</span>
-            </div>
-          )}
-          {elementId !== 'noelement' && (
+        ) : kindScheme !== 'span' ? (
+          <>
             <TextClassificationPanel
               element={element as ElementOutModel}
               displayConfig={displayConfig}
@@ -444,126 +420,47 @@ export const AnnotationManagement: FC = () => {
               lastTag={lastTag as string}
               phase={phase}
               frameRef={frameRef as unknown as HTMLDivElement}
-              postAnnotation={postAnnotation}
             />
-          )}
-        </>
-      ) : (
-        <>
-          <TextSpanPanel
-            elementId={elementId || 'noelement'}
-            displayConfig={displayConfig}
-            postAnnotation={postAnnotation}
-            labels={availableLabels}
-            text={element?.text as string}
-            lastTag={lastTag as string}
-          />
-        </>
-      )}
-      {/* NOTE: Axel Not too much customisation cause it's gonna be refactored soon */}
-      {elementId !== 'noelement' && (
-        <div className="horizontal center">
-          <BackButton
-            projectName={projectName || ''}
-            history={history}
-            setAppContext={setAppContext}
-          />
-
-          {kindScheme == 'multiclass' && (
-            <MulticlassInput
+          </>
+        ) : (
+          <>
+            <TextSpanPanel
               elementId={elementId || 'noelement'}
+              displayConfig={displayConfig}
               postAnnotation={postAnnotation}
               labels={availableLabels}
-              phase={phase}
-              element={element as ElementOutModel}
+              text={element?.text as string}
+              lastTag={lastTag as string}
             />
-          )}
-          {kindScheme == 'multilabel' && (
-            <MultilabelInput
-              elementId={elementId || 'noelement'}
-              postAnnotation={postAnnotation}
-              labels={availableLabels}
-            />
-          )}
+          </>
+        )}
 
-          <button
-            className="transparent-background"
-            onClick={() => setDisplayComment(!displayComment)}
-            title="Add a comment"
-          >
-            <FaPencilAlt />
-          </button>
-          {
-            // erase button to remove last annotation
-            lastTag && (
-              <button
-                className="transparent-background"
-                onClick={() => {
-                  postAnnotation(null, elementId);
-                }}
-                title="Erase current tag"
-              >
-                <PiEraser />
-              </button>
-            )
-          }
-          {elementId && (
-            <ForwardButton
-              setAppContext={setAppContext}
-              elementId={elementId}
-              refetchElement={refetchElement}
-            />
-          )}
-        </div>
-      )}
-      <div className="horizontal center">
-        {/* NOTE: Axel Not too much customisation cause it's gonna be refactored soon */}
-        <button
-          className="transparent-background"
-          onClick={() => {
-            setShowDisplayConfig(!showDisplayConfig);
-          }}
-          title="Display config menu"
-        >
-          <MdDisplaySettings />
-        </button>
-        <button
-          className="transparent-background"
-          onClick={() => {
-            setShowDisplayViz(!showDisplayConfig);
-          }}
-          title="Display the projection"
-        >
-          <FaMapMarkedAlt />
-        </button>
-        <button
-          className="transparent-background"
-          onClick={actionClearHistory}
-          title="Clear the history"
-        >
-          <FiRefreshCcw />
-        </button>
+        {elementId !== 'noelement' && (
+          <>
+            {kindScheme == 'multiclass' && (
+              <MulticlassInput
+                elementId={elementId || 'noelement'}
+                postAnnotation={postAnnotation}
+                labels={availableLabels}
+                phase={phase}
+                element={element as ElementOutModel}
+              />
+            )}
+            {kindScheme == 'multilabel' && (
+              <MultilabelInput
+                elementId={elementId || 'noelement'}
+                postAnnotation={postAnnotation}
+                labels={availableLabels}
+              />
+            )}
+          </>
+        )}
       </div>
 
-      <Modal show={displayComment} onHide={handleCloseComment} id="comment-modal">
-        <Modal.Header closeButton>
-          <Modal.Title>Add a comment with your annotation</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Comment"
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-          />
-        </Modal.Body>
-        <Modal.Footer>
-          <button className="btn-submit" onClick={handleCloseComment}>
-            Save
-          </button>
-        </Modal.Footer>
-      </Modal>
+      <div className="horizontal center">
+        <AnnotationHistoryList />
+      </div>
+
       <Modal show={showDisplayViz} onHide={handleCloseViz} size="xl" id="viz-modal">
         <Modal.Header closeButton>
           <Modal.Title>Current projection</Modal.Title>
@@ -578,12 +475,12 @@ export const AnnotationManagement: FC = () => {
           </div>
         </Modal.Body>
       </Modal>
-      <Modal show={showDisplayConfig} onHide={handleCloseConfig} size="xl" id="config-modal">
+      <Modal show={showDisplayConfig} onHide={handleCloseConfig} size="sm" id="config-modal">
         <Modal.Header closeButton>
           <Modal.Title>Configuration</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <TagDisplayParameters displayConfig={displayConfig} setAppContext={setAppContext} />
+          <TagDisplayParameters />
         </Modal.Body>
       </Modal>
       <Modal show={activeMenu} onHide={() => setActiveMenu(false)} id="active-modal" size="lg">

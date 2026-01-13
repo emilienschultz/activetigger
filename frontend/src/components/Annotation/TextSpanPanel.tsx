@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { FC, useEffect, useState } from 'react';
 import Select from 'react-select';
 import { AnnotateBlendTag, TextAnnotateBlend } from 'react-text-annotate-blend';
-import { DisplayConfig } from '../types';
+import { DisplayConfig } from '../../types';
 
 interface SpanInputProps {
   elementId: string;
@@ -49,7 +49,7 @@ export const TextSpanPanel: FC<SpanInputProps> = ({
 
   return (
     <>
-      <div className="annotation-frame" style={{ height: `${displayConfig.frameSize}vh` }}>
+      <div className="annotation-frame" style={{ height: `${displayConfig.textFrameHeight}vh` }}>
         <motion.div
           animate={elementId ? { backgroundColor: ['#e8e9ff', '#f9f9f9'] } : {}}
           transition={{ duration: 1 }}
