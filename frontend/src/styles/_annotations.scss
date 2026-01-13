@@ -154,6 +154,8 @@
 }
 
 .annotation-block {
+  position: relative;
+  width: 100%;
   @include media-breakpoint-up(lg) {
     max-height: 90vh;
     position: relative;

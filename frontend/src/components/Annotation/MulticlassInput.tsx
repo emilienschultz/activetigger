@@ -119,7 +119,7 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
   }, [element?.history]);
 
   return (
-    <div className="flex-grow-1 d-flex flex-column justify-content-center justify-content-lg-start gap-3">
+    <div className="flex-grow-1 flex-shrink-0 d-flex flex-column justify-content-center justify-content-lg-start gap-3">
       {/* TAGS ACTIONS */}
       <div className="tag-action-container ">
         {/* SKIP */}
