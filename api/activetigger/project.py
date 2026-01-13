@@ -63,6 +63,39 @@ from activetigger.tasks.update_datasets import UpdateDatasets
 from activetigger.users import Users
 
 
+class Errors:
+    """
+    Runtime error object
+    """
+
+    def __init__(self, timeout: int = 15) -> None:
+        """
+        Initialize the error stack
+        """
+        self.timeout = timeout
+        self.__stack: list[list] = []
+
+    def add(self, message: str) -> None:
+        """
+        Add an error to the stack
+        """
+        self.__stack.append([message, datetime.now(config.timezone)])
+
+    def clean(self) -> None:
+        """
+        Clean old errors
+        """
+        now = datetime.now(config.timezone)
+        self.__stack = [e for e in self.__stack if e[1] >= now - timedelta(minutes=self.timeout)]
+
+    def state(self) -> list[list]:
+        """
+        Get the current stack
+        """
+        self.clean()
+        return self.__stack
+
+
 class Project:
     """
     Project object
@@ -84,7 +117,7 @@ class Project:
     generations: Generations
     projections: Projections
     messages: Messages
-    errors: list[list]
+    errors: Errors
 
     def __init__(
         self,
@@ -107,7 +140,7 @@ class Project:
         self.path_models = path_models
         self.name = project_slug
         self.project_slug = project_slug
-        self.errors = []  # TODO Move to specific class / db in the future
+        self.errors = Errors()
         self.users = users
         self.messages = messages
 
@@ -433,7 +466,7 @@ class Project:
             )
 
         # deal with non-unique id
-        # TODO : compare with the general dataset ???
+        # TODO : compare with the general dataset
         if not ((df["id"].astype(str).apply(slugify)).nunique() == len(df)):
             df["id"] = [str(i) for i in range(len(df))]
             print("ID not unique, changed to default id")
@@ -994,7 +1027,7 @@ class Project:
             projections=self.projections.state(),
             generations=self.generations.state(),
             bertopic=self.bertopic.state(),
-            errors=self.errors,
+            errors=self.errors.state(),
             memory=get_dir_size(str(self.params.dir)),
             last_activity=self.db_manager.logs_service.get_last_activity_project(
                 self.params.project_slug
@@ -1313,9 +1346,7 @@ class Project:
             exception = process.future.exception()
             if exception:
                 print(f"Error in {e.kind} : {exception}")
-                self.errors.append(
-                    [datetime.now(config.timezone), f"Error for process {e.kind}", str(exception)]
-                )
+                self.errors.add(f"Error for process {e.kind} : {exception}")
 
                 # specific case for project creation
                 if e.kind == "create_project":
@@ -1392,7 +1423,7 @@ class Project:
                         print("bertopic")
             except Exception as ex:
                 print(f"Error in {e.kind} : {ex}")
-                self.errors.append([datetime.now(config.timezone), f"Error in {e.kind}", str(ex)])
+                self.errors.add(f"Error in {e.kind} : {str(ex)}")
                 logging.error(f"Error in {e.kind}", ex)
                 match e.kind:
                     case "create_project":
@@ -1408,11 +1439,9 @@ class Project:
 
         # if there are predictions, add them
         if len(add_predictions) > 0:
-            self.errors = self.errors + self.features.add_predictions(add_predictions)
-
-        # clean errors older than 15 minutes
-        delta = datetime.now(config.timezone) - timedelta(minutes=15)
-        self.errors = [error for error in self.errors if error[0] >= delta]
+            errors = self.features.add_predictions(add_predictions)
+            for err in errors:
+                self.errors.add(err)
 
     # def dump(self, with_files=True) -> None:
     #     """

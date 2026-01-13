@@ -208,13 +208,7 @@ class Features:
                     new_content=df,
                 )
             except Exception as ex:
-                errors.append(
-                    [
-                        datetime.now(config.timezone),
-                        "Error in adding prediction",
-                        str(ex),
-                    ]
-                )
+                errors.append(f"Error in adding prediction : {str(ex)}")
         return errors
 
     def add(
