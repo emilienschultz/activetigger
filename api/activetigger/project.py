@@ -33,6 +33,7 @@ from activetigger.datamodels import (
     NextInModel,
     NextProjectStateModel,
     PredictedLabel,
+    ProcessComputing,
     ProjectBaseModel,
     ProjectCreatingModel,
     ProjectDescriptionModel,
@@ -44,6 +45,7 @@ from activetigger.datamodels import (
     QuickModelComputing,
     QuickModelInModel,
     StaticFileModel,
+    UpdateComputing,
 )
 from activetigger.db.manager import DatabaseManager
 from activetigger.features import Features
@@ -57,7 +59,41 @@ from activetigger.quickmodels import QuickModels
 from activetigger.schemes import Schemes
 from activetigger.tasks.create_project import CreateProject
 from activetigger.tasks.generate_call import GenerateCall
+from activetigger.tasks.update_datasets import UpdateDatasets
 from activetigger.users import Users
+
+
+class Errors:
+    """
+    Runtime error object
+    """
+
+    def __init__(self, timeout: int = 15) -> None:
+        """
+        Initialize the error stack
+        """
+        self.timeout = timeout
+        self.__stack: list[list] = []
+
+    def add(self, message: str) -> None:
+        """
+        Add an error to the stack
+        """
+        self.__stack.append([message, datetime.now(config.timezone)])
+
+    def clean(self) -> None:
+        """
+        Clean old errors
+        """
+        now = datetime.now(config.timezone)
+        self.__stack = [e for e in self.__stack if e[1] >= now - timedelta(minutes=self.timeout)]
+
+    def state(self) -> list[list]:
+        """
+        Get the current stack
+        """
+        self.clean()
+        return self.__stack
 
 
 class Project:
@@ -81,7 +117,7 @@ class Project:
     generations: Generations
     projections: Projections
     messages: Messages
-    errors: list[list]
+    errors: Errors
 
     def __init__(
         self,
@@ -104,7 +140,7 @@ class Project:
         self.path_models = path_models
         self.name = project_slug
         self.project_slug = project_slug
-        self.errors = []  # TODO Move to specific class / db in the future
+        self.errors = Errors()
         self.users = users
         self.messages = messages
 
@@ -430,7 +466,7 @@ class Project:
             )
 
         # deal with non-unique id
-        # TODO : compare with the general dataset ???
+        # TODO : compare with the general dataset
         if not ((df["id"].astype(str).apply(slugify)).nunique() == len(df)):
             df["id"] = [str(i) for i in range(len(df))]
             print("ID not unique, changed to default id")
@@ -985,7 +1021,7 @@ class Project:
             projections=self.projections.state(),
             generations=self.generations.state(),
             bertopic=self.bertopic.state(),
-            errors=self.errors,
+            errors=self.errors.state(),
             memory=get_dir_size(str(self.params.dir)),
             last_activity=self.db_manager.logs_service.get_last_activity_project(
                 self.params.project_slug
@@ -1137,22 +1173,19 @@ class Project:
             shutil.copyfile(path_origin, path_target)
         return StaticFileModel(name=name, path=f"{project_slug}/{name}")
 
-    def update_project(self, update: ProjectUpdateModel) -> None:
+    def start_update_project(self, update: ProjectUpdateModel, username: str) -> None:
         """
         Update project parameters
 
         For text/contexts/expand, it needs to draw from raw data
-        TODO : put it in queue for data manipulation
+        - direct small modification
+        - bigger modification (texts/contexts/expand) with the queue
         """
 
         if not self.params.dir:
             raise ValueError("No directory for project")
         if self.data.train is None:
             raise ValueError("No train data for project")
-
-        # flag if needed to drop features
-        drop_features = False
-        df = None
 
         # update the name
         if update.project_name and update.project_name != self.params.project_name:
@@ -1161,86 +1194,26 @@ class Project:
         # update the language
         if update.language and update.language != self.params.language:
             self.params.language = update.language
-            drop_features = True
 
-        # update the context columns by modifying the train data
-        if update.cols_context and set(update.cols_context) != set(self.params.cols_context):
-            if df is None:
-                df = pd.read_parquet(
-                    self.params.dir.joinpath("data_all.parquet"),
-                    columns=update.cols_context,
-                )
-            self.data.train.drop(columns=self.params.cols_context, inplace=True)
-            self.data.train = pd.concat([self.data.train, df.loc[self.data.train.index]], axis=1)
-            self.data.train.to_parquet(self.params.dir.joinpath(config.train_file))
-            self.params.cols_context = update.cols_context
-            print("Context updated")
-
-        # update the text columns
-        if update.cols_text and set(update.cols_text) != set(self.params.cols_text):
-            if df is None:
-                df = pd.read_parquet(
-                    self.params.dir.joinpath("data_all.parquet"),
-                    columns=update.cols_text,
-                )
-            df_sub = df.loc[self.data.train.index]
-            df_sub["text"] = df_sub[update.cols_text].apply(
-                lambda x: "\n\n".join([str(i) for i in x if pd.notnull(i)]), axis=1
-            )
-            self.data.train["text"] = df_sub["text"]
-            self.data.train.to_parquet(self.params.dir.joinpath(config.train_file))
-            self.params.cols_text = update.cols_text
-            drop_features = True
-            del df_sub
-            print("Texts updated")
-
-        # update the train set
-        if update.add_n_train and update.add_n_train > 0:
-            if df is None:
-                df = pd.read_parquet(
-                    self.params.dir.joinpath("data_all.parquet"),
-                    columns=list(self.data.train.columns),
-                )
-            # index of elements used
-            elements_index = list(self.data.train.index)
-            if self.data.test is not None:
-                elements_index += list(self.data.test.index)
-            if self.data.valid is not None:
-                elements_index += list(self.data.valid.index)
-
-            # take elements that are not in index
-            df = df[~df.index.isin(elements_index)]
-
-            # sample elements
-            elements_to_add = df.sample(update.add_n_train)
-
-            # drop na elements to avoid problems
-            elements_to_add = elements_to_add[elements_to_add["text"].notna()]
-
-            self.data.train = pd.concat([self.data.train, elements_to_add])
-            self.data.train.to_parquet(self.params.dir.joinpath(config.train_file))
-
-            # update params
-            self.params.n_train = len(self.data.train)
-
-            # drop existing features
-            drop_features = True
-
-            # restart the project
-            del elements_to_add
-            print("Train set updated")
-
-        if df is not None:
-            del df
-
-        if drop_features:
-            self.features.reset_features_file()
-
-        # update the database
-        self.db_manager.projects_service.update_project(
-            self.params.project_slug, jsonable_encoder(self.params)
+        # for other updates, add task to the queue
+        unique_id = self.queue.add_task(
+            kind="update_datasets",
+            project_slug=self.name,
+            task=UpdateDatasets(
+                project_params=self.params,
+                update=update,
+            ),
+            queue="cpu",
         )
-        return None
+        self.computing.append(
+            UpdateComputing(
+                unique_id=unique_id,
+                user=username,
+                time=datetime.now(),
+                kind="update_datasets",
+                update=update,
+            )
+        )
 
     def start_languagemodel_training(self, bert: BertModelModel, username: str) -> None:
         """
@@ -1334,289 +1307,135 @@ class Project:
             )
         )
 
+    def clean_process(self, e: ProcessComputing) -> None:
+        """
+        Clean a process from computing and queue
+        """
+        self.computing.remove(e)
+        self.queue.delete(e.unique_id)
+
     def update_processes(self) -> None:
         """
         Update completed processes and do specific operations regarding their kind
         - get the result from the queue
         - add the result if needed
         - manage error if needed
-
-        # TODO : REFACTOR THIS FUNCTION
-
         """
         add_predictions = {}
 
         # loop on the current process
         for e in self.computing.copy():
+            # get the process
             process = self.queue.get(e.unique_id)
-
-            # case of not in queue
             if process is None:
                 logging.warning("Problem : id in computing not in queue")
-                self.computing.remove(e)
+                self.clean_process(e)
                 continue
 
             # check if the process is done, else continue
             if process.future is None or not process.future.done():
                 continue
 
-            # get the future for process done
-            future = process.future
-            exception = future.exception()
+            # log error if exists in the process execution
+            exception = process.future.exception()
             if exception:
                 print(f"Error in {e.kind} : {exception}")
-                self.errors.append(
-                    [datetime.now(config.timezone), f"Error for process {e.kind}", str(exception)]
-                )
-                self.computing.remove(e)
-                self.queue.delete(e.unique_id)
+                self.errors.add(f"Error for process {e.kind} : {exception}")
 
                 # specific case for project creation
                 if e.kind == "create_project":
                     print("Error in project creation")
                     self.status = "error"
+
+                self.clean_process(e)
                 continue
 
-            # case for project creation
-            if e.kind == "create_project":
-                e = cast(ProjectCreatingModel, e)
-                try:
-                    results = future.result()
-                    if results is None:
-                        print("No result from project creation")
-                        raise Exception("No result from project creation")
-                    self.finish_project_creation(
-                        e.username, results[0], results[1], results[2], results[3]
-                    )
-                except Exception as ex:
-                    self.errors.append(
-                        [datetime.now(config.timezone), "Error in project creation", str(ex)]
-                    )
-                    logging.error("Error in project creation", ex)
-                    raise ex
-                finally:
-                    self.computing.remove(e)
-                    self.queue.delete(e.unique_id)
-
-            # case for bert fine-tuning
-            if e.kind == "train_bert":
-                model = cast(LMComputing, e)
-                try:
-                    error = future.exception()
-                    if error:
-                        raise Exception(str(error))
-                    self.languagemodels.add(model)
-                    print("Bert training achieved")
-                    logging.debug("Bert training achieved")
-                except Exception as ex:
-                    self.db_manager.language_models_service.delete_model(
-                        self.name, model.model_name
-                    )
-                    self.errors.append(
-                        [
-                            datetime.now(config.timezone),
-                            "Error in bert model training",
-                            str(ex),
-                        ]
-                    )
-                finally:
-                    self.computing.remove(e)
-                    self.queue.delete(e.unique_id)
-
-            # case for bertmodel prediction
-            if e.kind == "predict_bert":
-                prediction = cast(LMComputing, e)
-                try:
-                    error = future.exception()
-                    if error:
-                        raise Exception(str(error))
-                    results = future.result()
-
-                    # case of predict on annotable : transform to feature
-                    if (
-                        results is not None
-                        and results.path
-                        and "predict_annotable.parquet" in results.path
-                    ):
-                        add_predictions["predict_" + prediction.model_name] = results.path
-                    self.languagemodels.add(prediction)
-                    print("Bert predicting achieved")
-                    logging.debug("Bert predicting achieved")
-                except Exception as ex:
-                    self.errors.append(
-                        [
-                            datetime.now(config.timezone),
-                            "Error in model predicting",
-                            str(ex),
-                        ]
-                    )
-                finally:
-                    self.computing.remove(e)
-                    self.queue.delete(e.unique_id)
-
-            # case for quickmodels training
-            if e.kind == "train_quickmodel":
-                sm = cast(QuickModelComputing, e)
-                try:
-                    error = future.exception()
-                    if error:
-                        raise Exception(str(error))
-                    self.quickmodels.add(sm)
-                    print("Quickmodel trained")
-                    logging.debug("Quickmodel trained")
-                except Exception as ex:
-                    self.errors.append(
-                        [datetime.now(config.timezone), "quickmodel failed", str(ex)]
-                    )
-                    logging.error("Quickmodel failed", ex)
-                finally:
-                    self.computing.remove(e)
-                    self.queue.delete(e.unique_id)
-
-            # case for quickmodel prediction
-            if e.kind == "predict_quickmodel":
-                sm = cast(QuickModelComputing, e)
-                try:
-                    error = future.exception()
-                    if error:
-                        raise Exception(str(error))
-                except Exception as ex:
-                    self.errors.append(
-                        [datetime.now(config.timezone), "quickmodel failed", str(ex)]
-                    )
-                    logging.error("Quickmodel failed", ex)
-                finally:
-                    self.computing.remove(e)
-                    self.queue.delete(e.unique_id)
-
-            # case for features
-            if e.kind == "feature":
-                feature_computation = cast(FeatureComputing, e)
-                try:
-                    error = future.exception()
-                    if error:
-                        raise Exception("from task" + str(error))
-                    results = future.result()
-                    self.features.add(
-                        feature_computation.name,
-                        feature_computation.type,
-                        feature_computation.user,
-                        feature_computation.parameters,
-                        results,
-                    )
-                    print("Feature added", feature_computation.name)
-                except Exception as ex:
-                    self.errors.append(
-                        [datetime.now(config.timezone), "Error in feature processing", str(ex)]
-                    )
-                    print("Error in feature processing", ex)
-                finally:
-                    self.computing.remove(e)
-                    self.queue.delete(e.unique_id)
-
-            # case for projections
-            if e.kind == "projection":
-                projection = cast(ProjectionComputing, e)
-                try:
-                    results = future.result()
-                    self.projections.add(projection, results)
-                    print("Projection added", projection.name)
-                    logging.debug("projection added")
-                except Exception as ex:
-                    self.errors.append(
-                        [
-                            datetime.now(config.timezone),
-                            "Error in feature vizualisation queue",
-                            str(ex),
-                        ]
-                    )
-                    logging.error("Error in feature vizualisation queue", ex)
-                finally:
-                    self.computing.remove(e)
-                    self.queue.delete(e.unique_id)
-
-            # case for generations
-            if e.kind == "generation":
-                try:
-                    results = future.result()
-                    r = cast(
-                        list[GenerationResult],
-                        results,
-                    )
-                    for row in r:
-                        self.generations.add(
-                            user=row.user,
-                            project_slug=row.project_slug,
-                            element_id=row.element_id,
-                            model_id=row.model_id,
-                            prompt=row.prompt,
-                            answer=row.answer,
+            # get the result and do specific operations, if it fails, log the error
+            try:
+                results = process.future.result()
+                match e.kind:
+                    case "create_project":
+                        e = cast(ProjectCreatingModel, e)
+                        if results is None:
+                            print("No result from project creation")
+                            raise Exception("No result from project creation")
+                        self.finish_project_creation(
+                            e.username, results[0], results[1], results[2], results[3]
                         )
-                except Exception as ex:
-                    self.errors.append(
-                        [
-                            datetime.now(config.timezone),
-                            "Error in generation queue",
-                            getattr(ex, "message", repr(ex)),
-                        ]
-                    )
-                    logging.warning("Error in generation queue", getattr(ex, "message", repr(ex)))
-                    print("Error in generation queue", getattr(ex, "message", repr(ex)))
-                finally:
-                    self.computing.remove(e)
-                    self.queue.delete(e.unique_id)
-
-            # case for bertopic
-            if e.kind == "bertopic":
-                try:
-                    # bertmodel = cast(BertopicComputing, e)
-                    print("Bertopic trained")
-                    # self.bertopic.add(bertmodel)
-                    logging.debug("Bertopic trained")
-                except Exception as ex:
-                    self.errors.append(
-                        [datetime.now(config.timezone), "Error in bertopic training", str(ex)]
-                    )
-                    logging.error("Error in bertopic training", ex)
-                finally:
-                    self.computing.remove(e)
-                    self.queue.delete(e.unique_id)
+                    case "update_datasets":
+                        e = cast(UpdateComputing, e)
+                        self.db_manager.projects_service.update_project(
+                            self.params.project_slug, jsonable_encoder(results)
+                        )
+                        # reset the features file and load the dataset again
+                        self.features.reset_features_file()
+                        self.data.load_dataset("all")
+                    case "train_bert":
+                        model = cast(LMComputing, e)
+                        self.languagemodels.add(model)
+                    case "predict_bert":
+                        prediction = cast(LMComputing, e)
+                        if (
+                            results is not None
+                            and results.path
+                            and "predict_annotable.parquet" in results.path
+                        ):
+                            add_predictions["predict_" + prediction.model_name] = results.path
+                        self.languagemodels.add(prediction)
+                    case "train_quickmodel":
+                        sm = cast(QuickModelComputing, e)
+                        self.quickmodels.add(sm)
+                    case "predict_quickmodel":
+                        sm = cast(QuickModelComputing, e)
+                    case "feature":
+                        feature_computation = cast(FeatureComputing, e)
+                        self.features.add(
+                            feature_computation.name,
+                            feature_computation.type,
+                            feature_computation.user,
+                            feature_computation.parameters,
+                            results,
+                        )
+                    case "projection":
+                        projection = cast(ProjectionComputing, e)
+                        self.projections.add(projection, results)
+                    case "generation":
+                        r = cast(
+                            list[GenerationResult],
+                            results,
+                        )
+                        for row in r:
+                            self.generations.add(
+                                user=row.user,
+                                project_slug=row.project_slug,
+                                element_id=row.element_id,
+                                model_id=row.model_id,
+                                prompt=row.prompt,
+                                answer=row.answer,
+                            )
+                    case "bertopic":
+                        print("bertopic")
+            except Exception as ex:
+                print(f"Error in {e.kind} : {ex}")
+                self.errors.add(f"Error in {e.kind} : {str(ex)}")
+                logging.error(f"Error in {e.kind}", ex)
+                match e.kind:
+                    case "create_project":
+                        self.status = "error"
+                    case "train_bert":
+                        self.db_manager.language_models_service.delete_model(
+                            self.name, model.model_name
+                        )
+                raise ex
+            # clean the process from the list and the queue
+            finally:
+                self.clean_process(e)
 
         # if there are predictions, add them
-        for f in add_predictions:
-            try:
-                # load the prediction probabilities minus one
-                df = pd.read_parquet(add_predictions[f])
-                df = df.drop(columns=["entropy", "prediction", "dataset", "label"])
-                df = df[df.columns[0:-1]]
-                name = f.replace("__", "_")  # avoid __ in the name for features
-                # if the feature already exists, delete it first
-                if self.features.exists(name):
-                    self.features.delete(name)
-                # add it
-                self.features.add(
-                    name=name,
-                    kind="prediction",
-                    parameters={},
-                    username="system",
-                    new_content=df,
-                )
-                logging.debug("Add feature" + str(name))
-            except Exception as ex:
-                self.errors.append(
-                    [
-                        datetime.now(config.timezone),
-                        "Error in adding prediction",
-                        str(ex),
-                    ]
-                )
-                logging.error("Error in addind prediction", ex)
-
-        # clean errors older than 15 minutes
-        delta = datetime.now(config.timezone) - timedelta(minutes=15)
-        self.errors = [error for error in self.errors if error[0] >= delta]
-
-        return None
+        if len(add_predictions) > 0:
+            errors = self.features.add_predictions(add_predictions)
+            for err in errors:
+                self.errors.add(err)
 
     # def dump(self, with_files=True) -> None:
     #     """
