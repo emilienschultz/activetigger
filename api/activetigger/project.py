@@ -620,6 +620,7 @@ class Project:
         frame is the use of projection coordinates to limit the selection
         filter is a regex to use on the corpus
         """
+        print(f"Get next called with parameters: {next}")
         if next.scheme not in self.schemes.available():
             raise ValueError("Scheme doesn't exist")
 

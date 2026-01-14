@@ -1,5 +1,6 @@
 import datetime
 import json
+import math
 import os
 import pickle
 import shutil
@@ -64,7 +65,9 @@ class TrainML(BaseTask):
         self.texts = texts
 
     def __init_paths(self, retrain: bool) -> None:
-        """Create a directory for the files to be saved"""
+        """
+        Create a directory for the files to be saved
+        """
         # if retrain, clear the folder
         if retrain:
             shutil.rmtree(self.model_path)
@@ -77,38 +80,42 @@ class TrainML(BaseTask):
     def __split_set(
         self, test_size: float = 0.2
     ) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
-        """Remove null elements and return train/test splits"""
-        # drop NA values
-        f = self.Y.notnull()
-        self.X = self.X[f]
-        self.Y = self.Y[f]
-
-        index = self.X.copy().index.to_series()
+        """
+        Remove null elements and return train/test splits
+        (equivalent of train_test_split from sklearn)
+        """
+        f = self.Y.notnull()  # filter drop NA values
+        index = self.X[f].copy().index.to_series()
         index = index.sample(frac=1.0, random_state=42)
-        n_element_train = int(len(index) * (1 - test_size))
-        index_train = index.head(n_element_train)
-        index_test = index.tail(len(index) - n_element_train)
-
-        X_train = self.X.loc[index_train.index, :]
-        Y_train = self.Y.loc[index_train.index]
-        X_test = self.X.loc[index_test.index, :]
-        Y_test = self.Y.loc[index_test.index]
-
+        n_total = len(index)
+        n_test = math.ceil(n_total * test_size)
+        n_train = n_total - n_test
+        index_train = index.head(n_train)
+        index_test = index.tail(n_test)
+        X_train = self.X[f].loc[index_train.index, :]
+        Y_train = self.Y[f].loc[index_train.index]
+        X_test = self.X[f].loc[index_test.index, :]
+        Y_test = self.Y[f].loc[index_test.index]
         return X_train, X_test, Y_train, Y_test
 
     def __compute_metrics(self, y_true: pd.Series, y_pred: pd.Series) -> MLStatisticsModel:
-        """Compute metrics"""
+        """
+        Compute metrics
+        """
         if self.texts is not None:
             texts = self.texts.loc[y_true.index]
         metrics = get_metrics(y_true, y_pred, texts=texts, labels=self.labels)
         return metrics
 
     def __compute_cv10(self) -> MLStatisticsModel:
-        """Compute cv (predict and compute metrics)"""
+        """
+        Compute cv (predict and compute metrics)
+        """
         num_folds = 10
         kf = KFold(n_splits=num_folds, shuffle=True, random_state=42)
+        f = self.Y.notnull()
         Y_pred_10cv = pd.Series(
-            cross_val_predict(self.model, self.X, self.Y, cv=kf), index=self.Y.index
+            cross_val_predict(self.model, self.X[f], self.Y[f], cv=kf), index=self.Y.index
         )
 
         statistics_cv10 = get_metrics(

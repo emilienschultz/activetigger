@@ -282,6 +282,8 @@ class QuickModels:
         sm = self.get(model_name)
         if sm.proba is None:
             raise ValueError("No probability available for this model")
+        print(element_id)
+        print(len(sm.proba), element_id in list(sm.proba.index))
         if element_id not in sm.proba.index:
             raise ValueError("Element ID not found in the predictions")
         predicted_label = sm.proba.loc[element_id, "prediction"]
