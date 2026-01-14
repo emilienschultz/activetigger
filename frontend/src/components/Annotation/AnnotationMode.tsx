@@ -146,11 +146,8 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
                     style={{ color: activeModel ? 'green' : 'grey', cursor: 'pointer' }}
                     title="Active learning"
                   />
-                  <Tooltip anchorSelect=".activelearning" place="top">
-                    Active learning
-                  </Tooltip>
+                  <span>{activeModel ? 'active' : 'inactive'}</span>{' '}
                 </button>
-                <span className="badge info">{activeModel ? 'active' : 'inactive'}</span>
               </div>
             </div>
           )}
@@ -189,7 +186,7 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
         {/* CONTENT */}
         <div>
           <div className="at-input-group">
-            <label className=" small-gray">Filter by Tag</label>
+            <label className=" small-gray">Filter by Tag/Users</label>
             <AnnotationTagFilterSelect availableLabels={availableLabels} />
           </div>
 
