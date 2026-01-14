@@ -221,7 +221,7 @@ class CreateProject(BaseTask):
             nb_cat = len(df_grouped)
             nb_elements_cat = round(self.params.n_train / nb_cat)
             trainset = df_grouped.apply(
-                lambda x: x.sample(min(len(x), nb_elements_cat)), random_state=42
+                lambda x: x.sample(min(len(x), nb_elements_cat), random_state=42)
             )
         # default with random selection in the remaining elements
         else:
