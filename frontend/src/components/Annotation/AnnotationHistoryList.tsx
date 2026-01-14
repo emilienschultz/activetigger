@@ -46,7 +46,7 @@ const AnnotationHistoryEntry: FC<{ elementHistoryPoint: ElementHistoryPoint }> =
       <p>{truncate(elementHistoryPoint.element_text, { length: 100 })}</p>
       <div className="d-flex gap-1 flex-wrap position-relative w-100">
         {elementHistoryPoint.label !== undefined && (
-          <span className="badge d-flex align-center gap-1">
+          <span className="badge d-flex align-center gap-1 flex-grow-1">
             {elementHistoryPoint.label ? (
               <>
                 <AnnotationIcon className="flex-shrink-0" />{' '}

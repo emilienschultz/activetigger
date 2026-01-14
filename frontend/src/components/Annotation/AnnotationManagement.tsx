@@ -162,7 +162,7 @@ export const AnnotationManagement: FC = () => {
           // wait for 500ms before fetch new element to see new button state
           setTimeout(() => {
             navigate(`/projects/${projectName}/tag/`);
-          }, 500);
+          }, 200);
         }
         // does not do nothing as we remount through navigate reFetchStatistics();
       }

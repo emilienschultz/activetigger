@@ -170,7 +170,7 @@
 .tag-action-container {
   --button-label-width: 25vh;
   @include media-breakpoint-down(lg) {
-    --button-label-width: 18vh;
+    --button-label-width: 8vh;
   }
 
   @extend .d-flex;
@@ -226,9 +226,9 @@
     @include media-breakpoint-up(lg) {
       min-width: 100%;
     }
-    @include media-breakpoint-down(lg) {
-      flex-grow: 1;
-    }
+    // @include media-breakpoint-down(lg) {
+    //   flex-grow: 1;
+    // }
     .truncate-middle {
       width: var(--button-label-width);
 
