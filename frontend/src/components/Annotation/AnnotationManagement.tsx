@@ -458,7 +458,7 @@ export const AnnotationManagement: FC = () => {
       </div>
 
       <div className="horizontal center">
-        <AnnotationHistoryList />
+        {displayConfig.displayHistory && <AnnotationHistoryList />}
       </div>
 
       <Modal show={showDisplayViz} onHide={handleCloseViz} size="xl" id="viz-modal">

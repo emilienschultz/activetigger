@@ -151,6 +151,7 @@ export interface DisplayConfig {
   displayPredictionStat: boolean;
   displayContext: boolean;
   displayHistory: boolean;
+  displayElementHistory: boolean;
   numberOfTokens: number;
   textFrameHeight: number;
   textFrameWidth: number;

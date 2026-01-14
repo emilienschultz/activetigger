@@ -109,7 +109,7 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
           }
           {
             //display history
-            phase != 'test' && displayConfig.displayHistory && (
+            phase != 'test' && displayConfig.displayElementHistory && (
               <details>
                 <summary>History</summary>
                 <div>

@@ -76,7 +76,7 @@ export const AnnotationHistoryList: FC = () => {
   return (
     <div className="horizontal center flex-column">
       <div className="d-flex justify-content-start gap-4 w-100 mb-4 align-items-center">
-        <h4 className="m-0">Annotation history (last 100)</h4>
+        <h4 className="text-muted mb-0 ">Last 100 annotations</h4>
         <button
           className="btn-secondary-action d-flex align-items-center gap-2"
           onClick={() => {

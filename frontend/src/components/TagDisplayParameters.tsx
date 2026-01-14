@@ -7,7 +7,23 @@ export const TagDisplayParameters: FC = () => {
     setAppContext,
   } = useAppContext();
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
+    <div className="d-flex flex-column">
+      <label>
+        <input
+          type="checkbox"
+          checked={displayConfig.displayHistory}
+          onChange={(_) => {
+            setAppContext((prev) => ({
+              ...prev,
+              displayConfig: {
+                ...displayConfig,
+                displayHistory: !displayConfig.displayHistory,
+              },
+            }));
+          }}
+        />
+        Annotation history
+      </label>
       <label>
         <input
           type="checkbox"
@@ -80,13 +96,13 @@ export const TagDisplayParameters: FC = () => {
       <label>
         <input
           type="checkbox"
-          checked={displayConfig.displayHistory}
+          checked={displayConfig.displayElementHistory}
           onChange={(_) => {
             setAppContext((prev) => ({
               ...prev,
               displayConfig: {
                 ...displayConfig,
-                displayHistory: !displayConfig.displayHistory,
+                displayElementHistory: !displayConfig.displayElementHistory,
               },
             }));
           }}
