@@ -457,8 +457,25 @@ export const AnnotationManagement: FC = () => {
         )}
       </div>
 
-      <div className="horizontal center">
-        {displayConfig.displayHistory && <AnnotationHistoryList />}
+      <div>
+        {displayConfig.displayHistory ? (
+          <AnnotationHistoryList />
+        ) : (
+          <span
+            style={{ cursor: 'pointer', color: 'gray' }}
+            onClick={(_) => {
+              setAppContext((prev) => ({
+                ...prev,
+                displayConfig: {
+                  ...displayConfig,
+                  displayHistory: !displayConfig.displayHistory,
+                },
+              }));
+            }}
+          >
+            History hidden - click to show
+          </span>
+        )}
       </div>
 
       <Modal show={showDisplayViz} onHide={handleCloseViz} size="xl" id="viz-modal">

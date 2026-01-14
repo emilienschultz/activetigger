@@ -87,7 +87,7 @@ export const ProjectHistory: FC<ProjectHistoryProps> = ({
         </thead>
         <tbody>
           {((logs as unknown as Row[]) || []).map((row, index) => (
-            <tr className={index % 2 === 0 ? 'darker' : ''}>
+            <tr className={index % 2 === 0 ? 'darker' : ''} key={index}>
               <td id="time">{displayTime(row.time)}</td>
               <td id="user">{row.user}</td>
               <td id="project">{row.project}</td>

@@ -3,6 +3,7 @@ import { truncate } from 'lodash';
 import { FC } from 'react';
 import { FaRegTrashAlt } from 'react-icons/fa';
 import { Link, useParams } from 'react-router-dom';
+import { Tooltip } from 'react-tooltip';
 import { useAppContext } from '../../core/context';
 import { useAnnotationSessionHistory } from '../../core/useHistory';
 import { ElementHistoryPoint } from '../../types';
@@ -68,23 +69,41 @@ const AnnotationHistoryEntry: FC<{ elementHistoryPoint: ElementHistoryPoint }> =
 };
 
 export const AnnotationHistoryList: FC = () => {
-  const { appContext } = useAppContext();
-  const { history, phase, currentProject } = appContext;
+  const { appContext, setAppContext } = useAppContext();
+  const { history, phase, currentProject, displayConfig } = appContext;
 
   const { clearAnnotationSessionHistory } = useAnnotationSessionHistory();
 
   return (
     <div className="horizontal center flex-column">
       <div className="d-flex justify-content-start gap-4 w-100 mb-4 align-items-center">
-        <h4 className="text-muted mb-0 ">Last 100 annotations</h4>
+        <h4 className="text-muted mb-0 annotationtitle">Last 100 annotations</h4>
+
         <button
-          className="btn-secondary-action d-flex align-items-center gap-2"
+          className="btn-secondary-action d-flex align-items-center gap-2 clearhistory"
           onClick={() => {
             clearAnnotationSessionHistory();
           }}
         >
           <FaRegTrashAlt /> clear history
         </button>
+        <Tooltip anchorSelect=".clearhistory" style={{ zIndex: 99 }}>
+          Clear history to be able to see again elements during this session.
+        </Tooltip>
+        <span
+          style={{ cursor: 'pointer', color: 'gray' }}
+          onClick={(_) => {
+            setAppContext((prev) => ({
+              ...prev,
+              displayConfig: {
+                ...displayConfig,
+                displayHistory: !displayConfig.displayHistory,
+              },
+            }));
+          }}
+        >
+          hide
+        </span>
       </div>
       <div className="annotation-history">
         {history
