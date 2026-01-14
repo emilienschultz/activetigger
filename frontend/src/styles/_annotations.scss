@@ -185,6 +185,7 @@
   width: fit-content;
   position: relative;
 
+  .btn-annotate-general-action,
   .btn-annotate-predicted-action,
   .btn-annotate-action {
     margin: 0;
@@ -207,9 +208,15 @@
     @extend .btn;
     @extend .btn-primary;
   }
-  .btn-annotate-predicted-action {
+  .btn-annotate-general-action {
     @extend .btn;
     @extend .btn-secondary;
+    background-color: gray;
+  }
+
+  .btn-annotate-predicted-action {
+    @extend .btn;
+    @extend .btn-success;
   }
 
   .tag-action-button {

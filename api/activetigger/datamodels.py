@@ -149,8 +149,8 @@ class NextInModel(BaseModel):
     scheme: str
     selection: str = "fixed"
     sample: str = "untagged"
-    on_labels: str | list[str] | None = None
-    on_users: str | list[str] | None = None
+    on_labels: list[str] | None = None
+    on_users: list[str] | None = None
     label_maxprob: str | None = None
     frame: list[Any] | None = None
     history: list[str] = []

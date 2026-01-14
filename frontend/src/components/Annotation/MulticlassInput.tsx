@@ -126,7 +126,7 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
         {skipAnnotation && (
           <button
             type="button"
-            className="btn-annotate-predicted-action tag-action-button"
+            className="btn-annotate-general-action tag-action-button"
             onClick={() => {
               skipAnnotation();
             }}
@@ -201,7 +201,7 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
         {/* NO TAG OPTION */}
         <button
           type="button"
-          className="btn-annotate-predicted-action no-tag-action"
+          className="btn-annotate-general-action no-tag-action"
           onClick={() => {
             postAnnotation(null, elementId, comment);
           }}

@@ -640,21 +640,14 @@ class Project:
         if next.sample == "untagged":
             f = df["labels"].isna()
         elif next.sample == "tagged":
-            # on a specific label
-            if next.on_labels is None:
-                f = df["labels"].notna()
-            else:
-                # temporary fix for migration
-                if isinstance(next.on_labels, str):
-                    next.on_labels = [next.on_labels]
-
+            # on specific labels
+            if next.on_labels is not None and len(next.on_labels) > 0:
                 f = df["labels"].isin(next.on_labels)
+            else:
+                f = df["labels"].notna()
 
-            # for a specific user if specified
-            if next.on_users is not None:
-                # temporary fix for migration
-                if isinstance(next.on_users, str):
-                    next.on_users = [next.on_users]
+            # on specific users
+            if next.on_users is not None and len(next.on_users) > 0:
                 f_user = df["user"].isin(next.on_users)
                 f = f & f_user
         else:
