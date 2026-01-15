@@ -11,6 +11,7 @@ from activetigger.db.languagemodels import ModelsService
 from activetigger.db.logs import LogsService
 from activetigger.db.messages import MessagesService
 from activetigger.db.models import Base
+from activetigger.db.monitoring import MonitoringService
 from activetigger.db.projects import ProjectsService
 from activetigger.db.users import UsersService
 from activetigger.functions import get_hash, get_root_pwd
@@ -53,6 +54,7 @@ class DatabaseManager:
         self.language_models_service = ModelsService(self.SessionMaker)
         self.logs_service = LogsService(self.SessionMaker)
         self.messages_service = MessagesService(self.SessionMaker)
+        self.monitoring_service = MonitoringService(self.SessionMaker)
 
         # Create tables if not already present
         Base.metadata.create_all(self.engine)

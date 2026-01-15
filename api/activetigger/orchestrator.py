@@ -32,6 +32,7 @@ from activetigger.db import DBException
 from activetigger.db.manager import DatabaseManager
 from activetigger.functions import get_dir_size, get_gpu_memory_info, slugify
 from activetigger.messages import Messages
+from activetigger.monitoring import Monitoring
 from activetigger.project import Project
 from activetigger.queue import Queue
 from activetigger.users import Users
@@ -59,6 +60,7 @@ class Orchestrator:
     messages: Messages
     max_projects: int
     project_creation_ongoing: dict[str, Project]
+    monitoring: Monitoring
 
     def __init__(self) -> None:
         """
@@ -88,6 +90,7 @@ class Orchestrator:
         )
         self.messages = Messages(self.db_manager)
         self.users = Users(self.db_manager, self.messages)
+        self.monitoring = Monitoring(self.db_manager)
 
         # projects in memory
         self.projects = {}

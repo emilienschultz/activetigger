@@ -53,6 +53,7 @@ from activetigger.functions import clean_regex, get_dir_size, slugify
 from activetigger.generation.generations import Generations
 from activetigger.languagemodels import LanguageModels
 from activetigger.messages import Messages
+from activetigger.monitoring import Monitoring
 from activetigger.projections import Projections
 from activetigger.queue import Queue
 from activetigger.quickmodels import QuickModels
@@ -118,6 +119,7 @@ class Project:
     projections: Projections
     messages: Messages
     errors: Errors
+    monitoring: Monitoring
 
     def __init__(
         self,
@@ -143,6 +145,7 @@ class Project:
         self.errors = Errors()
         self.users = users
         self.messages = messages
+        self.monitoring = Monitoring(db_manager, project_slug)
 
         # load the project if exist
         if self.exists():
@@ -540,7 +543,7 @@ class Project:
         username: str,
         n_min_annotated: int = 3,
         retrain: bool = False,
-    ) -> None:
+    ) -> str:
         """
         Build all the information before calling the quickmodel computation
         retrain : if True, will delete the previous model with the same name
@@ -601,7 +604,7 @@ class Project:
 
         logger_quickmodel = logging.getLogger("quickmodel")
         logger_quickmodel.info("Building the quickmodel request")
-        self.quickmodels.compute_quickmodel(
+        process_id = self.quickmodels.compute_quickmodel(
             project_slug=self.params.project_slug,
             user=username,
             scheme=quickmodel.scheme,
@@ -618,6 +621,13 @@ class Project:
             retrain=retrain,
             texts=self.data.train["text"] if self.data.train is not None else None,
         )
+        self.monitoring.register_process(
+            process_name=process_id,
+            kind="quickmodel",
+            parameters={},
+            user_name=username,
+        )
+        return process_id
 
     def get_model_prediction(self, type: str, name: str) -> pd.DataFrame:
         """
@@ -656,7 +666,6 @@ class Project:
         frame is the use of projection coordinates to limit the selection
         filter is a regex to use on the corpus
         """
-        print(f"Get next called with parameters: {next}")
         if next.scheme not in self.schemes.available():
             raise ValueError("Scheme doesn't exist")
 
@@ -1254,7 +1263,7 @@ class Project:
             )
 
         # launch training process
-        self.languagemodels.start_training_process(
+        process_id = self.languagemodels.start_training_process(
             name=bert.name,
             project=self.name,
             user=username,
@@ -1268,6 +1277,12 @@ class Project:
             loss=bert.loss,
             max_length=bert.max_length,
             auto_max_length=bert.auto_max_length,
+        )
+        self.monitoring.register_process(
+            process_name=process_id,
+            kind="train_bert",
+            parameters={},
+            user_name=username,
         )
 
     def start_generation(self, request: GenerationRequest, username: str) -> None:
@@ -1373,6 +1388,7 @@ class Project:
                     case "train_bert":
                         model = cast(LMComputing, e)
                         self.languagemodels.add(model)
+                        self.monitoring.close_process(model.unique_id)
                     case "predict_bert":
                         prediction = cast(LMComputing, e)
                         if (
@@ -1384,6 +1400,7 @@ class Project:
                         self.languagemodels.add(prediction)
                     case "train_quickmodel":
                         sm = cast(QuickModelComputing, e)
+                        self.monitoring.close_process(sm.unique_id)
                         self.quickmodels.add(sm)
                     case "predict_quickmodel":
                         sm = cast(QuickModelComputing, e)

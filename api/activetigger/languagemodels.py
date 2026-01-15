@@ -190,7 +190,7 @@ class LanguageModels:
         loss: str = "cross_entropy",
         max_length: int = 512,
         auto_max_length: bool = False,
-    ) -> None:
+    ) -> str:
         """
         Manage the training of a model from the API
         """
@@ -258,6 +258,7 @@ class LanguageModels:
                 get_progress=self.get_progress(model_name, status="training"),
             )
         )
+        return unique_id
 
     def clean_files_valid(self, model_name: str, dataset: str):
         """

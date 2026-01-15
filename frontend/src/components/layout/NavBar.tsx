@@ -78,6 +78,17 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
                 </Link>
               </li>
             ))}
+            {authenticatedUser && authenticatedUser.username === 'root' && (
+              <li key="monitor" className="nav-item">
+                <Link
+                  className={cx('nav-link', currentPage === 'monitor' && 'active')}
+                  aria-current={'page'}
+                  to="/monitor"
+                >
+                  Monitor
+                </Link>
+              </li>
+            )}
             <li className="nav-item" key="docs">
               <a
                 className={cx('nav-link', currentPage === 'docs' && 'active')}

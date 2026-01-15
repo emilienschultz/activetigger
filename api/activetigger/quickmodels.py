@@ -99,7 +99,7 @@ class QuickModels:
         balance_classes: bool = False,
         retrain: bool = False,
         texts: pd.Series | None = None,
-    ) -> None:
+    ) -> str:
         """
         Add a new quickmodel for a user and a scheme
         """
@@ -219,6 +219,7 @@ class QuickModels:
             dataset="train",
         )
         self.computing.append(req)
+        return unique_id
 
     def add(self, element: QuickModelComputing) -> None:
         """

@@ -2771,3 +2771,33 @@ export function useExportTopicsToScheme(projectSlug: string | null) {
   );
   return exportTopicsToScheme;
 }
+
+export function useGetMonitoringMetrics() {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
+  const getMonitoringMetrics = useAsyncMemo(async () => {
+    const res = await api.GET('/monitoring/metrics');
+    if (res.data && !res.error) return res.data;
+    else {
+      return null;
+    }
+  }, [fetchTrigger]);
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
+
+  return { metrics: getAsyncMemoData(getMonitoringMetrics) || null, reFetchMetrics: reFetch };
+}
+
+export function useGetMonitoringData(kind: string) {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
+  const getMonitoringData = useAsyncMemo(async () => {
+    const res = await api.GET('/monitoring/data', { params: { query: { kind: kind } } });
+    if (res.data && !res.error) return res.data;
+    else {
+      return null;
+    }
+  }, [fetchTrigger]);
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
+
+  return { data: getAsyncMemoData(getMonitoringData) || null, reFetchData: reFetch };
+}

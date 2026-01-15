@@ -1132,3 +1132,32 @@ class AuthUserModel(BaseModel):
     project_slug: str
     username: str
     status: str | None = None
+
+
+class MonitoringQuickModelsModel(BaseModel):
+    """
+    Monitoring quickmodels
+    """
+
+    n: int
+    mean: float
+    std: float
+
+
+class MonitoringLanguageModelsModel(BaseModel):
+    """
+    Monitoring language models
+    """
+
+    n: int
+    mean: float
+    std: float
+
+
+class MonitoringMetricsModel(BaseModel):
+    """
+    Monitoring metrics
+    """
+
+    quickmodels: MonitoringQuickModelsModel
+    languagemodels: MonitoringLanguageModelsModel

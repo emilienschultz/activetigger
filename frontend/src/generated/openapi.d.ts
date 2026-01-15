@@ -1667,6 +1667,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/monitoring/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Metrics
+         * @description Get monitoring metrics
+         */
+        get: operations["get_monitoring_metrics_monitoring_metrics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/monitoring/data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Data
+         * @description Get monitoring data
+         */
+        get: operations["get_monitoring_data_monitoring_data_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/": {
         parameters: {
             query?: never;
@@ -1998,10 +2038,7 @@ export interface components {
             grant_type?: string | null;
             /** Username */
             username: string;
-            /**
-             * Password
-             * Format: password
-             */
+            /** Password */
             password: string;
             /**
              * Scope
@@ -2010,10 +2047,7 @@ export interface components {
             scope: string;
             /** Client Id */
             client_id?: string | null;
-            /**
-             * Client Secret
-             * Format: password
-             */
+            /** Client Secret */
             client_secret?: string | null;
         };
         /** Body_upload_file_dataset_files_add_dataset_post */
@@ -2181,9 +2215,7 @@ export interface components {
             /** Text */
             text: string;
             /** Context */
-            context: {
-                [key: string]: unknown;
-            };
+            context: Record<string, never>;
             /** Selection */
             selection: string;
             /** Info */
@@ -2228,9 +2260,7 @@ export interface components {
             /** Name */
             name: string;
             /** Parameters */
-            parameters: {
-                [key: string]: unknown;
-            };
+            parameters: Record<string, never>;
             /** User */
             user: string;
             /** Time */
@@ -2256,9 +2286,7 @@ export interface components {
         FeaturesProjectStateModel: {
             /** Options */
             options: {
-                [key: string]: {
-                    [key: string]: unknown;
-                } | undefined;
+                [key: string]: Record<string, never> | undefined;
             };
             /** Available */
             available: string[];
@@ -2390,9 +2418,7 @@ export interface components {
             progress?: number | null;
             /** Loss */
             loss?: {
-                [key: string]: {
-                    [key: string]: unknown;
-                } | undefined;
+                [key: string]: Record<string, never> | undefined;
             } | null;
             /** Epochs */
             epochs?: number | null;
@@ -2473,9 +2499,7 @@ export interface components {
         /** LanguageModelsProjectStateModel */
         LanguageModelsProjectStateModel: {
             /** Options */
-            options: {
-                [key: string]: unknown;
-            }[];
+            options: Record<string, never>[];
             /** Available */
             available: {
                 [key: string]: {
@@ -2519,13 +2543,9 @@ export interface components {
             /** Confusion Matrix */
             confusion_matrix?: number[][] | null;
             /** False Predictions */
-            false_predictions?: {
-                [key: string]: unknown;
-            } | unknown[] | null;
+            false_predictions?: Record<string, never> | unknown[] | null;
             /** Table */
-            table?: {
-                [key: string]: unknown;
-            } | null;
+            table?: Record<string, never> | null;
         };
         /** MessagesInModel */
         MessagesInModel: {
@@ -2560,9 +2580,7 @@ export interface components {
             /** Scheme */
             scheme: string;
             /** Parameters */
-            parameters: {
-                [key: string]: unknown;
-            };
+            parameters: Record<string, never>;
             /** Path */
             path: string;
             /** Time */
@@ -2571,37 +2589,55 @@ export interface components {
         /** ModelInformationsModel */
         ModelInformationsModel: {
             /** Params */
-            params?: {
-                [key: string]: unknown;
-            } | null;
+            params?: Record<string, never> | null;
             /** Loss */
-            loss?: {
-                [key: string]: unknown;
-            } | null;
+            loss?: Record<string, never> | null;
             scores: components["schemas"]["ModelScoresModel"];
         };
         /** ModelScoresModel */
         ModelScoresModel: {
             /** Internalvalid Scores */
-            internalvalid_scores?: {
-                [key: string]: unknown;
-            } | null;
+            internalvalid_scores?: Record<string, never> | null;
             /** Train Scores */
-            train_scores?: {
-                [key: string]: unknown;
-            } | null;
+            train_scores?: Record<string, never> | null;
             /** Valid Scores */
-            valid_scores?: {
-                [key: string]: unknown;
-            } | null;
+            valid_scores?: Record<string, never> | null;
             /** Test Scores */
-            test_scores?: {
-                [key: string]: unknown;
-            } | null;
+            test_scores?: Record<string, never> | null;
             /** Outofsample Scores */
-            outofsample_scores?: {
-                [key: string]: unknown;
-            } | null;
+            outofsample_scores?: Record<string, never> | null;
+        };
+        /**
+         * MonitoringLanguageModelsModel
+         * @description Monitoring language models
+         */
+        MonitoringLanguageModelsModel: {
+            /** N */
+            n: number;
+            /** Mean */
+            mean: number;
+            /** Std */
+            std: number;
+        };
+        /**
+         * MonitoringMetricsModel
+         * @description Monitoring metrics
+         */
+        MonitoringMetricsModel: {
+            quickmodels: components["schemas"]["MonitoringQuickModelsModel"];
+            languagemodels: components["schemas"]["MonitoringLanguageModelsModel"];
+        };
+        /**
+         * MonitoringQuickModelsModel
+         * @description Monitoring quickmodels
+         */
+        MonitoringQuickModelsModel: {
+            /** N */
+            n: number;
+            /** Mean */
+            mean: number;
+            /** Std */
+            std: number;
         };
         /**
          * NewUserModel
@@ -2635,9 +2671,9 @@ export interface components {
              */
             sample: string;
             /** On Labels */
-            on_labels?: string | string[] | null;
+            on_labels?: string[] | null;
             /** On Users */
-            on_users?: string | string[] | null;
+            on_users?: string[] | null;
             /** Label Maxprob */
             label_maxprob?: string | null;
             /** Frame */
@@ -2805,9 +2841,7 @@ export interface components {
             /** Train Annotated N */
             train_annotated_n: number;
             /** Train Annotated Distribution */
-            train_annotated_distribution: {
-                [key: string]: unknown;
-            };
+            train_annotated_distribution: Record<string, never>;
             /** Test Set N */
             test_set_n?: number | null;
             /** Valid Set N */
@@ -2817,13 +2851,9 @@ export interface components {
             /** Valid Annotated N */
             valid_annotated_n?: number | null;
             /** Test Annotated Distribution */
-            test_annotated_distribution?: {
-                [key: string]: unknown;
-            } | null;
+            test_annotated_distribution?: Record<string, never> | null;
             /** Valid Annotated Distribution */
-            valid_annotated_distribution?: {
-                [key: string]: unknown;
-            } | null;
+            valid_annotated_distribution?: Record<string, never> | null;
             /** Sm 10Cv */
             sm_10cv?: unknown | null;
         };
@@ -3041,9 +3071,7 @@ export interface components {
         ProjectionsProjectStateModel: {
             /** Options */
             options: {
-                [key: string]: {
-                    [key: string]: unknown;
-                } | undefined;
+                [key: string]: Record<string, never> | undefined;
             };
             /** Available */
             available: {
@@ -3068,9 +3096,7 @@ export interface components {
             /** Text */
             text: string;
             /** Parameters */
-            parameters: {
-                [key: string]: unknown;
-            };
+            parameters: Record<string, never>;
         };
         /**
          * QuickModelInModel
@@ -3143,9 +3169,7 @@ export interface components {
         /** QuickModelsProjectStateModel */
         QuickModelsProjectStateModel: {
             /** Options */
-            options: {
-                [key: string]: unknown;
-            };
+            options: Record<string, never>;
             /** Available */
             available: {
                 [key: string]: components["schemas"]["ModelDescriptionModel"][] | undefined;
@@ -3228,17 +3252,11 @@ export interface components {
             };
             gpu: components["schemas"]["GpuInformationModel"];
             /** Cpu */
-            cpu: {
-                [key: string]: unknown;
-            };
+            cpu: Record<string, never>;
             /** Memory */
-            memory: {
-                [key: string]: unknown;
-            };
+            memory: Record<string, never>;
             /** Disk */
-            disk: {
-                [key: string]: unknown;
-            };
+            disk: Record<string, never>;
             /** Mail Available */
             mail_available: boolean;
             /** Messages */
@@ -5964,9 +5982,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        [key: string]: (unknown[] | {
-                            [key: string]: unknown;
-                        }) | undefined;
+                        [key: string]: (unknown[] | Record<string, never>) | undefined;
                     };
                 };
             };
@@ -6130,6 +6146,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_monitoring_metrics_monitoring_metrics_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringMetricsModel"];
+                };
+            };
+        };
+    };
+    get_monitoring_data_monitoring_data_get: {
+        parameters: {
+            query: {
+                kind: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown[];
                 };
             };
             /** @description Validation Error */
