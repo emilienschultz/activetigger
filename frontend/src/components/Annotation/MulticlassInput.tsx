@@ -119,107 +119,106 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
   }, [element?.history]);
 
   return (
-    <div className="flex-grow-1 flex-shrink-0 d-flex flex-column justify-content-center justify-content-lg-start gap-3">
+    <div className=" tag-action-container">
       {/* TAGS ACTIONS */}
-      <div className="tag-action-container ">
-        {/* SKIP */}
-        {skipAnnotation && (
-          <button
-            type="button"
-            className="btn-annotate-general-action tag-action-button"
-            onClick={() => {
-              skipAnnotation();
-            }}
-          >
-            Skip <span className="badge hotkey">S</span>
-          </button>
-        )}
-        {/* PREDICTION */}
-        {phase == 'train' && displayConfig.displayPrediction && element?.predict.label && (
-          <div className="d-flex flex-column align-items-start gap-1">
-            {displayConfig.displayPredictionStat && (
-              <small className="d-flex align-items-center gap-1">
-                <MdOnlinePrediction size="20" title="Prediction by model" id="prediction-icon" />{' '}
-                <Tooltip anchorSelect="#prediction-icon" place="top">
-                  Prediction by model
-                </Tooltip>
-                <span className="badge m-0" id="predict-probability">
-                  P. {predict_proba}
-                </span>
-                <Tooltip anchorSelect="#predict-probability" place="top">
-                  prediction's probability: {predict_proba}
-                </Tooltip>
-                <span className="badge m-0" id="predict-entropy">
-                  E. {predict_entropy}
-                </span>
-                <Tooltip anchorSelect="#predict-entropy" place="top">
-                  prediction's entropy: {predict_entropy}
-                </Tooltip>
-              </small>
-            )}
-            <button
-              type="button"
-              value={element?.predict.label as unknown as string}
-              className={cx(
-                'btn-annotate-predicted-action tag-action-button',
-                small ? ' icon-small' : '',
-              )}
-              onClick={(e) => {
-                postAnnotation(e.currentTarget.value, elementId, comment);
-              }}
-            >
-              <EmptyAnnotationIcon />
-              <MiddleEllipsis label={element?.predict.label} />{' '}
-              <span className="badge hotkey">P</span>
-            </button>
-          </div>
-        )}
-        {
-          // display buttons for label from the user
-          availableLabels.map((e, i) => (
-            <button
-              type="button"
-              key={e.label}
-              value={e.label}
-              className="tag-action-button btn-annotate-action"
-              onClick={(v) => {
-                if (element) postAnnotation(v.currentTarget.value, elementId, comment);
-              }}
-            >
-              {displayConfig.displayAnnotation ? (
-                lastAnnotation && lastAnnotation.label === e.label ? (
-                  <ActiveAnnotationIcon />
-                ) : (
-                  <EmptyAnnotationIcon />
-                )
-              ) : null}
-              <MiddleEllipsis label={e.label} />
-              {availableLabels.length < 10 && <span className="badge hotkey">{i + 1}</span>}
-            </button>
-          ))
-        }
-        {/* NO TAG OPTION */}
+
+      {/* SKIP */}
+      {skipAnnotation && (
         <button
           type="button"
-          className="btn-annotate-general-action no-tag-action"
+          className="btn-annotate-general-action tag-action-button"
           onClick={() => {
-            postAnnotation(null, elementId, comment);
+            skipAnnotation();
           }}
         >
-          {lastAnnotation === null ? <IoIosRadioButtonOn /> : <IoIosRadioButtonOff />}
-          <span className="text">
-            <NoAnnotationIcon /> No tag
-          </span>
-          <span className="badge hotkey">DEL</span>
+          Skip <span className="badge hotkey">S</span>
         </button>
+      )}
+      {/* PREDICTION */}
+      {phase == 'train' && displayConfig.displayPrediction && element?.predict.label && (
+        <div className="d-flex flex-column align-items-start gap-1">
+          {displayConfig.displayPredictionStat && (
+            <small className="d-flex align-items-center gap-1">
+              <MdOnlinePrediction size="20" title="Prediction by model" id="prediction-icon" />{' '}
+              <Tooltip anchorSelect="#prediction-icon" place="top">
+                Prediction by model
+              </Tooltip>
+              <span className="badge m-0" id="predict-probability">
+                P. {predict_proba}
+              </span>
+              <Tooltip anchorSelect="#predict-probability" place="top">
+                prediction's probability: {predict_proba}
+              </Tooltip>
+              <span className="badge m-0" id="predict-entropy">
+                E. {predict_entropy}
+              </span>
+              <Tooltip anchorSelect="#predict-entropy" place="top">
+                prediction's entropy: {predict_entropy}
+              </Tooltip>
+            </small>
+          )}
+          <button
+            type="button"
+            value={element?.predict.label as unknown as string}
+            className={cx(
+              'btn-annotate-predicted-action tag-action-button',
+              small ? ' icon-small' : '',
+            )}
+            onClick={(e) => {
+              postAnnotation(e.currentTarget.value, elementId, comment);
+            }}
+          >
+            <EmptyAnnotationIcon />
+            <MiddleEllipsis label={element?.predict.label} />{' '}
+            <span className="badge hotkey">P</span>
+          </button>
+        </div>
+      )}
+      {
+        // display buttons for label from the user
+        availableLabels.map((e, i) => (
+          <button
+            type="button"
+            key={e.label}
+            value={e.label}
+            className="tag-action-button btn-annotate-action"
+            onClick={(v) => {
+              if (element) postAnnotation(v.currentTarget.value, elementId, comment);
+            }}
+          >
+            {displayConfig.displayAnnotation ? (
+              lastAnnotation && lastAnnotation.label === e.label ? (
+                <ActiveAnnotationIcon />
+              ) : (
+                <EmptyAnnotationIcon />
+              )
+            ) : null}
+            <MiddleEllipsis label={e.label} />
+            {availableLabels.length < 10 && <span className="badge hotkey">{i + 1}</span>}
+          </button>
+        ))
+      }
+      {/* NO TAG OPTION */}
+      <button
+        type="button"
+        className="btn-annotate-general-action no-tag-action"
+        onClick={() => {
+          postAnnotation(null, elementId, comment);
+        }}
+      >
+        {lastAnnotation === null ? <IoIosRadioButtonOn /> : <IoIosRadioButtonOff />}
+        <span className="text">
+          <NoAnnotationIcon /> No tag
+        </span>
+        <span className="badge hotkey">DEL</span>
+      </button>
 
-        <textarea
-          className="form-control annotation-comment"
-          placeholder="Comment"
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-        />
-      </div>
+      <textarea
+        className="form-control annotation-comment"
+        placeholder="Comment"
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+      />
     </div>
   );
 };

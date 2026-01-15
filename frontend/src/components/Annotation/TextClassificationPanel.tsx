@@ -36,7 +36,7 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
         className="annotation-frame"
         style={
           {
-            '--height': `${displayConfig.textFrameHeight}vh`,
+            '--height': `${displayConfig.textFrameHeight}%`,
             '--width': `${displayConfig.textFrameWidth}%`,
           } as CSSProperties
         }
