@@ -76,7 +76,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
       lrate: 3e-5,
       wdecay: 0.01,
       best: true,
-      eval: 10,
+      eval: 9,
       gpu: true,
       adapt: false,
     },
