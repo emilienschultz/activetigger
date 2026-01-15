@@ -6,7 +6,6 @@
 
 import asyncio
 import datetime
-import logging
 import multiprocessing
 import threading
 import uuid
@@ -19,7 +18,6 @@ from loky import get_reusable_executor  # type: ignore[import]
 from activetigger.datamodels import QueueStateTaskModel, QueueTaskModel
 from activetigger.tasks.base_task import BaseTask
 
-logger = logging.getLogger("server")
 multiprocessing.set_start_method("spawn", force=True)
 
 
@@ -62,8 +60,7 @@ class Queue:
         self.executor = get_reusable_executor(max_workers=self.nb_workers, timeout=10)
 
         # launch a regular update on the queue
-        self.task = asyncio.create_task(self._update_queue(timeout=1))
-        logger.info("Init Queue")
+        self.task = asyncio.create_task(self._update_queue(timeout=0.5))
 
     def __del__(self) -> None:
         """
@@ -74,7 +71,7 @@ class Queue:
         if hasattr(self, "task"):
             self.task.cancel()
 
-    async def _update_queue(self, timeout: int = 1) -> None:
+    async def _update_queue(self, timeout: float = 1) -> None:
         """
         Update the queue every X seconds.
         Add new tasks to the executor if there are available workers.

@@ -1,4 +1,3 @@
-import logging
 import os
 import pickle
 import shutil
@@ -103,8 +102,6 @@ class QuickModels:
         """
         Add a new quickmodel for a user and a scheme
         """
-        logger_quickmodel = logging.getLogger("quickmodel")
-        logger_quickmodel.info("Intiating the computation process for the quickmodel")
         X, Y, labels = self.transform_data(df, col_labels, col_features, standardize)
 
         # default parameters

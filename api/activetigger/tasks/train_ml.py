@@ -190,6 +190,7 @@ class TrainML(BaseTask):
         """
         Fit quickmodel and calculate statistics
         """
+        start = datetime.datetime.now()
         self.__init_paths(self.retrain)
 
         X_train, X_test, Y_train, Y_test = self.__split_set()
@@ -219,3 +220,6 @@ class TrainML(BaseTask):
         self.__create_saving_files(
             proba, X_train, Y_train, metrics_train, metrics_test, statistics_cv10
         )
+
+        end = datetime.datetime.now()
+        print(f"Training completed in {(end - start).total_seconds()} seconds")

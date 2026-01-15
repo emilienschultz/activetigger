@@ -1,6 +1,5 @@
 import io
 import json
-import logging
 import os
 import shutil
 import time
@@ -601,9 +600,6 @@ class Project:
 
         col_features = list(df_features.columns)
         data = pd.concat([df_scheme, df_features], axis=1)
-
-        logger_quickmodel = logging.getLogger("quickmodel")
-        logger_quickmodel.info("Building the quickmodel request")
         process_id = self.quickmodels.compute_quickmodel(
             project_slug=self.params.project_slug,
             user=username,
@@ -1343,7 +1339,6 @@ class Project:
             # get the process
             process = self.queue.get(e.unique_id)
             if process is None:
-                logging.warning("Problem : id in computing not in queue")
                 self.clean_process(e)
                 continue
 
@@ -1435,7 +1430,6 @@ class Project:
             except Exception as ex:
                 print(f"Error in {e.kind} : {ex}")
                 self.errors.add(f"Error in {e.kind} : {str(ex)}")
-                logging.error(f"Error in {e.kind}", ex)
                 match e.kind:
                     case "create_project":
                         self.status = "error"

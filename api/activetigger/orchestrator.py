@@ -8,7 +8,6 @@ Each project share a few elements:
 """
 
 import asyncio
-import logging
 import os
 import shutil
 import time
@@ -36,8 +35,6 @@ from activetigger.monitoring import Monitoring
 from activetigger.project import Project
 from activetigger.queue import Queue
 from activetigger.users import Users
-
-logger = logging.getLogger("server")
 
 
 class Orchestrator:
@@ -108,14 +105,6 @@ class Orchestrator:
                 self.create_demo_project("demo", "demo")
         except Exception as e:
             print(f"Error while creating demo project: {e}")
-
-        # logging
-        logging.basicConfig(
-            filename=self.path.joinpath("log_server.log"),
-            level=logging.DEBUG,
-            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        )
-
         self.server_state = self.get_server_state()
 
     def __del__(self):
@@ -123,7 +112,6 @@ class Orchestrator:
         Close the server
         """
         print("Ending the server")
-        logger.error("Disconnect server")
         if self._update_task:
             self._update_task.cancel()
         self._running = False
@@ -221,7 +209,6 @@ class Orchestrator:
         Log action in the database
         """
         self.db_manager.logs_service.add_log(user, action, project, connect)
-        logger.info("%s from %s in project %s", action, user, project)
 
     def get_logs(self, project_slug: str, limit: int, partial: bool = True) -> pd.DataFrame:
         """

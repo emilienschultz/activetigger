@@ -1,4 +1,3 @@
-import logging
 import secrets
 from datetime import datetime
 from pathlib import Path
@@ -99,7 +98,6 @@ class Users:
             raise Exception("Can't delete root user auth")
         self.get_user(username)
         self.db_manager.projects_service.delete_auth(project_slug, username)
-        logging.info("Auth of user %s deleted", username)
 
     def get_auth_projects(self, username: str, auth: str | None = None) -> list:
         """
@@ -154,8 +152,6 @@ class Users:
             contact=new_user.contact,
         )
 
-        logging.info("User added to the database")
-
     def delete_user(self, user_to_delete: str, username: str) -> None:
         """
         Deleting user
@@ -170,8 +166,6 @@ class Users:
 
         # delete the user
         self.db_manager.users_service.delete_user(user_to_delete)
-
-        logging.info("User %s successfully deleted", user_to_delete)
 
     def get_user(self, name: str) -> UserInDBModel:
         """

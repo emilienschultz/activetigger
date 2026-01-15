@@ -1,6 +1,5 @@
 import gc
 import json
-import logging
 import multiprocessing
 import os
 import time
@@ -62,7 +61,6 @@ class PredictBert(BaseTask):
         self.statistics = statistics
         self.log_path = self.path / f"predict_bert_log_{time.time()}.log"
         self.progress_path = self.path / "progress_predict"
-        self.logger = self.__get_logger(self.log_path)
 
         if self.df is None and path_data is not None:
             self.df = self.__load_external_file(path_data, external_dataset)
@@ -106,17 +104,6 @@ class PredictBert(BaseTask):
             df["dataset"] = "all"
 
         return df
-
-    def __get_logger(self, log_path: Path) -> logging.Logger:
-        """
-        Create and return a logger
-        """
-        logger = logging.getLogger("predict_bert_model")
-        file_handler = logging.FileHandler(log_path)
-        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
-        return logger
 
     def __write_progress(self, progress: float) -> None:
         """

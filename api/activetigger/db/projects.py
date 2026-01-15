@@ -1,5 +1,4 @@
 import datetime
-import logging
 from typing import Any, TypedDict
 
 from sqlalchemy import and_, delete, func, select, update
@@ -42,7 +41,6 @@ class ProjectsService:
                 user_name=user_name,
             )
             session.add(project)
-        logging.debug("CREATE PROJECT %s", now)
         return project_slug
 
     def update_project(self, project_slug: str, parameters: dict[str, Any]):
@@ -123,7 +121,6 @@ class ProjectsService:
         """
         Update the codebook in the database
         """
-        logging.debug(f"update_scheme_codebook {project_slug} {scheme}")
         with self.Session.begin() as session:
             result_scheme = session.scalars(
                 select(Schemes).filter_by(project_slug=project_slug, name=scheme)

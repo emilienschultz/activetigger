@@ -1,5 +1,4 @@
 import importlib
-import logging
 from contextlib import asynccontextmanager
 from importlib.abc import Traversable
 from typing import Annotated
@@ -37,10 +36,6 @@ from activetigger.datamodels import (
     UserInDBModel,
 )
 from activetigger.orchestrator import orchestrator
-
-# to log specific events from api
-logger = logging.getLogger("api")
-logger_quickmodel = logging.getLogger("quickmodel")
 
 
 @asynccontextmanager

@@ -1,5 +1,4 @@
 import gc
-import logging
 import math
 import multiprocessing
 from pathlib import Path
@@ -112,12 +111,10 @@ class ComputeSbert(BaseTask):
                 index=self.texts.index,
                 columns=["sb%03d" % (x + 1) for x in range(len(embeddings[0][0]))],
             )
-            logging.debug("computation end")
             if self.progress_file_temporary:
                 self.path_progress.unlink()
             return emb
         except Exception as e:
-            logging.error(e)
             raise e
         finally:
             del sbert, self.texts
