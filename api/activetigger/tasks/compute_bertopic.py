@@ -22,8 +22,6 @@ from activetigger.datamodels import BertopicParamsModel
 from activetigger.tasks.base_task import BaseTask
 from activetigger.tasks.compute_sbert import ComputeSbert
 
-RANDOM_SEED = 2306406
-
 # accelerate UMAP
 try:
     import cuml  # type: ignore[import-not-found]
@@ -54,6 +52,7 @@ def visualize_documents(
     n_neighbors: int = 15,
     min_dist: float = 0.0,
     min_number_of_element: int = 50,
+    random_seed: int = 42,
 ) -> go.Figure:
     """"""
     # Transform inputs in np.ndarray
@@ -66,7 +65,7 @@ def visualize_documents(
         n_components=2,
         min_dist=min_dist,
         metric="cosine",
-        random_state=RANDOM_SEED,
+        random_state=random_seed,
     )
     reduced_embeddings = umap_model.fit_transform(embeddings)
     X, Y = reduced_embeddings[:, 0], reduced_embeddings[:, 1]
@@ -183,6 +182,7 @@ class ComputeBertopic(BaseTask):
         existing_embeddings: Path | None = None,
         cols_embeddings: list[str] | None = None,
         force_compute_embeddings: bool = False,
+        random_seed: int = 42,
         **kwargs,
     ):
         super().__init__()
@@ -190,6 +190,7 @@ class ComputeBertopic(BaseTask):
             raise ValueError("Embeddings file must be a parquet file.")
 
         # Set parameters
+        self.random_seed = random_seed
         self.path_data = path_data
         self.col_id = col_id
         self.col_text = col_text
@@ -200,7 +201,9 @@ class ComputeBertopic(BaseTask):
             parameters.input_datasets
         )  # train, all_sets (ie train+valid+test), complete
         self.parameters = parameters
-        self.existing_embeddings = existing_embeddings # Path to force using one file for the embeddings
+        self.existing_embeddings = (
+            existing_embeddings  # Path to force using one file for the embeddings
+        )
         self.cols_embeddings = cols_embeddings
         self.timestamp = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
         self.force_compute_embeddings = force_compute_embeddings
@@ -222,20 +225,18 @@ class ComputeBertopic(BaseTask):
 
     def __init_paths(self) -> tuple[Path, Path]:
         """Creates a folder (projects/{project_slug}/bertopic/runs/{bertopic_run}/)
-        as well a path for the embeddings (common to multiple runs — 
+        as well a path for the embeddings (common to multiple runs —
         projects/{project_slug}/bertopic/embeddings/...) and a path for the projection
         (unique per run — projects/{project_slug}/bertopic/runs/{bertopic_run}/projection2D.parquet)"""
-        
+
         # Create directory for the run
         self.path_run.mkdir(parents=True, exist_ok=True)
-        path_embeddings = (
-            self.path_bertopic
-            .joinpath("embeddings")
-            .joinpath((
+        path_embeddings = self.path_bertopic.joinpath("embeddings").joinpath(
+            (
                 f"bertopic_embeddings_{self.input_datasets}_"
                 f"{slugify(self.parameters.embedding_model)}"
                 f".parquet"
-            ))
+            )
         )
         path_projection = self.path_run.joinpath("projection2D.parquet")
         return path_embeddings, path_projection
@@ -260,7 +261,7 @@ class ComputeBertopic(BaseTask):
         return df
 
     def __check_text_data(self, df) -> pd.DataFrame:
-        """Check the validity of the dataframe (contains necessary data, index, 
+        """Check the validity of the dataframe (contains necessary data, index,
         and text length) and raise errors if necessary"""
 
         if self.col_text not in df.columns:
@@ -268,7 +269,7 @@ class ComputeBertopic(BaseTask):
         # Set the index if col_id is provided
         if self.col_id and self.col_id in df.columns:
             df.set_index(self.col_id, inplace=True)
-        
+
         # Drop rows with a text length too small
         criterion = df[self.col_text].apply(len) > self.parameters.filter_text_length
         df = df[criterion]
@@ -282,19 +283,18 @@ class ComputeBertopic(BaseTask):
         return df
 
     def __check_if_embeddings_computation_necessary(self, path_embeddings: Path) -> bool:
-        """Check if embeddings must be computed or not. 
-        We compute embeddings if: 
-            - force_compute_embeddings is True 
+        """Check if embeddings must be computed or not.
+        We compute embeddings if:
+            - force_compute_embeddings is True
             - existing_embeddings is not provided and the embeddings were not
                 previously computed.
-        TODO: AM: Might need to clarify which of force_compute_embeddings or 
+        TODO: AM: Might need to clarify which of force_compute_embeddings or
         existing_embeddings has the priority
         """
         return (
-            (not self.existing_embeddings and not path_embeddings.exists()) 
-            or self.force_compute_embeddings
-        )
-    
+            not self.existing_embeddings and not path_embeddings.exists()
+        ) or self.force_compute_embeddings
+
     def __compute_embeddings(self, df: pd.DataFrame, path_embeddings: Path) -> None:
         """
         Compute the embeddings using the SBERT model
@@ -319,9 +319,9 @@ class ComputeBertopic(BaseTask):
         computed = embeddings()
         # save the embeddings to a file
         computed.to_parquet(path_embeddings)
-    
+
     def __load_embeddings(self, path_embeddings: Path) -> pd.DataFrame:
-        """Load the embeddings, No verification because the file should exist, 
+        """Load the embeddings, No verification because the file should exist,
         errors are flagged beforehand"""
         return pd.read_parquet(path_embeddings)
 
@@ -341,7 +341,7 @@ class ComputeBertopic(BaseTask):
             df_embeddings = df_embeddings[self.cols_embeddings]
 
         return df_embeddings
-    
+
     def __create_projection(self, df_embeddings: pd.DataFrame, path_projection: Path) -> None:
         """
         Compute the projection to display it in the frontend later on
@@ -352,7 +352,7 @@ class ComputeBertopic(BaseTask):
                 n_components=2,
                 min_dist=0.0,
                 metric="cosine",
-                random_state=RANDOM_SEED,  # for deterministic behaviour
+                random_state=self.random_seed,  # for deterministic behaviour
             )
             print("Using cuML for UMAP computation")
         except Exception:
@@ -362,7 +362,7 @@ class ComputeBertopic(BaseTask):
                 min_dist=0.0,
                 low_memory=False,
                 metric="cosine",
-                random_state=RANDOM_SEED,  # for deterministic behaviour
+                random_state=self.random_seed,  # for deterministic behaviour
             )
             print("Using standard UMAP for computation")
         reduced_embeddings: np.ndarray = reducer.fit_transform(df_embeddings.values)
@@ -378,7 +378,7 @@ class ComputeBertopic(BaseTask):
                 # min_dist=self.parameters.umap_min_dist, # Removed because 0.0 is the best value to use for clustering - Axel
                 min_dist=0.0,
                 metric="cosine",
-                random_state=RANDOM_SEED,  # for deterministic behaviour
+                random_state=self.random_seed,  # for deterministic behaviour
             )
         except Exception as e:
             print(f"CuML UMAP failed: {e}, using standard UMAP instead.")
@@ -389,7 +389,7 @@ class ComputeBertopic(BaseTask):
                 min_dist=0.0,
                 metric="cosine",
                 low_memory=False,
-                random_state=RANDOM_SEED,  # for deterministic behaviour
+                random_state=self.random_seed,  # for deterministic behaviour
             )
 
         # Clustering with HDBSCAN
@@ -401,10 +401,10 @@ class ComputeBertopic(BaseTask):
         return umap_model, hdbscan_model
 
     def __load_vectorizer(self) -> CountVectorizer:
-        """Load a Vectorizer model, tries to load a custom lemmatizer if, failed 
-        return a default CountVectorizer. 
-        
-        TODO: AM: user should be warned if the vectorizer model is a default 
+        """Load a Vectorizer model, tries to load a custom lemmatizer if, failed
+        return a default CountVectorizer.
+
+        TODO: AM: user should be warned if the vectorizer model is a default
             CountVectorizer
         """
         try:
@@ -426,11 +426,11 @@ class ComputeBertopic(BaseTask):
         embeddings: np.ndarray,
         path_projection: Path,
     ) -> None:
-        """Create the following files: 
-            - topics csv (topic info)
-            - clusters csv (list binding id - cluster)
-            - params.json
-            - report.html (through __create_report)
+        """Create the following files:
+        - topics csv (topic info)
+        - clusters csv (list binding id - cluster)
+        - params.json
+        - report.html (through __create_report)
         """
         # Add the topics to the DataFrame
         df["cluster"] = topics
@@ -458,8 +458,8 @@ class ComputeBertopic(BaseTask):
                     "path_data": str(self.path_data),
                     "path_embeddings": str(self.existing_embeddings),
                     "path_projection": str(path_projection),
-                }, 
-                f
+                },
+                f,
             )
         # Create a report
         self.__create_report(
@@ -469,7 +469,7 @@ class ComputeBertopic(BaseTask):
             docs=df[self.col_text].to_list(),
             embeddings=embeddings,
         )
-    
+
     def __create_report(
         self,
         topic_model: BERTopic,
@@ -521,7 +521,7 @@ class ComputeBertopic(BaseTask):
         )
 
         # Create Plotly figure for 2D maps
-        try: 
+        try:
             fig_map = visualize_documents(
                 topics=topics,
                 topic_info=topic_info,
@@ -530,6 +530,7 @@ class ComputeBertopic(BaseTask):
                 n_neighbors=self.parameters.umap_n_neighbors,
                 min_dist=0.0,
                 min_number_of_element=-1,  # Need additional implementation
+                random_seed=self.random_seed,
             )
         except:
             fig_map = "You don't have enough elements to compute the hierarchy visualisation"
@@ -582,7 +583,7 @@ class ComputeBertopic(BaseTask):
     def __call__(self):
         """
         Compute BERTopic model
-        Main steps: 
+        Main steps:
             - create folder
             - load files
             - (if necessary compute the embeddings &) Load embeddings
@@ -596,9 +597,9 @@ class ComputeBertopic(BaseTask):
             df = self.__load_data()
             df = self.__check_text_data(df)
 
-            if self.__check_if_embeddings_computation_necessary(path_embeddings): 
+            if self.__check_if_embeddings_computation_necessary(path_embeddings):
                 self.__compute_embeddings(df, path_embeddings)
-            
+
             df_embeddings = self.__load_embeddings(path_embeddings)
             df_embeddings = self.__check_embeddings(df_embeddings, df)
             embeddings: np.ndarray = df_embeddings.values
@@ -668,4 +669,4 @@ class ComputeBertopic(BaseTask):
         Update the progress of the task
         """
         with open(self.path_run.joinpath("progress"), "w") as f:
-            f.write(message)    
+            f.write(message)

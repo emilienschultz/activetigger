@@ -1,5 +1,4 @@
 import json
-import os
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -9,6 +8,7 @@ import pandas as pd
 from fastapi.responses import FileResponse
 from slugify import slugify
 
+from activetigger.config import config
 from activetigger.datamodels import (
     BertopicComputing,
     BERTopicDescriptionModel,
@@ -96,6 +96,7 @@ class Bertopic:
             parameters=parameters,
             name=name,
             force_compute_embeddings=force_compute_embeddings,
+            random_seed=config.random_seed,
         )
         unique_id = self.queue.add_task("bertopic", self.project_slug, args, queue="gpu")
         self.computing.append(

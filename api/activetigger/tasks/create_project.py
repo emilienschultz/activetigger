@@ -28,8 +28,10 @@ class CreateProject(BaseTask):
         valid_file: str = "valid.parquet",
         test_file: str = "test.parquet",
         features_file: str = "features.parquet",
+        random_seed: int = 42,
     ):
         super().__init__()
+        self.random_seed = random_seed
         self.project_slug = project_slug
         self.params = params
         self.username = username
@@ -159,14 +161,14 @@ class CreateProject(BaseTask):
             n_to_draw = self.params.n_test + self.params.n_valid
             # if no stratification
             if len(self.params.cols_stratify) == 0:
-                draw = content.sample(n_to_draw, random_state=42)
+                draw = content.sample(n_to_draw, random_state=self.random_seed)
             # if stratification, total cat, number of element per cat, sample with a lim
             else:
                 df_grouped = content.groupby(self.params.cols_stratify, group_keys=False)
                 nb_cat = len(df_grouped)
                 nb_elements_cat = round(n_to_draw / nb_cat)
                 draw = df_grouped.apply(
-                    lambda x: x.sample(min(len(x), nb_elements_cat), random_state=42)
+                    lambda x: x.sample(min(len(x), nb_elements_cat), random_state=self.random_seed)
                 )
 
             # divide between test and valid
@@ -181,7 +183,7 @@ class CreateProject(BaseTask):
                 self.params.valid = True
                 rows_valid = list(validset.index)
             else:
-                testset = draw.sample(self.params.n_test, random_state=42)
+                testset = draw.sample(self.params.n_test, random_state=self.random_seed)
                 validset = draw.drop(index=testset.index)
                 validset.to_parquet(self.params.dir.joinpath(self.valid_file), index=True)
                 testset.to_parquet(self.params.dir.joinpath(self.test_file), index=True)
@@ -209,11 +211,16 @@ class CreateProject(BaseTask):
             f_na = content[self.params.cols_label[0]].isna()
             # different case regarding the number of labels
             if f_notna.sum() > self.params.n_train:
-                trainset = content[f_notna].sample(self.params.n_train, random_state=42)
+                trainset = content[f_notna].sample(
+                    self.params.n_train, random_state=self.random_seed
+                )
             else:
                 n_train_random = self.params.n_train - f_notna.sum()
                 trainset = pd.concat(
-                    [content[f_notna], content[f_na].sample(n_train_random, random_state=42)]
+                    [
+                        content[f_notna],
+                        content[f_na].sample(n_train_random, random_state=self.random_seed),
+                    ]
                 )
         # case there is stratification on the trainset
         elif len(self.params.cols_stratify) > 0 and self.params.stratify_train:
@@ -221,11 +228,11 @@ class CreateProject(BaseTask):
             nb_cat = len(df_grouped)
             nb_elements_cat = round(self.params.n_train / nb_cat)
             trainset = df_grouped.apply(
-                lambda x: x.sample(min(len(x), nb_elements_cat), random_state=42)
+                lambda x: x.sample(min(len(x), nb_elements_cat), random_state=self.random_seed)
             )
         # default with random selection in the remaining elements
         else:
-            trainset = content.sample(self.params.n_train, random_state=42)
+            trainset = content.sample(self.params.n_train, random_state=self.random_seed)
 
         # write the trainset
         trainset[["id_external", "text"] + self.params.cols_context].to_parquet(

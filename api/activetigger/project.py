@@ -252,6 +252,7 @@ class Project:
                 valid_file=config.valid_file,
                 test_file=config.test_file,
                 features_file=config.features_file,
+                random_seed=config.random_seed,
             ),
             queue="cpu",
         )

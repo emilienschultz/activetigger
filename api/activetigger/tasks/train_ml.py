@@ -43,9 +43,11 @@ class TrainML(BaseTask):
         balance_classes: bool = False,
         retrain: bool = False,
         texts: pd.Series | None = None,
+        random_seed: int = 42,
         **kwargs,
     ):
         super().__init__()
+        self.random_seed = random_seed
         self.model = model
         self.name = name
         self.X = X
@@ -86,7 +88,7 @@ class TrainML(BaseTask):
         """
         f = self.Y.notnull()  # filter drop NA values
         index = self.X[f].copy().index.to_series()
-        index = index.sample(frac=1.0, random_state=42)
+        index = index.sample(frac=1.0, random_state=self.random_seed)
         n_total = len(index)
         n_test = math.ceil(n_total * test_size)
         n_train = n_total - n_test
@@ -112,7 +114,7 @@ class TrainML(BaseTask):
         Compute cv (predict and compute metrics)
         """
         num_folds = 10
-        kf = KFold(n_splits=num_folds, shuffle=True, random_state=42)
+        kf = KFold(n_splits=num_folds, shuffle=True, random_state=self.random_seed)
         f = self.Y.notnull()
         Y_pred_10cv = pd.Series(
             cross_val_predict(self.model, self.X[f], self.Y[f], cv=kf), index=self.Y.index

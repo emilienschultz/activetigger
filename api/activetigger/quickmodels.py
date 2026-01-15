@@ -14,6 +14,7 @@ from sklearn.naive_bayes import MultinomialNB  # type: ignore[import]
 from sklearn.neighbors import KNeighborsClassifier  # type: ignore[import]
 from sklearn.preprocessing import StandardScaler  # type: ignore[import]
 
+from activetigger.config import config
 from activetigger.datamodels import (
     KnnParams,
     LogisticL1Params,
@@ -123,7 +124,7 @@ class QuickModels:
                 C=params_libL1.costLogL1,
                 class_weight="balanced" if balance_classes else None,
                 n_jobs=-1,
-                random_state=42,
+                random_state=config.random_seed,
             )
             model_params = params_libL1.model_dump()
 
@@ -135,7 +136,7 @@ class QuickModels:
                 C=params_libL2.costLogL2,
                 class_weight="balanced" if balance_classes else None,
                 n_jobs=-1,
-                random_state=42,
+                random_state=config.random_seed,
             )
             model_params = params_libL2.model_dump()
 
@@ -154,7 +155,7 @@ class QuickModels:
                 if balance_classes
                 else None,  # AM: Need to choose between balanced and balanced_subsample
                 n_jobs=-1,
-                random_state=42,
+                random_state=config.random_seed,
             )
             model_params = params_rf.model_dump()
 
@@ -193,6 +194,7 @@ class QuickModels:
             "features": features,
             "model_params": model_params,
             "texts": texts,
+            "random_seed": config.random_seed,
         }
         unique_id = self.queue.add_task("quickmodel", project_slug, TrainML(**args))
         del args
