@@ -31,9 +31,24 @@
 
       align-items: flex-start;
 
+      .active-mode-button {
+        padding: 3px 5px;
+        display: flex;
+        @extend .gap-1;
+
+        align-items: center;
+      }
       .react-select {
         width: 100%;
       }
+      // TODO: replace by react-select styling technics once we switch default input styles back to bootstrap
+      input,
+      select {
+        padding: 9px;
+        margin: 0;
+        line-height: initial;
+      }
+
       .at-input-group:has(.react-select) {
         flex-grow: 1;
         //max-width: 300px;
@@ -47,11 +62,12 @@
   }
 
   .submit-container {
-    @media (max-width: 1800px) {
-      align-self: end;
-    }
-    align-self: center;
+    // @media (max-width: 1800px) {
+    //   align-self: end;
+    // }
+    align-self: flex-end;
     display: flex;
+    align-items: center;
     column-gap: map.get($spacers, 1);
 
     > * {

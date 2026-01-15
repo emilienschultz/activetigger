@@ -136,7 +136,7 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
               <label className=" small-gray">Active mode</label>
               <div>
                 <button
-                  className="button"
+                  className="button active-mode-button"
                   type="button"
                   onClick={() => setActiveMenu((prev) => !prev)}
                 >
@@ -269,10 +269,9 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
         </small>
 
         <button
-          type="submit"
+          type="button"
           className="btn-primary-action"
-          onClick={(e) => {
-            e.preventDefault();
+          onClick={() => {
             fetchNextElement();
           }}
           title="Get next element with the selection mode"
@@ -284,6 +283,7 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
         </button>
 
         <button
+          type="button"
           className="btn-secondary-action"
           onClick={() => {
             setShowDisplayConfig((p) => !p);
