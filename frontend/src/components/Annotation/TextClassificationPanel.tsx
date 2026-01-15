@@ -30,14 +30,15 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
   phase,
   frameRef,
 }) => {
+  console.log(displayConfig.textFrameHeight);
   return (
     <>
       <div
         className="annotation-frame"
         style={
           {
-            '--height': `${displayConfig.textFrameHeight}%`,
-            '--width': `${displayConfig.textFrameWidth}%`,
+            '--height': `${displayConfig.textFrameHeight}vh`,
+            '--width': `${displayConfig.textFrameWidth}vw`,
           } as CSSProperties
         }
         ref={frameRef as unknown as LegacyRef<HTMLDivElement>}
