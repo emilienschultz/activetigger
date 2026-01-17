@@ -59,7 +59,6 @@ class PredictBert(BaseTask):
         self.file_name = file_name
         self.batch = batch
         self.statistics = statistics
-        self.log_path = self.path / f"predict_bert_log_{time.time()}.log"
         self.progress_path = self.path / "progress_predict"
 
         if self.df is None and path_data is not None:
@@ -279,7 +278,6 @@ class PredictBert(BaseTask):
         finally:
             # delete the temporary logs
             os.remove(self.progress_path)
-            os.remove(self.log_path)
             # clean memory
             del tokenizer, model, chunk, self.df, res, predictions, outputs, self.event
             gc.collect()

@@ -6,6 +6,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pandas as pd  # type: ignore[import]
 from pandas import DataFrame
 from sklearn.ensemble import RandomForestClassifier  # type: ignore[import]
@@ -282,15 +283,16 @@ class QuickModels:
         sm = self.get(model_name)
         if sm.proba is None:
             raise ValueError("No probability available for this model")
-        print(element_id)
-        print(len(sm.proba), element_id in list(sm.proba.index))
         if element_id not in sm.proba.index:
             raise ValueError("Element ID not found in the predictions")
         predicted_label = sm.proba.loc[element_id, "prediction"]
         predicted_proba = round(sm.proba.loc[element_id, predicted_label], 2)
         predicted_entropy = round(sm.proba.loc[element_id, "entropy"], 2)
+        print(predicted_entropy, type(predicted_entropy))
         return PredictedLabel(
-            label=predicted_label, proba=predicted_proba, entropy=predicted_entropy
+            label=predicted_label,
+            proba=None if np.isnan(predicted_proba) else predicted_proba,
+            entropy=None if np.isnan(predicted_entropy) else predicted_entropy,
         )
 
     def training(self) -> dict[str, list[str]]:

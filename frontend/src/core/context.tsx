@@ -59,7 +59,7 @@ export const DEFAULT_CONTEXT: AppContextValue = {
   },
   selectionConfig: {
     mode: 'fixed',
-    sample: 'all',
+    sample: 'untagged',
     frameSelection: false,
     frame: [],
   },

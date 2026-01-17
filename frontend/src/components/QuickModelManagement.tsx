@@ -177,6 +177,7 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
               currentScheme={currentScheme}
               id="compute-prediction"
               buttonLabel="Compute predictions"
+              isComputing={isComputing}
             />
           </div>
 

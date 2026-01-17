@@ -1,6 +1,6 @@
 import { Dispatch, FC, SetStateAction, useState } from 'react';
 
-import { IoIosRefresh, IoIosCheckmark } from 'react-icons/io';
+import { IoIosCheckmark, IoIosRefresh } from 'react-icons/io';
 import { PiEmptyBold } from 'react-icons/pi';
 import Select from 'react-select';
 import { useRetrainQuickModel } from '../core/api';
@@ -85,8 +85,8 @@ export const ActiveLearningManagement: FC<ActiveLearningManagementProps> = ({
         )}
       </div>
       {activeModel?.type === 'quickmodel' && (
-        <div className="horizontal">
-          <label htmlFor="frequencySlider" style={{ flex: '1 1 30%', border: '1px solid black' }}>
+        <div>
+          <label htmlFor="frequencySlider" className="m-2">
             Retrain model every
           </label>
           <input
@@ -99,7 +99,7 @@ export const ActiveLearningManagement: FC<ActiveLearningManagementProps> = ({
               refreshFreq(Number(e.currentTarget.value));
             }}
             step="5"
-            style={{ flex: '1 1 30%' }}
+            style={{ flex: '1 1 30%', width: '60px' }}
           />
         </div>
       )}

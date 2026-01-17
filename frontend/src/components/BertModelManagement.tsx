@@ -131,6 +131,7 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
                   currentScheme={currentScheme}
                   id="compute-prediction"
                   buttonLabel="Compute predictions"
+                  isComputing={isComputing}
                 />
               </div>
 

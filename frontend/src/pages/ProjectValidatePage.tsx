@@ -100,7 +100,7 @@ export const ProjectValidatePage: FC = () => {
                       projectSlug={projectName || null}
                       id="compute-validate"
                       style={{ margin: '8px 0px', color: 'white' }}
-                      idComputing={isComputing}
+                      isComputing={isComputing}
                     />
 
                     <DisplayScoresMenu
@@ -136,14 +136,6 @@ export const ProjectValidatePage: FC = () => {
                   <div className="alert alert-warning">No model available</div>
                 )}
                 <div>
-                  {/* AM: Necessary ? Confused... */}
-                  <DisplayTrainingProcesses
-                    projectSlug={projectName || null}
-                    processes={project?.languagemodels.training}
-                    processStatus="testing"
-                    displayStopButton={isComputing}
-                  />
-
                   {bertModelInformations && !project?.params.test && (
                     <div className="col-12">
                       <div className="alert alert-warning m-4">
@@ -151,6 +143,14 @@ export const ProjectValidatePage: FC = () => {
                         predictions on the project main page
                       </div>
                     </div>
+                  )}
+
+                  {isComputing && (
+                    <DisplayTrainingProcesses
+                      projectSlug={projectName || null}
+                      processes={project?.languagemodels.training}
+                      displayStopButton={isComputing}
+                    />
                   )}
 
                   {bertModelInformations && (
@@ -162,7 +162,7 @@ export const ProjectValidatePage: FC = () => {
                         projectSlug={projectName || null}
                         id="compute-validate"
                         style={{ margin: '8px 0px', color: 'white' }}
-                        idComputing={isComputing}
+                        isComputing={isComputing}
                       />
                       <DisplayScoresMenu
                         scores={

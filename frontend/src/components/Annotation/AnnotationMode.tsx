@@ -146,7 +146,7 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
                     style={{ color: activeModel ? 'green' : 'grey', cursor: 'pointer' }}
                     title="Active learning"
                   />
-                  <span>{activeModel ? 'active' : 'inactive'}</span>{' '}
+                  <span className="text-muted">{activeModel ? activeModel.value : 'inactive'}</span>{' '}
                 </button>
               </div>
             </div>

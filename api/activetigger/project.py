@@ -874,9 +874,11 @@ class Project:
             # get prediction if it exists
             predict = PredictedLabel(label=None, proba=None, entropy=None)
             if element.active_model is not None:
+                print("Getting prediction for ", element.active_model.value)
                 predict = self.quickmodels.get_prediction_element(
                     element.active_model.value, element.element_id
                 )
+                print(predict)
 
             # extract context
             context = cast(
