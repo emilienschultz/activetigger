@@ -139,6 +139,7 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
         <button
           onClick={() => {
             setDisplayNewModel(true);
+            setCurrentQuickModelName(null);
           }}
           className={cx('model-pill ', isComputing ? 'disabled' : '')}
           id="create-new"
@@ -146,6 +147,8 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
           <FaPlusCircle size={20} /> Create new model
         </button>
       </ModelsPillDisplay>
+
+      <hr className="my-4" />
 
       {isComputing && <StopProcessButton projectSlug={projectName} />}
 

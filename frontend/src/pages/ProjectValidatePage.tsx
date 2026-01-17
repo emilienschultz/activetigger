@@ -90,7 +90,7 @@ export const ProjectValidatePage: FC = () => {
                 ) : (
                   <div className="alert alert-warning">No model available</div>
                 )}
-
+                <hr className="my-4" />
                 {quickModelInformations && (
                   <>
                     <ValidateButtons
@@ -135,6 +135,7 @@ export const ProjectValidatePage: FC = () => {
                 ) : (
                   <div className="alert alert-warning">No model available</div>
                 )}
+                <hr className="my-4" />
                 <div>
                   {bertModelInformations && !project?.params.test && (
                     <div className="col-12">

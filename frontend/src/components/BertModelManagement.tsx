@@ -97,13 +97,17 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
         deleteModelFunction={deleteBertModel}
       >
         <button
-          onClick={() => setDisplayNewBertModel(true)}
+          onClick={() => {
+            setDisplayNewBertModel(true);
+            setCurrentBertModel(null);
+          }}
           className={cx('model-pill ', isComputing ? 'disabled' : '')}
           id="create-new"
         >
           <FaPlusCircle size={20} /> Create new model
         </button>
       </ModelsPillDisplay>
+
       {isComputing && (
         <DisplayTrainingProcesses
           projectSlug={projectSlug || null}
@@ -111,6 +115,9 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
           displayStopButton={isComputing}
         />
       )}
+
+      <hr className="my-4" />
+
       {currentBertModel && (
         <>
           {model && (
