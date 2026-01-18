@@ -8,10 +8,11 @@ import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
 import { AppContextValue } from '../core/context';
 import { useAnnotationSessionHistory } from '../core/useHistory';
+import { ElementHistoryPoint } from '../types';
 
 interface ProjectHistoryProps {
   projectSlug: string;
-  history: string[];
+  history: ElementHistoryPoint[];
   setAppContext: Dispatch<SetStateAction<AppContextValue>>;
 }
 
@@ -22,11 +23,7 @@ interface Row {
   action: string;
 }
 
-export const ProjectHistory: FC<ProjectHistoryProps> = ({
-  projectSlug,
-  history,
-  setAppContext,
-}) => {
+export const ProjectHistory: FC<ProjectHistoryProps> = ({ projectSlug, history }) => {
   // get logs
   const { logs } = useGetLogs(projectSlug, 100);
 

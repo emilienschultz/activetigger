@@ -14,7 +14,7 @@ interface validateButtonsProps {
   id?: string;
   buttonLabel?: string;
   style?: CSSProperties;
-  idComputing?: boolean;
+  isComputing?: boolean;
 }
 
 export const ValidateButtons: FC<validateButtonsProps> = ({
@@ -26,7 +26,7 @@ export const ValidateButtons: FC<validateButtonsProps> = ({
   id,
   buttonLabel,
   style,
-  idComputing,
+  isComputing,
 }) => {
   const { computeModelPrediction } = useComputeModelPrediction(projectSlug || null, 16);
   return (
@@ -37,7 +37,7 @@ export const ValidateButtons: FC<validateButtonsProps> = ({
         computeModelPrediction(modelName || '', 'annotable', currentScheme, kind);
       }}
       id={id}
-      disabled={idComputing}
+      disabled={isComputing}
     >
       <GrValidate size={20} /> {buttonLabel ? buttonLabel : 'Compute statistics on annotations'}
     </button>

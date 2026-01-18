@@ -77,7 +77,7 @@ export const AnnotationHistoryList: FC = () => {
   return (
     <div className="horizontal center flex-column">
       <div className="d-flex justify-content-start gap-4 w-100 mb-4 align-items-center">
-        <h4 className="text-muted mb-0 annotationtitle">Last 100 annotations</h4>
+        {/* <h5 className="text-muted mb-0 annotationtitle">Current history : {history.length}</h5> */}
 
         <button
           className="btn-secondary-action d-flex align-items-center gap-2 clearhistory"
@@ -85,7 +85,7 @@ export const AnnotationHistoryList: FC = () => {
             clearAnnotationSessionHistory();
           }}
         >
-          <FaRegTrashAlt /> clear history
+          <FaRegTrashAlt /> Clear history ({history.length} items)
         </button>
         <Tooltip anchorSelect=".clearhistory" style={{ zIndex: 99 }}>
           Clear history to be able to see again elements during this session.
