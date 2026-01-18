@@ -1,4 +1,3 @@
-import logging
 import os
 import pickle
 import shutil
@@ -7,6 +6,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pandas as pd  # type: ignore[import]
 from pandas import DataFrame
 from sklearn.ensemble import RandomForestClassifier  # type: ignore[import]
@@ -15,6 +15,7 @@ from sklearn.naive_bayes import MultinomialNB  # type: ignore[import]
 from sklearn.neighbors import KNeighborsClassifier  # type: ignore[import]
 from sklearn.preprocessing import StandardScaler  # type: ignore[import]
 
+from activetigger.config import config
 from activetigger.datamodels import (
     KnnParams,
     LogisticL1Params,
@@ -96,14 +97,13 @@ class QuickModels:
         standardize: bool = True,
         model_params: dict | None = None,
         cv10: bool = False,
+        balance_classes: bool = False,
         retrain: bool = False,
         texts: pd.Series | None = None,
-    ) -> None:
+    ) -> str:
         """
         Add a new quickmodel for a user and a scheme
         """
-        logger_quickmodel = logging.getLogger("quickmodel")
-        logger_quickmodel.info("Intiating the computation process for the quickmodel")
         X, Y, labels = self.transform_data(df, col_labels, col_features, standardize)
 
         # default parameters
@@ -114,20 +114,30 @@ class QuickModels:
         if model_type == "knn":
             params_knn = KnnParams(**model_params)
             model = KNeighborsClassifier(n_neighbors=int(params_knn.n_neighbors), n_jobs=-1)
+            balance_classes = False  # Force the parameter to be set as False
             model_params = params_knn.model_dump()
 
         if model_type == "logistic-l1":
             params_libL1 = LogisticL1Params(**model_params)
             model = LogisticRegression(
-                penalty="l1", solver="saga", C=params_libL1.costLogL1, n_jobs=-1, random_state=42
+                penalty="l1",
+                solver="saga",
+                C=params_libL1.costLogL1,
+                class_weight="balanced" if balance_classes else None,
+                n_jobs=-1,
+                random_state=config.random_seed,
             )
             model_params = params_libL1.model_dump()
 
         if model_type == "logistic-l2":
-            # Liblinear : method = 1 : multimodal logistic regression l2
             params_libL2 = LogisticL2Params(**model_params)
             model = LogisticRegression(
-                penalty="l2", solver="lbfgs", C=params_libL2.costLogL2, n_jobs=-1
+                penalty="l2",
+                solver="lbfgs",
+                C=params_libL2.costLogL2,
+                class_weight="balanced" if balance_classes else None,
+                n_jobs=-1,
+                random_state=config.random_seed,
             )
             model_params = params_libL2.model_dump()
 
@@ -139,11 +149,14 @@ class QuickModels:
             params_rf = RandomforestParams(**model_params)
             model = RandomForestClassifier(
                 n_estimators=int(params_rf.n_estimators),
-                random_state=42,
                 max_features=(
                     int(params_rf.max_features) if params_rf.max_features is not None else None
                 ),
+                class_weight="balanced"
+                if balance_classes
+                else None,  # AM: Need to choose between balanced and balanced_subsample
                 n_jobs=-1,
+                random_state=config.random_seed,
             )
             model_params = params_rf.model_dump()
 
@@ -161,6 +174,7 @@ class QuickModels:
                 fit_prior=params_nb.fit_prior,
                 class_prior=class_prior,
             )
+            balance_classes = False  # Force the parameter to be set as False
             model_params = params_nb.model_dump()
 
         # launch the compuation (model + statistics) as a future process
@@ -170,6 +184,7 @@ class QuickModels:
             "Y": Y,
             "labels": labels,
             "cv10": cv10,
+            "balance_classes": balance_classes,
             "path": self.path,
             "name": name,
             "retrain": retrain,
@@ -180,6 +195,7 @@ class QuickModels:
             "features": features,
             "model_params": model_params,
             "texts": texts,
+            "random_seed": config.random_seed,
         }
         unique_id = self.queue.add_task("quickmodel", project_slug, TrainML(**args))
         del args
@@ -198,10 +214,12 @@ class QuickModels:
             model_params=model_params,
             standardize=standardize,
             cv10=cv10,
+            balance_classes=balance_classes,
             retrain=retrain,
             dataset="train",
         )
         self.computing.append(req)
+        return unique_id
 
     def add(self, element: QuickModelComputing) -> None:
         """
@@ -217,6 +235,7 @@ class QuickModels:
             params=element.model_params,
             path=str(model_path),
             status="trained",
+            retrain=element.retrain,
         )
 
     def available(self) -> dict[str, list[ModelDescriptionModel]]:
@@ -269,8 +288,11 @@ class QuickModels:
         predicted_label = sm.proba.loc[element_id, "prediction"]
         predicted_proba = round(sm.proba.loc[element_id, predicted_label], 2)
         predicted_entropy = round(sm.proba.loc[element_id, "entropy"], 2)
+        print(predicted_entropy, type(predicted_entropy))
         return PredictedLabel(
-            label=predicted_label, proba=predicted_proba, entropy=predicted_entropy
+            label=predicted_label,
+            proba=None if np.isnan(predicted_proba) else predicted_proba,
+            entropy=None if np.isnan(predicted_entropy) else predicted_entropy,
         )
 
     def training(self) -> dict[str, list[str]]:
@@ -311,7 +333,7 @@ class QuickModels:
         # data for training
         Y = df[col_label]
         X = df[col_predictors]
-        labels = Y.unique()
+        labels = [str(i) for i in Y.unique() if pd.notna(i)]
 
         return X, Y, labels
 

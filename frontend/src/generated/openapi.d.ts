@@ -73,7 +73,7 @@ export interface paths {
         };
         /**
          * Recent Users
-         * @description Get recently connected users
+         * @description Get the number of recently connected users
          */
         get: operations["recent_users_users_recent_get"];
         put?: never;
@@ -137,7 +137,7 @@ export interface paths {
         put?: never;
         /**
          * Change Password
-         * @description Change password for an account
+         * @description Change our own password for an account
          */
         post: operations["change_password_users_changepwd_post"];
         delete?: never;
@@ -160,26 +160,6 @@ export interface paths {
          * @description Modify user auth on a specific project
          */
         post: operations["set_auth_users_auth__action__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/users/auth": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Auth
-         * @description Get all user auth
-         */
-        get: operations["get_auth_users_auth_get"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -606,7 +586,7 @@ export interface paths {
         put?: never;
         /**
          * Get Element
-         * @description Get specific element
+         * @description Get specific element by id
          */
         post: operations["get_element_elements_id_post"];
         delete?: never;
@@ -800,26 +780,6 @@ export interface paths {
          * @description Add, Update or Delete scheme
          */
         post: operations["post_schemes_schemes__action__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/features": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Features
-         * @description Available features for the project
-         */
-        get: operations["get_features_features_get"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1188,7 +1148,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/models/quickmodel": {
+    "/models/quick": {
         parameters: {
             query?: never;
             header?: never;
@@ -1199,7 +1159,7 @@ export interface paths {
          * Get Quickmodel
          * @description Get available quickmodel by a name
          */
-        get: operations["get_quickmodel_models_quickmodel_get"];
+        get: operations["get_quickmodel_models_quick_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1216,10 +1176,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Bert
+         * Get Model Information
          * @description Get model information
          */
-        get: operations["get_bert_models_information_get"];
+        get: operations["get_model_information_models_information_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1266,7 +1226,6 @@ export interface paths {
         /**
          * Post Bert
          * @description Compute bertmodel
-         *     TODO : move the methods to specific class
          */
         post: operations["post_bert_models_bert_train_post"];
         delete?: never;
@@ -1287,6 +1246,7 @@ export interface paths {
         /**
          * Delete Bert
          * @description Delete trained bert model
+         *     # TODO : check the replace
          */
         post: operations["delete_bert_models_bert_delete_post"];
         delete?: never;
@@ -1449,7 +1409,7 @@ export interface paths {
         };
         /**
          * Get Prompts
-         * @description Get the list of prompts for the user
+         * @description Get the list of prompts for the project
          */
         get: operations["get_prompts_generate_prompts_get"];
         put?: never;
@@ -1500,46 +1460,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/files": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Files
-         * @description Get all files
-         */
-        get: operations["get_files_files_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/files/copy/project": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Copy Existing Data
-         * @description Copy an existing project to create a new one
-         */
-        post: operations["copy_existing_data_files_copy_project_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/files/add/project": {
         parameters: {
             query?: never;
@@ -1581,7 +1501,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/files/delete": {
+    "/files/copy/project": {
         parameters: {
             query?: never;
             header?: never;
@@ -1591,10 +1511,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Delete File
-         * @description Delete a file
+         * Copy Existing Data
+         * @description Copy an existing project to create a new one
          */
-        post: operations["delete_file_files_delete_post"];
+        post: operations["copy_existing_data_files_copy_project_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1691,10 +1611,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Export Bertopoc To Scheme
+         * Export Bertopic To Scheme
          * @description Export the topic model as a scheme for the train set
          */
-        post: operations["export_bertopoc_to_scheme_bertopic_export_to_scheme_post"];
+        post: operations["export_bertopic_to_scheme_bertopic_export_to_scheme_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1711,6 +1631,8 @@ export interface paths {
         /**
          * Get Messages
          * @description Get messages
+         *     - all if root
+         *     - only for oneself
          */
         get: operations["get_messages_messages_get"];
         put?: never;
@@ -1739,6 +1661,46 @@ export interface paths {
          * @description Delete a message
          */
         post: operations["delete_message_messages_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/monitoring/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Metrics
+         * @description Get monitoring metrics
+         */
+        get: operations["get_monitoring_metrics_monitoring_metrics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/monitoring/data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Monitoring Data
+         * @description Get monitoring data
+         */
+        get: operations["get_monitoring_data_monitoring_data_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1911,22 +1873,23 @@ export interface components {
         };
         /**
          * AnnotationModel
-         * @description Specific Annotation
+         * @description Complete information on an annotation
          */
         AnnotationModel: {
             /** Project Slug */
             project_slug: string;
+            /** Dataset */
+            dataset: string;
             /** Scheme */
             scheme: string;
             /** Element Id */
             element_id: string;
             /** Label */
-            label: string | null;
-            /**
-             * Dataset
-             * @default train
-             */
-            dataset: string;
+            label?: string | null;
+            /** Time */
+            time?: string | null;
+            /** User */
+            user?: string | null;
             /** Comment */
             comment?: string | null;
             /** Selection */
@@ -1950,6 +1913,18 @@ export interface components {
          * @enum {string}
          */
         AuthActions: "add" | "delete";
+        /**
+         * AuthUserModel
+         * @description Information on auth
+         */
+        AuthUserModel: {
+            /** Project Slug */
+            project_slug: string;
+            /** Username */
+            username: string;
+            /** Status */
+            status?: string | null;
+        };
         /**
          * AvailableProjectsModel
          * @description Response for available projects
@@ -2167,17 +2142,17 @@ export interface components {
             outlier_reduction: boolean;
             /**
              * Hdbscan Min Cluster Size
-             * @default 10
+             * @default 15
              */
             hdbscan_min_cluster_size: number;
             /**
              * Umap N Neighbors
-             * @default 10
+             * @default 30
              */
             umap_n_neighbors: number;
             /**
              * Umap N Components
-             * @default 2
+             * @default 5
              */
             umap_n_components: number;
             /**
@@ -2185,16 +2160,18 @@ export interface components {
              * @default sentence_transformers
              */
             embedding_kind: string;
-            /**
-             * Embedding Model
-             * @default all-MiniLM-L6-v2
-             */
+            /** Embedding Model */
             embedding_model: string;
             /**
              * Filter Text Length
-             * @default 2
+             * @default 50
              */
             filter_text_length: number;
+            /**
+             * Input Datasets
+             * @default train
+             */
+            input_datasets: string;
             /** Name */
             name: string;
             /**
@@ -2222,13 +2199,10 @@ export interface components {
         ElementInModel: {
             /** Element Id */
             element_id: string;
+            /** Dataset */
+            dataset: string;
             /** Scheme */
             scheme?: string | null;
-            /**
-             * Dataset
-             * @default train
-             */
-            dataset: string;
             active_model?: components["schemas"]["ActiveModel"] | null;
         };
         /**
@@ -2252,7 +2226,7 @@ export interface components {
             /** Limit */
             limit: number | null;
             /** History */
-            history?: unknown[] | null;
+            history?: components["schemas"]["AnnotationModel"][] | null;
             /** N Sample */
             n_sample?: number | null;
         };
@@ -2322,16 +2296,6 @@ export interface components {
                     [key: string]: (string | null) | undefined;
                 } | undefined;
             };
-        };
-        /** GeneratedElementsIn */
-        GeneratedElementsIn: {
-            /** N Elements */
-            n_elements: number;
-            /**
-             * Filters
-             * @default []
-             */
-            filters: string[];
         };
         /**
          * GenerationAvailableModel
@@ -2644,6 +2608,52 @@ export interface components {
             outofsample_scores?: Record<string, never> | null;
         };
         /**
+         * MonitoringLanguageModelsModel
+         * @description Monitoring language models
+         */
+        MonitoringLanguageModelsModel: {
+            /** N */
+            n: number;
+            /** Mean */
+            mean: number;
+            /** Std */
+            std: number;
+        };
+        /**
+         * MonitoringMetricsModel
+         * @description Monitoring metrics
+         */
+        MonitoringMetricsModel: {
+            quickmodels: components["schemas"]["MonitoringQuickModelsModel"];
+            languagemodels: components["schemas"]["MonitoringLanguageModelsModel"];
+        };
+        /**
+         * MonitoringQuickModelsModel
+         * @description Monitoring quickmodels
+         */
+        MonitoringQuickModelsModel: {
+            /** N */
+            n: number;
+            /** Mean */
+            mean: number;
+            /** Std */
+            std: number;
+        };
+        /**
+         * NewUserModel
+         * @description New user definition
+         */
+        NewUserModel: {
+            /** Username */
+            username: string;
+            /** Password */
+            password: string;
+            /** Contact */
+            contact: string;
+            /** Status */
+            status: string;
+        };
+        /**
          * NextInModel
          * @description Requesting next element to annotate
          */
@@ -2660,8 +2670,10 @@ export interface components {
              * @default untagged
              */
             sample: string;
-            /** Label */
-            label?: string | null;
+            /** On Labels */
+            on_labels?: string[] | null;
+            /** On Users */
+            on_users?: string[] | null;
             /** Label Maxprob */
             label_maxprob?: string | null;
             /** Frame */
@@ -2678,8 +2690,6 @@ export interface components {
              * @default train
              */
             dataset: string;
-            /** User */
-            user?: string | null;
             model_active?: components["schemas"]["ActiveModel"] | null;
         };
         /** NextProjectStateModel */
@@ -3051,6 +3061,11 @@ export interface components {
             parameters: {
                 [key: string]: (number | string | boolean | unknown[]) | undefined;
             };
+            /**
+             * Normalize Features
+             * @default false
+             */
+            normalize_features: boolean;
         };
         /** ProjectionsProjectStateModel */
         ProjectionsProjectStateModel: {
@@ -3113,6 +3128,11 @@ export interface components {
              * @default false
              */
             cv10: boolean;
+            /**
+             * Balance Classes
+             * @default false
+             */
+            balance_classes: boolean;
         };
         /**
          * QuickModelOutModel
@@ -3140,6 +3160,11 @@ export interface components {
             statistics_train?: components["schemas"]["MLStatisticsModel"] | null;
             statistics_test?: components["schemas"]["MLStatisticsModel"] | null;
             statistics_cv10?: components["schemas"]["MLStatisticsModel"] | null;
+            /**
+             * Balance Classes
+             * @default false
+             */
+            balance_classes: boolean;
         };
         /** QuickModelsProjectStateModel */
         QuickModelsProjectStateModel: {
@@ -3153,6 +3178,22 @@ export interface components {
             training: {
                 [key: string]: string[] | undefined;
             };
+        };
+        /**
+         * ReconciliateElementInModel
+         * @description Reconciliate specific element
+         */
+        ReconciliateElementInModel: {
+            /** Dataset */
+            dataset: string;
+            /** Scheme */
+            scheme: string;
+            /** Element Id */
+            element_id: string;
+            /** Label */
+            label: string;
+            /** Users */
+            users: string[];
         };
         /**
          * ReconciliationModel
@@ -3289,6 +3330,8 @@ export interface components {
             text: string;
             /** Filename */
             filename: string;
+            /** Path */
+            path?: string | null;
         };
         /**
          * TokenModel
@@ -3453,25 +3496,23 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": string[];
+                    "application/json": number;
                 };
             };
         };
     };
     create_user_users_create_post: {
         parameters: {
-            query: {
-                username_to_create: string;
-                password: string;
-                status: string;
-                mail: string;
-                dummy?: boolean;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewUserModel"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -3559,18 +3600,18 @@ export interface operations {
     };
     set_auth_users_auth__action__post: {
         parameters: {
-            query: {
-                username: string;
-                project_slug: string;
-                status?: string;
-            };
+            query?: never;
             header?: never;
             path: {
                 action: components["schemas"]["AuthActions"];
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuthUserModel"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -3579,37 +3620,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_auth_users_auth_get: {
-        parameters: {
-            query: {
-                username: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown[];
                 };
             };
             /** @description Validation Error */
@@ -4328,18 +4338,17 @@ export interface operations {
     post_reconciliation_annotation_reconciliate_post: {
         parameters: {
             query: {
-                users: unknown[];
-                element_id: string;
-                label: string;
-                scheme: string;
-                dataset?: string;
                 project_slug: string;
             };
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReconciliateElementInModel"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -4604,6 +4613,7 @@ export interface operations {
             query: {
                 schemeA: string;
                 schemeB: string;
+                dataset: string;
                 project_slug: string;
             };
             header?: never;
@@ -4656,37 +4666,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_features_features_get: {
-        parameters: {
-            query: {
-                project_slug: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string[];
                 };
             };
             /** @description Validation Error */
@@ -5292,7 +5271,7 @@ export interface operations {
             };
         };
     };
-    get_quickmodel_models_quickmodel_get: {
+    get_quickmodel_models_quick_get: {
         parameters: {
             query: {
                 name: string;
@@ -5324,7 +5303,7 @@ export interface operations {
             };
         };
     };
-    get_bert_models_information_get: {
+    get_model_information_models_information_get: {
         parameters: {
             query: {
                 name: string;
@@ -5662,7 +5641,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GeneratedElementsIn"];
+                "application/json": components["schemas"]["ExportGenerationsParams"];
             };
         };
         responses: {
@@ -5815,58 +5794,6 @@ export interface operations {
             };
         };
     };
-    get_files_files_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string[];
-                };
-            };
-        };
-    };
-    copy_existing_data_files_copy_project_post: {
-        parameters: {
-            query: {
-                project_name: string;
-                source_project: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     upload_file_project_files_add_project_post: {
         parameters: {
             query: {
@@ -5937,10 +5864,11 @@ export interface operations {
             };
         };
     };
-    delete_file_files_delete_post: {
+    copy_existing_data_files_copy_project_post: {
         parameters: {
             query: {
-                filename: string;
+                project_name: string;
+                source_project: string;
             };
             header?: never;
             path?: never;
@@ -6101,7 +6029,7 @@ export interface operations {
             };
         };
     };
-    export_bertopoc_to_scheme_bertopic_export_to_scheme_post: {
+    export_bertopic_to_scheme_bertopic_export_to_scheme_post: {
         parameters: {
             query: {
                 topic_model_name: string;
@@ -6218,6 +6146,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_monitoring_metrics_monitoring_metrics_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringMetricsModel"];
+                };
+            };
+        };
+    };
+    get_monitoring_data_monitoring_data_get: {
+        parameters: {
+            query: {
+                kind: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown[];
                 };
             };
             /** @description Validation Error */
@@ -6380,6 +6359,7 @@ export interface operations {
         parameters: {
             query?: {
                 unique_id?: string | null;
+                project_slug?: string | null;
                 kind?: string | null;
             };
             header?: never;

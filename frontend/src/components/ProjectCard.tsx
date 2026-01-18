@@ -32,44 +32,39 @@ export const ProjectCard: FC<ProjectCardProps> = ({ project, resetContext }) => 
   };
 
   return (
-    <div
-      key={project.parameters.project_slug}
-      className="project-card d-flex justify-content-between"
-    >
-      <div onClick={navigateToProject} className="w-75">
-        <h3 className="project-title">{project.parameters.project_name}</h3>
-        <p className="project-details">
-          <span>Creator: {project.created_by}</span>
-          <span>Created at: {project.created_at}</span>
+    <div key={project.parameters.project_slug} id="project-card">
+      <div onClick={navigateToProject} className="clickable-zone">
+        <h3 className="projecttitle">{project.parameters.project_name}</h3>
+        <p className="projectdetails">
+          <span id="key">Creator: </span>
+          <span id="value">{project.created_by}</span>
+        </p>
+        <p className="projectdetails">
+          <span id="key">Created at: </span>
+          <span id="value">{project.created_at}</span>
         </p>
 
-        <div className="badge text-bg-secondary" title="Memory">
-          <span className="d-none d-md-inline">memory {project.size} Mo</span>
-        </div>
+        <span className="badge info">memory {project.size} Mo</span>
       </div>
-      <div>
-        <div className="trash-wrapper" onClick={handleShow}>
-          <FaRegTrashAlt size={20} />
-        </div>
-        <div>
-          <Modal show={showDelete} onHide={handleClose}>
-            <Modal.Header>
-              <Modal.Title>Delete the project</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-              Do you really want to delete the project {project.parameters.project_name}?
-            </Modal.Body>
-            <Modal.Footer>
-              <Button variant="danger" onClick={actionDelete} key="delete">
-                Delete
-              </Button>
-              <Button variant="secondary" onClick={handleClose} key="cancel">
-                Exit
-              </Button>
-            </Modal.Footer>
-          </Modal>
-        </div>
+      <div onClick={handleShow} className="trash-wrapper">
+        <FaRegTrashAlt size={20} />
       </div>
+      <Modal show={showDelete} onHide={handleClose}>
+        <Modal.Header>
+          <Modal.Title>Delete the project</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Do you really want to delete the project {project.parameters.project_name}?
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="danger" onClick={actionDelete} key="delete">
+            Delete
+          </Button>
+          <Button variant="secondary" onClick={handleClose} key="cancel">
+            Exit
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

@@ -1,4 +1,29 @@
-// project sidebar
+// generic elements ---
+.horizontal {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+.horizontal.wrap {
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.horizontal.center {
+  width: 100%;
+  justify-content: center;
+}
+
+// Titles, subsections and explanations
+.subsection {
+  font-weight: bold;
+  color: $secondary;
+  margin: 10px 0px;
+}
+
+// project sidebar ---
 .project-sidebar {
   height: fit-content;
   @include media-breakpoint-up(md) {
@@ -61,146 +86,42 @@
   }
 }
 
-.secondary-panel {
-  padding: 10px;
-  border-left: 2px solid #000;
-}
-
-.form-frame {
-  padding: 0px;
-}
-
-form label,
-.form-label {
-  margin-top: 5px;
-  padding: 5px;
-  display: block;
-  font-weight: bold;
-  margin-bottom: 5px;
-  color: #607d8b;
-}
-
-form input[type='number'],
-form select {
+// Status notch ---
+#status-notch {
+  position: fixed;
+  bottom: 0;
+  left: 0;
   width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 16px;
-}
-
-form button {
-  margin-top: 30px;
-  display: block;
-  width: 100%;
-  padding: 10px;
-  border: none;
-  border-radius: 4px;
-  background-color: #007bff;
-  color: white;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-form button:hover {
-  background-color: #0056b3;
-}
-
-.scrollable-cell {
-  min-height: 80px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.scrollable-cell:focus,
-.scrollable-cell:active {
-  white-space: normal;
-  max-height: 150px; /* Définit une hauteur max en mode scroll */
-  overflow: auto;
-}
-
-#upload-progress,
-#upload-progress[value]::-webkit-progress-bar {
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  border: none;
-  border-radius: 0;
-  background-color: lightgray;
-  height: 6px;
-  color: $secondary;
-  margin: 0;
-}
-#upload-progress[value]::-moz-progress-bar {
-  background-color: $secondary;
-}
-
-#upload-progress[value]::-webkit-progress-value {
-  background-color: $secondary;
-}
-
-#context-container {
+  border-top: 0.5px black solid;
+  background-color: $quaternary;
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  align-items: center;
-}
-
-#button-context-wrapper {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  align-items: center;
-  align-content: center;
-  width: 60%;
-  flex: 1 0 60%;
-}
-
-#context-button {
-  background-color: rgba(0, 0, 0, 0);
-  border: 0px;
-  color: $secondary;
-  text-decoration: underline;
-  opacity: 1;
-  padding: 3px 10px 3px 10px;
-  margin: 2px 4px 2px 4px;
-}
-
-table {
-  margin: 10px 0px;
-}
-
-.label-small-gray {
-  font-size: 0.8rem;
-  color: #9ca3af; // Tailwind's neutral gray tone (lighter)
-  margin-bottom: -5px;
-}
-
-#tag-parameters-div {
-  width: 100%;
-  display: flex;
-  align-items: start;
-  flex-wrap: wrap;
-  margin-bottom: 10px;
-
-  .parameter-div {
-    min-width: 50px;
-    margin: 3px 7px;
-    flex: 1 1 200px;
-  }
-
-  .parameter-div-small {
-    width: 20px;
-    margin: 3px 7px;
-    flex: 1 1 30px;
+  flex-wrap: nowrap;
+  // height: 150px;
+  span {
+    font-size: smaller;
+    border-right: 0.5px black solid;
+    padding-right: 10px;
+    margin-right: 5px;
+    margin-left: 10px;
+    margin-bottom: 3px;
+    margin-top: 3px;
+    // height: 100px;
   }
 }
 
-#header {
+#computing-span {
+  div {
+    padding: 0px 3px;
+  }
+}
+@keyframes shimmer {
+  to {
+    background-position: 100%;
+  }
+}
+
+// Navbar ---
+#nav-bar-header {
   $header-height: 50px;
   @include media-breakpoint-down(md) {
     #navbarSupportedContent {
@@ -222,21 +143,7 @@ table {
   }
 }
 
-.create-new-element {
-  font-size: normal;
-  background-color: $primary;
-  color: white;
-  font-weight: bold;
-  border: none;
-  border-radius: 20px;
-  padding: 0px 15px;
-  height: 35px;
-  display: inline-flex;
-  align-items: center;
-  font-size: smaller;
-  cursor: pointer;
-}
-
+// Model selection ---
 .model-pill-selection {
   display: flex;
   flex-wrap: wrap;
@@ -277,15 +184,20 @@ table {
   }
 }
 
-.getelement {
+// get element button
+.create-new-element {
+  font-size: normal;
   background-color: $primary;
-  border: 3px rgba(0, 0, 0, 0) solid;
-  border-radius: 5px;
   color: white;
-}
-
-.getelement.setting-changed {
-  animation: glow 1.5s ease-in-out infinite alternate;
+  font-weight: bold;
+  border: none;
+  border-radius: 20px;
+  padding: 0px 15px;
+  height: 35px;
+  display: inline-flex;
+  align-items: center;
+  font-size: smaller;
+  cursor: pointer;
 }
 
 @-webkit-keyframes glow {
@@ -295,135 +207,4 @@ table {
   to {
     border: 3px rgba(255, 255, 255, 0.7) solid;
   }
-}
-
-@for $nLabel from 1 through 100 {
-  #DisplayTableStatistics-#{$nLabel}{
-    $min-cell-width: 20px;
-    $inter-table-margin: 10px;
-    $grey: rgb(160, 160, 160);
-
-    width: 80%;
-    min-width: calc(($nLabel + 4) * $min-cell-width + 200px + $inter-table-margin);
-    max-width: calc(($nLabel + 30) * $min-cell-width + 200px + $inter-table-margin);
-    padding: 0px;
-    margin: 0px;
-    margin-bottom: 40px;
-    font-size: 10px;
-    
-    // containers
-    .row{
-      display: flex;
-      flex-direction: row;
-      flex-wrap: nowrap;
-      justify-content: space-between;
-      align-items: flex-start;
-
-      width: 100%;
-      margin: 0px;
-      padding: 0px;
-    }
-
-    .main, .score-bottom{
-      width: 80%;
-      padding: 0px;
-      margin-bottom: $inter-table-margin;
-      margin-right: $inter-table-margin;
-    }
-    
-    .table{
-      width:70%;
-      margin: 0px;
-      padding:0px;
-    }
-
-    .score-left{
-      width: 25%;
-    }
-
-    #truth-container{
-      width:  $min-cell-width;
-      margin:0px;
-      padding:0px;
-      display: flex;
-      flex-direction: column;
-      flex-wrap: nowrap;
-      justify-content: flex-end;
-      span{
-        writing-mode:sideways-lr;
-        // text-orientation: sideways;
-        text-align: center;
-        border-right:  $secondary 1px solid;
-        max-width: fit-content;
-        font-weight: bold;
-      }
-    }
-
-    #horizontal-labels-container{
-      width: 20%;
-      margin:0px;
-      padding:0px;
-      display: flex;
-      flex-direction: column;
-      flex-wrap: nowrap;
-      justify-content: flex-end;
-    }
-
-    // Table cells
-    .table-cell{
-      flex: 1 1 auto;
-      min-width: $min-cell-width;
-      height: 30px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .label-name{
-      font-weight: bold;
-    }
-
-    .recall{
-      font-size: 8px;
-      color: $grey;
-    }
-
-    .diag-cell{
-      color: green;
-      background: $tertiary;
-    }
-
-    .total-cell{
-      font-style: italic;
-      color: $grey;
-    }
-
-    .number-cell{
-      font-size: 11px;
-    }
-
-    .label-column-left{
-      align-items: flex-end;
-    }
-    
-    .label-column-right{
-      align-items: flex-start;
-      min-width: 100px;
-    }
-
-    #overlay-label{
-      border-bottom: $secondary 1px solid;
-      min-width: calc(2 * $min-cell-width);
-      font-weight: bold;
-    }
-  }
-}
-
-input[type="checkbox"]{
-  margin-right: 6px;
 }

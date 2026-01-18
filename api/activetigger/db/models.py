@@ -88,7 +88,9 @@ class Users(Base):
 
 class Schemes(Base):
     __tablename__ = "schemes"
-    __table_args__ = (PrimaryKeyConstraint("project_slug", "name", name="uq_project_slug_name"),)
+    __table_args__ = (
+        PrimaryKeyConstraint("project_slug", "name", name="uq_project_slug_name_schemes"),
+    )
 
     name: Mapped[str]
     time_created: Mapped[datetime.datetime] = mapped_column(
@@ -217,6 +219,7 @@ class Generations(Base):
     model: Mapped[GenModels] = relationship()
     prompt: Mapped[str]
     answer: Mapped[str]
+    batch: Mapped[str | None]
 
 
 class Features(Base):
@@ -241,7 +244,7 @@ class Features(Base):
 class Models(Base):
     __tablename__ = "models"
     __table_args__ = (
-        PrimaryKeyConstraint("project_slug", "name", name="uq_project_slug_name"),
+        PrimaryKeyConstraint("project_slug", "name", name="uq_project_slug_name_models"),
         ForeignKeyConstraint(
             ["project_slug", "scheme_name"],
             ["schemes.project_slug", "schemes.name"],
@@ -308,3 +311,21 @@ class Messages(Base):
         ForeignKey("projects.project_slug", ondelete="CASCADE")
     )
     for_user: Mapped[str | None] = mapped_column(ForeignKey("users.user_name"))
+
+
+class Monitoring(Base):
+    __tablename__ = "monitoring"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_name: Mapped[str | None]
+    process_name: Mapped[str]
+    time: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    project_slug: Mapped[str] = mapped_column(
+        ForeignKey("projects.project_slug", ondelete="CASCADE")
+    )
+    kind: Mapped[str]
+    parameters: Mapped[dict[str, Any]] = mapped_column(JSON)
+    events: Mapped[dict[str, Any]] = mapped_column(JSON)
+    duration: Mapped[float | None]

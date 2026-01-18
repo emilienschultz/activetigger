@@ -11,6 +11,7 @@ import {
 import {
   ActiveModel,
   DisplayConfig,
+  ElementHistoryPoint,
   GenerateConfig,
   NotificationType,
   ProjectStateModel,
@@ -30,7 +31,7 @@ export type AppContextValue = {
   labelColorMapping?: { [key: string]: string };
   activeModel?: ActiveModel | null;
   freqRefreshQuickModel: number; // freq to refresh active learning model
-  history: string[]; // element annotated
+  history: ElementHistoryPoint[]; // element annotated
   selectionHistory: Record<string, string>; // history of the selection
   reFetchCurrentProject?: () => void; // update the state of the project
   phase: string;
@@ -48,14 +49,17 @@ export const DEFAULT_CONTEXT: AppContextValue = {
     displayAnnotation: true,
     displayContext: false,
     displayPrediction: true,
-    displayHistory: false,
-    frameSize: 50,
+    displayPredictionStat: true,
+    displayHistory: true,
+    displayElementHistory: false,
+    textFrameHeight: 50,
+    textFrameWidth: 40,
     highlightText: '',
     numberOfTokens: 512,
   },
   selectionConfig: {
     mode: 'fixed',
-    sample: 'all',
+    sample: 'untagged',
     frameSelection: false,
     frame: [],
   },

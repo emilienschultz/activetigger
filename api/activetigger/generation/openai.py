@@ -1,5 +1,3 @@
-import logging
-
 from openai import OpenAI as OpenAIClient
 from openai import RateLimitError
 from openai.types.chat import ChatCompletionUserMessageParam
@@ -26,11 +24,9 @@ class OpenAI(GenerationModelClient):
             )
         except RateLimitError as rle:
             msg = "Not enough credits on this endpoint"
-            logging.error(msg)
             raise Exception(msg) from rle
         except Exception as e:
             msg = getattr(e, "message", repr(e))
-            logging.error("Error while calling OpenAI API: %s", e)
             raise Exception("Could not call OpenAI") from e
 
         if response.choices[0].message.content is None:

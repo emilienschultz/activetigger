@@ -1,0 +1,20 @@
+#progress-bar-window{
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background-color: #ffffff80;
+    display: flex;
+    justify-content: center;
+    align-items: center;   
+
+    #progress-bar-container{
+        background-color: $light;
+        border: $dark 4px solid;
+        border-radius: $border-radius;
+        width: 50%;
+        min-width: 200px;
+        padding: 10px;
+    }
+}

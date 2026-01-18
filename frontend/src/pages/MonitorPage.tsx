@@ -8,6 +8,8 @@ import { PageLayout } from '../components/layout/PageLayout';
 import { ManageMessages } from '../components/ManageMessages';
 import {
   useGetLogs,
+  useGetMonitoringData,
+  useGetMonitoringMetrics,
   useGetServer,
   useGetUserStatistics,
   useRestartQueue,
@@ -29,6 +31,100 @@ interface Row {
   action: string;
 }
 
+type ModelStats = {
+  name: string;
+  n: number;
+  mean: number;
+  std: number;
+};
+
+export function ModelStatsTable({ rows }: { rows: ModelStats[] }) {
+  return (
+    <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>N</th>
+          <th>Mean</th>
+          <th>Std</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.name}>
+            <td>{row.name}</td>
+            <td>{row.n}</td>
+            <td>{row.mean.toFixed(2)}</td>
+            <td>{row.std.toFixed(2)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+type ApiResponse = Record<
+  string,
+  {
+    n: number;
+    mean: number;
+    std: number;
+  }
+>;
+
+function normalizeStats(data: ApiResponse): ModelStats[] {
+  return Object.entries(data).map(([name, stats]) => ({
+    name,
+    ...stats,
+  }));
+}
+
+type ProcessRow = {
+  process_name: string;
+  kind: string;
+  time: string;
+  parameters: Record<string, unknown>;
+  events: Record<string, unknown>;
+  project_slug: string;
+  user_name: string;
+  duration: number;
+};
+
+type Props = {
+  rows: ProcessRow[];
+};
+
+export function ProcessTable({ rows }: Props) {
+  return (
+    <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+      <thead>
+        <tr>
+          <th>Process</th>
+          <th>Kind</th>
+          <th>Project</th>
+          <th>User</th>
+          <th>Events</th>
+          <th>Duration (s)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {(rows || [])
+          .sort((a, b) => b.duration - a.duration)
+          .map((row) => (
+            <tr key={row.process_name}>
+              <td title={row.process_name}>{row.process_name.slice(0, 8)}…</td>
+              <td>{row.kind}</td>
+              <td>{row.project_slug}</td>
+              <td>{row.user_name}</td>
+              <td>{JSON.stringify(row.events)}</td>
+              <td>{row.duration.toFixed(2)}</td>
+            </tr>
+          ))}
+      </tbody>
+    </table>
+  );
+}
+
 /**
  * MonitorPage component displays server monitoring information including logs, resources, active projects, and user statistics.
  */
@@ -37,10 +133,12 @@ export const MonitorPage: FC = () => {
   const { authenticatedUser } = useAuth();
   const { activeProjects, gpu, cpu, memory, disk, reFetchQueueState } = useGetServer(null);
   const { restartQueue } = useRestartQueue();
-  const { stopProcesses } = useStopProcesses();
+  const { stopProcesses } = useStopProcesses(null);
   const { logs } = useGetLogs('all', 500);
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const { userStatistics, reFetchStatistics } = useGetUserStatistics(currentUser);
+  const { metrics } = useGetMonitoringMetrics();
+  const { data } = useGetMonitoringData('all');
   useEffect(() => {
     reFetchStatistics();
   }, [currentUser, reFetchStatistics]);
@@ -146,6 +244,11 @@ export const MonitorPage: FC = () => {
                     </div>
                   </div>
                 ))}
+              </Tab>
+              <Tab eventKey="statistics" title="Statistics">
+                {<ModelStatsTable rows={normalizeStats(metrics || {})} />}
+
+                {<ProcessTable rows={data as unknown as ProcessRow[]} />}
               </Tab>
               <Tab eventKey="messages" title="Messages">
                 <div className="col-md-6">

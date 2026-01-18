@@ -20,6 +20,7 @@ import {
   ProjectUpdateModel,
   ProjectionParametersModel,
   QuickModelInModel,
+  SelectionConfig,
   SupportedAPI,
   TextDatasetModel,
   newBertModel,
@@ -27,6 +28,7 @@ import {
 import { HttpError } from './HTTPError';
 import { getAuthHeaders, useAuth } from './auth';
 import config from './config';
+import { useAppContext } from './context';
 import { useNotifications } from './notifications';
 import { getAsyncMemoData, useAsyncMemo } from './useAsyncMemo';
 
@@ -229,7 +231,7 @@ export function useCreateProject() {
         body: project,
       });
       if (!res.error) {
-        notify({ type: 'success', message: 'Project created' });
+        notify({ type: 'warning', message: 'Project in creation' });
         return res['data'];
       } else
         throw new Error(
@@ -613,16 +615,7 @@ export function useGetFeatureInfo(project_slug: string | null, project: unknown)
 export function useGetNextElementId(
   projectSlug: string | null,
   currentScheme: string | null,
-  selectionConfig: {
-    mode: string;
-    sample: string;
-    label?: string;
-    label_maxprob?: string;
-    filter?: string;
-    frameSelection?: boolean;
-    frame?: number[];
-    user?: string;
-  },
+  selectionConfig: SelectionConfig,
   history: string[],
   phase: string,
   activeModel: ActiveModel | null,
@@ -636,13 +629,13 @@ export function useGetNextElementId(
           scheme: currentScheme,
           selection: selectionConfig.mode,
           sample: selectionConfig.sample,
-          label: selectionConfig.label,
+          on_labels: selectionConfig.labels,
           filter: selectionConfig.filter,
           history: history,
           frame: selectionConfig.frameSelection ? selectionConfig.frame : null, // only if frame option selected
           dataset: phase,
           label_maxprob: selectionConfig.label_maxprob,
-          user: selectionConfig.user,
+          on_users: selectionConfig.users,
           model_active: activeModel,
         },
       });
@@ -661,24 +654,24 @@ export function useGetNextElementId(
 /**
  * Get element content by specific id
  */
-export function useGetElementById(
-  projectSlug: string | null,
-  currentScheme: string | null,
-  activeModel: ActiveModel | null,
-) {
+export function useGetElementById() {
+  const {
+    appContext: { currentProject, currentScheme, activeModel },
+  } = useAppContext();
+
   const getElementById = useCallback(
-    async (elementId: string, dataset: string) => {
-      if (projectSlug) {
+    async (elementId: string, phase: string) => {
+      if (currentProject?.params?.project_slug) {
         const res = await api.POST('/elements/id', {
           params: {
             query: {
-              project_slug: projectSlug,
+              project_slug: currentProject.params.project_slug,
             },
           },
           body: {
             element_id: elementId,
             scheme: currentScheme,
-            dataset: dataset,
+            dataset: phase,
             active_model: activeModel,
           },
         });
@@ -687,7 +680,7 @@ export function useGetElementById(
       }
       return null;
     },
-    [projectSlug, currentScheme, activeModel],
+    [currentProject?.params?.project_slug, currentScheme, activeModel],
   );
 
   return { getElementById };
@@ -907,6 +900,7 @@ export function useTrainQuickModel(projectSlug: string | null, scheme: string | 
             standardize: false,
             dichotomize: formData.dichotomize,
             cv10: formData.cv10,
+            balance_classes: formData.balance_classes,
           },
         });
 
@@ -959,7 +953,7 @@ export function useGetQuickModel(
 
   const getQuickModel = useAsyncMemo(async () => {
     if (name && project_slug) {
-      const res = await api.GET('/models/quickmodel', {
+      const res = await api.GET('/models/quick', {
         params: {
           query: {
             project_slug: project_slug,
@@ -1012,8 +1006,8 @@ export function useDeleteUserAuthProject(projectSlug: string | null, reFetchUser
         const res = await api.POST('/users/auth/{action}', {
           params: {
             path: { action: 'delete' },
-            query: { project_slug: projectSlug, username: username },
           },
+          body: { project_slug: projectSlug, username: username },
         });
         if (!res.error) notify({ type: 'success', message: 'Auth deleted for user' });
         reFetchUsersAuth();
@@ -1054,15 +1048,7 @@ export function useCreateUser(reFetchUsers: () => void) {
   const createUser = useCallback(
     async (username: string, password: string, status: string, mail: string) => {
       const res = await api.POST('/users/create', {
-        params: {
-          query: {
-            username_to_create: username,
-            password: password,
-            status: status,
-            mail: mail,
-            dummy: true,
-          },
-        },
+        body: { username: username, password: password, status: status, contact: mail },
       });
       if (!res.error) notify({ type: 'success', message: 'User created' });
       reFetchUsers();
@@ -1111,8 +1097,8 @@ export function useAddUserAuthProject(projectSlug: string | null, reFetchUsersAu
         const res = await api.POST('/users/auth/{action}', {
           params: {
             path: { action: 'add' },
-            query: { project_slug: projectSlug, username: username, status: auth },
           },
+          body: { project_slug: projectSlug, username: username, status: auth },
         });
         if (!res.error) notify({ type: 'success', message: 'Auth added for user' });
         reFetchUsersAuth();
@@ -1705,6 +1691,7 @@ export function useUpdateProjection(
             method: formData.method,
             features: formData.features,
             parameters: formData.parameters,
+            normalize_features: formData.normalize_features,
           },
         });
         if (!res.error) notify({ type: 'warning', message: 'Vizualisation is being computed' });
@@ -1832,12 +1819,14 @@ export function useReconciliate(projectSlug: string, scheme: string | null, data
           params: {
             query: {
               project_slug: projectSlug,
-              users: users,
-              scheme: scheme,
-              element_id: element_id,
-              label: label,
-              dataset: dataset,
             },
+          },
+          body: {
+            users: users,
+            scheme: scheme,
+            element_id: element_id,
+            label: label,
+            dataset: dataset,
           },
         });
         if (!res.error) notify({ type: 'success', message: 'Reconciliation done' });
@@ -1914,6 +1903,7 @@ export function useGenerate(
   prompt: string | null,
   mode: string | null,
   token?: string,
+  promptName?: string,
 ) {
   const { notify } = useNotifications();
   const generate = useCallback(async () => {
@@ -1931,13 +1921,14 @@ export function useGenerate(
           token: token,
           scheme: currentScheme,
           mode: mode,
+          prompt_name: promptName,
         },
       });
       if (!res.error) notify({ type: 'warning', message: 'Starting generation' });
       return true;
     }
     return null;
-  }, [projectSlug, modelId, prompt, n_batch, currentScheme, mode, token, notify]);
+  }, [projectSlug, modelId, prompt, n_batch, currentScheme, mode, token, notify, promptName]);
 
   return { generate };
 }
@@ -2034,7 +2025,7 @@ export function useGetActiveUsers() {
 
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
 
-  return { users: getAsyncMemoData(getActiveUsers), reFetchStatistics: reFetch };
+  return { n_users: getAsyncMemoData(getActiveUsers), reFetchStatistics: reFetch };
 }
 
 /**
@@ -2111,7 +2102,7 @@ export function useGetCompareSchemes(
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
 
   const getCompareSchemes = useAsyncMemo(async () => {
-    if (project_slug && schemeA && schemeB) {
+    if (project_slug && schemeA && schemeB && dataset) {
       const res = await api.GET('/schemes/compare', {
         params: {
           query: {
@@ -2125,7 +2116,7 @@ export function useGetCompareSchemes(
       return res.data;
     }
     return null;
-  }, [schemeA, schemeB, project_slug, fetchTrigger]);
+  }, [schemeA, schemeB, project_slug, fetchTrigger, dataset]);
 
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
 
@@ -2140,13 +2131,14 @@ export function useGetCompareSchemes(
 /**
  * Stop all process for a user
  */
-export function useStopProcesses() {
+export function useStopProcesses(projectSlug: string | null) {
   const { notify } = useNotifications();
   const stopProcesses = useCallback(
     async (kind: string = 'all', uniqueId: string | null = null) => {
       const res = await api.POST('/stop', {
         params: {
           query: {
+            project_slug: projectSlug,
             unique_id: uniqueId,
             kind: kind,
           },
@@ -2155,7 +2147,7 @@ export function useStopProcesses() {
       if (!res.error) notify({ type: 'success', message: 'Processes ended' });
       return true;
     },
-    [notify],
+    [notify, projectSlug],
   );
 
   return { stopProcesses };
@@ -2303,45 +2295,6 @@ export function useDeletePrompts(projectSlug: string | null) {
 }
 
 /***** MANAGE Files ******/
-
-/**
- * Get available files
- */
-export function useGetFiles() {
-  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
-
-  const getFiles = useAsyncMemo(async () => {
-    const res = await api.GET('/files');
-
-    return res.data;
-  }, [fetchTrigger]);
-
-  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
-
-  return { files: getAsyncMemoData(getFiles), reFetchFiles: reFetch };
-}
-
-/**
- * Delete a file
- */
-export function useDeleteFile(reFetchFiles: () => void) {
-  const { notify } = useNotifications();
-  const deleteFile = useCallback(
-    async (filename: string | null) => {
-      if (filename) {
-        const res = await api.POST('/files/delete', {
-          params: {
-            query: { filename: filename },
-          },
-        });
-        if (!res.error) notify({ type: 'success', message: 'File deleted' });
-        reFetchFiles();
-      }
-    },
-    [notify, reFetchFiles],
-  );
-  return deleteFile;
-}
 
 /**
  * Test if project name is available
@@ -2819,4 +2772,34 @@ export function useExportTopicsToScheme(projectSlug: string | null) {
     [notify, projectSlug],
   );
   return exportTopicsToScheme;
+}
+
+export function useGetMonitoringMetrics() {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
+  const getMonitoringMetrics = useAsyncMemo(async () => {
+    const res = await api.GET('/monitoring/metrics');
+    if (res.data && !res.error) return res.data;
+    else {
+      return null;
+    }
+  }, [fetchTrigger]);
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
+
+  return { metrics: getAsyncMemoData(getMonitoringMetrics) || null, reFetchMetrics: reFetch };
+}
+
+export function useGetMonitoringData(kind: string) {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
+  const getMonitoringData = useAsyncMemo(async () => {
+    const res = await api.GET('/monitoring/data', { params: { query: { kind: kind } } });
+    if (res.data && !res.error) return res.data;
+    else {
+      return null;
+    }
+  }, [fetchTrigger]);
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
+
+  return { data: getAsyncMemoData(getMonitoringData) || null, reFetchData: reFetch };
 }

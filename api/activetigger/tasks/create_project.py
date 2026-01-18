@@ -28,8 +28,10 @@ class CreateProject(BaseTask):
         valid_file: str = "valid.parquet",
         test_file: str = "test.parquet",
         features_file: str = "features.parquet",
+        random_seed: int = 42,
     ):
         super().__init__()
+        self.random_seed = random_seed
         self.project_slug = project_slug
         self.params = params
         self.username = username
@@ -43,19 +45,26 @@ class CreateProject(BaseTask):
         self,
     ) -> tuple[ProjectModel, pd.DataFrame | None, pd.DataFrame | None, pd.DataFrame | None]:
         """
-        Create the project with the given name and file, return the project model
-        and the train/test schemes to import in the database
+        Create the project with the given name and file
+        Define an internal and external index
+        return the project model and the train/valid/test datasets to import in the database
         """
         print(f"Start queue project {self.project_slug} for {self.username}")
+
         # check if the directory already exists + file (should with the data)
         if self.params.dir is None or not self.params.dir.exists():
             print("The directory does not exist and should", self.params.dir)
             raise Exception("The directory does not exist and should")
 
-        # Step 1 : load all data and index to str and rename columns
-        # If file comes from a previous project, there is no need to reprocess it
-        if self.params.filename:
+        # Step 1 : load all data, rename columns and define index
+        # Only for new file: if data from a previous project, no need to reprocess it
+        if self.params.filename is not None:
+            # load the uploaded file
             file_path = self.params.dir.joinpath(self.params.filename)
+
+            if not file_path.exists():
+                raise Exception("File not found, problem when uploading")
+
             if self.params.filename.endswith(".csv"):
                 content = pd.read_csv(file_path, low_memory=False, on_bad_lines="skip")
             elif self.params.filename.endswith(".parquet"):
@@ -64,10 +73,12 @@ class CreateProject(BaseTask):
                 content = pd.read_excel(file_path)
             else:
                 raise Exception("File format not supported (only csv, xlsx and parquet)")
-            # rename columns both for data & params to avoid confusion
+
+            # rename columns both for data & params to avoid confusion (use internal dataset_ prefix)
             content.columns = ["dataset_" + i for i in content.columns]  # type: ignore[assignment]
-            if self.params.col_id:
+            if self.params.col_id is not None:
                 self.params.col_id = "dataset_" + self.params.col_id
+
             # change also the name in the parameters
             self.params.cols_text = ["dataset_" + i for i in self.params.cols_text if i]
             self.params.cols_context = ["dataset_" + i for i in self.params.cols_context if i]
@@ -86,21 +97,23 @@ class CreateProject(BaseTask):
                     f"Not enough data for creating the train/valid/test dataset. Current : {len(content)} ; Selected : {self.params.n_test + self.params.n_valid + self.params.n_train}"
                 )
 
-            # create the index
-            keep_id = []  # keep unchanged the index to avoid desindexing
+            # create the internal/external index
+            # CAREFUL : external id has no constraint of uniqueness
+            # case where the index is the row number
+            if self.params.col_id == "dataset_row_number":
+                content["id_internal"] = [str(i) for i in range(len(content))]
+                content["id_external"] = content["id_internal"]
 
-            # case there is a id column that is unique
-            if self.params.col_id != "dataset_row_number" and (
-                (content[self.params.col_id].astype(str).apply(slugify)).nunique() == len(content)
-            ):
-                content["id"] = content[self.params.col_id].astype(str).apply(slugify)
-                keep_id.append(self.params.col_id)
-                content.set_index("id", inplace=True)
-            # by default the row number
+            # case the index is a column, use slugify for internal if unique after slugify
             else:
-                print("Use the row number as index")
-                content["id"] = [str(i) for i in range(len(content))]
-                content.set_index("id", inplace=True)
+                content["id_external"] = content[self.params.col_id].astype(str)
+                col_slugified = content["id_external"].apply(slugify)
+                if col_slugified.nunique() == len(content):
+                    content["id_internal"] = col_slugified
+                else:
+                    content["id_internal"] = [str(i) for i in range(len(content))]
+
+            content.set_index("id_internal", inplace=True)
 
             # convert columns that can be numeric or force text, exception for the text/labels
             for col in [i for i in content.columns if i not in self.params.cols_label]:
@@ -123,12 +136,6 @@ class CreateProject(BaseTask):
             # convert NA texts in empty string
             content["text"] = content["text"].fillna("")
 
-            # limit of usable text (in the futur, will be defined by the number of token)
-            def limit(text):
-                return 1200
-
-            content["limit"] = content["text"].apply(limit)
-
             # save a complete copy of the dataset
             content.to_parquet(self.params.dir.joinpath(self.data_all), index=True)
         else:
@@ -136,8 +143,6 @@ class CreateProject(BaseTask):
             content = pd.read_parquet(self.params.dir.joinpath(self.data_all))
             all_columns = list(content.columns)
             n_total = len(content)
-            keep_id = []
-            # TODO ATTENTION A L'INDEX
 
         # ------------------------
         # End of the data cleaning
@@ -150,18 +155,20 @@ class CreateProject(BaseTask):
         self.params.valid = False
         testset = None
         validset = None
+
+        # case there is a test or valid set, common draw
         if self.params.n_test + self.params.n_valid != 0:
             n_to_draw = self.params.n_test + self.params.n_valid
             # if no stratification
             if len(self.params.cols_stratify) == 0:
-                draw = content.sample(n_to_draw, random_state=42)
+                draw = content.sample(n_to_draw, random_state=self.random_seed)
             # if stratification, total cat, number of element per cat, sample with a lim
             else:
                 df_grouped = content.groupby(self.params.cols_stratify, group_keys=False)
                 nb_cat = len(df_grouped)
                 nb_elements_cat = round(n_to_draw / nb_cat)
                 draw = df_grouped.apply(
-                    lambda x: x.sample(min(len(x), nb_elements_cat), random_state=42)
+                    lambda x: x.sample(min(len(x), nb_elements_cat), random_state=self.random_seed)
                 )
 
             # divide between test and valid
@@ -176,7 +183,7 @@ class CreateProject(BaseTask):
                 self.params.valid = True
                 rows_valid = list(validset.index)
             else:
-                testset = draw.sample(self.params.n_test, random_state=42)
+                testset = draw.sample(self.params.n_test, random_state=self.random_seed)
                 validset = draw.drop(index=testset.index)
                 validset.to_parquet(self.params.dir.joinpath(self.valid_file), index=True)
                 testset.to_parquet(self.params.dir.joinpath(self.test_file), index=True)
@@ -191,7 +198,7 @@ class CreateProject(BaseTask):
         content = content.drop(rows_test)
         content = content.drop(rows_valid)
 
-        # case where there is no test set and the selection is deterministic
+        # case where there is no valid/test set and the selection is deterministic
         if (
             not self.params.random_selection
             and self.params.n_test == 0
@@ -204,11 +211,16 @@ class CreateProject(BaseTask):
             f_na = content[self.params.cols_label[0]].isna()
             # different case regarding the number of labels
             if f_notna.sum() > self.params.n_train:
-                trainset = content[f_notna].sample(self.params.n_train, random_state=42)
+                trainset = content[f_notna].sample(
+                    self.params.n_train, random_state=self.random_seed
+                )
             else:
                 n_train_random = self.params.n_train - f_notna.sum()
                 trainset = pd.concat(
-                    [content[f_notna], content[f_na].sample(n_train_random, random_state=42)]
+                    [
+                        content[f_notna],
+                        content[f_na].sample(n_train_random, random_state=self.random_seed),
+                    ]
                 )
         # case there is stratification on the trainset
         elif len(self.params.cols_stratify) > 0 and self.params.stratify_train:
@@ -216,15 +228,14 @@ class CreateProject(BaseTask):
             nb_cat = len(df_grouped)
             nb_elements_cat = round(self.params.n_train / nb_cat)
             trainset = df_grouped.apply(
-                lambda x: x.sample(min(len(x), nb_elements_cat)), random_state=42
+                lambda x: x.sample(min(len(x), nb_elements_cat), random_state=self.random_seed)
             )
         # default with random selection in the remaining elements
         else:
-            print("random selection of the trainset")
-            trainset = content.sample(self.params.n_train, random_state=42)
+            trainset = content.sample(self.params.n_train, random_state=self.random_seed)
 
         # write the trainset
-        trainset[list(set(["text", "limit"] + self.params.cols_context + keep_id))].to_parquet(
+        trainset[["id_external", "text"] + self.params.cols_context].to_parquet(
             self.params.dir.joinpath(self.train_file), index=True
         )
 
@@ -248,7 +259,7 @@ class CreateProject(BaseTask):
                 import_validset = validset[self.params.cols_label].dropna(how="all")
 
         # delete the initial file
-        if self.params.filename:
+        if self.params.filename is not None:
             self.params.dir.joinpath(self.params.filename).unlink()
 
         return ProjectModel(**project), import_trainset, import_validset, import_testset

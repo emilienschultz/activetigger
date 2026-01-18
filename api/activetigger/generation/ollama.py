@@ -1,5 +1,3 @@
-import logging
-
 import requests  # type: ignore[import]
 
 from activetigger.generation.client import GenerationModelClient
@@ -18,7 +16,6 @@ class Ollama(GenerationModelClient):
         m = model if model is not None else "llama3.1:70b"
         data = {"model": m, "prompt": prompt, "stream": False}
         response = requests.post(self.endpoint, json=data, verify=False)
-        logging.debug("Llama output: %s", response.content)
         if response.status_code == 200:
             return response.json()["response"]
         else:

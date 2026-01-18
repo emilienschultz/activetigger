@@ -88,137 +88,110 @@ export const EvalSetsManagement: FC<EvalSetsManagementModel> = ({
     }
   };
 
+  const capFirstLetter = (word: string) => {
+    return word.charAt(0).toUpperCase() + word.slice(1);
+  };
+
   return (
-    <div className="container">
-      <div className="row">
-        <div className="col-12">
-          {exist && (
-            <button
-              className="delete-button mt-3"
-              onClick={() => {
-                dropEvalSet(dataset).then(() => {
-                  navigate(0);
-                });
-              }}
-            >
-              Drop existing {dataset} set
-            </button>
-          )}
-        </div>
-      </div>
+    <div>
+      <h4 className="subsection">
+        {capFirstLetter(dataset)} set
+        {exist && (
+          <button
+            className="btn-drop-dataset"
+            onClick={() => {
+              dropEvalSet(dataset).then(() => {
+                navigate(0);
+              });
+            }}
+          >
+            Drop
+          </button>
+        )}
+      </h4>
 
       {!exist && (
-        <div className="row">
-          <h4 className="subsection">Import a {dataset} set</h4>
-          <div className="alert alert-info">
-            <form onSubmit={handleSubmit(onSubmit)}>
-              No {dataset} data set has been created. You can upload a {dataset} set. Careful : all
-              features will be dropped and need to be computed again, and id will be modified with
-              "imported_".
-              <label className="form-label" htmlFor="csvFile">
-                File to upload
-              </label>
-              <input className="form-control" id="csvFile" type="file" {...register('files')} />
-              {
-                // display datable if data available
-                data !== null && (
-                  <div>
-                    <div>Preview</div>
-                    <div className="m-3">
-                      Size of the dataset : <b>{data.data.length - 1}</b>
-                    </div>
-                    <DataTable<Record<DataType['headers'][number], string | number>>
-                      columns={data.headers.map((h) => ({
-                        name: h,
-                        selector: (row) => row[h],
-                        format: (row) => {
-                          const v = row[h];
-                          return typeof v === 'bigint' ? Number(v) : v;
-                        },
-                        width: '200px',
-                      }))}
-                      data={
-                        data.data.slice(0, 5) as Record<
-                          keyof DataType['headers'],
-                          string | number
-                        >[]
-                      }
-                    />
-                  </div>
-                )
-              }
-              {
-                // only display if data
-                data != null && (
-                  <div>
-                    <div>
-                      <label className="form-label" htmlFor="col_id">
-                        Column for id (they need to be unique)
-                      </label>
-                      <select
-                        className="form-control"
-                        id="col_id"
-                        disabled={data === null}
-                        {...register('col_id')}
-                      >
-                        {columns}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="form-label" htmlFor="cols_text">
-                        Text columns (all the selected fields will be concatenated)
-                      </label>
-                      <Controller
-                        name="cols_text"
-                        control={control}
-                        render={({ field: { onChange } }) => (
-                          <Select
-                            options={(data?.headers || []).map((e) => ({ value: e, label: e }))}
-                            isMulti
-                            onChange={(selectedOptions) => {
-                              onChange(
-                                selectedOptions
-                                  ? selectedOptions.map((option) => option.value)
-                                  : [],
-                              );
-                            }}
-                          />
-                        )}
-                      />
-                      <label className="form-label" htmlFor="col_label">
-                        Column for label (optional but they need to exist in the scheme)
-                      </label>
-                      <select
-                        className="form-control"
-                        id="col_label"
-                        disabled={data === null}
-                        {...register('col_label')}
-                      >
-                        <option key="none" value="">
-                          No label
-                        </option>
-
-                        {columns}
-                      </select>
-                      <label className="form-label" htmlFor="n_test">
-                        Number of elements
-                      </label>
-                      <input
-                        className="form-control"
-                        id="n_test"
-                        type="number"
-                        {...register('n_eval')}
-                      />
-                    </div>
-                    <button type="submit" className="btn btn-primary form-button">
-                      Create
-                    </button>
-                  </div>
-                )
-              }
-            </form>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="explanations">
+            No {dataset} data set has been created. You can upload a {dataset} set. Careful : all
+            features will be dropped and need to be computed again, and id will be modified with
+            "imported_".
           </div>
-        </div>
+          <label htmlFor="csvFile">File to upload</label>
+          <input id="csvFile" className="form-control" type="file" {...register('files')} />
+          {
+            // display datable if data available
+            data !== null && (
+              <div>
+                <div className="explanations">Preview</div>
+                <div>
+                  Size of the dataset : <b>{data.data.length - 1}</b>
+                </div>
+                {/* TODO: AXEL if too many rows, the page expands and it messes everything */}
+                <DataTable<Record<DataType['headers'][number], string | number>>
+                  columns={data.headers.map((h) => ({
+                    name: h,
+                    selector: (row) => row[h],
+                    format: (row) => {
+                      const v = row[h];
+                      return typeof v === 'bigint' ? Number(v) : v;
+                    },
+                    width: '200px',
+                  }))}
+                  data={
+                    data.data.slice(0, 5) as Record<keyof DataType['headers'], string | number>[]
+                  }
+                />
+              </div>
+            )
+          }
+          {
+            // only display if data
+            data != null && (
+              <div>
+                <label htmlFor="col_id">Column for id (they need to be unique)</label>
+                <select id="col_id" disabled={data === null} {...register('col_id')}>
+                  {columns}
+                </select>
+
+                <label htmlFor="cols_text">
+                  Text columns (all the selected fields will be concatenated)
+                </label>
+                <Controller
+                  name="cols_text"
+                  control={control}
+                  render={({ field: { onChange } }) => (
+                    <Select
+                      options={(data?.headers || []).map((e) => ({ value: e, label: e }))}
+                      isMulti
+                      onChange={(selectedOptions) => {
+                        onChange(
+                          selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                        );
+                      }}
+                    />
+                  )}
+                />
+                <label htmlFor="col_label">
+                  Column for label (optional but they need to exist in the scheme)
+                </label>
+                <select id="col_label" disabled={data === null} {...register('col_label')}>
+                  <option key="none" value="">
+                    No label
+                  </option>
+
+                  {columns}
+                </select>
+                <label htmlFor="n_test">Number of elements</label>
+                <input id="n_test" type="number" {...register('n_eval')} />
+
+                <button type="submit" className="btn-submit">
+                  Create
+                </button>
+              </div>
+            )
+          }
+        </form>
       )}
     </div>
   );

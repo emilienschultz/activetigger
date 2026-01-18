@@ -8,7 +8,7 @@ import { LossChart } from '../components/vizualisation/lossChart';
 import { ModelDescriptionModel, ProjectStateModel } from '../types';
 import { DisplayScores } from './DisplayScores';
 import { ModelsPillDisplay } from './ModelsPillDisplay';
-import { ValidateButtons } from './validateButton';
+import { ValidateButtons } from './ValidateButton';
 
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { FaPlusCircle } from 'react-icons/fa';
@@ -85,7 +85,7 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
   const [displayNewBertModel, setDisplayNewBertModel] = useState(false);
 
   return (
-    <div>
+    <>
       <ModelsPillDisplay
         modelNames={Object.values(availableBertModels)
           .sort((bertModelA, bertModelB) =>
@@ -97,13 +97,17 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
         deleteModelFunction={deleteBertModel}
       >
         <button
-          onClick={() => setDisplayNewBertModel(true)}
+          onClick={() => {
+            setDisplayNewBertModel(true);
+            setCurrentBertModel(null);
+          }}
           className={cx('model-pill ', isComputing ? 'disabled' : '')}
           id="create-new"
         >
           <FaPlusCircle size={20} /> Create new model
         </button>
       </ModelsPillDisplay>
+
       {isComputing && (
         <DisplayTrainingProcesses
           projectSlug={projectSlug || null}
@@ -111,23 +115,19 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
           displayStopButton={isComputing}
         />
       )}
+
+      <hr className="my-4" />
+
       {currentBertModel && (
-        <div>
+        <>
           {model && (
-            <div>
-              <div className="d-flex my-4">
-                <button
-                  className="btn btn-outline-secondary btn-sm me-2 d-flex align-items-center"
-                  onClick={() => setShowParameters(true)}
-                >
-                  <FaGear size={18} className="me-1" />
+            <>
+              <div className="horizontal wrap">
+                <button className="btn-secondary-action" onClick={() => setShowParameters(true)}>
+                  <FaGear size={18} />
                   Parameters
                 </button>
-
-                <button
-                  className="btn btn-outline-secondary btn-sm me-2 d-flex align-items-center"
-                  onClick={() => setShowRename(true)}
-                >
+                <button className="btn-secondary-action" onClick={() => setShowRename(true)}>
                   <MdDriveFileRenameOutline size={18} className="me-1" />
                   Rename
                 </button>
@@ -138,6 +138,7 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
                   currentScheme={currentScheme}
                   id="compute-prediction"
                   buttonLabel="Compute predictions"
+                  isComputing={isComputing}
                 />
               </div>
 
@@ -148,12 +149,10 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
                 projectSlug={projectSlug}
               />
 
-              <div className="mt-2">
-                <LossChart loss={loss} />
-              </div>
-            </div>
+              <LossChart loss={loss} />
+            </>
           )}
-        </div>
+        </>
       )}
 
       <Modal
@@ -202,15 +201,14 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
           <form onSubmit={handleSubmitRename(onSubmitRename)}>
             <input
               id="new_name"
-              className="form-control me-2 mt-2"
               type="text"
               placeholder="New name of the model"
               {...registerRename('new_name')}
             />
-            <button className="btn btn-primary me-2 mt-2">Rename</button>
+            <button className="btn-submit">Rename</button>
           </form>
         </Modal.Body>
       </Modal>
-    </div>
+    </>
   );
 };

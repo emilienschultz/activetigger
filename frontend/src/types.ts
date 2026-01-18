@@ -78,6 +78,10 @@ export type FeatureDescriptionModelOut = components['schemas']['FeatureDescripti
 
 export type ActiveModel = components['schemas']['ActiveModel'];
 
+export type ElementHistoryPoint = Omit<components['schemas']['AnnotationModel'], 'user'> & {
+  element_text: string;
+};
+
 export interface FeatureDfmParameters {
   dfm_tfidf: string;
   ngrams: number;
@@ -121,12 +125,12 @@ export interface FeatureModelExtended {
 export interface SelectionConfig {
   mode: string;
   sample: string;
-  label?: string;
+  labels?: string[];
   label_maxprob?: string; // label to use for maxprob selection
   frame?: number[];
   frameSelection?: boolean; // true/false to use frame to select
   filter?: string;
-  user?: string;
+  users?: string[];
 }
 
 export interface GenerateConfig {
@@ -144,10 +148,13 @@ export interface DisplayConfig {
   interfaceType: string;
   displayAnnotation: boolean;
   displayPrediction: boolean;
+  displayPredictionStat: boolean;
   displayContext: boolean;
   displayHistory: boolean;
+  displayElementHistory: boolean;
   numberOfTokens: number;
-  frameSize: number;
+  textFrameHeight: number;
+  textFrameWidth: number;
   highlightText: string;
   labelsOrder?: string[];
 }

@@ -6,7 +6,6 @@
 
 import asyncio
 import datetime
-import logging
 import multiprocessing
 import threading
 import uuid
@@ -19,7 +18,6 @@ from loky import get_reusable_executor  # type: ignore[import]
 from activetigger.datamodels import QueueStateTaskModel, QueueTaskModel
 from activetigger.tasks.base_task import BaseTask
 
-logger = logging.getLogger("server")
 multiprocessing.set_start_method("spawn", force=True)
 
 
@@ -57,11 +55,12 @@ class Queue:
         self.manager = Manager()
         self.current = []
         self.lock = threading.Lock()
+
+        # create the executor
         self.executor = get_reusable_executor(max_workers=self.nb_workers, timeout=10)
 
         # launch a regular update on the queue
-        self.task = asyncio.create_task(self._update_queue(timeout=1))
-        logger.info("Init Queue")
+        self.task = asyncio.create_task(self._update_queue(timeout=0.5))
 
     def __del__(self) -> None:
         """
@@ -72,7 +71,7 @@ class Queue:
         if hasattr(self, "task"):
             self.task.cancel()
 
-    async def _update_queue(self, timeout: int = 1) -> None:
+    async def _update_queue(self, timeout: float = 1) -> None:
         """
         Update the queue every X seconds.
         Add new tasks to the executor if there are available workers.
@@ -136,11 +135,11 @@ class Queue:
 
             # generate a unique id
             unique_id = str(uuid.uuid4())
+            task.unique_id = unique_id
+
             # set an event to inform the end of the process
             event = self.manager.Event()
-            # add informartion in the task
             task.event = event
-            task.unique_id = unique_id
 
             # add it in the current processes
             self.current.append(
@@ -161,7 +160,7 @@ class Queue:
 
     def get(self, unique_id: str) -> QueueTaskModel | None:
         """
-        Get a process
+        Get a running process
         """
         element = [i for i in self.current if i.unique_id == unique_id]
         if len(element) == 0:
@@ -182,7 +181,7 @@ class Queue:
         """
         Delete completed elements from the stack
         """
-        if type(ids) is str:
+        if isinstance(ids, str):
             ids = [ids]
         for i in [t for t in self.current if t.unique_id in ids]:
             if i.future is None or not i.future.done():

@@ -1,11 +1,14 @@
 import chroma from 'chroma-js';
 import { motion } from 'framer-motion';
 import { FC, useEffect, useState } from 'react';
+import { FaCheck } from 'react-icons/fa';
 import Select from 'react-select';
 import { AnnotateBlendTag, TextAnnotateBlend } from 'react-text-annotate-blend';
+import { DisplayConfig } from '../../types';
 
 interface SpanInputProps {
   elementId: string;
+  displayConfig: DisplayConfig;
   text: string;
   labels: string[];
   postAnnotation: (label: string, elementId: string) => void;
@@ -14,6 +17,7 @@ interface SpanInputProps {
 
 export const TextSpanPanel: FC<SpanInputProps> = ({
   elementId,
+  displayConfig,
   text,
   postAnnotation,
   labels,
@@ -45,36 +49,8 @@ export const TextSpanPanel: FC<SpanInputProps> = ({
   }));
 
   return (
-    <div>
-      <div className="my-3 w-50 mx-auto d-flex align-items-center">
-        <label className="me-2">Annotate with </label>
-        <Select
-          value={options.find((opt) => opt.value === tag) || null}
-          onChange={(opt) => setTag(opt && opt.value)}
-          options={options}
-          styles={{
-            option: (provided, state) => ({
-              ...provided,
-              backgroundColor: state.isFocused ? state.data.color : 'white',
-              color: state.isFocused ? 'white' : state.data.color,
-            }),
-            singleValue: (provided, state) => ({
-              ...provided,
-              color: state.data.color,
-            }),
-          }}
-        />
-        <button
-          className="btn btn-primary ms-2"
-          onClick={() => {
-            postAnnotation(JSON.stringify(value) || JSON.stringify([]), elementId);
-            setValue([]);
-          }}
-        >
-          Validate annotations
-        </button>
-      </div>
-      <div>
+    <>
+      <div className="annotation-frame" style={{ height: `${displayConfig.textFrameHeight}vh` }}>
         <motion.div
           animate={elementId ? { backgroundColor: ['#e8e9ff', '#f9f9f9'] } : {}}
           transition={{ duration: 1 }}
@@ -97,6 +73,35 @@ export const TextSpanPanel: FC<SpanInputProps> = ({
           />
         </motion.div>
       </div>
-    </div>
+      <div>
+        <div className="d-flex gap-2 align-items-center mt-2">
+          <Select
+            value={options.find((opt) => opt.value === tag) || null}
+            onChange={(opt) => setTag(opt && opt.value)}
+            options={options}
+            styles={{
+              option: (provided, state) => ({
+                ...provided,
+                backgroundColor: state.isFocused ? state.data.color : 'white',
+                color: state.isFocused ? 'white' : state.data.color,
+              }),
+              singleValue: (provided, state) => ({
+                ...provided,
+                color: state.data.color,
+              }),
+            }}
+          />
+          <button
+            className="btn btn-outline-success align-items-center justify-content-center validate-btn"
+            onClick={() => {
+              postAnnotation(JSON.stringify(value) || JSON.stringify([]), elementId);
+              setValue([]);
+            }}
+          >
+            <FaCheck size={18} />
+          </button>
+        </div>
+      </div>
+    </>
   );
 };

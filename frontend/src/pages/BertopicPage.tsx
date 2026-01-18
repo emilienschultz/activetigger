@@ -4,6 +4,7 @@ import { FC, useCallback, useEffect, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { FaCloudDownloadAlt, FaPlusCircle } from 'react-icons/fa';
 import { RiFileTransferLine } from 'react-icons/ri';
+import { SlSizeFullscreen } from 'react-icons/sl';
 import { useParams } from 'react-router-dom';
 import { DisplayTableTopics, Row } from '../components/DisplayTableTopics';
 import { BertopicForm } from '../components/forms/BertopicForm';
@@ -34,7 +35,7 @@ export const BertopicPage: FC = () => {
   const { downloadBertopicReport } = useDownloadBertopicReport(projectName || null);
   const availableBertopic = currentProject ? currentProject.bertopic.available : [];
   const [currentBertopic, setCurrentBertopic] = useState<string | null>(null);
-  const { getElementById } = useGetElementById(projectName || null, null, null);
+  const { getElementById } = useGetElementById();
 
   const { topics, parameters, reFetchTopics } = useGetBertopicTopics(
     projectName || null,
@@ -83,6 +84,14 @@ export const BertopicPage: FC = () => {
   };
 
   const [showComputeNewBertopic, setShowComputeNewBertopic] = useState(false);
+  const [figSize, setFigSize] = useState<number>(40);
+  const toogleFigSize = () => {
+    if (figSize === 40) {
+      setFigSize(80);
+    } else {
+      setFigSize(40);
+    }
+  };
 
   return (
     // <ProjectPageLayout projectName={projectName} currentAction="explore">
@@ -220,7 +229,7 @@ export const BertopicPage: FC = () => {
         )}
         {projection && (
           <>
-            <div style={{ height: '300px' }}>
+            <div style={{ height: `${figSize}vh`, width: '80vw' }}>
               <BertopicVizSigma
                 className={`col-12 border h-100`}
                 data={
@@ -253,15 +262,18 @@ export const BertopicPage: FC = () => {
         )}
         {topics && (
           <>
-            <div style={{ margin: '10px 0px' }}>
+            <div style={{ margin: '10px 0px' }} className="d-flex gap-2 align-items-center">
+              <button className="btn" onClick={() => toogleFigSize()}>
+                <SlSizeFullscreen />
+              </button>
               <button
-                className="btn btn-primary me-2"
+                className="btn-primary-action"
                 onClick={() => exportBertopicAsAnnotation(currentBertopic)}
               >
                 Convert to scheme <RiFileTransferLine size={20} />
               </button>
               <button
-                className="btn btn-primary mx-2"
+                className="btn-primary-action"
                 id="download-topics"
                 onClick={() => (currentBertopic ? downloadBertopicTopics(currentBertopic) : null)}
               >
@@ -273,14 +285,14 @@ export const BertopicPage: FC = () => {
                 Representation and Representative Docs
               </Tooltip> */}
               <button
-                className="btn btn-primary mx-2"
+                className="btn-primary-action"
                 id="download-clusters"
                 onClick={() => (currentBertopic ? downloadBertopicClusters(currentBertopic) : null)}
               >
                 Export topic per text <FaCloudDownloadAlt size={20} />
               </button>
               <button
-                className="btn btn-primary mx-2"
+                className="btn-primary-action"
                 id="download-clusters"
                 onClick={() => (currentBertopic ? downloadBertopicReport(currentBertopic) : null)}
               >

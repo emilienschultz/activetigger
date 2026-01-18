@@ -1,11 +1,16 @@
-import logging
+import secrets
+from datetime import datetime
 from pathlib import Path
 
-import yaml  # type: ignore[import]
+import yaml
 
 from activetigger.config import config
 from activetigger.datamodels import (
-    AnnotationModel,
+    AuthUserModel,
+    DatasetModel,
+    NewUserModel,
+    ProjectModel,
+    ProjectSummaryModel,
     UserInDBModel,
     UserModel,
     UsersStateModel,
@@ -13,6 +18,7 @@ from activetigger.datamodels import (
 )
 from activetigger.db.manager import DatabaseManager
 from activetigger.functions import compare_to_hash, get_dir_size, get_hash
+from activetigger.messages import Messages
 
 
 class Users:
@@ -22,21 +28,52 @@ class Users:
 
     db_manager: DatabaseManager
     users: dict
+    failed_attemps: dict[str, list[datetime]]
+    messages: Messages
 
     def __init__(
         self,
         db_manager: DatabaseManager,
+        messages: Messages,
         file_users: str = "users.yaml",
     ):
         """
         Init users references
         """
         self.db_manager = db_manager
+        self.messages = messages
 
         # add specific users parameters if they exist
         self.users = {}
         if Path(file_users).exists():
             self.users = yaml.safe_load(open(file_users))
+        self.failed_attemps: dict = {}
+
+    def log_failed_login_attempt(self, username: str) -> None:
+        """
+        Register the timestamp of a failed login attempt
+        Raise an error if there are too many failed attempts in a short period
+        """
+        if username not in self.failed_attemps:
+            self.failed_attemps[username] = []
+        self.failed_attemps[username].append(datetime.now())
+
+    def check_failed_login_attempts(
+        self, username: str, timewindow: int = 10, max_attempts: int = 3
+    ) -> None:
+        """
+        Check if there are too many failed login attempts in a short period
+        Raise an error if there are too many failed attempts in a short period
+        """
+        if username not in self.failed_attemps:
+            return
+        # filter attempts in the timewindow
+        now = datetime.now()
+        self.failed_attemps[username] = [
+            t for t in self.failed_attemps[username] if (now - t).total_seconds() < timewindow
+        ]
+        if len(self.failed_attemps[username]) >= max_attempts:
+            raise Exception("Too many failed login attempts. Please try again after a few minutes.")
 
     def get_project_auth(self, project_slug: str) -> dict[str, str]:
         """
@@ -44,13 +81,14 @@ class Users:
         """
         return self.db_manager.projects_service.get_project_auth(project_slug)
 
-    def set_auth(self, username: str, project_slug: str, status: str) -> None:
+    def set_auth(self, auth: AuthUserModel) -> None:
         """
         Set user auth for a project
         """
-        self.get_user(username)
-        self.db_manager.projects_service.add_auth(project_slug, username, status)
-        logging.info("Auth successfully to %s", username)
+        if auth.status is None:
+            raise Exception("Missing status")
+        self.get_user(auth.username)
+        self.db_manager.projects_service.add_auth(auth.project_slug, auth.username, auth.status)
 
     def delete_auth(self, username: str, project_slug: str) -> None:
         """
@@ -60,7 +98,6 @@ class Users:
             raise Exception("Can't delete root user auth")
         self.get_user(username)
         self.db_manager.projects_service.delete_auth(project_slug, username)
-        logging.info("Auth of user %s deleted", username)
 
     def get_auth_projects(self, username: str, auth: str | None = None) -> list:
         """
@@ -90,15 +127,13 @@ class Users:
         if username == "root":
             return self.db_manager.users_service.get_users_created_by("all", active)
         else:
-            return self.db_manager.users_service.get_users_created_by(username, active)
+            # TODO : in the future, allows users in project related to the account ?
+            return {}
 
     def add_user(
         self,
-        name: str,
-        password: str,
-        role: str = "manager",
-        created_by: str = "NA",
-        mail: str = "NA",
+        new_user: NewUserModel,
+        created_by: str,
     ) -> None:
         """
         Add user to database
@@ -106,14 +141,16 @@ class Users:
             Default, users are managers
         """
         # test if the user doesn't exist, even among deactivated users
-        if name in self.existing_users(active=False):
+        if new_user.username in self.existing_users(active=False):
             raise Exception("Username already exists")
-        hash_pwd = get_hash(password)
+        hash_pwd = get_hash(new_user.password)
         self.db_manager.users_service.add_user(
-            name, hash_pwd.decode("utf8"), role, created_by, contact=mail
+            new_user.username,
+            hash_pwd.decode("utf8"),
+            new_user.status,
+            created_by,
+            contact=new_user.contact,
         )
-
-        logging.info("User added to the database")
 
     def delete_user(self, user_to_delete: str, username: str) -> None:
         """
@@ -124,13 +161,11 @@ class Users:
             raise Exception("Can't delete root user")
         if user_to_delete not in self.existing_users():
             raise Exception("Username does not exist")
-        if user_to_delete not in self.existing_users("root"):
+        if user_to_delete not in self.existing_users(username):
             raise Exception("You don't have the right to delete this user")
 
         # delete the user
         self.db_manager.users_service.delete_user(user_to_delete)
-
-        logging.info("User %s successfully deleted", user_to_delete)
 
     def get_user(self, name: str) -> UserInDBModel:
         """
@@ -144,11 +179,18 @@ class Users:
     def authenticate_user(self, username: str, password: str) -> UserInDBModel:
         """
         User authentification
+        - Check too many failed login attempts
+        - Check username/password
         """
-        user = self.get_user(username)
-        if not compare_to_hash(password, user.hashed_password):
-            raise Exception("Wrong password")
-        return user
+        self.check_failed_login_attempts(username)
+        try:
+            user = self.get_user(username)
+            if not compare_to_hash(password, user.hashed_password):
+                raise Exception("Wrong password")
+            return user
+        except Exception:
+            self.log_failed_login_attempt(username)
+            raise Exception("Wrong username or password")
 
     def auth(self, username: str, project_slug: str) -> str | None:
         """
@@ -180,7 +222,6 @@ class Users:
         """
         hash_pwd = get_hash(password)
         self.db_manager.users_service.change_password(username, hash_pwd.decode("utf8"))
-        return None
 
     def get_statistics(self, username: str) -> UserStatistics:
         """
@@ -222,3 +263,70 @@ class Users:
             users=list(r.keys()),
             last_schemes={i: r[i].scheme for i in r},
         )
+
+    def get_auth_datasets(self, username: str) -> list[DatasetModel]:
+        """
+        Get datasets authorized for the user (projects where is manager)
+        """
+        projects = self.get_auth_projects(username, auth="manager")
+        return [
+            DatasetModel(
+                project_slug=p[2]["project_slug"],
+                columns=p[2]["all_columns"],
+                n_rows=p[2]["n_total"],
+            )
+            for p in projects
+        ]
+
+    def get_user_projects(self, username: str) -> list[ProjectSummaryModel]:
+        """
+        Get projects authorized for the user
+        """
+        projects_auth = self.get_auth_projects(username)
+        projects = []
+        for i in list(reversed(projects_auth)):
+            # get the project slug
+            project_slug = i[0]
+            user_right = i[1]
+            parameters = self.db_manager.projects_service.get_project(project_slug)
+            if parameters is None:
+                continue
+            parameters = ProjectModel(**parameters["parameters"])
+            created_by = i[3]
+            created_at = i[4].strftime("%Y-%m-%d %H:%M:%S")
+            try:
+                size = round(get_dir_size(config.data_path + "/projects/" + i[0]), 1)
+            except Exception as e:
+                print(e)
+                size = 0.0
+            last_activity = self.db_manager.logs_service.get_last_activity_project(i[0])
+
+            # create the project summary model
+            projects.append(
+                ProjectSummaryModel(
+                    project_slug=project_slug,
+                    user_right=user_right,
+                    parameters=parameters,
+                    created_by=created_by,
+                    created_at=created_at,
+                    size=size,
+                    last_activity=last_activity,
+                )
+            )
+        return projects
+
+    def reset_password(self, mail: str) -> None:
+        """
+        Reset password for a user with the given email
+        """
+        # Check if mail is connected to a user
+        user_name = self.db_manager.users_service.get_user_by_mail(mail)
+
+        # Generate a random password
+        new_password = secrets.token_hex(16)
+
+        # Send the mail to the user with the new password
+        self.messages.send_mail_reset_password(user_name, mail, new_password)
+
+        # Update the user's password in the database
+        self.force_change_password(user_name, new_password)

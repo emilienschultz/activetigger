@@ -55,6 +55,7 @@ class Config(metaclass=_Singleton):
     n_workers_cpu: int
     update_timeout: int
     mail_server_port: int
+    random_seed: int
     timezone: pytz.BaseTzInfo
     mail_available: bool = False
     default_user: str = "root"
@@ -66,7 +67,6 @@ class Config(metaclass=_Singleton):
     file_models: str = "bert_models.csv"
     default_scheme: str = "default"
     mail_server: str | None = os.environ.get("MAIL_SERVER", None)
-
     mail_account: str | None = os.environ.get("MAIL_ACCOUNT", None)
     mail_password: str | None = os.environ.get("MAIL_PASSWORD", None)
 
@@ -82,6 +82,7 @@ class Config(metaclass=_Singleton):
         self.n_workers_gpu = parse_environ("N_WORKERS_GPU", int, 1)
         self.n_workers_cpu = parse_environ("N_WORKERS_CPU", int, 5)
         self.update_timeout = parse_environ("UPDATE_TIMEOUT", int, 1)
+        self.random_seed = parse_environ("RANDOM_SEED", int, 42)
         self.database_url = os.environ.get(
             "DATABASE_URL",
             f"sqlite:///{os.path.join(self.data_path, 'projects', 'activetigger.db')}",

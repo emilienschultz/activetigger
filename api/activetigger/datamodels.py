@@ -149,13 +149,13 @@ class NextInModel(BaseModel):
     scheme: str
     selection: str = "fixed"
     sample: str = "untagged"
-    label: str | None = None
+    on_labels: list[str] | None = None
+    on_users: list[str] | None = None
     label_maxprob: str | None = None
     frame: list[Any] | None = None
     history: list[str] = []
     filter: str | None = None
     dataset: str = "train"
-    user: str | None = None
     model_active: ActiveModel | None = None
 
 
@@ -165,9 +165,25 @@ class ElementInModel(BaseModel):
     """
 
     element_id: str
+    dataset: str
     scheme: str | None = None
-    dataset: str = "train"
     active_model: ActiveModel | None = None
+
+
+class AnnotationModel(BaseModel):
+    """
+    Complete information on an annotation
+    """
+
+    project_slug: str
+    dataset: str
+    scheme: str
+    element_id: str
+    label: str | None = None
+    time: datetime.datetime | None = None
+    user: str | None = None
+    comment: str | None = None
+    selection: str | None = None
 
 
 class ElementOutModel(BaseModel):
@@ -182,9 +198,20 @@ class ElementOutModel(BaseModel):
     info: str | None
     predict: PredictedLabel
     frame: list | None
-    limit: int | None
-    history: list | None = None
+    limit: int | None  # TO REMOVE
+    history: list[AnnotationModel] | None = None
     n_sample: int | None = None
+
+
+class NewUserModel(BaseModel):
+    """
+    New user definition
+    """
+
+    username: str
+    password: str
+    contact: str
+    status: str
 
 
 class UserModel(BaseModel):
@@ -228,20 +255,6 @@ class TokenModel(BaseModel):
     access_token: str
     token_type: str
     status: str | None
-
-
-class AnnotationModel(BaseModel):
-    """
-    Specific Annotation
-    """
-
-    project_slug: str
-    scheme: str
-    element_id: str
-    label: str | None
-    dataset: str = "train"
-    comment: str | None = None
-    selection: str | None = None
 
 
 class TableAnnotationsModel(BaseModel):
@@ -364,6 +377,7 @@ class ProjectionParametersModel(BaseModel):
     method: str
     features: list
     parameters: dict[str, float | str | bool | list] = {}
+    normalize_features: bool = False
 
 
 class ProjectionDataModel(BaseModel):
@@ -459,6 +473,7 @@ class BertopicParamsModel(BaseModel):
     embedding_kind: str = "sentence_transformers"
     embedding_model: str = "all-MiniLM-L6-v2"
     filter_text_length: int = 2
+    input_datasets: str = "train"
 
 
 class ComputeBertopicModel(BertopicParamsModel):
@@ -468,6 +483,17 @@ class ComputeBertopicModel(BertopicParamsModel):
 
     name: str
     force_compute_embeddings: bool = False
+    embedding_model: str
+    language: str | None = None
+    input_datasets: str = "train"
+    umap_n_neighbors: int = 30
+    hdbscan_min_cluster_size: int = 15
+    outlier_reduction: bool = True
+    filter_text_length: int = 50
+    umap_n_components: int = 5
+    top_n_words: int = 15
+    n_gram_range: tuple[int, int] = (1, 2)
+    embedding_kind: str = "sentence_transformers"
 
 
 class GenerationAvailableModel(BaseModel):
@@ -514,6 +540,15 @@ class GenerationRequest(BaseModel):
     n_batch: int = 1
     scheme: str
     mode: str = "all"
+    prompt_name: str | None = None
+
+
+class ProjectUpdateModel(BaseModel):
+    project_name: str | None = None
+    language: str | None = None
+    cols_text: list[str] | None = None
+    cols_context: list[str] | None = None
+    add_n_train: int | None = None
 
 
 # --------------------
@@ -526,6 +561,10 @@ class ProcessComputing(BaseModel):
     unique_id: str
     time: datetime.datetime
     kind: str
+
+
+class UpdateComputing(ProcessComputing):
+    update: ProjectUpdateModel
 
 
 class LMComputing(ProcessComputing):
@@ -550,6 +589,7 @@ class ProjectionComputing(ProcessComputing):
     name: str
     method: str
     params: ProjectionParametersModel
+    normalize_features: bool = False
 
 
 class FeatureComputing(ProcessComputing):
@@ -565,6 +605,7 @@ class GenerationComputing(ProcessComputing):
     number: int
     model_id: int
     get_progress: Callable[[], float | None] | None = None
+    prompt_name: str | None = None
 
 
 class BertopicComputing(ProcessComputing):
@@ -592,6 +633,7 @@ class QuickModelInModel(BaseModel):
     standardize: bool | None = True
     dichotomize: str | None = None
     cv10: bool = False
+    balance_classes: bool = False
 
 
 class QuickModelComputing(ProcessComputing):
@@ -609,6 +651,7 @@ class QuickModelComputing(ProcessComputing):
     dataset: str
     standardize: bool = False
     cv10: bool = False
+    balance_classes: bool = False
     retrain: bool = False
 
 
@@ -629,6 +672,7 @@ class QuickModelComputed(BaseModel):
     time: datetime.datetime
     standardize: bool = False
     cv10: bool = False
+    balance_classes: bool = False
     retrain: bool = False
     proba: DataFrame | None = None
     model: BaseEstimator
@@ -655,6 +699,7 @@ class QuickModelOutModel(BaseModel):
     statistics_train: MLStatisticsModel | None = None
     statistics_test: MLStatisticsModel | None = None
     statistics_cv10: MLStatisticsModel | None = None
+    balance_classes: bool = False
 
 
 class GenerationComputingOut(BaseModel):
@@ -874,6 +919,18 @@ class ReconciliationModel(BaseModel):
     users: list[str]
 
 
+class ReconciliateElementInModel(BaseModel):
+    """
+    Reconciliate specific element
+    """
+
+    dataset: str
+    scheme: str
+    element_id: str
+    label: str
+    users: list[str]
+
+
 class AuthActions(StrEnum):
     add = "add"
     delete = "delete"
@@ -992,14 +1049,6 @@ class ModelInformationsModel(BaseModel):
     scores: ModelScoresModel
 
 
-class ProjectUpdateModel(BaseModel):
-    project_name: str | None = None
-    language: str | None = None
-    cols_text: list[str] | None = None
-    cols_context: list[str] | None = None
-    add_n_train: int | None = None
-
-
 class UserStatistics(BaseModel):
     username: str
     projects: dict[str, str]
@@ -1022,6 +1071,7 @@ class TextDatasetModel(BaseModel):
     id: str
     text: str
     filename: str
+    path: Path | None = None
 
 
 class GeneratedElementsIn(BaseModel):
@@ -1074,3 +1124,42 @@ class DatasetModel(BaseModel):
     project_slug: str
     columns: list[str]
     n_rows: int
+
+
+class AuthUserModel(BaseModel):
+    """
+    Information on auth
+    """
+
+    project_slug: str
+    username: str
+    status: str | None = None
+
+
+class MonitoringQuickModelsModel(BaseModel):
+    """
+    Monitoring quickmodels
+    """
+
+    n: int
+    mean: float
+    std: float
+
+
+class MonitoringLanguageModelsModel(BaseModel):
+    """
+    Monitoring language models
+    """
+
+    n: int
+    mean: float
+    std: float
+
+
+class MonitoringMetricsModel(BaseModel):
+    """
+    Monitoring metrics
+    """
+
+    quickmodels: MonitoringQuickModelsModel
+    languagemodels: MonitoringLanguageModelsModel

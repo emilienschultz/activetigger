@@ -8,7 +8,7 @@ import hdbscan  # type: ignore[import]
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go  # type: ignore[import]
-import stopwordsiso as stopwords  # type: ignore[import]
+import stopwordsiso  # type: ignore[import]
 import umap  # type: ignore[import]
 from bertopic import BERTopic  # type: ignore[import]
 from great_tables import GT, loc, style
@@ -17,11 +17,10 @@ from simplemma import lemmatize
 from sklearn.feature_extraction.text import CountVectorizer  # type: ignore[import]
 from slugify import slugify
 
+from activetigger.config import config
 from activetigger.datamodels import BertopicParamsModel
 from activetigger.tasks.base_task import BaseTask
 from activetigger.tasks.compute_sbert import ComputeSbert
-
-RANDOM_SEED = 2306406
 
 # accelerate UMAP
 try:
@@ -53,6 +52,7 @@ def visualize_documents(
     n_neighbors: int = 15,
     min_dist: float = 0.0,
     min_number_of_element: int = 50,
+    random_seed: int = 42,
 ) -> go.Figure:
     """"""
     # Transform inputs in np.ndarray
@@ -65,7 +65,7 @@ def visualize_documents(
         n_components=2,
         min_dist=min_dist,
         metric="cosine",
-        random_state=RANDOM_SEED,
+        random_state=random_seed,
     )
     reduced_embeddings = umap_model.fit_transform(embeddings)
     X, Y = reduced_embeddings[:, 0], reduced_embeddings[:, 1]
@@ -82,6 +82,7 @@ def visualize_documents(
             )
         ],
         layout={
+            "width": 900,
             "plot_bgcolor": "#FCFCFC",
             "margin": {"t": 20, "b": 40},
             "xaxis": {"zerolinecolor": "#ECECEC", "gridcolor": "#ECECEC"},
@@ -181,24 +182,28 @@ class ComputeBertopic(BaseTask):
         existing_embeddings: Path | None = None,
         cols_embeddings: list[str] | None = None,
         force_compute_embeddings: bool = False,
+        random_seed: int = 42,
         **kwargs,
     ):
         super().__init__()
-        if not path_data.suffix == ".parquet":
-            raise ValueError("File must be a parquet file.")
         if existing_embeddings and not existing_embeddings.suffix == ".parquet":
             raise ValueError("Embeddings file must be a parquet file.")
 
         # Set parameters
+        self.random_seed = random_seed
         self.path_data = path_data
         self.col_id = col_id
         self.col_text = col_text
         if name is None:
             name = f"bertopic_{path_data.stem}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
         self.name = slugify(name)
-        self.file_name = slugify(path_data.stem)
+        self.input_datasets = (
+            parameters.input_datasets
+        )  # train, all_sets (ie train+valid+test), complete
         self.parameters = parameters
-        self.existing_embeddings = existing_embeddings
+        self.existing_embeddings = (
+            existing_embeddings  # Path to force using one file for the embeddings
+        )
         self.cols_embeddings = cols_embeddings
         self.timestamp = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
         self.force_compute_embeddings = force_compute_embeddings
@@ -212,207 +217,85 @@ class ComputeBertopic(BaseTask):
         if self.path_run.exists():
             raise ValueError(f"Run {self.name} already exists, please chose another name.")
 
-    def __call__(self):
-        """
-        Compute BERTopic model
-        """
-        try:
-            # Initialize the run directory
-            self.path_run.mkdir(parents=True, exist_ok=True)
-            self.update_progress("Initializing")
+    def __stop_process_opportunity(self):
+        """stop process by the user"""
+        if self.event is not None:
+            if self.event.is_set():
+                raise Exception("Process interrupted by user")
 
-            # Load the data from the file
-            df = pd.read_parquet(self.path_data)
-            if self.col_text not in df.columns:
-                raise ValueError(f"Column {self.col_text} not found in the data.")
+    def __init_paths(self) -> tuple[Path, Path]:
+        """Creates a folder (projects/{project_slug}/bertopic/runs/{bertopic_run}/)
+        as well a path for the embeddings (common to multiple runs —
+        projects/{project_slug}/bertopic/embeddings/...) and a path for the projection
+        (unique per run — projects/{project_slug}/bertopic/runs/{bertopic_run}/projection2D.parquet)"""
 
-            # Drop rows with a text length too small
-            df = df[df[self.col_text].apply(len) > self.parameters.filter_text_length]
-            print(f"Data loaded with {len(df)} rows.")
-
-            # Set the index if col_id is provided
-            if self.col_id and self.col_id in df.columns:
-                df.set_index(self.col_id, inplace=True)
-
-            # Path for existing embeddings
-            path_embeddings = self.path_bertopic.joinpath("embeddings").joinpath(
-                f"bertopic_embeddings_{self.file_name}_{slugify(self.parameters.embedding_model)}.parquet"
+        # Create directory for the run
+        self.path_run.mkdir(parents=True, exist_ok=True)
+        path_embeddings = self.path_bertopic.joinpath("embeddings").joinpath(
+            (
+                f"bertopic_embeddings_{self.input_datasets}_"
+                f"{slugify(self.parameters.embedding_model)}"
+                f".parquet"
             )
-            # Path for 2D projection
-            path_projection = self.path_run.joinpath(
-                f"bertopic_projection_{self.file_name}_{slugify(self.parameters.embedding_model)}.parquet"
-            )
+        )
+        path_projection = self.path_run.joinpath("projection2D.parquet")
+        return path_embeddings, path_projection
 
-            # Check if existing embeddings are in the folder
-            if not self.existing_embeddings and path_embeddings.exists():
-                self.existing_embeddings = path_embeddings
+    def __load_data(self) -> pd.DataFrame:
+        """Depending on the input_datasets (train, all_sets or complete), load
+        one or several files and return it"""
 
-            # interrupt if event is set
-            if self.event is not None:
-                if self.event.is_set():
-                    raise Exception("Process interrupted by user")
-
-            # Compute embeddings if not provided or if forced
-            if (not self.existing_embeddings) or self.force_compute_embeddings:
-                self.compute_embeddings(df, path_embeddings)
-                self.compute_projection(path_embeddings, path_projection)
-                self.existing_embeddings = path_embeddings
-
-            # Compute projection if does not exist
-            if not path_projection.exists():
-                self.compute_projection(self.existing_embeddings, path_projection)
-
-            # Copy the projection to the run directory
-            shutil.copy(path_projection, self.path_run.joinpath("projection2D.parquet"))
-
-            # Load embeddings
-            self.update_progress("Loading embeddings")
-            df_embeddings = pd.read_parquet(self.existing_embeddings)
-            if self.cols_embeddings and not all(
-                col in df_embeddings.columns for col in self.cols_embeddings
-            ):
-                raise ValueError("Some embeddings columns not found in the embeddings data.")
-            if self.cols_embeddings:
-                embeddings = df_embeddings[self.cols_embeddings].values
-            else:
-                embeddings = df_embeddings.values
-
-            # Test if the embeddings & the texts have the same index
-            if not df.index.equals(df_embeddings.index) or len(df) != len(df_embeddings):
-                raise ValueError(
-                    "The index of the embeddings and the texts do not match. "
-                    "Please force the computation of embeddings or check your data."
+        match self.input_datasets:
+            case "train":
+                df = pd.read_parquet(self.path_data.joinpath(config.train_file))
+            case "all_sets":
+                df = pd.concat(
+                    [
+                        pd.read_parquet(self.path_data.joinpath(file))
+                        for file in [config.train_file, config.test_file, config.valid_file]
+                        if self.path_data.joinpath(file).is_file()
+                    ]
                 )
+            case "complete":
+                df = pd.read_parquet(self.path_data.joinpath(config.data_all))
+        return df
 
-            # Initialize BERTopic
-            self.update_progress("Initializing BERTopic")
+    def __check_text_data(self, df) -> pd.DataFrame:
+        """Check the validity of the dataframe (contains necessary data, index,
+        and text length) and raise errors if necessary"""
 
-            # Dimensionality reduction with UMAP
-            try:
-                umap_model = cuml.UMAP(
-                    n_neighbors=self.parameters.umap_n_neighbors,
-                    n_components=self.parameters.umap_n_components,
-                    # min_dist=self.parameters.umap_min_dist, # Removed because 0.0 is the best value to use for clustering - Axel
-                    min_dist=0.0,
-                    metric="cosine",
-                    random_state=RANDOM_SEED,  # for deterministic behaviour
-                )
-            except Exception as e:
-                print(f"CuML UMAP failed: {e}, using standard UMAP instead.")
-                umap_model = umap.UMAP(
-                    n_neighbors=self.parameters.umap_n_neighbors,
-                    n_components=self.parameters.umap_n_components,
-                    # min_dist=self.parameters.umap_min_dist, # Removed because 0.0 is the best value to use for clustering - Axel
-                    min_dist=0.0,
-                    metric="cosine",
-                    random_state=RANDOM_SEED,  # for deterministic behaviour
-                )
+        if self.col_text not in df.columns:
+            raise ValueError(f"Column {self.col_text} not found in the data.")
+        # Set the index if col_id is provided
+        if self.col_id and self.col_id in df.columns:
+            df.set_index(self.col_id, inplace=True)
 
-            # Clustering with HDBSCAN
-            hdbscan_model = hdbscan.HDBSCAN(
-                min_cluster_size=self.parameters.hdbscan_min_cluster_size,
-                metric="euclidean",
-                prediction_data=True,
+        # Drop rows with a text length too small
+        criterion = df[self.col_text].apply(len) > self.parameters.filter_text_length
+        df = df[criterion]
+        print(f"Data loaded with {len(df)} rows.")
+
+        if len(df) < 15:
+            raise ValueError(
+                f"Not enough elements ({len(df)}) — after "
+                f"removing elements < {self.parameters.filter_text_length}"
             )
+        return df
 
-            # Vectorizer to manage stopwords
-            try:
-                stopwords = self.get_stopwords()
-                vectorizer_model = CountVectorizer(
-                    tokenizer=CustomLemmatizer(self.parameters.language, stopwords)
-                )
-            except ValueError:
-                vectorizer_model = CountVectorizer()
-
-            topic_model = BERTopic(
-                language=self.parameters.language,
-                vectorizer_model=vectorizer_model,
-                # nr_topics=self.parameters.nr_topics, # Removed because overridden by the hdbscan model - Axel
-                # min_topic_size=self.parameters.min_topic_size, # Removed to propose topic reduction later in the pipeline - Axel
-                umap_model=umap_model,
-                hdbscan_model=hdbscan_model,
-            )
-
-            self.update_progress("Fitting the model")
-            # Fit the BERTopic model
-            topics, _ = topic_model.fit_transform(
-                documents=df[self.col_text],
-                embeddings=embeddings,
-            )
-
-            # Add outlier reduction
-            try:
-                if self.parameters.outlier_reduction:
-                    print("Reducing outliers")
-                    topics = topic_model.reduce_outliers(df[self.col_text], topics)
-            except Exception as e:
-                print(f"Error during outlier reduction: {e}")
-
-            # interrupt if event is set
-            if self.event is not None:
-                if self.event.is_set():
-                    raise Exception("Process interrupted by user")
-
-            # Add the topics to the DataFrame
-            df["cluster"] = topics
-
-            # Save the topics and documents informations
-            topics_df: pd.DataFrame = topic_model.get_topic_info()
-            if self.parameters.outlier_reduction:
-                topics_df = topics_df.loc[topics_df.Topic != -1, :]
-                # Update the counts
-                topics_df = topics_df.set_index("Topic")
-                topics_df["Count-Bis"] = pd.Series(topics).value_counts()
-                topics_df = topics_df.reset_index()
-
-            topics_df.to_csv(self.path_run.joinpath("bertopic_topics.csv"))
-            df["cluster"].to_csv(self.path_run.joinpath("bertopic_clusters.csv"))
-            parameters = {
-                "bertopic_params": self.parameters.model_dump(),
-                "col_text": self.col_text,
-                "col_id": self.col_id,
-                "name": self.name,
-                "timestamp": self.timestamp,
-                "path_data": str(self.path_data),
-                "path_embeddings": str(self.existing_embeddings),
-                "path_projection": str(path_projection),
-            }
-            with open(self.path_run.joinpath("params.json"), "w") as f:
-                json.dump(parameters, f)
-
-            # Create a report
-            self.create_report(
-                topic_model=topic_model,
-                topics=topics,
-                topic_info=topics_df,
-                docs=df[self.col_text].to_list(),
-                embeddings=embeddings,
-            )
-
-            self.path_run.joinpath("progress").unlink(missing_ok=True)
-            return None
-        except Exception as e:
-            # Case an error happens
-            if self.path_run.exists():
-                shutil.rmtree(self.path_run)
-            raise e
-
-    def update_progress(self, message: str) -> None:
+    def __check_if_embeddings_computation_necessary(self, path_embeddings: Path) -> bool:
+        """Check if embeddings must be computed or not.
+        We compute embeddings if:
+            - force_compute_embeddings is True
+            - existing_embeddings is not provided and the embeddings were not
+                previously computed.
+        TODO: AM: Might need to clarify which of force_compute_embeddings or
+        existing_embeddings has the priority
         """
-        Update the progress of the task
-        """
-        with open(self.path_run.joinpath("progress"), "w") as f:
-            f.write(message)
+        return (
+            not self.existing_embeddings and not path_embeddings.exists()
+        ) or self.force_compute_embeddings
 
-    def get_stopwords(self) -> list[str]:
-        """
-        Get the stopwords for the specified language
-        """
-        if self.parameters.language not in stopwords.langs():
-            raise ValueError(f"Unsupported language {self.parameters.language}")
-        return list(stopwords.stopwords(self.parameters.language))
-
-    def compute_embeddings(self, df: pd.DataFrame, path_embeddings: Path) -> None:
+    def __compute_embeddings(self, df: pd.DataFrame, path_embeddings: Path) -> None:
         """
         Compute the embeddings using the SBERT model
         """
@@ -420,6 +303,7 @@ class ComputeBertopic(BaseTask):
             raise ValueError("Only sentence_transformers embeddings are supported for BERTopic.")
         if path_embeddings.exists():
             path_embeddings.unlink()
+
         self.update_progress(f"Computing embeddings with {self.parameters.embedding_model}")
         embeddings = ComputeSbert(
             texts=df[self.col_text],
@@ -436,9 +320,31 @@ class ComputeBertopic(BaseTask):
         # save the embeddings to a file
         computed.to_parquet(path_embeddings)
 
-    def compute_projection(self, path_embeddings: Path, path_projection: Path):
+    def __load_embeddings(self, path_embeddings: Path) -> pd.DataFrame:
+        """Load the embeddings, No verification because the file should exist,
+        errors are flagged beforehand"""
+        return pd.read_parquet(path_embeddings)
+
+    def __check_embeddings(self, df_embeddings: pd.DataFrame, df: pd.DataFrame):
+        """Make sure that the embeddings loaded have the right form and that the index
+        of the embeddings_df and the df (text) match"""
+        # Test if the embeddings & the texts have the same index
+        if not df.index.equals(df_embeddings.index) or len(df) != len(df_embeddings):
+            raise ValueError(
+                "The index of the embeddings and the texts do not match. "
+                "Please force the computation of embeddings or check your data."
+            )
+        if self.cols_embeddings:
+            # NOTE: AM: Artefact?
+            if not all(col in df_embeddings.columns for col in self.cols_embeddings):
+                raise ValueError("Some embeddings columns not found in the embeddings data.")
+            df_embeddings = df_embeddings[self.cols_embeddings]
+
+        return df_embeddings
+
+    def __create_projection(self, df_embeddings: pd.DataFrame, path_projection: Path) -> None:
         """
-        Reduce the dimensionality of the embeddings if needed.
+        Compute the projection to display it in the frontend later on
         """
         try:
             reducer = cuml.UMAP(
@@ -446,7 +352,7 @@ class ComputeBertopic(BaseTask):
                 n_components=2,
                 min_dist=0.0,
                 metric="cosine",
-                random_state=RANDOM_SEED,  # for deterministic behaviour
+                random_state=self.random_seed,  # for deterministic behaviour
             )
             print("Using cuML for UMAP computation")
         except Exception:
@@ -454,22 +360,123 @@ class ComputeBertopic(BaseTask):
                 n_neighbors=self.parameters.umap_n_neighbors,
                 n_components=2,
                 min_dist=0.0,
+                low_memory=False,
                 metric="cosine",
-                random_state=RANDOM_SEED,  # for deterministic behaviour
+                random_state=self.random_seed,  # for deterministic behaviour
             )
             print("Using standard UMAP for computation")
-        embeddings = pd.read_parquet(path_embeddings)
-        reduced_embeddings = reducer.fit_transform(embeddings)
-        df_reduced = pd.DataFrame(reduced_embeddings, index=embeddings.index, columns=["x", "y"])
+        reduced_embeddings: np.ndarray = reducer.fit_transform(df_embeddings.values)
+        df_reduced = pd.DataFrame(reduced_embeddings, index=df_embeddings.index, columns=["x", "y"])
         df_reduced.to_parquet(path_projection)
 
-    def create_report(
+    def __load_UMAP_HDBSCAN(self):
+        # Dimensionality reduction with UMAP
+        try:
+            umap_model = cuml.UMAP(
+                n_neighbors=self.parameters.umap_n_neighbors,
+                n_components=self.parameters.umap_n_components,
+                # min_dist=self.parameters.umap_min_dist, # Removed because 0.0 is the best value to use for clustering - Axel
+                min_dist=0.0,
+                metric="cosine",
+                random_state=self.random_seed,  # for deterministic behaviour
+            )
+        except Exception as e:
+            print(f"CuML UMAP failed: {e}, using standard UMAP instead.")
+            umap_model = umap.UMAP(
+                n_neighbors=self.parameters.umap_n_neighbors,
+                n_components=self.parameters.umap_n_components,
+                # min_dist=self.parameters.umap_min_dist, # Removed because 0.0 is the best value to use for clustering - Axel
+                min_dist=0.0,
+                metric="cosine",
+                low_memory=False,
+                random_state=self.random_seed,  # for deterministic behaviour
+            )
+
+        # Clustering with HDBSCAN
+        hdbscan_model = hdbscan.HDBSCAN(
+            min_cluster_size=self.parameters.hdbscan_min_cluster_size,
+            metric="euclidean",
+            prediction_data=True,
+        )
+        return umap_model, hdbscan_model
+
+    def __load_vectorizer(self) -> CountVectorizer:
+        """Load a Vectorizer model, tries to load a custom lemmatizer if, failed
+        return a default CountVectorizer.
+
+        TODO: AM: user should be warned if the vectorizer model is a default
+            CountVectorizer
+        """
+        try:
+            if self.parameters.language not in stopwordsiso.langs():
+                raise ValueError(f"Unsupported language {self.parameters.language}")
+            stopwords = list(stopwordsiso.stopwords(self.parameters.language))
+            vectorizer_model = CountVectorizer(
+                tokenizer=CustomLemmatizer(self.parameters.language, stopwords)
+            )
+        except ValueError:
+            vectorizer_model = CountVectorizer()
+        return vectorizer_model
+
+    def __create_saving_files(
+        self,
+        df: pd.DataFrame,
+        topic_model: BERTopic,
+        topics: list[int],
+        embeddings: np.ndarray,
+        path_projection: Path,
+    ) -> None:
+        """Create the following files:
+        - topics csv (topic info)
+        - clusters csv (list binding id - cluster)
+        - params.json
+        - report.html (through __create_report)
+        """
+        # Add the topics to the DataFrame
+        df["cluster"] = topics
+
+        # Save the topics and documents informations
+        topics_df: pd.DataFrame = topic_model.get_topic_info()
+        if self.parameters.outlier_reduction and self.parameters.outlier_reduction != "Failed":
+            topics_df = topics_df.loc[topics_df.Topic != -1, :]
+            # Update the counts
+            topics_df = topics_df.set_index("Topic")
+            topics_df["Count-Bis"] = pd.Series(topics).value_counts()
+            topics_df = topics_df.reset_index()
+
+        topics_df.to_csv(self.path_run.joinpath("bertopic_topics.csv"))
+        df["cluster"].to_csv(self.path_run.joinpath("bertopic_clusters.csv"))
+
+        with open(self.path_run.joinpath("params.json"), "w") as f:
+            json.dump(
+                {
+                    "bertopic_params": self.parameters.model_dump(),
+                    "col_text": self.col_text,
+                    "col_id": self.col_id,
+                    "name": self.name,
+                    "timestamp": self.timestamp,
+                    "path_data": str(self.path_data),
+                    "path_embeddings": str(self.existing_embeddings),
+                    "path_projection": str(path_projection),
+                },
+                f,
+            )
+        # Create a report
+        self.__create_report(
+            topic_model=topic_model,
+            topics=topics,
+            topic_info=topics_df,
+            docs=df[self.col_text].to_list(),
+            embeddings=embeddings,
+        )
+
+    def __create_report(
         self,
         topic_model: BERTopic,
         topics: list[int],
         topic_info: pd.DataFrame,
         docs: list[str],
-        embeddings: list[list[float]],
+        embeddings: np.ndarray,
     ) -> None:
         """Creates an HTML report downloadable by the user"""
         # Creates a table for topic info with great tables
@@ -514,15 +521,19 @@ class ComputeBertopic(BaseTask):
         )
 
         # Create Plotly figure for 2D maps
-        fig_map = visualize_documents(
-            topics=topics,
-            topic_info=topic_info,
-            docs=docs,
-            embeddings=embeddings,
-            n_neighbors=self.parameters.umap_n_neighbors,
-            min_dist=0.0,
-            min_number_of_element=-1,  # Need additional implementation
-        ).update_layout(width=900)
+        try:
+            fig_map = visualize_documents(
+                topics=topics,
+                topic_info=topic_info,
+                docs=docs,
+                embeddings=embeddings,
+                n_neighbors=self.parameters.umap_n_neighbors,
+                min_dist=0.0,
+                min_number_of_element=-1,  # Need additional implementation
+                random_seed=self.random_seed,
+            )
+        except:
+            fig_map = "You don't have enough elements to compute the hierarchy visualisation"
 
         # Create plotly figure for hierarchical representation
         fig_hierarchical = topic_model.visualize_hierarchy().update_layout(
@@ -568,3 +579,94 @@ class ComputeBertopic(BaseTask):
             with open(input_template_path) as template_file:
                 j2_template = Template(template_file.read())
                 output_file.write(j2_template.render(jinja_data))
+
+    def __call__(self):
+        """
+        Compute BERTopic model
+        Main steps:
+            - create folder
+            - load files
+            - (if necessary compute the embeddings &) Load embeddings
+            - Create BERTopic instance + fit_transform
+            - Save parameters, results and a n html report
+        """
+        try:
+            path_embeddings, path_projection = self.__init_paths()
+            self.update_progress("Initializing")
+
+            df = self.__load_data()
+            df = self.__check_text_data(df)
+
+            if self.__check_if_embeddings_computation_necessary(path_embeddings):
+                self.__compute_embeddings(df, path_embeddings)
+
+            df_embeddings = self.__load_embeddings(path_embeddings)
+            df_embeddings = self.__check_embeddings(df_embeddings, df)
+            embeddings: np.ndarray = df_embeddings.values
+            self.__create_projection(df_embeddings, path_projection)
+
+            self.__stop_process_opportunity()
+
+            # Initialize BERTopic
+            self.update_progress("Initializing BERTopic")
+            umap_model, hdbscan_model = self.__load_UMAP_HDBSCAN()
+            vectorizer_model = self.__load_vectorizer()
+
+            topic_model = BERTopic(
+                language=self.parameters.language,
+                vectorizer_model=vectorizer_model,
+                # nr_topics=self.parameters.nr_topics, # Removed because overridden by the hdbscan model - Axel
+                # min_topic_size=self.parameters.min_topic_size, # Removed to propose topic reduction later in the pipeline - Axel
+                umap_model=umap_model,
+                hdbscan_model=hdbscan_model,
+            )
+
+            self.update_progress("Fitting the model")
+            # Fit the BERTopic model
+            topics, _ = topic_model.fit_transform(
+                documents=df[self.col_text],
+                embeddings=embeddings,
+            )
+
+            # Add outlier reduction
+            if self.parameters.outlier_reduction:
+                try:
+                    print("Reducing outliers")
+                    topics = topic_model.reduce_outliers(
+                        documents=df[self.col_text],
+                        topics=topics,
+                        embeddings=embeddings,
+                        strategy="embeddings",
+                    )
+                except Exception as e:
+                    self.parameters.outlier_reduction = "Failed"
+                    print(
+                        f"Error during outlier reduction: {e} — Most likely "
+                        "because there are not enough elements in your dataset"
+                    )
+
+            self.__stop_process_opportunity()
+
+            self.__create_saving_files(
+                df=df,
+                topic_model=topic_model,
+                topics=topics,
+                embeddings=embeddings,
+                path_projection=path_projection,
+            )
+
+            self.path_run.joinpath("progress").unlink(missing_ok=True)
+            return
+
+        except Exception as e:
+            # Case an error happens
+            if self.path_run.exists():
+                shutil.rmtree(self.path_run)
+            raise e
+
+    def update_progress(self, message: str) -> None:
+        """
+        Update the progress of the task
+        """
+        with open(self.path_run.joinpath("progress"), "w") as f:
+            f.write(message)

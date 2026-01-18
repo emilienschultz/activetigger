@@ -57,10 +57,7 @@ export const DisplayTableTopics: FC<TableTopicsProps> = ({ data }) => {
   ];
 
   return (
-    <div
-      style={{ inlineSize: '100%', blockSize: 80 * data.length, display: 'grid', gap: 8 }}
-      className="mt-3"
-    >
+    <div style={{ inlineSize: '100%', blockSize: 80 * data.length, display: 'grid', gap: 8 }}>
       <div style={{ blockSize: '100%' }}>
         <DataGrid columns={columns} rows={data} className="fill-grid" rowHeight={80} />
       </div>

@@ -1,6 +1,5 @@
 import io
 import json
-import logging
 import os
 import shutil
 import time
@@ -9,7 +8,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, cast
 
-import pandas as pd  # type: ignore[import]
+import pandas as pd
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse
 from pandas import DataFrame
@@ -18,8 +17,8 @@ from activetigger.bertopic import Bertopic
 from activetigger.config import config
 from activetigger.data import Data
 from activetigger.datamodels import (
+    AuthUserModel,
     BertModelModel,
-    BertopicComputing,
     ElementInModel,
     ElementOutModel,
     EvalSetDataModel,
@@ -33,6 +32,7 @@ from activetigger.datamodels import (
     NextInModel,
     NextProjectStateModel,
     PredictedLabel,
+    ProcessComputing,
     ProjectBaseModel,
     ProjectCreatingModel,
     ProjectDescriptionModel,
@@ -44,19 +44,56 @@ from activetigger.datamodels import (
     QuickModelComputing,
     QuickModelInModel,
     StaticFileModel,
+    UpdateComputing,
 )
 from activetigger.db.manager import DatabaseManager
 from activetigger.features import Features
 from activetigger.functions import clean_regex, get_dir_size, slugify
 from activetigger.generation.generations import Generations
 from activetigger.languagemodels import LanguageModels
+from activetigger.messages import Messages
+from activetigger.monitoring import Monitoring
 from activetigger.projections import Projections
 from activetigger.queue import Queue
 from activetigger.quickmodels import QuickModels
 from activetigger.schemes import Schemes
 from activetigger.tasks.create_project import CreateProject
 from activetigger.tasks.generate_call import GenerateCall
+from activetigger.tasks.update_datasets import UpdateDatasets
 from activetigger.users import Users
+
+
+class Errors:
+    """
+    Runtime error object
+    """
+
+    def __init__(self, timeout: int = 15) -> None:
+        """
+        Initialize the error stack
+        """
+        self.timeout = timeout
+        self.__stack: list[list] = []
+
+    def add(self, message: str) -> None:
+        """
+        Add an error to the stack
+        """
+        self.__stack.append([message, datetime.now(config.timezone)])
+
+    def clean(self) -> None:
+        """
+        Clean old errors
+        """
+        now = datetime.now(config.timezone)
+        self.__stack = [e for e in self.__stack if e[1] >= now - timedelta(minutes=self.timeout)]
+
+    def state(self) -> list[list]:
+        """
+        Get the current stack
+        """
+        self.clean()
+        return self.__stack
 
 
 class Project:
@@ -73,16 +110,15 @@ class Project:
     data: Data
     db_manager: DatabaseManager
     params: ProjectModel
-    train: DataFrame | None
-    valid: DataFrame | None
-    test: DataFrame | None
     schemes: Schemes
     features: Features
     languagemodels: LanguageModels
     quickmodels: QuickModels
     generations: Generations
     projections: Projections
-    errors: list[list]
+    messages: Messages
+    errors: Errors
+    monitoring: Monitoring
 
     def __init__(
         self,
@@ -90,11 +126,14 @@ class Project:
         queue: Queue,
         db_manager: DatabaseManager,
         path_models: Path,
+        users: Users,
+        messages: Messages,
     ) -> None:
         """
-        Load existing project
+        Initialize the project
+        - load if it exits in database
         """
-        self.status = "initial"
+        self.status = "initialize"
         self.starting_time = time.time()
         self.queue = queue
         self.computing = []
@@ -102,17 +141,15 @@ class Project:
         self.path_models = path_models
         self.name = project_slug
         self.project_slug = project_slug
-        self.errors = []  # TODO Move to specific class / db in the future
-        self.users = Users(self.db_manager)
+        self.errors = Errors()
+        self.users = users
+        self.messages = messages
+        self.monitoring = Monitoring(db_manager, project_slug)
 
         # load the project if exist
         if self.exists():
             self.status = "created"
             self.load_project(project_slug)
-
-    def __del__(self):
-        print(f"Project {self.name} deleted")
-        pass
 
     def exists(self) -> bool:
         """
@@ -122,20 +159,86 @@ class Project:
             return True
         return False
 
+    def load_project(self, project_slug: str) -> None:
+        """
+        Load existing project
+        """
+        # get projet parameters
+        existing_project = self.db_manager.projects_service.get_project(project_slug)
+
+        if not existing_project:
+            raise ValueError("This project does not exist")
+
+        self.params = ProjectModel(**existing_project["parameters"])
+
+        # check if directory exists
+        if self.params.dir is None:
+            raise ValueError("No directory exists for this project")
+
+        # Tabular data management
+        self.data = Data(
+            self.params.dir,
+            self.params.dir.joinpath(config.data_all),
+            self.params.dir.joinpath(config.features_file),
+            self.params.dir.joinpath(config.train_file),
+            self.params.dir.joinpath(config.valid_file),
+            self.params.dir.joinpath(config.test_file),
+        )
+
+        # create specific management objets
+        self.schemes = Schemes(
+            project_slug,
+            self.db_manager,
+            self.data,
+        )
+        self.features = Features(
+            project_slug,
+            self.data,
+            self.path_models,
+            self.queue,
+            cast(list[FeatureComputing], self.computing),
+            self.db_manager,
+            self.params.language,
+        )
+        self.languagemodels = LanguageModels(
+            project_slug,
+            self.params.dir,
+            self.queue,
+            self.computing,
+            self.db_manager,
+            config.file_models,
+        )
+        self.quickmodels = QuickModels(
+            project_slug, self.params.dir, self.queue, self.computing, self.db_manager
+        )
+        self.generations = Generations(
+            self.db_manager, cast(list[GenerationComputing], self.computing)
+        )
+        self.projections = Projections(self.params.dir, self.computing, self.queue)
+        self.bertopic = Bertopic(
+            project_slug,
+            self.params.dir,
+            self.queue,
+            self.computing,
+            self.features,
+            self.db_manager,
+        )
+
     def start_project_creation(self, params: ProjectBaseModel, username: str, path: Path) -> None:
         """
         Manage process creation, sending the heavy process to the queue
         """
         self.status = "creating"
+
         # test if the name of the column is specified
         if params.col_id is None or params.col_id == "":
             raise Exception("No column selected for the id")
         if params.cols_text is None or len(params.cols_text) == 0:
             raise Exception("No column selected for the text")
+
         # add the dedicated directory
         params.dir = path.joinpath(self.project_slug)
 
-        print("Adding project to the queue")
         # send the process to the queue
         unique_id = self.queue.add_task(
             "create_project",
@@ -149,9 +252,11 @@ class Project:
                 valid_file=config.valid_file,
                 test_file=config.test_file,
                 features_file=config.features_file,
+                random_seed=config.random_seed,
             ),
             queue="cpu",
         )
+
         # Update the register
         self.computing.append(
             ProjectCreatingModel(
@@ -179,11 +284,13 @@ class Project:
         self.db_manager.projects_service.add_project(
             project.project_slug, jsonable_encoder(project), username
         )
-        # add the default scheme (basic name or with a random number if the name already exists)
+
+        # add the default scheme if needed
         if import_trainset_labels is None or len(import_trainset_labels.columns) == 0:
             self.db_manager.projects_service.add_scheme(
                 self.project_slug, config.default_scheme, [], "multiclass", "system"
             )
+
         # if labels/schemes to import, add them to the database
         else:
             for col in import_trainset_labels.columns:
@@ -240,9 +347,13 @@ class Project:
                         elements=elements,
                     )
 
-        # create user authorizations
-        self.users.set_auth(username, project.project_slug, "manager")
-        self.users.set_auth("root", project.project_slug, "manager")
+        # add user authorizations
+        self.users.set_auth(
+            AuthUserModel(username=username, project_slug=project.project_slug, status="manager")
+        )
+        self.users.set_auth(
+            AuthUserModel(username="root", project_slug=project.project_slug, status="manager")
+        )
         self.status = "created"
 
     def delete(self) -> None:
@@ -251,7 +362,7 @@ class Project:
         """
 
         if self.params.dir is None:
-            raise ValueError("No directory exists for this project")
+            raise ValueError("No directory for this project")
 
         # remove from database
         try:
@@ -270,81 +381,6 @@ class Project:
         # remove static files
         if Path(f"{config.data_path}/projects/static/{self.name}").exists():
             shutil.rmtree(f"{config.data_path}/projects/static/{self.name}")
-
-    def load_project(self, project_slug: str) -> None:
-        """
-        Load existing project
-        """
-
-        try:
-            self.params = self.load_params(project_slug)
-        except Exception as e:
-            raise ValueError("This project can be loaded", str(e))
-
-        # check if directory exists
-        if self.params.dir is None:
-            raise ValueError("No directory exists for this project")
-
-        # Tabular data management
-        self.data = Data(
-            self.params.dir,
-            self.params.dir.joinpath(config.train_file),
-            self.params.dir.joinpath(config.valid_file) if self.params.valid else None,
-            self.params.dir.joinpath(config.test_file) if self.params.test else None,
-        )
-
-        # create specific management objets
-        self.schemes = Schemes(
-            project_slug,
-            self.db_manager,
-            self.data,
-        )
-        self.features = Features(
-            project_slug,
-            self.params.dir.joinpath(config.features_file),
-            self.params.dir.joinpath(config.data_all),
-            self.params.dir.joinpath(config.train_file),
-            self.params.dir.joinpath(config.valid_file),
-            self.params.dir.joinpath(config.test_file),
-            self.path_models,
-            self.queue,
-            cast(list[FeatureComputing], self.computing),
-            self.db_manager,
-            self.params.language,
-        )
-        self.languagemodels = LanguageModels(
-            project_slug,
-            self.params.dir,
-            self.queue,
-            self.computing,
-            self.db_manager,
-            config.file_models,
-        )
-        self.quickmodels = QuickModels(
-            project_slug, self.params.dir, self.queue, self.computing, self.db_manager
-        )
-        self.generations = Generations(
-            self.db_manager, cast(list[GenerationComputing], self.computing)
-        )
-        self.projections = Projections(self.params.dir, self.computing, self.queue)
-        self.bertopic = Bertopic(
-            project_slug,
-            self.params.dir,
-            self.queue,
-            self.computing,
-            self.features,
-            self.db_manager,
-        )
-
-    def load_params(self, project_slug: str) -> ProjectModel:
-        """
-        Load params from database
-        """
-        existing_project = self.db_manager.projects_service.get_project(project_slug)
-        if existing_project:
-            return ProjectModel(**existing_project["parameters"])
-        else:
-            raise NameError(f"{project_slug} does not exist.")
 
     def drop_evalset(self, dataset: str) -> None:
         """
@@ -433,7 +469,7 @@ class Project:
             )
 
         # deal with non-unique id
-        # TODO : compare with the general dataset ???
+        # TODO : compare with the general dataset
         if not ((df["id"].astype(str).apply(slugify)).nunique() == len(df)):
             df["id"] = [str(i) for i in range(len(df))]
             print("ID not unique, changed to default id")
@@ -466,12 +502,12 @@ class Project:
         # write the dataset
         if dataset == "test":
             df[["text"]].to_parquet(self.params.dir.joinpath(config.test_file))
-            self.data.test = df[["text"]]
             self.params.test = True
+            self.data.load_dataset("test")
         else:
             df[["text"]].to_parquet(self.params.dir.joinpath(config.valid_file))
-            self.data.valid = df[["text"]]
             self.params.valid = True
+            self.data.load_dataset("valid")
 
         # update the database
         self.db_manager.projects_service.update_project(
@@ -497,6 +533,7 @@ class Project:
             standardize=model.standardize,
             dichotomize=model.model_params.get("dichotomize", None),
             cv10=model.cv10,
+            balance_classes=model.balance_classes,
         )
         self.train_quickmodel(quickmodel, username, retrain=True)
 
@@ -506,7 +543,7 @@ class Project:
         username: str,
         n_min_annotated: int = 3,
         retrain: bool = False,
-    ) -> None:
+    ) -> str:
         """
         Build all the information before calling the quickmodel computation
         retrain : if True, will delete the previous model with the same name
@@ -546,7 +583,7 @@ class Project:
 
         # get data
         df_features = self.features.get(quickmodel.features, dataset=["train"])
-        df_scheme = self.schemes.get_scheme_data(scheme=quickmodel.scheme)
+        df_scheme = self.schemes.get_scheme(scheme=quickmodel.scheme)
 
         # management for multilabels / dichotomize
         if quickmodel.dichotomize is not None:
@@ -564,10 +601,7 @@ class Project:
 
         col_features = list(df_features.columns)
         data = pd.concat([df_scheme, df_features], axis=1)
-
-        logger_quickmodel = logging.getLogger("quickmodel")
-        logger_quickmodel.info("Building the quickmodel request")
-        self.quickmodels.compute_quickmodel(
+        process_id = self.quickmodels.compute_quickmodel(
             project_slug=self.params.project_slug,
             user=username,
             scheme=quickmodel.scheme,
@@ -580,9 +614,17 @@ class Project:
             model_params=params,
             standardize=quickmodel.standardize or False,
             cv10=quickmodel.cv10 or False,
+            balance_classes=quickmodel.balance_classes or False,
             retrain=retrain,
             texts=self.data.train["text"] if self.data.train is not None else None,
         )
+        self.monitoring.register_process(
+            process_name=process_id,
+            kind="quickmodel",
+            parameters={},
+            user_name=username,
+        )
+        return process_id
 
     def get_model_prediction(self, type: str, name: str) -> pd.DataFrame:
         """
@@ -624,35 +666,36 @@ class Project:
         if next.scheme not in self.schemes.available():
             raise ValueError("Scheme doesn't exist")
 
-        # select the current state of annotation
+        # select the current dataset
         if next.dataset == "test":
             if self.data.test is None:
                 raise ValueError("No test dataset available")
-            df = self.schemes.get_scheme_data(next.scheme, complete=True, kind=["test"])
+            df = self.schemes.get_scheme(next.scheme, complete=True, datasets=["test"])
         elif next.dataset == "valid":
             if self.data.valid is None:
                 raise ValueError("No valid dataset available")
-            df = self.schemes.get_scheme_data(next.scheme, complete=True, kind=["valid"])
+            df = self.schemes.get_scheme(next.scheme, complete=True, datasets=["valid"])
         else:
-            df = self.schemes.get_scheme_data(next.scheme, complete=True, kind=["train"])
+            df = self.schemes.get_scheme(next.scheme, complete=True, datasets=["train"])
 
-        # the filter for the sample
+        # filter based on the labels
         if next.sample == "untagged":
             f = df["labels"].isna()
         elif next.sample == "tagged":
-            # on a specific label
-            if next.label is not None and next.label in df["labels"].unique():
-                f = df["labels"] == next.label
+            # on specific labels
+            if next.on_labels is not None and len(next.on_labels) > 0:
+                f = df["labels"].isin(next.on_labels)
             else:
                 f = df["labels"].notna()
-            # for a specific user if specified
-            if next.user is not None and next.user != "":
-                f_user = df["user"] == next.user
+
+            # on specific users
+            if next.on_users is not None and len(next.on_users) > 0:
+                f_user = df["user"].isin(next.on_users)
                 f = f & f_user
         else:
             f = df["labels"].apply(lambda x: True)
 
-        # add a regex condition to the selection
+        # filter based on the text (field, context)
         if next.filter:
             # sanitize
             df["ID"] = df.index  # duplicate the id column
@@ -676,7 +719,7 @@ class Project:
                 f_regex = df["text"].str.contains(filter_san, regex=True, case=True, na=False)
             f = f & f_regex
 
-        # manage frame selection (if projection, only in the box)
+        # filter with a frame (projection coordinates)
         if next.frame and len(next.frame) == 4:
             if username in self.projections.available:
                 if self.projections.available[username].data is not None:
@@ -697,14 +740,17 @@ class Project:
         if sum(f) == 0:
             raise ValueError("No element available with this selection mode.")
 
-        # Take into account the session history
+        # filter by history
         ss = df[f].drop(next.history, errors="ignore")
         if len(ss) == 0:
-            raise ValueError("No element available with this selection mode.")
+            raise ValueError(
+                "No element available with this selection mode and history. Clear the history to access previous elements."
+            )
         indicator = None
         n_sample = f.sum()  # use len(ss) for adding history
 
-        # select type of selection
+        # select an element based on the method
+
         if next.selection == "fixed":  # next row
             element_id = ss.index[0]
 
@@ -753,18 +799,16 @@ class Project:
         ):
             predict = self.quickmodels.get_prediction_element(next.model_active.value, element_id)
 
-        # get all tags already existing for the element
+        # get all tags already existing for the element selected
         previous = self.schemes.projects_service.get_annotations_by_element(
             self.params.project_slug, next.scheme, element_id
         )
 
         if next.dataset in ["test", "valid"]:
-            limit = 1200
             context = {}
         else:
             if self.data.train is None:
                 raise Exception("Train dataset is not defined")
-            limit = int(self.data.train.loc[element_id, "limit"])
             # get context
             context = dict(
                 self.data.train.fillna("NA").loc[element_id, self.params.cols_context].apply(str)
@@ -778,7 +822,7 @@ class Project:
             info=indicator,
             predict=predict,
             frame=next.frame,
-            limit=limit,
+            limit=None,
             history=previous,
             n_sample=n_sample,
         )
@@ -794,65 +838,49 @@ class Project:
 
         TODO : get next and get element could be merged
         """
-        history = None
 
-        if element.dataset == "valid" and self.data.valid is not None:
+        text = None
+        predict = PredictedLabel(label=None, proba=None, entropy=None)
+        context = {}
+        history = None
+        if element.scheme is not None:
+            history = self.schemes.projects_service.get_annotations_by_element(
+                self.params.project_slug, element.scheme, element.element_id
+            )
+
+        if element.dataset == "valid":
+            if self.data.valid is None:
+                raise Exception("Valid dataset is not defined")
             if element.element_id not in self.data.valid.index:
                 raise Exception("Element does not exist.")
-            if element.scheme is not None:
-                history = self.schemes.projects_service.get_annotations_by_element(
-                    self.params.project_slug, element.scheme, element.element_id
-                )
-            return ElementOutModel(
-                element_id=element.element_id,
-                text=str(self.data.valid.loc[element.element_id, "text"]),
-                context={},
-                selection="valid",
-                info="",
-                predict=PredictedLabel(label=None, proba=None, entropy=None),
-                frame=None,
-                limit=1200,
-                history=history,
-            )
+            text = str(self.data.valid.loc[element.element_id, "text"])
 
-        if element.dataset == "test" and self.data.test is not None:
+        if element.dataset == "test":
+            if self.data.test is None:
+                raise Exception("Test dataset is not defined")
             if element.element_id not in self.data.test.index:
                 raise Exception("Element does not exist.")
-            if element.scheme is not None:
-                history = self.schemes.projects_service.get_annotations_by_element(
-                    self.params.project_slug, element.scheme, element.element_id
-                )
-            return ElementOutModel(
-                element_id=element.element_id,
-                text=str(self.data.test.loc[element.element_id, "text"]),
-                context={},
-                selection="test",
-                info="",
-                predict=PredictedLabel(label=None, proba=None, entropy=None),
-                frame=None,
-                limit=1200,
-                history=history,
-            )
+            text = str(self.data.test.loc[element.element_id, "text"])
 
+        # case for train with more information
         if element.dataset == "train":
             if self.data.train is None:
                 raise Exception("Train dataset is not defined")
             if element.element_id not in self.data.train.index:
                 raise Exception("Element does not exist.")
 
+            text = str(self.data.train.loc[element.element_id, "text"])
+
             # get prediction if it exists
             predict = PredictedLabel(label=None, proba=None, entropy=None)
             if element.active_model is not None:
+                print("Getting prediction for ", element.active_model.value)
                 predict = self.quickmodels.get_prediction_element(
                     element.active_model.value, element.element_id
                 )
+                print(predict)
 
-            # get element tags
-            if element.scheme is not None:
-                history = self.schemes.projects_service.get_annotations_by_element(
-                    self.params.project_slug, element.scheme, element.element_id
-                )
-
+            # extract context
             context = cast(
                 dict[str, Any],
                 self.data.train.loc[element.element_id, self.params.cols_context]  # type: ignore[index]
@@ -861,19 +889,20 @@ class Project:
                 .to_dict(),
             )
 
-            return ElementOutModel(
-                element_id=element.element_id,
-                text=str(self.data.train.loc[element.element_id, "text"]),
-                context=context,
-                selection="request",
-                predict=predict,
-                info="get specific",
-                frame=None,
-                limit=cast(int, self.data.train.loc[element.element_id, "limit"]),
-                history=history,
-            )
+        if text is None:
+            raise Exception("Dataset does not exist.")
 
-        raise Exception("Dataset does not exist.")
+        return ElementOutModel(
+            element_id=element.element_id,
+            text=text,
+            context=context,
+            selection="request",
+            predict=predict,
+            info="get specific",
+            frame=None,
+            limit=None,
+            history=history,
+        )
 
     def get_params(self) -> ProjectModel:
         """
@@ -914,12 +943,12 @@ class Project:
 
         # part train
         users = self.db_manager.users_service.get_coding_users(scheme, self.params.project_slug)
-        df_train = self.schemes.get_scheme_data(scheme, kind=["train"])
+        df_train = self.schemes.get_scheme(scheme, datasets=["train"])
         train_annotated_distribution = self.compute_annotations_distribution(df_train, kind)
 
         # part valid
         if self.params.valid and (self.data.valid is not None):
-            df_valid = self.schemes.get_scheme_data(scheme, kind=["valid"])
+            df_valid = self.schemes.get_scheme(scheme, datasets=["valid"])
             valid_set_n = len(self.data.valid)
             valid_annotated_n = len(df_valid.dropna(subset=["labels"]))
             valid_annotated_distribution = self.compute_annotations_distribution(df_valid, kind)
@@ -930,7 +959,7 @@ class Project:
 
         # part test
         if self.params.test and (self.data.test is not None):
-            df_test = self.schemes.get_scheme_data(scheme, kind=["test"])
+            df_test = self.schemes.get_scheme(scheme, datasets=["test"])
             test_set_n = len(self.data.test)
             test_annotated_n = len(df_test.dropna(subset=["labels"]))
             test_annotated_distribution = self.compute_annotations_distribution(df_test, kind)
@@ -963,7 +992,7 @@ class Project:
         if projection is None:
             return None
         # get annotations
-        df = self.schemes.get_scheme_data(scheme, complete=True, kind=["train"])
+        df = self.schemes.get_scheme(scheme, complete=True, datasets=["train"])
         data = projection.data
         data["labels"] = df["labels"].fillna("NA")
 
@@ -983,7 +1012,7 @@ class Project:
 
     def state(self) -> ProjectStateModel:
         """
-        Send state of the project
+        State of the project
         Collecting states for submodules
         """
         return ProjectStateModel(
@@ -1000,7 +1029,7 @@ class Project:
             projections=self.projections.state(),
             generations=self.generations.state(),
             bertopic=self.bertopic.state(),
-            errors=self.errors,
+            errors=self.errors.state(),
             memory=get_dir_size(str(self.params.dir)),
             last_activity=self.db_manager.logs_service.get_last_activity_project(
                 self.params.project_slug
@@ -1038,61 +1067,58 @@ class Project:
     ) -> FileResponse:
         """
         Export annotation data in different formats
-        - for a scheme
-        - for all schemes
+        - for a scheme & dataset
+        - for all schemes & every annotation
         """
+
         path = self.params.dir  # path of the data
         if path is None:
             raise ValueError("Problem of filesystem for project")
 
-        # test or train
+        # test dataset availability
+        if dataset == "valid":
+            if self.data.valid is None:
+                raise Exception("No valid data available")
         if dataset == "test":
-            if not self.params.test:
-                raise Exception("No test data available")
-            if scheme == "all":
-                schemes = self.schemes.available()
-                if len(schemes) == 0:
-                    raise Exception("No scheme available")
-                data = pd.concat(
-                    {
-                        s: self.schemes.get_scheme_data(s, complete=True, kind=["test"])["labels"]
-                        for s in schemes
-                    },
-                    axis=1,
-                )
-                file_name = f"data_test_{self.name}_all_schemes.{format}"
-                dropna = False
-            else:
-                data = self.schemes.get_scheme_data(scheme=scheme, complete=True, kind=["test"])
-                file_name = f"data_test_{self.name}_{scheme}.{format}"
-        else:
-            if scheme == "all":
-                schemes = self.schemes.available()
-                if len(schemes) == 0:
-                    raise Exception("No scheme available")
-                data = pd.concat(
-                    {
-                        s: self.schemes.get_scheme_data(s, complete=True, kind=["train"])["labels"]
-                        for s in schemes
-                    },
-                    axis=1,
-                )
-                file_name = f"data_train_{self.name}_all_schemes.{format}"
-                dropna = False
-            else:
-                data = self.schemes.get_scheme_data(scheme=scheme, complete=True, kind=["train"])
-                file_name = f"data_train_{self.name}_{scheme}.{format}"
+            if self.data.test is None:
+                raise Exception("No train data available")
 
-        # transformation
+        # for a specific scheme and dataset
+        if scheme != "all" and dataset in ["train", "test", "valid"]:
+            data = self.schemes.get_scheme(
+                scheme=scheme, complete=True, datasets=[dataset], id_external=True
+            )
+            file_name = f"export_tags_{self.name}_{scheme}.{format}"
+        # for all the annotated data in the project, need to concate
+        elif scheme == "all":
+            schemes = self.schemes.available()
+            data = pd.concat(
+                {
+                    s: self.schemes.get_scheme(
+                        s, complete=True, datasets=["train", "valid", "test"], id_external=True
+                    )
+                    for s in schemes
+                },
+                axis=1,
+            )
+            file_name = f"export_tags_{self.name}_all.{format}"
+            dropna = False
+        else:
+            raise Exception("Scheme or dataset not recognized")
+
+        # transformation of the data
         if dropna:
             data = data.dropna(subset=["labels"])
-        data = (
-            data.rename(columns={"labels": scheme, "id": "at_id"})
-            .drop(columns=["limit"], errors="ignore")
-            .reset_index()
-        )
 
-        # Create files
+        # select columns + order
+        cols = ["id_external"] + [
+            c for c in data.columns if c not in ["id_internal", "id_external"]
+        ]
+        data = data[cols]
+        if self.params.col_id is not None:
+            data.rename(columns={"id_external": self.params.col_id}, inplace=True)
+
+        # write file in the folder
         if format == "csv":
             data.to_csv(path.joinpath(file_name))
         if format == "parquet":
@@ -1110,6 +1136,7 @@ class Project:
         table = self.generations.get_generated(
             project_slug=project_slug,
             user_name=username,
+            params=params,
         )
 
         # apply filters on the generated
@@ -1154,21 +1181,19 @@ class Project:
             shutil.copyfile(path_origin, path_target)
         return StaticFileModel(name=name, path=f"{project_slug}/{name}")
 
-    def update_project(self, update: ProjectUpdateModel) -> None:
+    def start_update_project(self, update: ProjectUpdateModel, username: str) -> None:
         """
         Update project parameters
 
         For text/contexts/expand, it needs to draw from raw data
+        - direct small modification
+        - bigger modification (texts/contexts/expand) with the queue
         """
 
         if not self.params.dir:
             raise ValueError("No directory for project")
         if self.data.train is None:
             raise ValueError("No train data for project")
-
-        # flag if needed to drop features
-        drop_features = False
-        df = None
 
         # update the name
         if update.project_name and update.project_name != self.params.project_name:
@@ -1177,86 +1202,26 @@ class Project:
         # update the language
         if update.language and update.language != self.params.language:
             self.params.language = update.language
-            drop_features = True
 
-        # update the context columns by modifying the train data
-        if update.cols_context and set(update.cols_context) != set(self.params.cols_context):
-            if df is None:
-                df = pd.read_parquet(
-                    self.params.dir.joinpath("data_all.parquet"),
-                    columns=update.cols_context,
-                )
-            self.data.train.drop(columns=self.params.cols_context, inplace=True)
-            self.data.train = pd.concat([self.data.train, df.loc[self.data.train.index]], axis=1)
-            self.data.train.to_parquet(self.params.dir.joinpath(config.train_file))
-            self.params.cols_context = update.cols_context
-            print("Context updated")
-
-        # update the text columns
-        if update.cols_text and set(update.cols_text) != set(self.params.cols_text):
-            if df is None:
-                df = pd.read_parquet(
-                    self.params.dir.joinpath("data_all.parquet"),
-                    columns=update.cols_text,
-                )
-            df_sub = df.loc[self.data.train.index]
-            df_sub["text"] = df_sub[update.cols_text].apply(
-                lambda x: "\n\n".join([str(i) for i in x if pd.notnull(i)]), axis=1
-            )
-            self.data.train["text"] = df_sub["text"]
-            self.data.train.to_parquet(self.params.dir.joinpath(config.train_file))
-            self.params.cols_text = update.cols_text
-            drop_features = True
-            del df_sub
-            print("Texts updated")
-
-        # update the train set
-        if update.add_n_train and update.add_n_train > 0:
-            if df is None:
-                df = pd.read_parquet(
-                    self.params.dir.joinpath("data_all.parquet"),
-                    columns=list(self.data.train.columns),
-                )
-            # index of elements used
-            elements_index = list(self.data.train.index)
-            if self.data.test is not None:
-                elements_index += list(self.data.test.index)
-            if self.data.valid is not None:
-                elements_index += list(self.data.valid.index)
-
-            # take elements that are not in index
-            df = df[~df.index.isin(elements_index)]
-
-            # sample elements
-            elements_to_add = df.sample(update.add_n_train)
-
-            # drop na elements to avoid problems
-            elements_to_add = elements_to_add[elements_to_add["text"].notna()]
-
-            self.data.train = pd.concat([self.data.train, elements_to_add])
-            self.data.train.to_parquet(self.params.dir.joinpath(config.train_file))
-
-            # update params
-            self.params.n_train = len(self.data.train)
-
-            # drop existing features
-            drop_features = True
-
-            # restart the project
-            del elements_to_add
-            print("Train set updated")
-
-        if df is not None:
-            del df
-
-        if drop_features:
-            self.features.reset_features_file()
-
-        # update the database
-        self.db_manager.projects_service.update_project(
-            self.params.project_slug, jsonable_encoder(self.params)
+        # for other updates, add task to the queue
+        unique_id = self.queue.add_task(
+            kind="update_datasets",
+            project_slug=self.name,
+            task=UpdateDatasets(
+                project_params=self.params,
+                update=update,
+            ),
+            queue="cpu",
         )
-        return None
+        self.computing.append(
+            UpdateComputing(
+                unique_id=unique_id,
+                user=username,
+                time=datetime.now(),
+                kind="update_datasets",
+                update=update,
+            )
+        )
 
     def start_languagemodel_training(self, bert: BertModelModel, username: str) -> None:
         """
@@ -1268,7 +1233,7 @@ class Project:
                 "User already has a process launched, please wait before launching another one"
             )
         # get data
-        df = self.schemes.get_scheme_data(bert.scheme, kind=["train"], complete=True)
+        df = self.schemes.get_scheme(bert.scheme, datasets=["train"], complete=True)
         df = df[["text", "labels"]].dropna()
 
         # management for multilabels / dichotomize
@@ -1297,7 +1262,7 @@ class Project:
             )
 
         # launch training process
-        self.languagemodels.start_training_process(
+        process_id = self.languagemodels.start_training_process(
             name=bert.name,
             project=self.name,
             user=username,
@@ -1311,6 +1276,12 @@ class Project:
             loss=bert.loss,
             max_length=bert.max_length,
             auto_max_length=bert.auto_max_length,
+        )
+        self.monitoring.register_process(
+            process_name=process_id,
+            kind="train_bert",
+            parameters={},
+            user_name=username,
         )
 
     def start_generation(self, request: GenerationRequest, username: str) -> None:
@@ -1338,6 +1309,7 @@ class Project:
         self.computing.append(
             GenerationComputing(
                 unique_id=unique_id,
+                prompt_name=request.prompt_name if request.prompt_name else "",
                 user=username,
                 project=self.name,
                 model_id=request.model_id,
@@ -1350,328 +1322,179 @@ class Project:
             )
         )
 
+    def clean_process(self, e: ProcessComputing) -> None:
+        """
+        Clean a process from computing and queue
+        """
+        self.computing.remove(e)
+        self.queue.delete(e.unique_id)
+
     def update_processes(self) -> None:
         """
         Update completed processes and do specific operations regarding their kind
         - get the result from the queue
         - add the result if needed
         - manage error if needed
-
-        # TODO : REFACTOR THIS FUNCTION
-
         """
         add_predictions = {}
 
         # loop on the current process
         for e in self.computing.copy():
+            # get the process
             process = self.queue.get(e.unique_id)
-
-            # case of not in queue
             if process is None:
-                logging.warning("Problem : id in computing not in queue")
-                self.computing.remove(e)
+                self.clean_process(e)
                 continue
 
             # check if the process is done, else continue
             if process.future is None or not process.future.done():
                 continue
 
-            # get the future for process done
-            future = process.future
-            exception = future.exception()
+            # log error if exists in the process execution
+            exception = process.future.exception()
             if exception:
                 print(f"Error in {e.kind} : {exception}")
-                self.errors.append(
-                    [datetime.now(config.timezone), f"Error for process {e.kind}", str(exception)]
-                )
-                self.computing.remove(e)
-                self.queue.delete(e.unique_id)
+                self.errors.add(f"Error for process {e.kind} : {exception}")
 
                 # specific case for project creation
                 if e.kind == "create_project":
+                    print("Error in project creation")
                     self.status = "error"
+
+                self.clean_process(e)
                 continue
 
-            # case for project creation
-            if e.kind == "create_project":
-                e = cast(ProjectCreatingModel, e)
-                try:
-                    results = future.result()
-                    if results is None:
-                        print("No result from project creation")
-                        raise Exception("No result from project creation")
-                    self.finish_project_creation(
-                        e.username, results[0], results[1], results[2], results[3]
-                    )
-                except Exception as ex:
-                    self.errors.append(
-                        [datetime.now(config.timezone), "Error in project creation", str(ex)]
-                    )
-                    logging.error("Error in project creation", ex)
-                finally:
-                    self.computing.remove(e)
-                    self.queue.delete(e.unique_id)
-
-            # case for bert fine-tuning
-            if e.kind == "train_bert":
-                model = cast(LMComputing, e)
-                try:
-                    error = future.exception()
-                    if error:
-                        raise Exception(str(error))
-                    self.languagemodels.add(model)
-                    print("Bert training achieved")
-                    logging.debug("Bert training achieved")
-                except Exception as ex:
-                    self.db_manager.language_models_service.delete_model(
-                        self.name, model.model_name
-                    )
-                    self.errors.append(
-                        [
-                            datetime.now(config.timezone),
-                            "Error in bert model training",
-                            str(ex),
-                        ]
-                    )
-                finally:
-                    self.computing.remove(e)
-                    self.queue.delete(e.unique_id)
-
-            # case for bertmodel prediction
-            if e.kind == "predict_bert":
-                prediction = cast(LMComputing, e)
-                try:
-                    error = future.exception()
-                    if error:
-                        raise Exception(str(error))
-                    results = future.result()
-
-                    # case of predict on annotable : transform to feature
-                    if (
-                        results is not None
-                        and results.path
-                        and "predict_annotable.parquet" in results.path
-                    ):
-                        add_predictions["predict_" + prediction.model_name] = results.path
-                    self.languagemodels.add(prediction)
-                    print("Bert predicting achieved")
-                    logging.debug("Bert predicting achieved")
-                except Exception as ex:
-                    self.errors.append(
-                        [
-                            datetime.now(config.timezone),
-                            "Error in model predicting",
-                            str(ex),
-                        ]
-                    )
-                finally:
-                    self.computing.remove(e)
-                    self.queue.delete(e.unique_id)
-
-            # case for quickmodels training
-            if e.kind == "train_quickmodel":
-                sm = cast(QuickModelComputing, e)
-                try:
-                    error = future.exception()
-                    if error:
-                        raise Exception(str(error))
-                    self.quickmodels.add(sm)
-                    print("Quickmodel trained")
-                    logging.debug("Quickmodel trained")
-                except Exception as ex:
-                    self.errors.append(
-                        [datetime.now(config.timezone), "quickmodel failed", str(ex)]
-                    )
-                    logging.error("Quickmodel failed", ex)
-                finally:
-                    self.computing.remove(e)
-                    self.queue.delete(e.unique_id)
-
-            # case for quickmodel prediction
-            if e.kind == "predict_quickmodel":
-                sm = cast(QuickModelComputing, e)
-                try:
-                    error = future.exception()
-                    if error:
-                        raise Exception(str(error))
-                except Exception as ex:
-                    self.errors.append(
-                        [datetime.now(config.timezone), "quickmodel failed", str(ex)]
-                    )
-                    logging.error("Quickmodel failed", ex)
-                finally:
-                    self.computing.remove(e)
-                    self.queue.delete(e.unique_id)
-
-            # case for features
-            if e.kind == "feature":
-                feature_computation = cast(FeatureComputing, e)
-                try:
-                    error = future.exception()
-                    if error:
-                        raise Exception("from task" + str(error))
-                    results = future.result()
-                    self.features.add(
-                        feature_computation.name,
-                        feature_computation.type,
-                        feature_computation.user,
-                        feature_computation.parameters,
-                        results,
-                    )
-                    print("Feature added", feature_computation.name)
-                except Exception as ex:
-                    self.errors.append(
-                        [datetime.now(config.timezone), "Error in feature processing", str(ex)]
-                    )
-                    print("Error in feature processing", ex)
-                finally:
-                    self.computing.remove(e)
-                    self.queue.delete(e.unique_id)
-
-            # case for projections
-            if e.kind == "projection":
-                projection = cast(ProjectionComputing, e)
-                try:
-                    results = future.result()
-                    self.projections.add(projection, results)
-                    print("Projection added", projection.name)
-                    logging.debug("projection added")
-                except Exception as ex:
-                    self.errors.append(
-                        [
-                            datetime.now(config.timezone),
-                            "Error in feature vizualisation queue",
-                            str(ex),
-                        ]
-                    )
-                    logging.error("Error in feature vizualisation queue", ex)
-                finally:
-                    self.computing.remove(e)
-                    self.queue.delete(e.unique_id)
-
-            # case for generations
-            if e.kind == "generation":
-                try:
-                    results = future.result()
-                    r = cast(
-                        list[GenerationResult],
-                        results,
-                    )
-                    for row in r:
-                        self.generations.add(
-                            user=row.user,
-                            project_slug=row.project_slug,
-                            element_id=row.element_id,
-                            model_id=row.model_id,
-                            prompt=row.prompt,
-                            answer=row.answer,
+            # get the result and do specific operations, if it fails, log the error
+            try:
+                results = process.future.result()
+                match e.kind:
+                    case "create_project":
+                        e = cast(ProjectCreatingModel, e)
+                        if results is None:
+                            print("No result from project creation")
+                            raise Exception("No result from project creation")
+                        self.finish_project_creation(
+                            e.username, results[0], results[1], results[2], results[3]
                         )
-                except Exception as ex:
-                    self.errors.append(
-                        [
-                            datetime.now(config.timezone),
-                            "Error in generation queue",
-                            getattr(ex, "message", repr(ex)),
-                        ]
-                    )
-                    logging.warning("Error in generation queue", getattr(ex, "message", repr(ex)))
-                    print("Error in generation queue", getattr(ex, "message", repr(ex)))
-                finally:
-                    self.computing.remove(e)
-                    self.queue.delete(e.unique_id)
-
-            # case for bertopic
-            if e.kind == "bertopic":
-                try:
-                    bertmodel = cast(BertopicComputing, e)
-                    print("Bertopic trained")
-                    # self.bertopic.add(bertmodel)
-                    logging.debug("Bertopic trained")
-                except Exception as ex:
-                    self.errors.append(
-                        [datetime.now(config.timezone), "Error in bertopic training", str(ex)]
-                    )
-                    logging.error("Error in bertopic training", ex)
-                finally:
-                    self.computing.remove(e)
-                    self.queue.delete(e.unique_id)
+                    case "update_datasets":
+                        e = cast(UpdateComputing, e)
+                        self.db_manager.projects_service.update_project(
+                            self.params.project_slug, jsonable_encoder(results)
+                        )
+                        # reset the features file and load the dataset again
+                        self.features.reset_features_file()
+                        self.data.load_dataset("all")
+                    case "train_bert":
+                        model = cast(LMComputing, e)
+                        self.languagemodels.add(model)
+                        self.monitoring.close_process(model.unique_id)
+                    case "predict_bert":
+                        prediction = cast(LMComputing, e)
+                        if (
+                            results is not None
+                            and results.path
+                            and "predict_annotable.parquet" in results.path
+                        ):
+                            add_predictions["predict_" + prediction.model_name] = results.path
+                        self.languagemodels.add(prediction)
+                    case "train_quickmodel":
+                        sm = cast(QuickModelComputing, e)
+                        self.monitoring.close_process(sm.unique_id)
+                        self.quickmodels.add(sm)
+                    case "predict_quickmodel":
+                        sm = cast(QuickModelComputing, e)
+                    case "feature":
+                        feature_computation = cast(FeatureComputing, e)
+                        self.features.add(
+                            feature_computation.name,
+                            feature_computation.type,
+                            feature_computation.user,
+                            feature_computation.parameters,
+                            results,
+                        )
+                    case "projection":
+                        projection = cast(ProjectionComputing, e)
+                        self.projections.add(projection, results)
+                    case "generation":
+                        e = cast(GenerationComputing, e)
+                        r = cast(
+                            list[GenerationResult],
+                            results,
+                        )
+                        batch = e.prompt_name + "_" + e.unique_id
+                        for row in r:
+                            self.generations.add(
+                                user=row.user,
+                                project_slug=row.project_slug,
+                                element_id=row.element_id,
+                                model_id=row.model_id,
+                                prompt=row.prompt,
+                                answer=row.answer,
+                                batch=batch,
+                            )
+                    case "bertopic":
+                        print("bertopic")
+            except Exception as ex:
+                print(f"Error in {e.kind} : {ex}")
+                self.errors.add(f"Error in {e.kind} : {str(ex)}")
+                match e.kind:
+                    case "create_project":
+                        self.status = "error"
+                    case "train_bert":
+                        self.db_manager.language_models_service.delete_model(
+                            self.name, model.model_name
+                        )
+                raise ex
+            # clean the process from the list and the queue
+            finally:
+                self.clean_process(e)
 
         # if there are predictions, add them
-        for f in add_predictions:
-            try:
-                # load the prediction probabilities minus one
-                df = pd.read_parquet(add_predictions[f])
-                df = df.drop(columns=["entropy", "prediction", "dataset", "id", "label"])
-                df = df[df.columns[0:-1]]
-                name = f.replace("__", "_")  # avoid __ in the name for features
-                # if the feature already exists, delete it first
-                if self.features.exists(name):
-                    self.features.delete(name)
-                # add it
-                self.features.add(
-                    name=name,
-                    kind="prediction",
-                    parameters={},
-                    username="system",
-                    new_content=df,
-                )
-                logging.debug("Add feature" + str(name))
-            except Exception as ex:
-                self.errors.append(
-                    [
-                        datetime.now(config.timezone),
-                        "Error in adding prediction",
-                        str(ex),
-                    ]
-                )
-                logging.error("Error in addind prediction", ex)
+        if len(add_predictions) > 0:
+            errors = self.features.add_predictions(add_predictions)
+            for err in errors:
+                self.errors.add(err)
 
-        # clean errors older than 15 minutes
-        delta = datetime.now(config.timezone) - timedelta(minutes=15)
-        self.errors = [error for error in self.errors if error[0] >= delta]
+    # def dump(self, with_files=True) -> None:
+    #     """
+    #     Dump the project in a archive
+    #     - keep the files
+    #     - do not keep the models
 
-        return None
+    #     Ideally, to be able to rerun everything
+    #     """
+    #     if self.params.dir is None:
+    #         raise Exception("No directory for project")
+    #     os.mkdir(self.params.dir.joinpath("dump"))
 
-    def dump(self, with_files=True) -> None:
-        """
-        Dump the project in a archive
-        - keep the files
-        - do not keep the models
+    #     # save the project parameters
+    #     # - features computed
 
-        Ideally, to be able to rerun everything
-        """
-        if self.params.dir is None:
-            raise Exception("No directory for project")
-        os.mkdir(self.params.dir.joinpath("dump"))
+    #     # save the annotations
 
-        # save the project parameters
-        # - features computed
+    #     # save the data (train + test + all)
+    #     if with_files:
+    #         shutil.copyfile(
+    #             self.params.dir.joinpath("data_all.parquet"),
+    #             self.params.dir.joinpath("dump").joinpath("data_all.parquet"),
+    #         )
+    #         shutil.copyfile(
+    #             self.params.dir.joinpath("train.parquet"),
+    #             self.params.dir.joinpath("dump").joinpath("data_train.parquet"),
+    #         )
+    #         if self.params.test:
+    #             shutil.copyfile(
+    #                 self.params.dir.joinpath("test.parquet"),
+    #                 self.params.dir.joinpath("dump").joinpath("data_test.parquet"),
+    #             )
 
-        # save the annotations
+    #     # save the codebook
 
-        # save the data (train + test + all)
-        if with_files:
-            shutil.copyfile(
-                self.params.dir.joinpath("data_all.parquet"),
-                self.params.dir.joinpath("dump").joinpath("data_all.parquet"),
-            )
-            shutil.copyfile(
-                self.params.dir.joinpath("train.parquet"),
-                self.params.dir.joinpath("dump").joinpath("data_train.parquet"),
-            )
-            if self.params.test:
-                shutil.copyfile(
-                    self.params.dir.joinpath("test.parquet"),
-                    self.params.dir.joinpath("dump").joinpath("data_test.parquet"),
-                )
+    #     # create the archive
+    #     shutil.make_archive(
+    #         f"dump_{self.project_slug}", "zip", self.params.dir.joinpath("dump"), self.params.dir
+    #     )
 
-        # save the codebook
-
-        # create the archive
-        shutil.make_archive(
-            f"dump_{self.project_slug}", "zip", self.params.dir.joinpath("dump"), self.params.dir
-        )
-
-        # delete the dump folder
-        shutil.rmtree(self.params.dir.joinpath("dump"))
-        return None
+    #     # delete the dump folder
+    #     shutil.rmtree(self.params.dir.joinpath("dump"))
+    #     return None

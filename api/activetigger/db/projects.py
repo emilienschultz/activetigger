@@ -1,12 +1,11 @@
 import datetime
-import logging
 from typing import Any, TypedDict
 
 from sqlalchemy import and_, delete, func, select, update
 from sqlalchemy.orm import Session as SessionType
 from sqlalchemy.orm import sessionmaker
 
-from activetigger.datamodels import FeatureDescriptionModelOut
+from activetigger.datamodels import AnnotationModel, FeatureDescriptionModelOut
 from activetigger.db import DBException
 from activetigger.db.models import Annotations, Auths, Features, Models, Projects, Schemes, Tokens
 
@@ -42,7 +41,6 @@ class ProjectsService:
                 user_name=user_name,
             )
             session.add(project)
-        logging.debug("CREATE PROJECT %s", now)
         return project_slug
 
     def update_project(self, project_slug: str, parameters: dict[str, Any]):
@@ -123,7 +121,6 @@ class ProjectsService:
         """
         Update the codebook in the database
         """
-        logging.debug(f"update_scheme_codebook {project_slug} {scheme}")
         with self.Session.begin() as session:
             result_scheme = session.scalars(
                 select(Schemes).filter_by(project_slug=project_slug, name=scheme)
@@ -217,7 +214,7 @@ class ProjectsService:
 
     def get_scheme_elements(
         self, project_slug: str, scheme: str, dataset: list[str], user: str | None = None
-    ) -> list:
+    ) -> list[list]:
         """
         Get last annotation for each element id for a project/scheme
         """
@@ -305,24 +302,36 @@ class ProjectsService:
 
     def get_annotations_by_element(
         self, project_slug: str, scheme: str, element_id: str, limit: int = 10
-    ):
+    ) -> list[AnnotationModel]:
         with self.Session() as session:
-            annotations = session.execute(
-                select(
-                    Annotations.annotation,
-                    Annotations.dataset,
-                    Annotations.user_name,
-                    Annotations.time,
+            annotations = (
+                session.execute(
+                    select(Annotations)
+                    .filter_by(
+                        project_slug=project_slug,
+                        scheme_name=scheme,
+                        element_id=element_id,
+                    )
+                    .order_by(Annotations.time.desc())
+                    .limit(limit)
                 )
-                .filter_by(
+                .scalars()
+                .all()
+            )
+            return [
+                AnnotationModel(
                     project_slug=project_slug,
-                    scheme_name=scheme,
-                    element_id=element_id,
+                    scheme=r.scheme_name,
+                    element_id=r.element_id,
+                    label=r.annotation,
+                    dataset=r.dataset,
+                    comment=r.comment,
+                    selection="by element",
+                    time=r.time,
+                    user=r.user_name,
                 )
-                .order_by(Annotations.time.desc())
-                .limit(limit)
-            ).all()
-            return [[a.annotation, a.dataset, a.user_name, a.time] for a in annotations]
+                for r in annotations
+            ]
 
     def delete_annotations_evalset(self, project_slug: str, dataset: str):
         """

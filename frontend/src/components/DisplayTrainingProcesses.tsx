@@ -1,6 +1,6 @@
 import { FC } from 'react';
-import PulseLoader from 'react-spinners/PulseLoader';
-import { useStopProcesses } from '../core/api';
+// import { useStopProcesses } from '../core/api';
+import { StopProcessButton } from './StopProcessButton';
 import { LossChart } from './vizualisation/lossChart';
 
 export interface DisplayTrainingProcessesProps {
@@ -32,14 +32,13 @@ interface LossData {
 }
 
 export const DisplayTrainingProcesses: FC<DisplayTrainingProcessesProps> = ({
+  projectSlug,
   processes,
   processStatus,
   displayStopButton = false,
 }) => {
-  const { stopProcesses } = useStopProcesses();
-
   const displayAdvancement = (val: number | string | null) => {
-    if (!val) return 'process in the queue waiting to start';
+    if (!val) return 'process in the queue, waiting to start';
     const v = Math.round(Number(val));
     if (v >= 100) return 'completed, please wait';
     return v + '%';
@@ -54,44 +53,32 @@ export const DisplayTrainingProcesses: FC<DisplayTrainingProcessesProps> = ({
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto my-4">
       {Object.keys(processes || {}).length > 0 && displayStopButton && (
-        <div>
-          <button
-            key="stop"
-            className="btn btn-primary mt-3 d-flex align-items-center"
-            onClick={() => stopProcesses('bert')}
-          >
-            <PulseLoader color={'white'} /> Stop process
-          </button>
-        </div>
+        <StopProcessButton projectSlug={projectSlug} />
       )}
       {Object.keys(processes || {}).length > 0 && (
-        <div className="mt-3">
+        <div>
           Process running:
           <ul className="list-group">
             {Object.entries(
               processes as Record<string, Record<string, string | number | null>>,
             ).map(([user, v]) => (
               <li className="list-group-item" key={v.name}>
-                <div className="d-flex justify-content-between align-items-center">
-                  <div>
-                    <strong>From:</strong> {user} <br />
-                    <strong>Name:</strong> {v.name} <br />
-                    <strong>Status:</strong> {v.status}
-                  </div>
-                  <div className="text-end">
-                    <span className="fw-bold">{displayAdvancement(v.progress)}</span>
-                    {v.status === 'training' && (
-                      <div className="mt-2">
-                        <LossChart
-                          loss={v.loss as unknown as LossData}
-                          xmax={(v.epochs as number) || undefined}
-                        />
-                      </div>
-                    )}
-                  </div>
+                <div className="horizontal wrap" style={{ justifyContent: 'space-between' }}>
+                  <span style={{ marginRight: '10px' }}>From: {user};</span>
+                  <span style={{ marginRight: '10px' }}>Name: {v.name};</span>
+                  <span style={{ marginRight: '10px' }}>Status: {v.status};</span>
+                  <span style={{ marginRight: '10px' }} className="fw-bold">
+                    {displayAdvancement(v.progress)}
+                  </span>
                 </div>
+                {v.status === 'training' && (
+                  <LossChart
+                    loss={v.loss as unknown as LossData}
+                    xmax={(v.epochs as number) || undefined}
+                  />
+                )}
               </li>
             ))}
           </ul>

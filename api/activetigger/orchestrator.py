@@ -1,11 +1,14 @@
 """
-Define the orchestrator and launch the instance
+Define the orchestrator and launch the instance that will span projects
+Each project share a few elements:
+- database manager
+- queue
+- users management
+- messages management
 """
 
 import asyncio
-import logging
 import os
-import secrets
 import shutil
 import time
 import traceback
@@ -13,52 +16,40 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import cast
 
-import pandas as pd  # type: ignore[import]
-import psutil  # type: ignore[import]
-from fastapi.encoders import jsonable_encoder
-from jose import jwt  # type: ignore[import]
+import pandas as pd
+import psutil
+from jose import jwt
 
 from activetigger import __version__
 from activetigger.config import config
 from activetigger.datamodels import (
-    DatasetModel,
     LMComputing,
     ProjectBaseModel,
-    ProjectModel,
-    ProjectSummaryModel,
     ServerStateModel,
 )
 from activetigger.db import DBException
 from activetigger.db.manager import DatabaseManager
 from activetigger.functions import get_dir_size, get_gpu_memory_info, slugify
 from activetigger.messages import Messages
+from activetigger.monitoring import Monitoring
 from activetigger.project import Project
 from activetigger.queue import Queue
 from activetigger.users import Users
 
-logger = logging.getLogger("server")
-
 
 class Orchestrator:
     """
-    Server to manage the API
-    Mono-process
+    Process to manage projects
+    Use the config object to get parameters
     """
 
+    starting_time: float
     db_name: str
-    features_file: str
-    data_all: str
-    train_file: str
-    test_file: str
-    valid_file: str
-    default_user: str
     jwt_algorithm: str
     n_workers_cpu: int
     n_workers_gpu: int
-    starting_time: float
     path: Path
     path_models: Path
-    db: Path
     projects: dict[str, Project]
     db_manager: DatabaseManager
     queue: Queue
@@ -66,6 +57,7 @@ class Orchestrator:
     messages: Messages
     max_projects: int
     project_creation_ongoing: dict[str, Project]
+    monitoring: Monitoring
 
     def __init__(self) -> None:
         """
@@ -74,20 +66,13 @@ class Orchestrator:
         self.starting_time = time.time()
 
         self.max_projects = config.max_loaded_projects
-        self.data_all = config.data_all
-        self.features_file = config.features_file
-        self.train_file = config.train_file
-        self.test_file = config.test_file
-        self.valid_file = config.valid_file
-        self.valid_file = config.valid_file
-        self.default_user = config.default_user
         self.jwt_algorithm = config.jwt_algorithm
         self.n_workers_cpu = config.n_workers_cpu
         self.n_workers_gpu = config.n_workers_gpu
 
         # Define path
-        self.path = Path(config.data_path + "/projects")
-        self.path_models = Path(config.data_path + "/models")
+        self.path = Path(config.data_path) / "projects"
+        self.path_models = Path(config.data_path) / "models"
 
         # create directories parent/static/models
         self.path.mkdir(parents=True, exist_ok=True)
@@ -100,31 +85,26 @@ class Orchestrator:
             nb_workers_cpu=self.n_workers_cpu,
             nb_workers_gpu=self.n_workers_gpu,
         )
-        self.users = Users(self.db_manager)
         self.messages = Messages(self.db_manager)
+        self.users = Users(self.db_manager, self.messages)
+        self.monitoring = Monitoring(self.db_manager)
+
+        # projects in memory
         self.projects = {}
 
-        # timestamp of project creation
+        # projects in creation
         self.project_creation_ongoing = {}
 
         # update the projects asynchronously
         self._running = True
         self._update_task = asyncio.create_task(self._update(timeout=config.update_timeout))
 
-        # create the demo project if not existing
+        # create the demo project if not existing at startup
         try:
             if "demo" not in self.existing_projects():
                 self.create_demo_project("demo", "demo")
         except Exception as e:
             print(f"Error while creating demo project: {e}")
-
-        # logging
-        logging.basicConfig(
-            filename=self.path.joinpath("log_server.log"),
-            level=logging.DEBUG,
-            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        )
-
         self.server_state = self.get_server_state()
 
     def __del__(self):
@@ -132,7 +112,6 @@ class Orchestrator:
         Close the server
         """
         print("Ending the server")
-        logger.error("Disconnect server")
         if self._update_task:
             self._update_task.cancel()
         self._running = False
@@ -145,6 +124,7 @@ class Orchestrator:
         """
         self.queue.restart()
         self.projects = {}
+        self.project_creation_ongoing = {}
 
     def starting_project_creation(self, project: ProjectBaseModel, username: str) -> str:
         """
@@ -153,21 +133,19 @@ class Orchestrator:
         project_slug = self.check_project_name(project.project_name)
         if project_slug in ["new"]:
             raise Exception("This project name is not valid - reserved word")
-        print("Starting project creation", project.project_name)
-        # create a object project and start creation
-        p = Project(
+        self.project_creation_ongoing[project_slug] = Project(
             project_slug,
             self.queue,
             self.db_manager,
             path_models=self.path_models,
+            users=self.users,
+            messages=self.messages,
         )
-        p.start_project_creation(
+        self.project_creation_ongoing[project_slug].start_project_creation(
             params=project,
             username=username,
             path=self.path,
         )
-        # add it to the orchestrator
-        self.project_creation_ongoing[project_slug] = p
         return project_slug
 
     async def _update(self, timeout: int = 1, project_lifetime: int = 7200) -> None:
@@ -179,7 +157,6 @@ class Orchestrator:
         """
         try:
             while self._running:
-                print("update orchestrator - projets in memory:", len(self.projects))
                 self.queue.clean_old_processes()
                 timer = time.time()
 
@@ -204,6 +181,8 @@ class Orchestrator:
                     try:
                         project.update_processes()
                         if project.status == "created":
+                            to_del.append(p)
+                        if project.status == "error":
                             to_del.append(p)
                     except Exception as e:
                         print(f"Error while updating project {p}: {e}")
@@ -230,7 +209,6 @@ class Orchestrator:
         Log action in the database
         """
         self.db_manager.logs_service.add_log(user, action, project, connect)
-        logger.info("%s from %s in project %s", action, user, project)
 
     def get_logs(self, project_slug: str, limit: int, partial: bool = True) -> pd.DataFrame:
         """
@@ -290,67 +268,6 @@ class Orchestrator:
             messages=self.messages.get_messages_system(),
         )
 
-    def get_auth_datasets(self, username: str) -> list[DatasetModel]:
-        """
-        Get datasets authorized for the user
-        """
-        projects = self.users.get_auth_projects(username, auth="manager")
-        return [
-            DatasetModel(
-                project_slug=p[2]["project_slug"],
-                columns=p[2]["all_columns"],
-                n_rows=p[2]["n_total"],
-            )
-            for p in projects
-        ]
-
-    def get_auth_projects(self, username: str) -> list[ProjectSummaryModel]:
-        """
-        Get projects authorized for the user
-        """
-        projects_auth = self.users.get_auth_projects(username)
-        projects = []
-        for i in list(reversed(projects_auth)):
-            # get the project slug
-            project_slug = i[0]
-            user_right = i[1]
-            parameters = self.db_manager.projects_service.get_project(project_slug)
-            if parameters is None:
-                continue
-            parameters = ProjectModel(**parameters["parameters"])
-            created_by = i[3]
-            created_at = i[4].strftime("%Y-%m-%d %H:%M:%S")
-            try:
-                size = round(get_dir_size(config.data_path + "/projects/" + i[0]), 1)
-            except Exception as e:
-                print(e)
-                size = 0.0
-            last_activity = self.db_manager.logs_service.get_last_activity_project(i[0])
-
-            # create the project summary model
-            projects.append(
-                ProjectSummaryModel(
-                    project_slug=project_slug,
-                    user_right=user_right,
-                    parameters=parameters,
-                    created_by=created_by,
-                    created_at=created_at,
-                    size=size,
-                    last_activity=last_activity,
-                )
-            )
-        return projects
-
-    def get_project_params(self, project_slug: str) -> ProjectModel | None:
-        """
-        Get project params from database
-        """
-        existing_project = self.db_manager.projects_service.get_project(project_slug)
-        if existing_project:
-            return ProjectModel(**existing_project["parameters"])
-        else:
-            return None
-
     def exists(self, project_name: str) -> bool:
         """
         Test if a project exists in the database
@@ -369,7 +286,7 @@ class Orchestrator:
             raise Exception("The project name is not valid - empty")
         return project_slug
 
-    def create_access_token(self, data: dict, expires_min: int = 60):
+    def create_access_token(self, data: dict, expires_min: int = 60) -> str:
         """
         Create access token
         """
@@ -382,7 +299,6 @@ class Orchestrator:
         # add it in the database as active
         self.db_manager.projects_service.add_token(encoded_jwt, "active")
 
-        # return it
         return encoded_jwt
 
     def revoke_access_token(self, token) -> None:
@@ -390,9 +306,8 @@ class Orchestrator:
         Revoke existing access token
         """
         self.db_manager.projects_service.revoke_token(token)
-        return None
 
-    def decode_access_token(self, token: str):
+    def decode_access_token(self, token: str) -> dict:
         """
         Decode access token
         """
@@ -409,6 +324,26 @@ class Orchestrator:
         payload = jwt.decode(token, config.secret_key, algorithms=[self.jwt_algorithm])
         return payload
 
+    def manage_fifo_queue(self) -> None:
+        """
+        Manage the current projects in memory for an orchestrator
+        """
+        if len(self.projects) >= self.max_projects:
+            old_element = sorted(
+                [(p, self.projects[p].starting_time) for p in self.projects],
+                key=lambda x: x[1],
+            )[0]
+            if (
+                old_element[1] < time.time() - 600
+            ):  # check if the project has a least ten minutes old to avoid destroying current projects
+                del self.projects[old_element[0]]
+                print(f"Delete project {old_element[0]} to gain memory")
+            else:
+                print("Too many projects in the current memory")
+                raise Exception(
+                    "There is too many projects currently loaded in this server. Please wait"
+                )
+
     def start_project(self, project_slug: str) -> None:
         """
         Load project in server
@@ -418,7 +353,12 @@ class Orchestrator:
 
         try:
             self.projects[project_slug] = Project(
-                project_slug, self.queue, self.db_manager, path_models=self.path_models
+                project_slug,
+                self.queue,
+                self.db_manager,
+                path_models=self.path_models,
+                users=self.users,
+                messages=self.messages,
             )
         except Exception as e:
             raise Exception(
@@ -440,49 +380,46 @@ class Orchestrator:
         self.queue.kill(process_id)
         self.log_action(username, f"KILL PROCESS: {process_id}", "all")
 
-    def stop_user_processes(self, kind: str | list, username: str):
+    def stop_user_processes(
+        self, username: str, project_slug: str | None = None, kind: str | list[str] | None = None
+    ) -> None:
         """
         Stop all the processes of a user
         """
 
-        # kill all the process of a user
+        # define the processes to kill
         if kind == "all":
             kind = ["train_bert", "predict_bert", "generation", "feature", "bertopic"]
         if kind == "bert":
             kind = ["train_bert", "predict_bert"]
+        if kind is None:
+            kind = "all"
         if isinstance(kind, str) and kind != "all":
             kind = [kind]
 
-        # get all processes associated to the user for the specified kind
-        processes = {p: self.projects[p].get_process(kind, username) for p in self.projects}
-
-        # kill all processes associated
-        for project in processes:
-            for process in processes[project]:
+        # kill all the processes of the user
+        if project_slug is None:
+            processes = {p: self.projects[p].get_process(kind, username) for p in self.projects}
+            for project in processes:
+                for process in processes[project]:
+                    self.queue.kill(process.unique_id)
+                    if process.kind == "train_bert":
+                        process = cast(LMComputing, process)
+                        self.db_manager.language_models_service.delete_model(
+                            project, process.model_name
+                        )
+        # kill all the processes of the user for a specific project
+        else:
+            if project_slug not in self.projects:
+                raise Exception("This project is not loaded in memory")
+            processes_project = self.projects[project_slug].get_process(kind, username)
+            for process in processes_project:
                 self.queue.kill(process.unique_id)
                 if process.kind == "train_bert":
                     process = cast(LMComputing, process)
                     self.db_manager.language_models_service.delete_model(
-                        project, process.model_name
+                        project_slug, process.model_name
                     )
-
-    def set_project_parameters(self, project: ProjectModel, username: str) -> None:
-        """
-        Update project parameters in the DB
-        """
-        # get project
-        existing_project = self.db_manager.projects_service.get_project(project.project_slug)
-
-        if existing_project:
-            # Update the existing project
-            self.db_manager.projects_service.update_project(
-                project.project_slug, jsonable_encoder(project)
-            )
-        else:
-            # Insert a new project
-            self.db_manager.projects_service.add_project(
-                project.project_slug, jsonable_encoder(project), username
-            )
 
     def existing_projects(self) -> list:
         """
@@ -577,21 +514,14 @@ class Orchestrator:
         )
         self.starting_project_creation(project, username)
 
-    def reset_password(self, mail: str) -> None:
+    def available_storage(self, username: str) -> bool:
         """
-        Reset password for a user with the given email
+        Check if the user storage is not exceeded
         """
-        # Check if mail is connected to a user
-        user_name = self.db_manager.users_service.get_user_by_mail(mail)
-
-        # Generate a random password
-        new_password = secrets.token_hex(16)
-
-        # Send the mail to the user with the new password
-        self.messages.send_mail_reset_password(user_name, mail, new_password)
-
-        # Update the user's password in the database
-        self.users.force_change_password(user_name, new_password)
+        limit = self.users.get_storage_limit(username)
+        if self.users.get_storage(username) > limit * 1000:
+            return False
+        return True
 
 
 # launch the instance

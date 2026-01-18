@@ -1,4 +1,3 @@
-import io
 from typing import Annotated
 
 import pandas as pd  # type: ignore[import]
@@ -10,7 +9,6 @@ from fastapi import (
 
 from activetigger.app.dependencies import (
     ProjectAction,
-    check_storage,
     get_project,
     test_rights,
     verified_user,
@@ -38,6 +36,7 @@ async def train_quickmodel(
     """
     Compute quickmodel
     """
+    test_rights(ProjectAction.ADD, current_user.username, project.name)
     try:
         project.train_quickmodel(quickmodel, current_user.username)
         orchestrator.log_action(
@@ -57,6 +56,7 @@ async def retrain_quickmodel(
     """
     Retrain quickmodel
     """
+    test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
         project.retrain_quickmodel(name, scheme, current_user.username)
         orchestrator.log_action(current_user.username, f"RETRAIN SIMPLE MODEL {name}", project.name)
@@ -73,8 +73,8 @@ async def delete_quickmodel(
     """
     Delete quickmodel
     """
+    test_rights(ProjectAction.DELETE, current_user.username, project.name)
     try:
-        test_rights(ProjectAction.DELETE, current_user.username, project.name)
         project.quickmodels.delete(name)
         orchestrator.log_action(
             current_user.username, f"DELETE SIMPLE MODEL + FEATURES: {name}", project.name
@@ -105,7 +105,7 @@ async def save_bert(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/models/quickmodel", dependencies=[Depends(verified_user)])
+@router.get("/models/quick", dependencies=[Depends(verified_user)])
 async def get_quickmodel(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
@@ -114,6 +114,7 @@ async def get_quickmodel(
     """
     Get available quickmodel by a name
     """
+    test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
         sm = project.quickmodels.get(name)
         return QuickModelOutModel(
@@ -124,6 +125,7 @@ async def get_quickmodel(
             statistics_train=sm.statistics_train,
             statistics_test=sm.statistics_test,
             statistics_cv10=sm.statistics_cv10,
+            balance_classes=sm.balance_classes,
             scheme=sm.scheme,
             username=sm.user,
         )
@@ -132,7 +134,7 @@ async def get_quickmodel(
 
 
 @router.get("/models/information", dependencies=[Depends(verified_user)])
-async def get_bert(
+async def get_model_information(
     project: Annotated[Project, Depends(get_project)], name: str, kind: str
 ) -> ModelInformationsModel:
     """
@@ -172,75 +174,69 @@ async def predict(
     """
     test_rights(ProjectAction.ADD, current_user.username, project.name)
     try:
-        datasets = None
-
+        # types of prediction
         if kind not in ["quick", "bert"]:
             raise Exception(f"Model kind {kind} not recognized")
 
+        if dataset not in ["annotable", "external", "all"]:
+            raise Exception(f"Dataset {dataset} not recognized")
+
         # managing the perimeter of the prediction
+        datasets = None
         if dataset == "annotable":
             datasets = ["train"]
             if project.data.valid is not None:
                 datasets.append("valid")
             if project.data.test is not None:
                 datasets.append("test")
-        elif dataset == "external":
+        if dataset == "external":
             if kind != "bert":
                 raise Exception("External dataset prediction is only available for bert models")
-        elif dataset == "all":
-            pass
-        else:
-            raise Exception(f"Dataset {dataset} not recognized")
 
         # case for bert models
         if kind == "bert":
             # case the prediction is done on an external dataset
             if dataset == "external":
-                # TODO : load data in the job rather than in the api
                 if external_dataset is None:
-                    raise HTTPException(status_code=400, detail="External dataset is missing")
-                # load the external dataset
-                if not project.data.check_dataset_exists(external_dataset.filename):
+                    raise Exception("External dataset must be provided for external prediction")
+                if not project.data.get_path(external_dataset.filename).exists():
                     raise HTTPException(
                         status_code=404,
                         detail=f"External dataset file {external_dataset.filename} not found",
                     )
-                df = project.data.read_dataset(external_dataset.filename)
-                df["text"] = df[external_dataset.text]
-                df["index"] = df[external_dataset.id].apply(str)
-                df["id"] = df["index"]
-                df["dataset"] = "external"
-                df.set_index("index", inplace=True)
-                df = df[["id", "dataset", "text"]].dropna()
+                df = None
                 col_label = None
                 datasets = None
+                path_data = project.data.get_path(external_dataset.filename)
+
             # case the prediction is done on all the data
             elif dataset == "all":
-                df = pd.DataFrame(project.features.get_column_raw("text", index="all"))
-                if project.params.col_id != "dataset_row_number":
-                    df["id"] = project.features.get_column_raw(project.params.col_id, index="all")
-                else:
-                    df["id"] = df.index
-                df["dataset"] = "all"
+                df = None
                 col_label = None
+                datasets = None
+                path_data = project.data.path_data_all
+
             # case the prediction is done on annotable data
             else:
                 if datasets is None:
-                    raise Exception("Datasets variable should be defined for annotable dataset")
-                df = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=datasets)
+                    raise Exception("No dataset available for prediction")
+                df = project.schemes.get_scheme(
+                    scheme=scheme, complete=True, datasets=datasets, id_external=True
+                )
                 col_label = "labels"
+                path_data = None
+
             project.languagemodels.start_predicting_process(
                 project_slug=project.name,
                 name=model_name,
                 user=current_user.username,
                 df=df,
-                col_text="text",
                 col_label=col_label,
-                col_id="id",
-                col_datasets="dataset",
                 dataset=dataset,
                 batch_size=batch_size,
                 statistics=datasets,
+                path_data=path_data,
+                external_dataset=external_dataset,
             )
 
         # case for quick models
@@ -254,7 +250,7 @@ async def predict(
             # build the X, y dataframe
             df = project.features.get(sm.features, dataset=dataset, keep_dataset_column=True)
             cols_features = [col for col in df.columns if col != "dataset"]
-            labels = project.schemes.get_scheme_data(scheme=scheme, complete=True, kind=datasets)
+            labels = project.schemes.get_scheme(scheme=scheme, complete=True, datasets=datasets)
             df["labels"] = labels["labels"]
             df["text"] = labels["text"]
 
@@ -268,7 +264,7 @@ async def predict(
                 cols_features=cols_features,
                 col_label="labels",
                 statistics=datasets,
-                col_text="text",  # TODO : fx bug
+                col_text="text",
             )
 
         orchestrator.log_action(
@@ -288,11 +284,14 @@ async def post_bert(
 ) -> None:
     """
     Compute bertmodel
-    TODO : move the methods to specific class
     """
     test_rights(ProjectAction.ADD, current_user.username, project.name)
     try:
-        check_storage(current_user.username)
+        if not orchestrator.available_storage(current_user.username):
+            raise HTTPException(
+                status_code=403,
+                detail="Storage limit exceeded. Please delete models orcontact the administrator.",
+            )
         project.start_languagemodel_training(
             bert=bert,
             username=current_user.username,
@@ -312,6 +311,7 @@ async def delete_bert(
 ) -> None:
     """
     Delete trained bert model
+    # TODO : check the replace
     """
     test_rights(ProjectAction.DELETE, current_user.username, project.name)
     try:

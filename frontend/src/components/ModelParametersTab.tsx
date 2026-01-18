@@ -6,7 +6,7 @@ interface ModelParametersTabProps {
 
 export const ModelParametersTab: FC<ModelParametersTabProps> = ({ params }) => {
   return (
-    <table className="table">
+    <table id="parameter-tables-thin">
       <thead>
         <tr>
           <th scope="col">Key</th>
@@ -21,8 +21,8 @@ export const ModelParametersTab: FC<ModelParametersTabProps> = ({ params }) => {
               if (keyB === 'base_model') return 1;
               return 0;
             })
-            .map(([key, value]) => (
-              <tr key={key}>
+            .map(([key, value], index) => (
+              <tr key={key} className={index % 2 === 0 ? 'dark' : ''}>
                 <td>{key}</td>
                 <td>{JSON.stringify(value)}</td>
               </tr>

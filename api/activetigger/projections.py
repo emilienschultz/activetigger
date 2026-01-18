@@ -90,16 +90,19 @@ class Projections:
         username: str,
         projection: ProjectionParametersModel,
         features: DataFrame,
+        normalize_features: bool = False
     ) -> None:
         """
         Launch the projection computation in the queue
         """
-
         unique_id = self.queue.add_task(
             "projection",
             project_slug,
             ComputeProjection(
-                kind=projection.method, features=features, params=projection.parameters
+                kind=projection.method, 
+                features=features, 
+                params=projection.parameters,
+                normalize_features=normalize_features
             ),
         )
         self.computing.append(
@@ -111,6 +114,7 @@ class Projections:
                 kind="projection",
                 method=projection.method,
                 params=projection,
+                normalize_features=normalize_features
             )
         )
 

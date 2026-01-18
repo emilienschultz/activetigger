@@ -31,7 +31,7 @@ async def rename_label(
     """
     Rename a a label
     """
-    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
+    test_rights(ProjectAction.UPDATE, current_user.username, project.project_slug)
 
     try:
         project.schemes.rename_label(former_label, new_label, scheme, current_user.username)
@@ -111,12 +111,14 @@ async def post_codebook(
 
 @router.get("/schemes/codebook", dependencies=[Depends(verified_user)])
 async def get_codebook(
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project: Annotated[Project, Depends(get_project)],
     scheme: str,
 ) -> CodebookModel:
     """
     Get the codebook of a scheme for a project
     """
+    test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
         return project.schemes.get_codebook(scheme)
     except Exception as e:
@@ -170,15 +172,18 @@ async def duplicate_scheme(
 
 @router.get("/schemes/compare", dependencies=[Depends(verified_user)])
 async def compare_schemes(
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project: Annotated[Project, Depends(get_project)],
     schemeA: str,
     schemeB: str,
+    dataset: str,
 ) -> CompareSchemesModel:
     """
     Compare two schemes
     """
+    test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
-        return project.schemes.compare(schemeA, schemeB)
+        return project.schemes.compare(schemeA, schemeB, dataset)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

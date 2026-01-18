@@ -38,7 +38,8 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
         ];
 
   return (
-    <nav className="navbar navbar-dark bg-primary navbar-expand-md" id="header">
+    // NOTE: Axel: I didn't do no css refactor here cause it's highly specific
+    <nav className="navbar navbar-dark bg-primary navbar-expand-md" id="nav-bar-header">
       <div className="container-fluid">
         <div id="logo-container" className="navbar-brand">
           <Link className="navbar-brand" to="/">
@@ -77,6 +78,17 @@ const NavBar: FC<NavBarPropsType> = ({ currentPage }) => {
                 </Link>
               </li>
             ))}
+            {authenticatedUser && authenticatedUser.username === 'root' && (
+              <li key="monitor" className="nav-item">
+                <Link
+                  className={cx('nav-link', currentPage === 'monitor' && 'active')}
+                  aria-current={'page'}
+                  to="/monitor"
+                >
+                  Monitor
+                </Link>
+              </li>
+            )}
             <li className="nav-item" key="docs">
               <a
                 className={cx('nav-link', currentPage === 'docs' && 'active')}

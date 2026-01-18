@@ -6,7 +6,7 @@ import Tabs from 'react-bootstrap/Tabs';
 
 import { FeaturesManagement } from '../components/FeaturesManagement';
 import { EvalSetsManagement } from '../components/forms/EvalSetsManagement';
-import { ImportAnnotations } from '../components/ImportAnnotations';
+import { ImportAnnotations } from '../components/forms/ImportAnnotations';
 import { ProjectPageLayout } from '../components/layout/ProjectPageLayout';
 import { useAppContext } from '../core/context';
 

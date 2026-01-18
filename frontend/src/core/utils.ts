@@ -92,13 +92,17 @@ export async function loadExcelFile(file: File): Promise<DataType> {
   const worksheet = workbook.Sheets[sheetName];
 
   // Convert the sheet to JSON format with headers
-  const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+  const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null });
 
   // Extract headers (first row)
   const headers = jsonData[0] as string[];
 
-  // Extract data (subsequent rows)
-  const data = jsonData.slice(1).map((row) => fromPairs(zip(headers, row as string[])));
+  // Extract data (subsequent rows) removing empty rows
+  const data = jsonData
+    .slice(1)
+    .filter((row) => (row as string[]).some((cell) => cell !== null && cell !== '')) // keeps at least one non-empty cell
+    .map((row) => fromPairs(zip(headers, row as string[])));
+  console.log('Excel data loaded:', data);
 
   // Return a DataType object with the data, headers, and filename
   return { data, headers, filename: file.name };
@@ -414,3 +418,30 @@ export const sortDatesAsStrings = (
   }
   return 0;
 };
+
+export function isValidRegex(pattern: string) {
+  console.log('isValid', pattern);
+  try {
+    new RegExp(pattern);
+    return true;
+  } catch (e) {
+    console.log('pattern invalid');
+    return false;
+  }
+}
+
+export const displayTime = (time: string) => {
+  // 2025-12-11 10:50:57.786644 -> 2025-12-11 10:50
+  return time.slice(0, time.indexOf(':') + 3);
+};
+
+export function truncateInMiddle(string: string, maxLength: number, separator: string = '...') {
+  if (string.length <= maxLength) return string;
+
+  const sepLen = separator.length,
+    charsToShow = maxLength - sepLen,
+    frontChars = Math.ceil(charsToShow / 2),
+    backChars = Math.floor(charsToShow / 2);
+
+  return `${string.slice(0, frontChars)}${separator}${string.slice(string.length - backChars)}`;
+}

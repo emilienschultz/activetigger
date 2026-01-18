@@ -57,6 +57,7 @@ class ModelsService:
         scheme: str,
         params: dict[str, Any],
         path: str,
+        retrain: bool = False
     ):
         session = self.SessionMaker()
 
@@ -64,23 +65,29 @@ class ModelsService:
         models = (
             session.query(Models).filter(Models.name == name, Models.project_slug == project).all()
         )
-        if len(models) > 0:
+        if (len(models) == 1) and retrain:
+            # A model has been retrained so nothing must
+            # happen with regard to the database
+            pass
+        elif len(models) > 0:
+            # A model already exists, we can't have another one
             raise Exception("Model already exists")
-
-        model = Models(
-            project_slug=project,
-            time=datetime.datetime.now(),
-            kind=kind,
-            name=name,
-            user_name=user,
-            parameters=params,
-            scheme_name=scheme,
-            status=status,
-            path=path,
-        )
-        session.add(model)
-        session.commit()
-        session.close()
+        else:
+            # it's a new model that must be saved into the database
+            model = Models(
+                project_slug=project,
+                time=datetime.datetime.now(),
+                kind=kind,
+                name=name,
+                user_name=user,
+                parameters=params,
+                scheme_name=scheme,
+                status=status,
+                path=path,
+            )
+            session.add(model)
+            session.commit()
+            session.close()
 
     def model_exists(self, project_slug: str, name: str):
         session = self.SessionMaker()

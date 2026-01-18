@@ -90,7 +90,6 @@ export const DisplayProjection: FC<DisplayProjectionProps> = ({
             </label>
           </div>
           <ProjectionVizSigma
-            className={`col-12 border h-100`}
             data={currentProjection}
             selectedId={elementId || undefined}
             setSelectedId={(id?: string | undefined) => id}

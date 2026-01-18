@@ -8,39 +8,21 @@ import { useDeleteFeature, useGetFeatureInfo } from '../core/api';
 import { useAppContext } from '../core/context';
 import { sortDatesAsStrings } from '../core/utils';
 import { FeatureDescriptionModelOut } from '../types';
-import { CreateNewFeature } from './CreateNewFeature';
+import { CreateNewFeature } from './forms/CreateNewFeature';
 import { ModelsPillDisplay } from './ModelsPillDisplay';
+import { ModelParametersTab } from './ModelParametersTab';
 
 export default function SimpleTable(data: FeatureDescriptionModelOut) {
   return (
-    <div>
-      <table className="table-auto border-collapse border border-gray-300 w-full">
-        <tbody>
-          <tr>
-            <td className="border border-gray-300 px-4 py-2 font-medium">Name</td>
-            <td className="border border-gray-300 px-4 py-2">{data.name}</td>
-          </tr>
-          <tr>
-            <td className="border border-gray-300 px-4 py-2 font-medium">User</td>
-            <td className="border border-gray-300 px-4 py-2">{data.user}</td>
-          </tr>
-          <tr>
-            <td className="border border-gray-300 px-4 py-2 font-medium">Time</td>
-            <td className="border border-gray-300 px-4 py-2">{data.time}</td>
-          </tr>
-          <tr>
-            <td className="border border-gray-300 px-4 py-2 font-medium">Kind</td>
-            <td className="border border-gray-300 px-4 py-2">{data.kind}</td>
-          </tr>
-          <tr>
-            <td className="border border-gray-300 px-4 py-2 font-medium">Parameters</td>
-            <td className="border border-gray-300 px-4 py-2">
-              {JSON.stringify(data.parameters, null, 2)}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <ModelParametersTab
+      params={{
+        Name: data.name,
+        User: data.user,
+        Time: data.time,
+        Kind: data.kind,
+        ...data.parameters,
+      }}
+    />
   );
 }
 

@@ -1,4 +1,3 @@
-import logging
 from typing import Annotated, cast
 
 from fastapi import (
@@ -18,6 +17,7 @@ from activetigger.datamodels import (
     NextInModel,
     ProjectionOutModel,
     ProjectionParametersModel,
+    ReconciliateElementInModel,
     ReconciliationModel,
     TableAnnotationsModel,
     TableBatchInModel,
@@ -28,10 +28,7 @@ from activetigger.datamodels import (
 from activetigger.orchestrator import orchestrator
 from activetigger.project import Project
 
-logger = logging.getLogger(__name__)
-
-# declare router
-router = APIRouter()
+router = APIRouter(tags=["annotations"])
 
 
 @router.post("/elements/next", dependencies=[Depends(verified_user)])
@@ -89,10 +86,14 @@ async def compute_projection(
     if len(projection.features) == 0:
         raise HTTPException(status_code=400, detail="No feature available")
     try:
-        features = project.features.get(
-            projection.features, dataset=["train"]
-        )  # get features from project
-        project.projections.compute(project.name, current_user.username, projection, features)
+        features = project.features.get(projection.features, dataset=["train"])
+        project.projections.compute(
+            project_slug=project.name,
+            username=current_user.username,
+            projection=projection,
+            features=features,
+            normalize_features=projection.normalize_features,
+        )
         orchestrator.log_action(
             current_user.username,
             f"COMPUTE PROJECTION: {projection.method}",
@@ -100,6 +101,7 @@ async def compute_projection(
         )
         return WaitingModel(detail=f"Projection {projection.method} is computing")
     except Exception as e:
+        print(e)
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
@@ -129,38 +131,18 @@ async def post_list_elements(
     Update a table of annotations
     """
     test_rights(ProjectAction.UPDATE, current_user.username, project.name)
-    errors = []
-    # loop on annotations
-    for annotation in table.annotations:
-        if annotation.label is None or annotation.element_id is None:
-            errors.append(annotation)
-            continue
-
-        try:
-            project.schemes.push_annotation(
-                annotation.element_id,
-                annotation.label,
-                annotation.scheme,
-                current_user.username,
-                table.dataset,
-                "table",
-            )
-            orchestrator.log_action(
-                current_user.username,
-                f"UPDATE ANNOTATION: in {annotation.scheme} element {annotation.element_id} as {annotation.label}",
-                project.name,
-            )
-        except Exception:
-            errors.append(annotation)
-            continue
-
-    if len(errors) > 0:
-        raise HTTPException(
-            status_code=500,
-            detail="Error with some of the annotations - " + str(errors),
+    try:
+        errors = project.schemes.push_annotations_table(table, current_user.username)
+        orchestrator.log_action(
+            current_user.username,
+            f"UPDATE BATCH ANNOTATIONS in project {project.name} N={len(table.annotations)} annotations ({len(errors or [])} errors)",
+            project.name,
         )
-
-    return None
+        if errors is not None:
+            Exception(f"Errors during annotations update: {errors}")
+        return None
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/annotation/file", dependencies=[Depends(verified_user)])
@@ -194,7 +176,7 @@ async def get_element(
     element: ElementInModel,
 ) -> ElementOutModel:
     """
-    Get specific element
+    Get specific element by id
     """
     test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
@@ -234,38 +216,17 @@ async def get_reconciliation_table(
 async def post_reconciliation(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project: Annotated[Project, Depends(get_project)],
-    users: list = Query(),
-    element_id: str = Query(),
-    label: str = Query(),
-    scheme: str = Query(),
-    dataset: str = Query("train"),
+    element: ReconciliateElementInModel,
 ) -> None:
     """
     Post a label for all user in a list
     """
     test_rights(ProjectAction.UPDATE, current_user.username, project.name)
     try:
-        # add a tag for each user
-        for u in users:
-            project.schemes.push_annotation(
-                element_id, label, scheme, u, dataset, "reconciliation", "disagreement"
-            )
-
-        # add a new tag for the reconciliator
-        project.schemes.push_annotation(
-            element_id=element_id,
-            label=label,
-            scheme=scheme,
-            user=current_user.username,
-            mode=dataset,
-            comment="reconciliation",
-            selection="disagreement",
-        )
-
-        # log
+        project.schemes.reconciliate_element(element, current_user.username)
         orchestrator.log_action(
             current_user.username,
-            f"RECONCILIATE ANNOTATION: in {scheme} element {element_id} as {label}",
+            f"RECONCILIATE ANNOTATION: in {element.scheme} element {element.element_id} as {element.label}",
             project.name,
         )
         return None

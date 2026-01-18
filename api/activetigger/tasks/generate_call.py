@@ -1,6 +1,4 @@
-import logging
 from pathlib import Path
-from typing import cast
 
 from pandas import DataFrame, Series
 
@@ -132,7 +130,6 @@ class GenerateCall(BaseTask):
                     answer=response,
                 )
             )
-            logging.debug("element generated: %s, %s ", _index, response)
             self._write_progress(int((c / len(self.df)) * 100))
             c += 1
 

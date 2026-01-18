@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useDeleteProject } from '../core/api';
 import { ProjectStateModel } from '../types';
 import { ProjectUpdateForm } from './forms/ProjectUpdateForm';
+import { ModelParametersTab } from './ModelParametersTab';
 
 export interface ProjectParametersModel {
   project: ProjectStateModel;
@@ -33,9 +34,6 @@ export const ProjectParameters: FC<ProjectParametersModel> = ({ project, project
   return (
     <>
       <div className="explanations">Parameters of this project</div>
-      <button className="btn btn-primary" onClick={() => setShowModify(!showModify)}>
-        Change parameters
-      </button>
       <Modal show={showModify} onHide={() => setShowModify(false)} id="addfeature-modal">
         <Modal.Header closeButton>
           <Modal.Title>Add a new feature</Modal.Title>
@@ -44,65 +42,48 @@ export const ProjectParameters: FC<ProjectParametersModel> = ({ project, project
           <ProjectUpdateForm />
         </Modal.Body>
       </Modal>
-      <table className="table-statistics">
-        <tbody>
-          <tr className="table-delimiter">
-            <td>Parameters</td>
-            <td>Value</td>
-          </tr>
-          <tr>
-            <td>Project name</td>
-            <td>{project.params.project_name}</td>
-          </tr>
-          <tr>
-            <td>Project slug</td>
-            <td>{project.params.project_slug}</td>
-          </tr>
-          <tr>
-            <td>Filename</td>
-            <td>{project.params.filename}</td>
-          </tr>
-          <tr>
-            <td>Total rows</td>
-            <td>{project.params.n_total}</td>
-          </tr>
-          <tr>
-            <td>Language</td>
-            <td>{project.params.language}</td>
-          </tr>
-          <tr>
-            <td>Columns text</td>
-            <td>{project.params.cols_text}</td>
-          </tr>
-          <tr>
-            <td>Column id</td>
-            <td>{project.params.col_id}</td>
-          </tr>
-          <tr>
-            <td>Colums context</td>
-            <td>{JSON.stringify(project.params.cols_context)}</td>
-          </tr>
-          <tr>
-            <td>Rows in test set</td>
-            <td>{project.params.test ? project.params.n_test : 'empty'}</td>
-          </tr>
-        </tbody>
-      </table>
+      <ModelParametersTab
+        params={
+          {
+            'Project Name': project.params.project_name,
+            'Project Slug': project.params.project_slug,
+            Filename: project.params.filename,
+            'Total Rows': project.params.n_total,
+            Language: project.params.language,
+            'Text Column': project.params.cols_text,
+            'Column ID': project.params.col_id,
+            'Colums context': JSON.stringify(project.params.cols_context),
+            'Rows in test set': project.params.test ? project.params.n_test : 'Empty',
+            'Rows in valid set': project.params.valid ? project.params.n_valid : 'Empty',
+          } as Record<string, unknown>
+        }
+      />
 
-      <button onClick={handleShow} className="delete-button mt-3">
-        Delete project
-      </button>
+      <div className="horizontal wrap">
+        <button className="btn-primary-action" onClick={() => setShowModify(!showModify)}>
+          Change parameters
+        </button>
+        <button onClick={handleShow} className="btn-danger">
+          Delete project
+        </button>
+      </div>
 
       <div>
         <Modal show={show} onHide={handleClose}>
           <Modal.Header>
             <Modal.Title>Delete the project</Modal.Title>
           </Modal.Header>
-          <Modal.Body>Do you really want to delete this project</Modal.Body>
-          <Modal.Footer>
-            <button onClick={handleClose}>Cancel</button>
-            <button onClick={actionDelete}>Confirm</button>
-          </Modal.Footer>
+          <Modal.Body>
+            Do you really want to delete this project
+            <div className="horizontal">
+              <button onClick={handleClose} style={{ flex: '1 1 auto' }}>
+                Cancel
+              </button>
+              <button className="btn-danger" onClick={actionDelete} style={{ flex: '1 1 auto' }}>
+                Confirm
+              </button>
+            </div>
+          </Modal.Body>
         </Modal>
       </div>
     </>

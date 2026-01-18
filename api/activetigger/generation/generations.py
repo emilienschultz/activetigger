@@ -1,7 +1,10 @@
+import re
+
 import pandas as pd
 from pandas import DataFrame
 
 from activetigger.datamodels import (  # ignore[import]
+    ExportGenerationsParams,
     GenerationAvailableModel,
     GenerationComputing,
     GenerationComputingOut,
@@ -85,6 +88,7 @@ class Generations:
         model_id: int,
         prompt: str,
         answer: str,
+        batch: str | None = None,
     ) -> None:
         """
         Add a generated element in the database
@@ -96,26 +100,27 @@ class Generations:
             model_id=model_id,
             prompt=prompt,
             answer=answer,
+            batch=batch,
         )
         return None
 
     def get_generated(
-        self,
-        project_slug: str,
-        user_name: str,
-        n_elements: int | None = None,
+        self, project_slug: str, user_name: str, params: ExportGenerationsParams
     ) -> DataFrame:
         """
         Get generated elements from the database
         """
         result = self.generations_service.get_generated(
-            project_slug=project_slug, user_name=user_name, n_elements=n_elements
+            project_slug=project_slug, user_name=user_name
         )
-        df = pd.DataFrame(result, columns=["time", "index", "prompt", "answer", "model_name"])
+        df = pd.DataFrame(
+            result, columns=["time", "index", "batch", "prompt", "answer", "model_name"]
+        )
         df["time"] = pd.to_datetime(df["time"])
         if df["time"].dt.tz is None:
             df["time"] = df["time"].dt.tz_localize("UTC")
         df["time"] = df["time"].dt.tz_convert("Europe/Paris")
+        df["answer"] = self.filter(df["answer"], params.filters)
         return df
 
     def training(self) -> dict[str, GenerationComputingOut]:
@@ -218,6 +223,8 @@ class Generations:
         """
         Add a GenAI model to the project
         """
+        if self.model_exists(project_slug, model.name):
+            raise Exception("A model with this name already exists")
         return self.generations_service.add_project_gen_model(project_slug, model, user_name)
 
     def delete_model(self, project_slug: str, model_id: int) -> None:
@@ -226,3 +233,16 @@ class Generations:
         """
         self.generations_service.delete_project_gen_model(project_slug, model_id)
         return None
+
+    @staticmethod
+    def check_prompts(prompt: str, cols: list[str]) -> None:
+        """
+        Check if all prompts are valid
+        "[[XXX]]" in the prompt correspond to a column
+        """
+        for tag_like in re.findall("[\[]{2}\w{1,}[\]]{2}", prompt):
+            tag_name = tag_like[2:-2]  # tag minus "[[" and "]]""
+            if tag_name in ["TEXT", *cols]:
+                continue
+            else:
+                raise Exception(f"The tag {tag_like} is not part of the columns")

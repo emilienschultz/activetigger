@@ -13,7 +13,8 @@ import { AppContextValue } from '../core/context';
 import { AnnotationModel } from '../types';
 
 interface Row {
-  id: string;
+  id_internal: string;
+  id_external: string;
   timestamp: string;
   labels: string;
   text: string;
@@ -53,13 +54,9 @@ export const DataTabular: FC<DataTabularModel> = ({
   };
 
   const blocker = useBlocker(({ currentLocation, nextLocation }) => {
-    if (
-      currentLocation.pathname !== nextLocation.pathname &&
-      Object.values(modifiedRows).length > 0
-    ) {
-      return true;
-    }
-    return false;
+    return (
+      currentLocation.pathname !== nextLocation.pathname && Object.values(modifiedRows).length > 0
+    );
   });
 
   //   const availableLabels =
@@ -99,8 +96,10 @@ export const DataTabular: FC<DataTabularModel> = ({
       resizable: true,
       width: 180,
       renderCell: (props) => (
-        <div className={props.row.id in modifiedRows ? 'modified-cell' : ''}>
-          <Link to={`/projects/${projectSlug}/tag/${props.row.id}`}>{props.row.id}</Link>
+        <div className={props.row.id_internal in modifiedRows ? 'modified-cell' : ''}>
+          <Link to={`/projects/${projectSlug}/tag/${props.row.id_internal}`}>
+            {props.row.id_external}
+          </Link>
         </div>
       ),
     },
@@ -182,8 +181,8 @@ export const DataTabular: FC<DataTabularModel> = ({
           onRowChange({ ...row, labels: event.target.value }, true);
           setModifiedRows((prevState) => ({
             ...prevState,
-            [row.id]: {
-              element_id: row.id,
+            [row.id_internal]: {
+              element_id: row.id_internal,
               label: event.target.value,
               scheme: currentScheme as string,
               project_slug: projectSlug as string,
@@ -228,109 +227,107 @@ export const DataTabular: FC<DataTabularModel> = ({
   };
 
   return (
-    <div className="row">
-      <div className="col-12">
-        <div id="tag-parameters-div">
-          <div className="parameter-div">
-            <label className="form-label label-small-gray">Dataset</label>
-            <select
-              className="form-select"
-              value={currentDataset}
-              onChange={(e) => {
-                changeDataSet(e.target.value);
-              }}
-            >
-              <option value="train">train</option>
-              {isValid && <option value="valid">validation</option>}
-              {isTest && <option value="test">test</option>}
-            </select>
-          </div>
-          <div className="parameter-div">
-            <label className="form-label label-small-gray">Tagged</label>
-            <select
-              className="form-select"
-              onChange={(e) => setSample(e.target.value)}
-              value={sample}
-            >
-              {['tagged', 'untagged', 'all', 'recent'].map((e) => (
-                <option key={e}>{e}</option>
-              ))}
-            </select>
-          </div>
-          <div className="parameter-div">
-            <label className="form-label label-small-gray">Filter</label>
-            <input
-              className="form-control"
-              placeholder="Regex search to filter on text / for both text and label, use ALL: to start"
-              onChange={(e) => setSearch(e.target.value)}
-            ></input>
-            {!isValidRegex(search || '') && (
-              <div className="alert alert-danger">Regex not valid</div>
-            )}
-          </div>
-          <div className="parameter-div-small">
-            <label className="form-label label-small-gray">Page size</label>
-            <select
-              onChange={(e) => {
-                setPage(1);
-                setPageSize(Number(e.target.value));
-              }}
-              className="form-select"
-              value={pageSize}
-            >
-              {[10, 20, 50, 100].map((e) => (
-                <option key={e}>{e}</option>
-              ))}
-            </select>
-          </div>
-          <div className="parameter-div-small">
-            <label className="form-label label-small-gray">Page</label>
-            <select
-              className="form-select"
-              onChange={(e) => {
-                setPage(Number(e.target.value));
-              }}
-              value={page || '1'}
-            >
-              {range(1, totalElement > 0 ? Math.ceil(totalElement / pageSize) + 1 : 1).map((v) => (
-                <option key={v}>{v}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div id="tag-parameters-div">
-          {Object.keys(modifiedRows).length > 0 && (
-            <button onClick={validateChanges}>Validate changes</button>
-          )}
-          <div className="parameter-div">
-            <span>Total: {totalElement}</span>
-          </div>
+    <>
+      <div className="horizontal wrap" id="tabular-view-control-panel">
+        <div>
+          <label>Dataset</label>
+          <select
+            className="form-select"
+            value={currentDataset}
+            onChange={(e) => {
+              changeDataSet(e.target.value);
+            }}
+          >
+            <option value="train">train</option>
+            {isValid && <option value="valid">validation</option>}
+            {isTest && <option value="test">test</option>}
+          </select>
         </div>
         <div>
-          <DataGrid
-            className="fill-grid"
-            style={{ backgroundColor: 'white' }}
-            columns={columns}
-            rows={rows}
-            rowHeight={80}
-            onRowsChange={(e) => {
-              setRows(e);
-            }}
-          />
+          <label>Tagged</label>
+          <select onChange={(e) => setSample(e.target.value)} value={sample}>
+            {['tagged', 'untagged', 'all', 'recent'].map((e) => (
+              <option key={e}>{e}</option>
+            ))}
+          </select>
         </div>
-        <div className="d-flex justify-content-center mt-3 align-items-center">
-          <button
-            className="btn"
-            onClick={() => (page && page > 1 ? setPage(page - 1) : setPage(1))}
-          >
-            <MdSkipPrevious size={30} />
-          </button>{' '}
-          Change page{' '}
-          <button className="btn" onClick={() => (page ? setPage(page + 1) : setPage(1))}>
-            <MdSkipNext size={30} />
-          </button>
+        <div>
+          <label>
+            Filter{' '}
+            {!isValidRegex(search || '') && <span className="badge danger">Regex not valid</span>}
+          </label>
+          <input
+            placeholder="Regex search to filter on text / for both text and label, use ALL: to start"
+            onChange={(e) => setSearch(e.target.value)}
+          ></input>
         </div>
       </div>
+      <div className="horizontal wrap" id="tabular-view-page-control">
+        <div>
+          <label>Page size</label>
+          <select
+            onChange={(e) => {
+              setPage(1);
+              setPageSize(Number(e.target.value));
+            }}
+            className="form-select"
+            value={pageSize}
+          >
+            {[10, 20, 50, 100].map((e) => (
+              <option key={e}>{e}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label>Page</label>
+          <select
+            onChange={(e) => {
+              setPage(Number(e.target.value));
+            }}
+            value={page || '1'}
+          >
+            {range(1, totalElement > 0 ? Math.ceil(totalElement / pageSize) + 1 : 1).map((v) => (
+              <option key={v}>{v}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="horizontal center">
+        {Object.keys(modifiedRows).length > 0 && (
+          <button className="btn-primary-action" onClick={validateChanges}>
+            Validate changes
+          </button>
+        )}
+      </div>
+      <span className="explanations">Total: {totalElement}</span>
+
+      <DataGrid
+        className="fill-grid"
+        style={{ backgroundColor: 'white' }}
+        columns={columns}
+        rows={rows}
+        rowHeight={80}
+        onRowsChange={(e) => {
+          setRows(e);
+        }}
+      />
+      <div className="horizontal center">
+        <button
+          className="transparent-background"
+          onClick={() => (page && page > 1 ? setPage(page - 1) : setPage(1))}
+        >
+          <MdSkipPrevious size={30} />
+        </button>{' '}
+        Change page{' '}
+        <button
+          className="transparent-background"
+          onClick={() => (page ? setPage(page + 1) : setPage(1))}
+        >
+          <MdSkipNext size={30} />
+        </button>
+      </div>
+
       <Modal show={blocker.state === 'blocked'} onHide={blocker.reset}>
         <Modal.Header>
           <Modal.Title>You are leaving the page</Modal.Title>
@@ -343,6 +340,6 @@ export const DataTabular: FC<DataTabularModel> = ({
           <button onClick={blocker.proceed}>Yes</button>
         </Modal.Footer>
       </Modal>
-    </div>
+    </>
   );
 };

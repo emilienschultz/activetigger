@@ -7,15 +7,12 @@ from fastapi import (
 )
 
 from activetigger.app.dependencies import (
-    ProjectAction,
     ServerAction,
     test_rights,
     verified_user,
 )
 from activetigger.datamodels import MessagesInModel, MessagesOutModel, UserInDBModel
 from activetigger.orchestrator import orchestrator
-
-router = APIRouter()
 
 router = APIRouter(tags=["messages"])
 
@@ -30,9 +27,16 @@ async def get_messages(
 ) -> list[MessagesOutModel]:
     """
     Get messages
+    - all if root
+    - only for oneself
     """
     try:
-        return orchestrator.messages.get_messages(kind, from_user, for_user, for_project)
+        if current_user.username == "root":
+            return orchestrator.messages.get_messages(kind, from_user, for_user, for_project)
+        else:
+            return orchestrator.messages.get_messages(
+                kind, from_user, current_user.username, for_project
+            )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 

@@ -1,4 +1,3 @@
-import time
 from enum import Enum
 from typing import Annotated
 
@@ -24,28 +23,6 @@ def get_orchestrator():
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-def manage_fifo_queue():
-    """
-    Manage the current projects in memory
-    """
-    if len(orchestrator.projects) >= orchestrator.max_projects:
-        old_element = sorted(
-            [[p, orchestrator.projects[p].starting_time] for p in orchestrator.projects],
-            key=lambda x: x[1],
-        )[0]
-        if (
-            old_element[1] < time.time() - 600
-        ):  # check if the project has a least ten minutes old to avoid destroying current projects
-            del orchestrator.projects[old_element[0]]
-            print(f"Delete project {old_element[0]} to gain memory")
-        else:
-            print("Too many projects in the current memory")
-            raise HTTPException(
-                status_code=500,
-                detail="There is too many projects currently loaded in this server. Please wait",
-            )
-
-
 async def get_project(project_slug: str) -> Project:
     """
     Dependency to get existing project
@@ -53,29 +30,16 @@ async def get_project(project_slug: str) -> Project:
     - if not loaded, load it first
     """
 
-    # if project doesn't exist
+    # test if project exists
     if not orchestrator.exists(project_slug):
         raise HTTPException(status_code=404, detail="Project not found")
-
-    # if the project is already loaded
-    if project_slug in orchestrator.projects:
-        return orchestrator.projects[project_slug]
-
-    # Manage a FIFO queue
-    manage_fifo_queue()
-
-    # load the project
     try:
-        orchestrator.start_project(project_slug)
+        if project_slug not in orchestrator.projects:
+            orchestrator.manage_fifo_queue()
+            orchestrator.start_project(project_slug)
+        return orchestrator.projects[project_slug]
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail="There is a problem with the project loading. Please contact the administrator"
-            + str(e),
-        )
-
-    # return loaded project
-    return orchestrator.projects[project_slug]
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 async def verified_user(
@@ -97,8 +61,7 @@ async def verified_user(
 
     # get user caracteristics
     try:
-        user = orchestrator.users.get_user(name=username)
-        return user
+        return orchestrator.users.get_user(name=username)
     except Exception as e:
         raise HTTPException(status_code=404) from e
 
@@ -111,13 +74,17 @@ async def check_auth_exists(
     """
     Check if a user is associated to a project
     """
-    # print("route", request.url.path, request.method)
     try:
         auth = orchestrator.users.auth(current_user.username, project_slug)
         if not auth:
             raise HTTPException(status_code=403, detail="Forbidden: Invalid rights")
     except Exception as e:
         raise HTTPException(status_code=403, detail="Forbidden: Invalid rights") from e
+
+
+# --------------------------
+# Rights management
+# --------------------------
 
 
 class ServerAction(str, Enum):
@@ -137,6 +104,8 @@ class ProjectAction(str, Enum):
     UPDATE_ANNOTATION = "modify annotation"
     EXPORT_DATA = "export data"
     MANAGE_FILES = "manage files"
+    MONITOR = "access specific project information"
+    GENERATE = "use generation features"
 
 
 def test_rights(
@@ -149,6 +118,9 @@ def test_rights(
     Management of rights on the routes
 
     Based on an action, a user, a project
+    Existing status : root, manager, annotator, demo
+    Existing rights : manager, contributor
+    Not implemented : rights specific to scheme
     """
     try:
         user = orchestrator.users.get_user(name=username)
@@ -187,6 +159,11 @@ def test_rights(
     if not project_slug:
         raise HTTPException(500, "Project name missing")
     auth = orchestrator.users.auth(username, project_slug)
+    if auth is None:
+        raise HTTPException(
+            status_code=408,
+            detail=f"Forbidden: User {username} has no rights to perform action {action} on project {project_slug}",
+        )
 
     match action:
         # only manager can delete/modify elements
@@ -200,7 +177,7 @@ def test_rights(
             if auth in ["manager"]:
                 return True
         # only manager and contributor can create
-        case ProjectAction.ADD:
+        case ProjectAction.ADD | ProjectAction.MONITOR | ProjectAction.GENERATE:
             if auth in ["manager", "contributor"]:
                 return True
         # everyone can get info or add annotation
@@ -212,15 +189,3 @@ def test_rights(
         status_code=408,
         detail=f"Forbidden: User {username} has no rights to perform action {action} on project {project_slug}",
     )
-
-
-def check_storage(username: str) -> None:
-    """
-    Check if the user storage is not exceeded
-    """
-    limit = orchestrator.users.get_storage_limit(username)
-    if orchestrator.users.get_storage(username) > limit * 1000:
-        raise HTTPException(
-            status_code=500,
-            detail=f"User storage limit exceeded ({limit} Gb), please delete some models in your projects",
-        )

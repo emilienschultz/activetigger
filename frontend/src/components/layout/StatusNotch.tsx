@@ -29,7 +29,9 @@ export const StatusNotch: FC<{
     appContext: { currentProject },
   } = useAppContext();
   const { authenticatedUser } = useAuth();
-  const { stopProcesses } = useStopProcesses();
+  const { stopProcesses } = useStopProcesses(
+    projectState ? projectState.params.project_slug : null,
+  );
   // const nbUsers = projectState ? projectState.users.length : 0;
 
   // display the number of current processes on the server
@@ -50,7 +52,7 @@ export const StatusNotch: FC<{
 
   const whatComutation = (projectState: ProjectStateModel) => {
     if (currentUser in projectState.languagemodels.training) {
-      return 'BERT computing';
+      return 'BERT';
     } else if (currentUser in projectState.quickmodel.training) {
       return 'Quick model computing';
     } else if (currentUser in projectState.projections.training) {
@@ -76,7 +78,7 @@ export const StatusNotch: FC<{
   }
 
   const errors = projectState?.errors.map((arr) => arr.join(' - ')) || [];
-
+  // NOTE: Axel: I didn't do no css refactor here cause it's highly specific
   return (
     <div id="status-notch">
       {canEdit && (

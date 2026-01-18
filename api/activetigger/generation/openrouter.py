@@ -1,5 +1,4 @@
 import json
-import logging
 
 import requests  # type: ignore[import]
 
@@ -33,7 +32,6 @@ class OpenRouter(GenerationModelClient):
             ),
             headers=headers,
         )
-        logging.debug("openrouter output: %s", response.content)
         if response.status_code == 200:
             return response.json()["choices"][0]["message"]["content"]
         else:

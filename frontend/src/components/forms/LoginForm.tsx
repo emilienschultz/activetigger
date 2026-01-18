@@ -55,21 +55,9 @@ export const LoginForm: FC<{ redirectTo?: string }> = ({ redirectTo }) => {
     <>
       {!reset && (
         <form onSubmit={handleSubmit(onSubmit)}>
-          <input
-            className="form-control form-appearance mt-2"
-            type="text"
-            {...register('username')}
-            placeholder="Username"
-          />
-          <input
-            className="form-control mt-2"
-            type="password"
-            {...register('password')}
-            placeholder="Password"
-          />
-          <div className="d-flex justify-content-between">
-            <button className="btn btn-primary btn-validation">Login</button>
-          </div>
+          <input type="text" {...register('username')} placeholder="Username" />
+          <input type="password" {...register('password')} placeholder="Password" />
+          <button className="btn-submit">Login</button>
         </form>
       )}
       {mail_available && (
@@ -78,19 +66,16 @@ export const LoginForm: FC<{ redirectTo?: string }> = ({ redirectTo }) => {
         </a>
       )}
       {reset && (
-        <div className="d-flex justify-content-center align-items-center">
-          <div className="d-flex flex-row align-items-center">
-            <input
-              className="form-control form-appearance me-2"
-              placeholder="Enter your email"
-              onChange={(e) => setMail(e.target.value)}
-              value={mail}
-              type="email"
-            />
-            <button className="btn btn-danger" onClick={resetPassword}>
-              Reset
-            </button>
-          </div>
+        <div className="horizontal">
+          <input
+            placeholder="Enter your email"
+            onChange={(e) => setMail(e.target.value)}
+            value={mail}
+            type="email"
+          />
+          <button className="btn-danger" onClick={resetPassword}>
+            Reset
+          </button>
         </div>
       )}
     </>
