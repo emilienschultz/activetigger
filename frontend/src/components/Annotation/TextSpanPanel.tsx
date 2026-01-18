@@ -1,6 +1,7 @@
 import chroma from 'chroma-js';
 import { motion } from 'framer-motion';
 import { FC, useEffect, useState } from 'react';
+import { FaCheck } from 'react-icons/fa';
 import Select from 'react-select';
 import { AnnotateBlendTag, TextAnnotateBlend } from 'react-text-annotate-blend';
 import { DisplayConfig } from '../../types';
@@ -72,9 +73,8 @@ export const TextSpanPanel: FC<SpanInputProps> = ({
           />
         </motion.div>
       </div>
-      <div className="horizontal center" style={{ alignItems: 'end' }}>
-        <div style={{ width: '40%', minWidth: '200px', marginRight: '10px' }}>
-          <label>Annotate with </label>
+      <div>
+        <div className="d-flex gap-2 align-items-center mt-2">
           <Select
             value={options.find((opt) => opt.value === tag) || null}
             onChange={(opt) => setTag(opt && opt.value)}
@@ -91,16 +91,16 @@ export const TextSpanPanel: FC<SpanInputProps> = ({
               }),
             }}
           />
+          <button
+            className="btn btn-outline-success align-items-center justify-content-center validate-btn"
+            onClick={() => {
+              postAnnotation(JSON.stringify(value) || JSON.stringify([]), elementId);
+              setValue([]);
+            }}
+          >
+            <FaCheck size={18} />
+          </button>
         </div>
-        <button
-          className="btn-primary-action"
-          onClick={() => {
-            postAnnotation(JSON.stringify(value) || JSON.stringify([]), elementId);
-            setValue([]);
-          }}
-        >
-          Validate annotations
-        </button>
       </div>
     </>
   );

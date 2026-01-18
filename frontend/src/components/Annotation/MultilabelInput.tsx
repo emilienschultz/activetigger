@@ -1,5 +1,5 @@
 import { FC, useCallback, useEffect, useState } from 'react';
-import { FaSquareCheck } from 'react-icons/fa6';
+import { FaCheck } from 'react-icons/fa6';
 import Select from 'react-select';
 
 interface MulticlassInputProps {
@@ -35,25 +35,24 @@ export const MultilabelInput: FC<MulticlassInputProps> = ({
   }, [handleKeyboardEvents]);
 
   return (
-    <div className="horizontal" style={{ width: '50%', minWidth: '300px' }}>
-      {/* NOTE: Axel: Need to be reconsidered */}
+    <div className="d-flex gap-2 align-items-center">
       <Select
         isMulti
-        className="flex-grow-1" // Axel: ugghhhhh
         options={labels.map((e) => ({ value: e, label: e }))}
         onChange={(e) => {
           setSelectedLabels(e.map((e) => e.value));
         }}
         value={selectedLabels.map((e) => ({ value: e, label: e }))}
+        className="w-100"
       />
       <button
-        className="btn-primary-action"
+        className="btn btn-outline-success d-flex align-items-center justify-content-center validate-btn"
         onClick={() => {
           postAnnotation(selectedLabels.join('|'), elementId);
           setSelectedLabels([]);
         }}
       >
-        <FaSquareCheck size={30} />
+        <FaCheck size={18} />
       </button>
     </div>
   );
