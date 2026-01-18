@@ -86,7 +86,7 @@ export const DisplayScores: FC<DisplayScoresProps> = ({
       </span>
       <DisplayTableStatistics scores={scores} title={title} />
       {scores['false_predictions'] && (
-        <button className="btn-secondary-action " onClick={() => setShowFalsePredictions(true)}>
+        <button className="btn-secondary-action" onClick={() => setShowFalsePredictions(true)}>
           Show false predictions
         </button>
       )}

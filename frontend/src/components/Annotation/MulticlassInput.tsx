@@ -15,10 +15,10 @@ interface MulticlassInputProps {
   elementId: string;
   labels: string[];
   postAnnotation: (label: string | null, elementId: string, comment?: string) => void;
-
   small?: boolean;
   phase?: string;
   element?: ElementOutModel;
+  secondaryLabels?: boolean;
 }
 
 interface LabelType {
@@ -33,6 +33,7 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
   phase,
   element,
   small = false,
+  secondaryLabels = true,
 }) => {
   // get the context and set the labels
   const {
@@ -123,7 +124,7 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
       {/* TAGS ACTIONS */}
 
       {/* SKIP */}
-      {skipAnnotation && (
+      {skipAnnotation && secondaryLabels && (
         <button
           type="button"
           className="btn-annotate-general-action tag-action-button"

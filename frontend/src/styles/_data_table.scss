@@ -218,7 +218,6 @@
 
 #label-table{
   width: 100%;
-  min-width: 420px;
 
   td, th{
     padding: 5px 10px;
@@ -229,16 +228,12 @@
   }
   
   .label-col{
-    text-align: right;
-    width: 40%;
-    min-width: 150px;
+    text-align: center;
     border-bottom: 0.2px $dark-grey-color solid;
   }
   
   .dataset-col{
     text-align: center;
-    width: 10%;
-    min-width: 60px;
     border-bottom: 0.2px $dark-grey-color solid;
   }
 

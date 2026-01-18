@@ -233,7 +233,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
             <FaGear size={18} />
             Parameters
           </button>
-          <div className="horizontal wrap">
+          <div className="d-flex">
             <ProjectionVizSigma
               data={projectionData}
               selectedId={currentElementId}
@@ -255,16 +255,18 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
               {selectedElement ? (
                 <div style={{ width: '100%', padding: '15px' }}>
                   <a
-                    className="badge"
+                    className="badge m-0 p-1"
                     onClick={() =>
                       navigate(`/projects/${projectName}/tag/${selectedElement.element_id}?tab=tag`)
                     }
                     style={{ cursor: 'pointer' }}
                   >
-                    Element {selectedElement.element_id}
+                    Text {selectedElement.element_id}
                   </a>
                   <div>{selectedElement.text}</div>
-                  <div>Previous annotations : {JSON.stringify(selectedElement.history)}</div>
+                  <div className="text-muted mt-2">
+                    Previous annotations : {JSON.stringify(selectedElement.history)}
+                  </div>
                   <h5 className="subsection">Annotate this element</h5>
                   <div>
                     {kindScheme == 'multiclass' && (
@@ -274,6 +276,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                         postAnnotation={postAnnotation}
                         labels={availableLabels}
                         small={true}
+                        secondaryLabels={false}
                       />
                     )}
                     {kindScheme == 'multilabel' && (
@@ -430,6 +433,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
             projectName={projectName || ''}
             featuresOption={project?.features.options || {}}
             columns={project?.params.all_columns || []}
+            callback={() => setDisplayNewFeature(false)}
           />
         </Modal.Body>
       </Modal>

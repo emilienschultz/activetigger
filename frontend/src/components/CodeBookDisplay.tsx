@@ -77,14 +77,18 @@ export const CodebookDisplay: FC<CodebookDisplayProps> = ({
           <span style={{ fontWeight: 'bold' }}>📘 Guidelines</span>
           {canEdit && (
             <div id="edit-buttons-group" role="group">
-              <button onClick={() => setShowCodebookModal(true)} title="Edit codebook">
-                <MdDriveFileRenameOutline size={16} />
+              <button
+                onClick={() => setShowCodebookModal(true)}
+                title="Edit codebook"
+                className="btn btn-link p-0"
+              >
+                <MdDriveFileRenameOutline size={20} />
               </button>
-              <button onClick={openAsHTML} title="Open">
-                <FaBookOpen size={16} />
+              <button onClick={openAsHTML} title="Open" className="btn btn-link p-0">
+                <FaBookOpen size={20} />
               </button>
-              <button onClick={downloadMarkdown} title="Download">
-                <FaCloudDownloadAlt size={16} />
+              <button onClick={downloadMarkdown} title="Download" className="btn btn-link p-0">
+                <FaCloudDownloadAlt size={20} />
               </button>
             </div>
           )}

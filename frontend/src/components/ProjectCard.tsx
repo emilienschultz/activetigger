@@ -46,28 +46,25 @@ export const ProjectCard: FC<ProjectCardProps> = ({ project, resetContext }) => 
 
         <span className="badge info">memory {project.size} Mo</span>
       </div>
-
-      <div className="trash-wrapper" onClick={handleShow}>
+      <div onClick={handleShow} className="trash-wrapper">
         <FaRegTrashAlt size={20} />
       </div>
-      <div>
-        <Modal show={showDelete} onHide={handleClose}>
-          <Modal.Header>
-            <Modal.Title>Delete the project</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            Do you really want to delete the project {project.parameters.project_name}?
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="danger" onClick={actionDelete} key="delete">
-              Delete
-            </Button>
-            <Button variant="secondary" onClick={handleClose} key="cancel">
-              Exit
-            </Button>
-          </Modal.Footer>
-        </Modal>
-      </div>
+      <Modal show={showDelete} onHide={handleClose}>
+        <Modal.Header>
+          <Modal.Title>Delete the project</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Do you really want to delete the project {project.parameters.project_name}?
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="danger" onClick={actionDelete} key="delete">
+            Delete
+          </Button>
+          <Button variant="secondary" onClick={handleClose} key="cancel">
+            Exit
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

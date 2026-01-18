@@ -180,28 +180,28 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
           <div className="horizontal">
             <button
               onClick={() => setShowCreateNewScheme(!showCreateNewScheme)}
-              className="transparent-background"
+              className="btn btn-link ms-2 p-0"
               title="New scheme"
             >
               <FaPlusCircle size={20} />
             </button>
             <button
               onClick={() => setShowRename(!showRename)}
-              className="transparent-background"
+              className="btn btn-link p-0"
               title="Rename current scheme"
             >
               <MdDriveFileRenameOutline size={20} />
             </button>
             <button
               onClick={() => duplicateScheme()}
-              className="transparent-background"
+              className="btn btn-link p-0"
               title="Duplicate current scheme"
             >
               <IoDuplicate size={20} />
             </button>
             <button
               onClick={() => setShowDelete(!showDelete)}
-              className="transparent-background"
+              className="btn btn-link p-0"
               title="Delete current scheme"
             >
               <FaRegTrashAlt size={20} />

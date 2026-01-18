@@ -45,13 +45,13 @@ export const HomePage: FC = () => {
         <div className="row">
           <center>
             <div className="alert alert-warning mt-3">
-              ⚠️ This interface is in beta testing. Please save your data.{' '}
+              ⚠️ This interface is in development for a stable version. Please save your data.{' '}
               <a
                 href="https://github.com/emilienschultz/activetigger/issues"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Please open a issue for any bug or problem
+                For any problem, open a issue
               </a>
             </div>
           </center>

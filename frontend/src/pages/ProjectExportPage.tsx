@@ -95,7 +95,7 @@ export const ProjectExportPage: FC = () => {
               <Tab eventKey="annotations" title="Annotations">
                 <div>
                   <button
-                    className="btn btn-primary mt-2"
+                    className="btn-secondary-action"
                     onClick={() => {
                       if (currentScheme) getAnnotationsFile(currentScheme, format, 'train');
                     }}
@@ -104,7 +104,7 @@ export const ProjectExportPage: FC = () => {
                   </button>
                   {project?.params.valid && (
                     <button
-                      className="btn btn-primary mx-2 mt-2"
+                      className="btn-secondary-action"
                       onClick={() => {
                         if (currentScheme) getAnnotationsFile(currentScheme, format, 'valid');
                       }}
@@ -114,7 +114,7 @@ export const ProjectExportPage: FC = () => {
                   )}
                   {project?.params.test && (
                     <button
-                      className="btn btn-primary mx-2 mt-2"
+                      className="btn-secondary-action"
                       onClick={() => {
                         if (currentScheme) getAnnotationsFile(currentScheme, format, 'test');
                       }}
@@ -125,7 +125,7 @@ export const ProjectExportPage: FC = () => {
                 </div>
                 <div>
                   <button
-                    className="btn btn-primary mt-2"
+                    className="btn-secondary-action"
                     onClick={() => {
                       if (currentScheme) getAnnotationsFile('all', format, 'train');
                     }}
@@ -150,7 +150,7 @@ export const ProjectExportPage: FC = () => {
                 </div>
                 <div>
                   <button
-                    className="btn btn-primary mt-3"
+                    className="btn-secondary-action"
                     onClick={() => {
                       if (features) {
                         getFeaturesFile(features, format);
@@ -163,7 +163,7 @@ export const ProjectExportPage: FC = () => {
                 {availableProjection && (
                   <div>
                     <button
-                      className="btn btn-primary mt-3"
+                      className="btn-secondary-action"
                       onClick={() => {
                         if (availableProjection) {
                           getProjectionFile(format);
@@ -197,7 +197,7 @@ export const ProjectExportPage: FC = () => {
                   <div>
                     {availablePredictionAll && (
                       <button
-                        className="btn btn-primary mt-3"
+                        className="btn-secondary-action"
                         onClick={() => {
                           if (model) {
                             getPredictionsFile(model, format);
@@ -211,7 +211,7 @@ export const ProjectExportPage: FC = () => {
                   <div>
                     {availablePredictionTest && (
                       <button
-                        className="btn btn-primary mt-3"
+                        className="btn-secondary-action"
                         onClick={() => {
                           if (model) {
                             getPredictionsFile(model, format, 'test');
@@ -225,7 +225,7 @@ export const ProjectExportPage: FC = () => {
                   <div>
                     {availablePredictionExternal && (
                       <button
-                        className="btn btn-primary mt-3"
+                        className="btn-secondary-action"
                         onClick={() => {
                           if (model) {
                             getPredictionsFile(model, format, 'external');
@@ -254,7 +254,7 @@ export const ProjectExportPage: FC = () => {
                         </Link>
                       ) : (
                         <button
-                          className="btn btn-primary mt-3"
+                          className="btn-secondary-action"
                           onClick={() => {
                             getModelFile(model);
                           }}

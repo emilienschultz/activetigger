@@ -57,16 +57,12 @@ export const LabelCard: FC<LabelCardProps> = ({
       <td className="dataset-col">{countTest ? countTest : 0}</td>
       {canEdit && (
         <>
-          <td className="edit-col">
-            <button
-              className="transparent-background"
-              title="Delete"
-              onClick={() => setShowDelete(true)}
-            >
+          <td className="text-center">
+            <button className="btn btn-link p-0" title="Delete" onClick={() => setShowDelete(true)}>
               <FaRegTrashAlt />
             </button>
             <button
-              className="transparent-background"
+              className="btn btn-link p-0"
               title="Rename"
               onClick={() => setShowRename(!showRename)}
             >
@@ -187,7 +183,7 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
 
   return (
     <>
-      <table id="label-table">
+      <table id="label-table" className="mt-5">
         <thead>
           <tr>
             <th scope="col" className="label-col">
