@@ -1903,6 +1903,7 @@ export function useGenerate(
   prompt: string | null,
   mode: string | null,
   token?: string,
+  promptName?: string,
 ) {
   const { notify } = useNotifications();
   const generate = useCallback(async () => {
@@ -1920,13 +1921,14 @@ export function useGenerate(
           token: token,
           scheme: currentScheme,
           mode: mode,
+          prompt_name: promptName,
         },
       });
       if (!res.error) notify({ type: 'warning', message: 'Starting generation' });
       return true;
     }
     return null;
-  }, [projectSlug, modelId, prompt, n_batch, currentScheme, mode, token, notify]);
+  }, [projectSlug, modelId, prompt, n_batch, currentScheme, mode, token, notify, promptName]);
 
   return { generate };
 }

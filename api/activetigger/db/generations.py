@@ -1,5 +1,4 @@
 import datetime
-import os
 from typing import Sequence
 
 from sqlalchemy import delete, select
@@ -8,9 +7,7 @@ from sqlalchemy.orm import joinedload, sessionmaker
 
 from activetigger.config import config
 from activetigger.datamodels import (
-    GenerationAvailableModel,
     GenerationCreationModel,
-    GenerationModelApi,
     PromptModel,
 )
 from activetigger.db.models import Generations, GenModels, Prompts
@@ -31,6 +28,7 @@ class GenerationsService:
         model_id: int,
         prompt: str,
         answer: str,
+        batch: str | None = None,
     ):
         session = self.Session()
         generation = Generations(
@@ -41,12 +39,15 @@ class GenerationsService:
             model_id=model_id,
             prompt=prompt,
             answer=answer,
+            batch=batch,
         )
         session.add(generation)
         session.commit()
         session.close()
 
-    def get_generated(self, project_slug: str, user_name: str, n_elements: int | None = None):
+    def get_generated(
+        self, project_slug: str, user_name: str, n_elements: int | None = None
+    ) -> list[list]:
         """
         Get elements from generated table by order desc
         """
@@ -70,12 +71,23 @@ class GenerationsService:
                 [
                     el.time,
                     el.element_id,
+                    el.batch,
                     el.prompt,
                     el.answer,
                     el.model.name if el.model else None,
                 ]
                 for el in generated
             ]
+
+    def get_batch(self, batch_id: str) -> list[Generations] | None:
+        """
+        Get all generations for a given batch ID
+        """
+        with self.Session() as session:
+            generations = session.scalars(
+                select(Generations).filter_by(batch=batch_id).order_by(Generations.time.desc())
+            ).all()
+        return list(generations) if generations is not None else None
 
     def get_project_gen_models(self, project_slug: str) -> Sequence[GenModels]:
         """

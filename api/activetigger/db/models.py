@@ -219,6 +219,7 @@ class Generations(Base):
     model: Mapped[GenModels] = relationship()
     prompt: Mapped[str]
     answer: Mapped[str]
+    batch: Mapped[str | None]
 
 
 class Features(Base):

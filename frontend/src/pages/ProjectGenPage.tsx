@@ -31,6 +31,7 @@ import { GenModel, SupportedAPI } from '../types';
 interface Row {
   time: string;
   index: string;
+  batch: string;
   prompt: string;
   answer: string;
   endpoint: string;
@@ -44,7 +45,7 @@ const columns: readonly Column<Row>[] = [
     name: 'Time',
     key: 'time',
     resizable: true,
-    width: '15%',
+    width: '10%',
   },
   {
     name: 'Id',
@@ -53,10 +54,16 @@ const columns: readonly Column<Row>[] = [
     width: '10%',
   },
   {
+    name: 'Batch',
+    key: 'batch',
+    resizable: true,
+    width: '10%',
+  },
+  {
     name: 'Answer',
     key: 'answer',
     resizable: true,
-    width: '35%',
+    width: '30%',
     renderCell: ({ row }) => (
       <div
         style={{
@@ -91,6 +98,7 @@ const columns: readonly Column<Row>[] = [
       </div>
     ),
   },
+
   {
     name: 'Model name',
     key: 'model_name',
@@ -143,6 +151,7 @@ export const GenPage: FC = () => {
     generateConfig.prompt || null,
     generateConfig.selectionMode || null,
     generateConfig.token,
+    promptName,
   );
 
   // to stop generation
@@ -254,11 +263,17 @@ export const GenPage: FC = () => {
     );
   };
 
+  console.log(promptName);
+
   return (
     <ProjectPageLayout projectName={projectName} currentAction="generate">
+      <div className="alert alert-info my-3" role="alert">
+        This module is still experimental, design primarily to test generative models. If you have
+        idea to improve it, please contact us!
+      </div>
       <div className="container-fluid mt-3">
-        <div className="row"></div>
         <div className="explanations">Use external LLM models for generation</div>
+
         <Modal
           show={showFormAddModel}
           id="createmodel-modal"
@@ -282,12 +297,14 @@ export const GenPage: FC = () => {
             <FaPlusCircle size={20} /> Add new model
           </button>
         </ModelsPillDisplay>
+        <hr className="my-3" />
+
         {currentModel && (
           <>
             <div className="row mt-3">
-              <div className="col-6">
-                <div>
-                  <label htmlFor="batch">N elements to annotate </label>
+              <div className="d-flex col-6">
+                <div className="me-3">
+                  <label htmlFor="batch">Elements </label>
                   <input
                     type="number"
                     id="batch"
@@ -302,11 +319,8 @@ export const GenPage: FC = () => {
                     }}
                   />
                 </div>
-              </div>
-              <div className="col-6">
                 <div>
-                  <label htmlFor="mode">Select from </label>
-
+                  <label htmlFor="mode">From </label>
                   <select
                     id="mode"
                     className="form-select"
@@ -323,81 +337,52 @@ export const GenPage: FC = () => {
                 </div>
               </div>
 
-              <Modal show={showRecordPromptForm} onHide={() => setShowRecordPromptForm(false)}>
-                <Modal.Header>
-                  <Modal.Title>Record the current prompt</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                  <div className="d-flex align-items-center">
-                    <input
-                      type="text"
-                      id="promptname"
-                      className="form-control"
-                      value={promptName}
-                      placeholder="Prompt name to save"
-                      onChange={(e) => setPromptName(e.target.value)}
-                    />
-                    <button
-                      className="btn btn-primary mx-2 savebutton"
-                      onClick={() => {
-                        if (!promptName)
-                          notify({ type: 'error', message: 'Prompt name is required' });
-                        savePrompts(generateConfig.prompt || null, promptName);
-                        reFetchPrompts();
-                        setShowRecordPromptForm(false);
-                      }}
-                    >
-                      Save
-                    </button>
-                    <Tooltip anchorSelect=".savebutton" place="top" style={{ zIndex: 99 }}>
-                      Save the prompt
-                    </Tooltip>
-                  </div>
-                </Modal.Body>
-              </Modal>
-              <div className="d-flex align-items-center my-2" style={{ zIndex: 1 }}>
-                <Select
-                  id="select-prompt"
-                  options={(prompts || []).map((e) => ({
-                    value: e.id as unknown as string,
-                    label: e.parameters.name as unknown as string,
-                    text: e.text as unknown as string,
-                  }))}
-                  isClearable
-                  placeholder="Saved prompts"
-                  onChange={(e) => {
-                    setAppContext((prev) => ({
-                      ...prev,
-                      generateConfig: {
-                        ...generateConfig,
-                        prompt: e?.text || '',
-                        promptId: e?.value,
-                      },
-                    }));
-                  }}
-                />
-                <button
-                  onClick={() => {
-                    setShowRecordPromptForm(true);
-                  }}
-                  className="btn btn-primary mx-2 savebutton"
-                >
-                  <FaRegSave size={20} />
-                </button>
-                <button
-                  onClick={() => {
-                    deletePrompts(generateConfig.promptId || null);
-                    reFetchPrompts();
-                  }}
-                  className="btn btn-primary"
-                >
-                  <FaRegTrashAlt size={20} />
-                </button>
-              </div>
               <div className="mt-2">
                 <label htmlFor="prompt" style={{ zIndex: 0 }}>
                   Prompt
                 </label>
+                <div className="d-flex align-items-center my-2" style={{ zIndex: 1 }}>
+                  <Select
+                    id="select-prompt"
+                    options={(prompts || []).map((e) => ({
+                      value: e.id as unknown as string,
+                      label: e.parameters.name as unknown as string,
+                      text: e.text as unknown as string,
+                    }))}
+                    isClearable
+                    placeholder="Saved prompts"
+                    onChange={(e) => {
+                      setAppContext((prev) => ({
+                        ...prev,
+                        generateConfig: {
+                          ...generateConfig,
+                          prompt: e?.text || '',
+                          promptId: e?.value,
+                        },
+                      }));
+                      setPromptName(e?.label || '');
+                    }}
+                  />
+                  <button
+                    onClick={() => {
+                      setShowRecordPromptForm(true);
+                    }}
+                    className="btn btn-link p-0 savebutton ms-2"
+                    title="Save current prompt"
+                  >
+                    <FaRegSave size={20} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      deletePrompts(generateConfig.promptId || null);
+                      reFetchPrompts();
+                    }}
+                    className="btn btn-link p-0"
+                    title="Delete saved prompt"
+                  >
+                    <FaRegTrashAlt size={20} />
+                  </button>
+                </div>
                 <textarea
                   id="prompt"
                   rows={5}
@@ -491,6 +476,38 @@ export const GenPage: FC = () => {
           </>
         )}
       </div>
+      <Modal show={showRecordPromptForm} onHide={() => setShowRecordPromptForm(false)}>
+        <Modal.Header>
+          <Modal.Title>Record the current prompt</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="d-flex align-items-center">
+            <input
+              type="text"
+              id="promptname"
+              className="form-control"
+              value={promptName}
+              placeholder="Prompt name to save"
+              onChange={(e) => setPromptName(e.target.value)}
+            />
+            <button
+              className="btn btn-primary mx-2 savebutton"
+              onClick={() => {
+                if (!promptName) notify({ type: 'error', message: 'Prompt name is required' });
+                savePrompts(generateConfig.prompt || null, promptName);
+                reFetchPrompts();
+                setShowRecordPromptForm(false);
+                setPromptName(promptName);
+              }}
+            >
+              Save
+            </button>
+            <Tooltip anchorSelect=".savebutton" place="top" style={{ zIndex: 99 }}>
+              Save the prompt
+            </Tooltip>
+          </div>
+        </Modal.Body>
+      </Modal>
     </ProjectPageLayout>
   );
 };

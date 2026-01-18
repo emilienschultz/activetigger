@@ -88,6 +88,7 @@ class Generations:
         model_id: int,
         prompt: str,
         answer: str,
+        batch: str | None = None,
     ) -> None:
         """
         Add a generated element in the database
@@ -99,6 +100,7 @@ class Generations:
             model_id=model_id,
             prompt=prompt,
             answer=answer,
+            batch=batch,
         )
         return None
 
@@ -111,7 +113,9 @@ class Generations:
         result = self.generations_service.get_generated(
             project_slug=project_slug, user_name=user_name
         )
-        df = pd.DataFrame(result, columns=["time", "index", "prompt", "answer", "model_name"])
+        df = pd.DataFrame(
+            result, columns=["time", "index", "batch", "prompt", "answer", "model_name"]
+        )
         df["time"] = pd.to_datetime(df["time"])
         if df["time"].dt.tz is None:
             df["time"] = df["time"].dt.tz_localize("UTC")

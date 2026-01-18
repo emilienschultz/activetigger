@@ -540,6 +540,7 @@ class GenerationRequest(BaseModel):
     n_batch: int = 1
     scheme: str
     mode: str = "all"
+    prompt_name: str | None = None
 
 
 class ProjectUpdateModel(BaseModel):
@@ -604,6 +605,7 @@ class GenerationComputing(ProcessComputing):
     number: int
     model_id: int
     get_progress: Callable[[], float | None] | None = None
+    prompt_name: str | None = None
 
 
 class BertopicComputing(ProcessComputing):

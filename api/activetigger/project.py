@@ -1309,6 +1309,7 @@ class Project:
         self.computing.append(
             GenerationComputing(
                 unique_id=unique_id,
+                prompt_name=request.prompt_name if request.prompt_name else "",
                 user=username,
                 project=self.name,
                 model_id=request.model_id,
@@ -1415,10 +1416,12 @@ class Project:
                         projection = cast(ProjectionComputing, e)
                         self.projections.add(projection, results)
                     case "generation":
+                        e = cast(GenerationComputing, e)
                         r = cast(
                             list[GenerationResult],
                             results,
                         )
+                        batch = e.prompt_name + "_" + e.unique_id
                         for row in r:
                             self.generations.add(
                                 user=row.user,
@@ -1427,6 +1430,7 @@ class Project:
                                 model_id=row.model_id,
                                 prompt=row.prompt,
                                 answer=row.answer,
+                                batch=batch,
                             )
                     case "bertopic":
                         print("bertopic")
