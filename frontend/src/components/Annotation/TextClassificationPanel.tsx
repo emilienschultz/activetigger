@@ -37,7 +37,6 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
         style={
           {
             '--height': `${displayConfig.textFrameHeight}vh`,
-            '--width': `${displayConfig.textFrameWidth}vw`,
           } as CSSProperties
         }
         ref={frameRef as unknown as LegacyRef<HTMLDivElement>}

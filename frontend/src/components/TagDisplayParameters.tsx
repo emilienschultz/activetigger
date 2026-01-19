@@ -134,7 +134,8 @@ export const TagDisplayParameters: FC = () => {
         <input
           type="range"
           min="25"
-          max="100"
+          max="90"
+          value={displayConfig.textFrameHeight}
           onChange={(e) => {
             setAppContext((prev) => ({
               ...prev,
@@ -152,7 +153,8 @@ export const TagDisplayParameters: FC = () => {
         <input
           type="range"
           min="25"
-          max="100"
+          max="80"
+          value={displayConfig.textFrameWidth}
           onChange={(e) => {
             setAppContext((prev) => ({
               ...prev,

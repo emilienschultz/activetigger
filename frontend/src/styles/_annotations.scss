@@ -86,51 +86,173 @@
   border-radius: $border-radius;
 }
 
-.annotation-frame {
-  position: relative;
-  white-space: pre-wrap;
-  box-shadow: 0px 0px 15px color(from $primary srgb r g b / 50%);
-  font-size: 16px;
-  line-height: 1.6;
+.annotation-block {
+  display: grid;
 
-  padding: 16px;
-  height: var(--height);
+  @extend .gap-3;
+  @extend .my-3;
+  justify-content: flex-start;
 
-  flex-basis: var(--width);
-  flex-shrink: 1;
-  @include media-breakpoint-down(lg) {
-    flex-basis: auto;
-    width: 100%;
+  width: 100%;
+  @include media-breakpoint-up(lg) {
+    gap: 1rem;
+    grid-template-columns: var(--text-width) calc(100% - var(--text-width) - 1rem);
+    grid-template-rows: 100%;
+    max-height: 90vh;
   }
 
-  //max-width: var(--width);
-
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  .element-text {
-    flex-grow: 1;
-    overflow-y: auto;
-    margin: 0;
-  }
-  dl {
+  .annotation-frame {
+    // layout
+    grid-column: 1;
+    grid-row: 1;
+    padding: 16px;
+    height: var(--height);
+    //width: var(--width);
+    //internal layout
     display: flex;
-    flex-wrap: wrap;
-    row-gap: map.get($spacers, 0);
-    column-gap: map.get($spacers, 3);
-    .dl-item {
-      * {
-        margin: 0;
-      }
-      @extend .gap-1;
+
+    flex-direction: column;
+    justify-content: space-between;
+    @include media-breakpoint-down(lg) {
+      flex-basis: auto;
+      width: 100%;
+    }
+
+    // text
+    position: relative;
+    white-space: pre-wrap;
+    box-shadow: 0px 0px 15px color(from $primary srgb r g b / 50%);
+    font-size: 16px;
+    line-height: 1.6;
+
+    .element-text {
+      flex-grow: 1;
+      overflow-y: auto;
+      margin: 0;
+    }
+    dl {
       display: flex;
-      dt:after {
-        content: ':';
+      flex-wrap: wrap;
+      row-gap: map.get($spacers, 0);
+      column-gap: map.get($spacers, 3);
+      .dl-item {
+        * {
+          margin: 0;
+        }
+        @extend .gap-1;
+        display: flex;
+        dt:after {
+          content: ':';
+        }
+      }
+    }
+  }
+
+  .tag-action-container {
+    --tag-action-width: 200px;
+
+    display: grid;
+    overflow-y: scroll;
+
+    grid-auto-flow: column;
+    column-gap: 1rem;
+    row-gap: 1rem;
+
+    grid-template-rows: repeat(auto-fill, 40px);
+    grid-template-columns: repeat(auto-fit, var(--tag-action-width));
+    height: 100%;
+
+    justify-content: start;
+    align-content: center;
+
+    @include media-breakpoint-down(lg) {
+      --button-label-width: 10vh;
+      height: fit-content;
+      grid-auto-flow: row;
+      grid-template-columns: repeat(auto-fill, var(--tag-action-width));
+      justify-content: center;
+    }
+
+    // @extend .flex-lg-column;
+    // @extend .justify-content-center;
+    // @extend .justify-content-lg-start;
+
+    // @extend .gap-2;
+    // @extend .align-items-end;
+    // @extend .align-items-lg-start;
+
+    .btn-annotate-general-action,
+    .btn-annotate-predicted-action,
+    .btn-annotate-action {
+      margin: 0;
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      color: white;
+
+      height: fit-content;
+
+      svg,
+      .badge {
+        //icon & key stroke badge
+        flex-shrink: 0;
+      }
+    }
+    .btn-annotate-action {
+      @extend .btn;
+      @extend .btn-primary;
+    }
+    .btn-annotate-general-action {
+      @extend .btn;
+      @extend .btn-secondary;
+      background-color: rgb(250, 153, 74);
+    }
+
+    .btn-annotate-predicted-action {
+      @extend .btn;
+      @extend .btn-info;
+
+      background-color: $gray-500;
+      border-color: $gray-500;
+    }
+
+    .tag-action-button {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      .truncate-middle {
+        width: 0;
+        flex-grow: 1;
+        flex-shrink: 1;
+      }
+      .badge {
+        flex-shrink: 0;
+        flex-grow: 0;
+      }
+    }
+    .no-tag-action {
+      align-items: center;
+      span.text {
+        display: flex;
+        flex-wrap: nowrap;
+        text-wrap: nowrap;
+        align-items: center;
+        flex-grow: 1;
+        @extend .gap-1;
+      }
+    }
+    .annotation-comment {
+      width: 100%;
+      @include media-breakpoint-down(lg) {
+        grid-column-start: span 2;
+      }
+      @include media-breakpoint-up(lg) {
+        grid-row-start: span 2;
       }
     }
   }
 }
-
 .text-out-context {
   color: $secondary;
   opacity: 0.7;
@@ -168,111 +290,12 @@
     align-items: start;
     .badge {
       max-width: 100%;
-      width: fit-content;
       margin: 0;
+
+      .truncate-middle {
+        min-width: 0;
+      }
     }
-  }
-}
-
-.annotation-block {
-  display: flex;
-  flex-direction: column;
-  @extend .gap-3;
-  @extend .my-3;
-  justify-content: flex-start;
-  position: relative;
-
-  width: 100%;
-  @include media-breakpoint-up(lg) {
-    flex-direction: row;
-    max-height: 90vh;
-    position: relative;
-  }
-  overflow-y: no;
-  > * {
-    max-height: 100%;
-    overflow-y: auto;
-  }
-}
-
-.tag-action-container {
-  --button-label-width: 25vh;
-  @include media-breakpoint-down(lg) {
-    --button-label-width: 10vh;
-    flex-wrap: wrap;
-  }
-
-  display: flex;
-  flex-shrink: 0;
-  @extend .flex-lg-column;
-  @extend .justify-content-center;
-  @extend .justify-content-lg-start;
-
-  @extend .gap-2;
-  @extend .align-items-end;
-  @extend .align-items-lg-start;
-
-  .btn-annotate-general-action,
-  .btn-annotate-predicted-action,
-  .btn-annotate-action {
-    margin: 0;
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    color: white;
-
-    height: fit-content;
-
-    *:last-child,
-    *:first-child {
-      //icon & key stroke badge
-      flex-shrink: 0;
-    }
-  }
-  .btn-annotate-action {
-    @extend .btn;
-    @extend .btn-primary;
-  }
-  .btn-annotate-general-action {
-    @extend .btn;
-    @extend .btn-secondary;
-    background-color: rgb(250, 153, 74);
-  }
-
-  .btn-annotate-predicted-action {
-    @extend .btn;
-    @extend .btn-info;
-
-    background-color: $gray-500;
-    border-color: $gray-500;
-
- 
-  }
-
-  .tag-action-button {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    .truncate-middle {
-      width: var(--button-label-width);
-    }
-    .badge {
-      flex-shrink: 0;
-      flex-grow: 0;
-    }
-  }
-  .no-tag-action {
-    align-items: center;
-    span.text {
-      display: flex;
-      align-items: center;
-      flex-grow: 1;
-      @extend .gap-1;
-    }
-  }
-  .annotation-comment {
-    width: 100%;
   }
 }
 
@@ -282,13 +305,13 @@
   align-items: center;
   position: relative;
   text-align: start;
-
   flex-shrink: 1;
   flex-grow: 1;
+
   span {
     @extend .text-truncate;
     display: inline-block;
-    max-width: 50%;
+    max-width: 100%;
     white-space: preserve nowrap;
   }
   span:first-child {

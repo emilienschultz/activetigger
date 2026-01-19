@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { CSSProperties, FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuRefreshCw } from 'react-icons/lu';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -408,7 +408,14 @@ export const AnnotationManagement: FC = () => {
       {/**
        * ANNOTATION BLOCK
        **/}
-      <div className="annotation-block">
+      <div
+        className="annotation-block"
+        style={
+          {
+            '--text-width': `${displayConfig.textFrameWidth}%`,
+          } as CSSProperties
+        }
+      >
         {elementId === 'noelement' ? (
           <div className="alert horizontal center">
             <div>

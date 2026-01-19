@@ -135,6 +135,20 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
           Skip <span className="badge hotkey">S</span>
         </button>
       )}
+      {/* NO TAG OPTION */}
+      <button
+        type="button"
+        className="btn-annotate-general-action no-tag-action"
+        onClick={() => {
+          postAnnotation(null, elementId, comment);
+        }}
+      >
+        {lastAnnotation === null ? <IoIosRadioButtonOn /> : <IoIosRadioButtonOff />}
+        <span className="text">
+          <NoAnnotationIcon /> No tag
+        </span>
+        <span className="badge hotkey">DEL</span>
+      </button>
       {/* PREDICTION */}
       {phase == 'train' && displayConfig.displayPrediction && element?.predict.label && (
         <div className="d-flex flex-column align-items-start gap-1">
@@ -199,20 +213,6 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
           </button>
         ))
       }
-      {/* NO TAG OPTION */}
-      <button
-        type="button"
-        className="btn-annotate-general-action no-tag-action"
-        onClick={() => {
-          postAnnotation(null, elementId, comment);
-        }}
-      >
-        {lastAnnotation === null ? <IoIosRadioButtonOn /> : <IoIosRadioButtonOff />}
-        <span className="text">
-          <NoAnnotationIcon /> No tag
-        </span>
-        <span className="badge hotkey">DEL</span>
-      </button>
 
       <textarea
         className="form-control annotation-comment"
