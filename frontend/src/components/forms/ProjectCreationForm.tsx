@@ -221,7 +221,7 @@ export const ProjectCreationForm: FC = () => {
               clearInterval(intervalId);
               if (computeFeatures) addFeature(slug, 'sbert', 'sbert', { model: 'generic' });
               resetContext();
-              navigate(`/projects/${slug}?fromProjectPage=true`);
+              navigate(`/projects/${slug}?fromCreatePage=true`);
               return;
             }
 

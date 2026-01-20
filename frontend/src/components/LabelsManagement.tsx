@@ -165,9 +165,9 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
     setCreateLabelValue('');
   };
 
-  useEffect(() => {
-    reFetchStatistics();
-  }, [reFetchStatistics, currentScheme, availableLabels]);
+  // useEffect(() => {
+  //   reFetchStatistics();
+  // }, [reFetchStatistics, currentScheme, availableLabels]);
 
   // update the labels in the state and context
   const updateLabels = (newLabels: LabelType[]) => {

@@ -45,18 +45,18 @@ export const ProjectPage: FC = () => {
   // get the fact that we come from the create page
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [fromProjectPage, setFromProjectPage] = useState<boolean>(false);
-  if (!fromProjectPage && searchParams.get('fromProjectPage') === 'true') {
-    setFromProjectPage(true);
+  const [fromCreatePage, setFromCreatePage] = useState<boolean>(false);
+  if (!fromCreatePage && searchParams.get('fromCreatePage') === 'true') {
+    setFromCreatePage(true);
   }
 
   // if conditions, navigate to the tag page
   useEffect(() => {
-    if (currentScheme && fromProjectPage && availableLabels.length > 1) {
+    if (currentScheme && fromCreatePage && availableLabels.length > 1) {
       navigate(`/projects/${projectSlug}/tag`);
-      setFromProjectPage(false);
+      setFromCreatePage(false);
     }
-  }, [fromProjectPage, availableLabels, navigate, projectSlug, currentScheme]);
+  }, [fromCreatePage, availableLabels, navigate, projectSlug, currentScheme]);
 
   if (!projectSlug || !project) return;
 

@@ -30,7 +30,6 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
   phase,
   frameRef,
 }) => {
-  console.log(displayConfig.textFrameHeight);
   return (
     <>
       <div
