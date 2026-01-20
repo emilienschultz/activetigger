@@ -454,7 +454,12 @@ export const ProjectCreationForm: FC = () => {
                 max={maxTrainSet}
               />
 
-              <div className="explanations">Best practices for machine learning process</div>
+              <div className="explanations">
+                For best practices for machine learning process, see the{' '}
+                <a target="_blank" href="https://emilienschultz.github.io/activetigger/docs/">
+                  documentation
+                </a>
+              </div>
 
               <label htmlFor="n_valid">
                 Number of elements in the validation set (optional)
@@ -512,7 +517,7 @@ export const ProjectCreationForm: FC = () => {
                     {...register('random_selection')}
                   />
                   <label htmlFor="random_selection">
-                    Random selection of elements{' '}
+                    Select elements at random{' '}
                     <a className="rselect">
                       <HiOutlineQuestionMarkCircle />
                     </a>
