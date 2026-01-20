@@ -235,6 +235,7 @@ export const DataTabular: FC<DataTabularModel> = ({
             className="form-select"
             value={currentDataset}
             onChange={(e) => {
+              setPage(1);
               changeDataSet(e.target.value);
             }}
           >
@@ -245,7 +246,13 @@ export const DataTabular: FC<DataTabularModel> = ({
         </div>
         <div>
           <label>Tagged</label>
-          <select onChange={(e) => setSample(e.target.value)} value={sample}>
+          <select
+            onChange={(e) => {
+              setPage(1);
+              setSample(e.target.value);
+            }}
+            value={sample}
+          >
             {['tagged', 'untagged', 'all', 'recent'].map((e) => (
               <option key={e}>{e}</option>
             ))}
@@ -258,7 +265,10 @@ export const DataTabular: FC<DataTabularModel> = ({
           </label>
           <input
             placeholder="Regex search to filter on text / for both text and label, use ALL: to start"
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setPage(1);
+              setSearch(e.target.value);
+            }}
           ></input>
         </div>
       </div>
@@ -273,7 +283,7 @@ export const DataTabular: FC<DataTabularModel> = ({
             className="form-select"
             value={pageSize}
           >
-            {[10, 20, 50, 100].map((e) => (
+            {[10, 20, 50].map((e) => (
               <option key={e}>{e}</option>
             ))}
           </select>
