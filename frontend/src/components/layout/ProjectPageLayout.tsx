@@ -52,7 +52,9 @@ export const ProjectPageLayout: FC<ProjectPageLayoutProps> = ({
             currentMode={phase}
             developmentMode={developmentMode}
           />
-          <div className="flex-grow-1 mb-3">{children}</div>
+          <div className="flex-grow-1 mb-3" style={{ minWidth: 0 }}>
+            {children}
+          </div>
         </div>
       </div>
       <StatusNotch

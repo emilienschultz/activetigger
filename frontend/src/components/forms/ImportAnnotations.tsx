@@ -108,18 +108,23 @@ export const ImportAnnotations: FC<ImportPropos> = ({ projectName, currentScheme
               <div>
                 Size of the dataset : <b>{data.data.length - 1}</b>
               </div>
-              <DataTable<Record<DataType['headers'][number], string | number>>
-                columns={data.headers.map((h) => ({
-                  name: h,
-                  selector: (row) => row[h],
-                  format: (row) => {
-                    const v = row[h];
-                    return typeof v === 'bigint' ? Number(v) : v;
-                  },
-                  width: '200px',
-                }))}
-                data={data.data.slice(0, 5) as Record<keyof DataType['headers'], string | number>[]}
-              />
+
+              <div>
+                <DataTable<Record<DataType['headers'][number], string | number>>
+                  columns={data.headers.map((h) => ({
+                    name: h,
+                    selector: (row) => row[h],
+                    format: (row) => {
+                      const v = row[h];
+                      return typeof v === 'bigint' ? Number(v) : v;
+                    },
+                    width: '200px',
+                  }))}
+                  data={
+                    data.data.slice(0, 5) as Record<keyof DataType['headers'], string | number>[]
+                  }
+                />
+              </div>
 
               <label htmlFor="col_id">
                 Column for id (they need to match exactly the original data)

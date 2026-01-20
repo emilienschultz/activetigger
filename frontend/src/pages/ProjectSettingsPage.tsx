@@ -56,44 +56,48 @@ export const ProjectSettingsPage: FC = () => {
 
   return (
     <ProjectPageLayout projectName={projectSlug} currentAction="settings">
-      <Tabs id="panel" className="mt-3" defaultActiveKey="parameters">
-        <Tab eventKey="parameters" title="Parameters">
-          <ProjectParameters project={project} projectSlug={projectSlug} />
-        </Tab>
-        <Tab eventKey="features" title="Features">
-          <div className="explanations">Available features</div>
-          <FeaturesManagement />
-        </Tab>
+      <div className="row">
+        <div className="col-12">
+          <Tabs id="panel" className="mt-3" defaultActiveKey="parameters">
+            <Tab eventKey="parameters" title="Parameters">
+              <ProjectParameters project={project} projectSlug={projectSlug} />
+            </Tab>
+            <Tab eventKey="features" title="Features">
+              <div className="explanations">Available features</div>
+              <FeaturesManagement />
+            </Tab>
 
-        <Tab eventKey="import" title="Import">
-          <div className="explanations">Import data to this project</div>
-          <ImportAnnotations
-            projectName={project.params.project_slug}
-            currentScheme={currentScheme || null}
-          />
-          <EvalSetsManagement
-            projectSlug={projectSlug}
-            currentScheme={currentScheme || ''}
-            dataset={'valid'}
-            exist={project?.params.valid}
-          />
-          <EvalSetsManagement
-            projectSlug={projectSlug}
-            currentScheme={currentScheme || ''}
-            dataset={'test'}
-            exist={project?.params.test}
-          />
-        </Tab>
+            <Tab eventKey="import" title="Import">
+              <div className="explanations">Import data to this project</div>
+              <ImportAnnotations
+                projectName={project.params.project_slug}
+                currentScheme={currentScheme || null}
+              />
+              <EvalSetsManagement
+                projectSlug={projectSlug}
+                currentScheme={currentScheme || ''}
+                dataset={'valid'}
+                exist={project?.params.valid}
+              />
+              <EvalSetsManagement
+                projectSlug={projectSlug}
+                currentScheme={currentScheme || ''}
+                dataset={'test'}
+                exist={project?.params.test}
+              />
+            </Tab>
 
-        <Tab eventKey="session" title="Session history">
-          <div className="explanations">History of the current session</div>
-          <ProjectHistory
-            projectSlug={projectSlug}
-            history={history}
-            setAppContext={setAppContext}
-          />
-        </Tab>
-      </Tabs>
+            <Tab eventKey="session" title="Session history">
+              <div className="explanations">History of the current session</div>
+              <ProjectHistory
+                projectSlug={projectSlug}
+                history={history}
+                setAppContext={setAppContext}
+              />
+            </Tab>
+          </Tabs>
+        </div>
+      </div>
     </ProjectPageLayout>
   );
 };
