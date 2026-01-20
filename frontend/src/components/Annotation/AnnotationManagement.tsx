@@ -185,7 +185,7 @@ export const AnnotationManagement: FC = () => {
 
   const lastTag = element?.history && element.history.length > 0 ? element.history[0].label : null;
 
-  const fetchNextElement = () => {
+  const fetchNextElement = useCallback(() => {
     getNextElementId().then((res) => {
       if (res && res.n_sample) setNSample(res.n_sample);
       if (res && res.element_id) {
@@ -201,7 +201,7 @@ export const AnnotationManagement: FC = () => {
         navigate(`/projects/${projectName}/tag/noelement`);
       }
     });
-  };
+  }, [getNextElementId, notify, setNSample, navigate, projectName, elementId]);
 
   const highlightTextRaw = [selectionConfig.filter, ...displayConfig.highlightText.split('\n')];
   const highlightText = highlightTextRaw.filter(
@@ -377,7 +377,10 @@ export const AnnotationManagement: FC = () => {
 
   useEffect(() => {
     // fetch next element in the new phase
-    fetchNextElement();
+    // only if there is one current element to avoid triggering fetchnext at page load
+    if (element !== null) {
+      fetchNextElement();
+    }
     // disabling echaustive deps as we only want to track phase to avoid unnecessary fetchNext
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
