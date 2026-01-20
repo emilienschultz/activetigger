@@ -1,5 +1,8 @@
 @use 'sass:map';
 
+/**
+* ANNOTATION MODE
+*/
 .annotation-mode {
   margin-top: map.get($spacers, 1);
   display: flex;
@@ -88,33 +91,75 @@
 
 .annotation-block {
   display: grid;
+  // tag action button/grid size settings
+  --tag-action-width: 200px;
+  --tag-action-column-gap: 1rem;
+  --tag-action-row-gap: 1rem;
+
+  @include media-breakpoint-down(lg) {
+    --tag-action-width: 100%;
+  }
 
   @extend .gap-3;
   @extend .my-3;
   justify-content: flex-start;
 
   width: 100%;
+
+  // two column layout when big screen and force one column inactive
   @include media-breakpoint-up(lg) {
-    gap: 1rem;
-    grid-template-columns: var(--text-width) calc(100% - var(--text-width) - 1rem);
-    grid-template-rows: 100%;
-    max-height: 90vh;
+    &:not(.force-one-column-layout) {
+      // text column take all available space => auto
+      // buttons takes the rest of available width but with a minimum to see the potential second column without having to scroll
+      grid-template-columns: auto minmax(
+          calc(var(--tag-action-width) + var(--tag-action-column-gap) + 10px),
+          calc(100% - var(--text-width) - var(--tag-action-column-gap))
+        );
+      // only one row
+      grid-template-rows: 100%;
+      // make sure the layout fits into visible space
+      max-height: 90vh;
+
+      .tag-action-container {
+        // respect height to force columns
+        height: 100%;
+        // place element in top-bottom flow before filling second column
+        grid-auto-flow: column;
+        // constraint column widths to avoid long labels spreading
+        grid-template-columns: repeat(auto-fit, var(--tag-action-width));
+        // align columns to the text frame limit
+        justify-content: start;
+      }
+    }
+  }
+
+  // special one column layout option
+  &.force-one-column-layout {
+    // only one column
+    grid-template-columns: 100%;
+    // center both rows
+    justify-items: center;
+    // apply width settings to the text frame
+    .annotation-frame {
+      width: var(--text-width);
+    }
   }
 
   .annotation-frame {
-    // layout
+    // place in the grid (optional)
     grid-column: 1;
     grid-row: 1;
+    //layout
     padding: 16px;
     height: var(--height);
-    //width: var(--width);
+
     //internal layout
     display: flex;
-
     flex-direction: column;
     justify-content: space-between;
+
     @include media-breakpoint-down(lg) {
-      flex-basis: auto;
+      //ignore width settings on small screens
       width: 100%;
     }
 
@@ -130,6 +175,7 @@
       overflow-y: auto;
       margin: 0;
     }
+    // additional information boxes
     dl {
       display: flex;
       flex-wrap: wrap;
@@ -148,44 +194,53 @@
     }
   }
 
+  /**
+  * TAG ACTION CONTAINER
+  * grid which shows the tag action buttons
+  */
   .tag-action-container {
-    --tag-action-width: 200px;
+    // buttons height
     --tag-action-height: 40px;
 
     display: grid;
+    // we need to allow overflow to make sure the layout can respect the width to spread columns
     overflow-y: scroll;
 
-    grid-auto-flow: column;
-    column-gap: 1rem;
-    row-gap: 1rem;
+    // gaps
+    column-gap: var(--tag-action-column-gap);
+    row-gap: var(--tag-action-row-gap);
 
+    // default layout for small screens/one-column
+    // spread rows
+    grid-auto-flow: row;
     grid-template-rows: repeat(auto-fill, var(--tag-action-height));
-    grid-template-columns: repeat(auto-fit, var(--tag-action-width));
-    height: 100%;
+    // columns width constraints
+    grid-template-columns: repeat(auto-fill, var(--tag-action-width));
 
-    justify-content: start;
+    // fill width
+    width: 100%;
+    // as high as needed
+    height: fit-content;
+
     align-content: start;
     align-items: center;
+    justify-content: center;
 
     @include media-breakpoint-down(lg) {
-      --button-label-width: 10vh;
-      height: fit-content;
-      grid-auto-flow: row;
-      grid-template-columns: repeat(auto-fill, var(--tag-action-width));
-      justify-content: center;
+      // only two columns
+      grid-template-columns: repeat(auto-fill, calc(50% - var(--tag-action-column-gap) / 2));
+
+      @include media-breakpoint-down(sm) {
+        // only one column
+        grid-template-columns: 100%;
+      }
     }
-
-    // @extend .flex-lg-column;
-    // @extend .justify-content-center;
-    // @extend .justify-content-lg-start;
-
-    // @extend .gap-2;
-    // @extend .align-items-end;
-    // @extend .align-items-lg-start;
 
     .btn-annotate-general-action,
     .btn-annotate-predicted-action,
     .btn-annotate-action {
+      //buttons internal layout
+
       margin: 0;
       display: flex;
       gap: 0.5rem;
@@ -199,30 +254,18 @@
         //icon & key stroke badge
         flex-shrink: 0;
       }
+      @include media-breakpoint-down(sm) {
+        // hide key stroke badges on small screen => no keyboard
+        .badge {
+          display: none;
+        }
+      }
     }
-    .btn-annotate-action {
-      @extend .btn;
-      @extend .btn-primary;
-    }
-    .btn-annotate-general-action {
-      @extend .btn;
-      @extend .btn-secondary;
-      background-color: rgb(250, 153, 74);
-    }
-
-    .btn-annotate-predicted-action {
-      @extend .btn;
-      @extend .btn-info;
-
-      background-color: $gray-500;
-      border-color: $gray-500;
-    }
-
     .tag-action-button {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      width: 100%;
+      width: var(--tag-action-width);
       .truncate-middle {
         width: 0;
         flex-grow: 1;
@@ -233,8 +276,43 @@
         flex-grow: 0;
       }
     }
+
+    // button styles
+    .btn-annotate-action {
+      @extend .btn;
+      @extend .btn-primary;
+    }
+    .btn-annotate-general-action {
+      @extend .btn;
+      @extend .btn-secondary;
+      background-color: rgb(250, 153, 74);
+    }
+    .btn-annotate-predicted-action {
+      @extend .btn;
+      @extend .btn-info;
+
+      background-color: $gray-500;
+      border-color: $gray-500;
+    }
+
+    // prediction layout with or without stats
+    .prediction-container {
+      // container does not change layout
+      display: contents;
+      align-self: center;
+      &:has(.prediction-stats) {
+        display: flex;
+        flex-direction: column;
+        @extend .gap-1;
+        align-items: flex-start;
+        // span on two rows
+        grid-row-start: span 2;
+      }
+    }
+    // no tag button special case
     .no-tag-action {
       align-items: center;
+      width: var(--tag-action-width);
       span.text {
         display: flex;
         flex-wrap: nowrap;
@@ -244,26 +322,35 @@
         @extend .gap-1;
       }
     }
+    // comment field layout + placement on grid
     .annotation-comment {
       width: 100%;
       @include media-breakpoint-down(lg) {
         grid-column-start: span 2;
       }
+      @include media-breakpoint-down(md) {
+        grid-column-start: span 1;
+      }
       @include media-breakpoint-up(lg) {
         grid-row-start: span 2;
-        height: calc(var(--tag-action-height) * 2 + 1rem);
+        height: calc(var(--tag-action-height) * 2 + var(--tag-action-row-gap));
       }
     }
   }
 }
+
 .text-out-context {
   color: $secondary;
   opacity: 0.7;
   font-style: italic;
 }
 
+/**
+* ANNOTATION HISTORY
+*/
 .annotation-history {
   $gapSize: map.get($spacers, 3);
+  width: 100%;
 
   display: flex;
 
@@ -283,7 +370,7 @@
       width: calc(50% - (1 / 2 * $gapSize));
     }
     @include media-breakpoint-down(sm) {
-      width: calc(100%);
+      width: 100%;
     }
 
     text-decoration: none;
@@ -292,7 +379,7 @@
     justify-content: space-between;
     align-items: start;
     .badge {
-      max-width: 100%;
+      max-width: calc(100% - 2 * map.get($spacers, 2));
       margin: 0;
 
       .truncate-middle {
@@ -302,6 +389,9 @@
   }
 }
 
+/**
+* TRUNCATE MIDDLE COMPONENT
+*/
 .truncate-middle {
   display: flex;
   justify-content: start;

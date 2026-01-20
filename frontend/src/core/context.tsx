@@ -56,6 +56,7 @@ export const DEFAULT_CONTEXT: AppContextValue = {
     textFrameWidth: 40,
     highlightText: '',
     numberOfTokens: 512,
+    forceOneColumnLayout: false,
   },
   selectionConfig: {
     mode: 'fixed',

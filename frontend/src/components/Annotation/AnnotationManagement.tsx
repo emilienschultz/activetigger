@@ -12,6 +12,7 @@ import {
 import { useAppContext } from '../../core/context';
 import { ElementOutModel } from '../../types';
 
+import classNames from 'classnames';
 import { Modal } from 'react-bootstrap';
 import { useNotifications } from '../../core/notifications';
 import { useAnnotationSessionHistory } from '../../core/useHistory';
@@ -409,7 +410,11 @@ export const AnnotationManagement: FC = () => {
        * ANNOTATION BLOCK
        **/}
       <div
-        className="annotation-block"
+        className={classNames(
+          'annotation-block',
+          (displayConfig.forceOneColumnLayout || kindScheme == 'multilabel') &&
+            'force-one-column-layout',
+        )} // add class to force bottom if settings OR multiclass label
         style={
           {
             '--text-width': `${displayConfig.textFrameWidth}%`,

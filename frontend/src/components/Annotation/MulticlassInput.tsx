@@ -122,38 +122,11 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
   return (
     <div className=" tag-action-container">
       {/* TAGS ACTIONS */}
-
-      {/* SKIP */}
-      {skipAnnotation && secondaryLabels && (
-        <button
-          type="button"
-          className="btn-annotate-general-action tag-action-button"
-          onClick={() => {
-            skipAnnotation();
-          }}
-        >
-          Skip <span className="badge hotkey">S</span>
-        </button>
-      )}
-      {/* NO TAG OPTION */}
-      <button
-        type="button"
-        className="btn-annotate-general-action no-tag-action"
-        onClick={() => {
-          postAnnotation(null, elementId, comment);
-        }}
-      >
-        {lastAnnotation === null ? <IoIosRadioButtonOn /> : <IoIosRadioButtonOff />}
-        <span className="text">
-          <NoAnnotationIcon /> No tag
-        </span>
-        <span className="badge hotkey">DEL</span>
-      </button>
       {/* PREDICTION */}
       {phase == 'train' && displayConfig.displayPrediction && element?.predict.label && (
-        <div className="d-flex flex-column align-items-start gap-1">
+        <div className="prediction-container">
           {displayConfig.displayPredictionStat && (
-            <small className="d-flex align-items-center gap-1">
+            <small className="d-flex align-items-center gap-1 prediction-stats">
               <MdOnlinePrediction size="20" title="Prediction by model" id="prediction-icon" />{' '}
               <Tooltip anchorSelect="#prediction-icon" place="top">
                 Prediction by model
@@ -183,12 +156,12 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
               postAnnotation(e.currentTarget.value, elementId, comment);
             }}
           >
-            <EmptyAnnotationIcon />
             <MiddleEllipsis label={element?.predict.label} />{' '}
             <span className="badge hotkey">P</span>
           </button>
         </div>
       )}
+
       {
         // display buttons for label from the user
         availableLabels.map((e, i) => (
@@ -220,6 +193,33 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
         value={comment}
         onChange={(e) => setComment(e.target.value)}
       />
+
+      {/* SKIP */}
+      {skipAnnotation && secondaryLabels && (
+        <button
+          type="button"
+          className="btn-annotate-general-action tag-action-button"
+          onClick={() => {
+            skipAnnotation();
+          }}
+        >
+          Skip <span className="badge hotkey">S</span>
+        </button>
+      )}
+      {/* NO TAG OPTION */}
+      <button
+        type="button"
+        className="btn-annotate-general-action no-tag-action"
+        onClick={() => {
+          postAnnotation(null, elementId, comment);
+        }}
+      >
+        {lastAnnotation === null ? <IoIosRadioButtonOn /> : <IoIosRadioButtonOff />}
+        <span className="text">
+          <NoAnnotationIcon /> No tag
+        </span>
+        <span className="badge hotkey">DEL</span>
+      </button>
     </div>
   );
 };

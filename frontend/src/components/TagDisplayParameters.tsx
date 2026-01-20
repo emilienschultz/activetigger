@@ -153,7 +153,7 @@ export const TagDisplayParameters: FC = () => {
         <input
           type="range"
           min="25"
-          max="80"
+          max="100"
           value={displayConfig.textFrameWidth}
           onChange={(e) => {
             setAppContext((prev) => ({
@@ -167,6 +167,23 @@ export const TagDisplayParameters: FC = () => {
           style={{ marginRight: '10px' }}
         />
       </div>
+
+      <label>
+        <input
+          type="checkbox"
+          checked={displayConfig.forceOneColumnLayout}
+          onChange={(_) => {
+            setAppContext((prev) => ({
+              ...prev,
+              displayConfig: {
+                ...displayConfig,
+                forceOneColumnLayout: !displayConfig.forceOneColumnLayout,
+              },
+            }));
+          }}
+        />
+        Force one column layout
+      </label>
 
       <label>Highlight words in the text</label>
       <textarea
