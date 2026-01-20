@@ -67,6 +67,7 @@ export const DataTabular: FC<DataTabularModel> = ({
   const [search, setSearch] = useState<string | null>(null);
   const [sample, setSample] = useState<string>('all');
   const [pageSize, setPageSize] = useState(20);
+  const [changeTrigger, setChangeTrigger] = useState<boolean>(false);
 
   // get API elements when table shape change
   const {
@@ -86,7 +87,7 @@ export const DataTabular: FC<DataTabularModel> = ({
 
   useEffect(() => {
     if (page !== null) getPage({ pageIndex: page, pageSize });
-  }, [page, pageSize, getPage, currentDataset]);
+  }, [page, pageSize, getPage, currentDataset, changeTrigger]);
 
   // define table
   const columns: readonly Column<Row>[] = [
@@ -305,7 +306,13 @@ export const DataTabular: FC<DataTabularModel> = ({
 
       <div className="horizontal center">
         {Object.keys(modifiedRows).length > 0 && (
-          <button className="btn-primary-action" onClick={validateChanges}>
+          <button
+            className="btn-primary-action"
+            onClick={() => {
+              validateChanges();
+              setChangeTrigger(!changeTrigger);
+            }}
+          >
             Validate changes
           </button>
         )}
