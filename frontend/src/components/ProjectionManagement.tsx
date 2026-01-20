@@ -285,7 +285,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                     <ul>
                       {selectedElement.history?.map((e) => {
                         return (
-                          <li>
+                          <li key={`${e.time}-${e.user}`}>
                             label: {e.label ? e.label : 'label removed'} ({e.time} by {e.user})
                             <br />
                           </li>
