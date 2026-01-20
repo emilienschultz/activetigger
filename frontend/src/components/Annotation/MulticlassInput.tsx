@@ -187,13 +187,6 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
         ))
       }
 
-      <textarea
-        className="form-control annotation-comment"
-        placeholder="Comment"
-        value={comment}
-        onChange={(e) => setComment(e.target.value)}
-      />
-
       {/* SKIP */}
       {skipAnnotation && secondaryLabels && (
         <button
@@ -220,6 +213,12 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
         </span>
         <span className="badge hotkey">DEL</span>
       </button>
+      <textarea
+        className="form-control annotation-comment"
+        placeholder="Comment"
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+      />
     </div>
   );
 };
