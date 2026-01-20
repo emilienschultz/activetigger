@@ -301,22 +301,30 @@ export const AnnotationManagement: FC = () => {
     }
   }, [availableQuickModels, selectFirstModelTrained, setAppContext]);
 
-  // retrain quick model
+  // retrain quick model (only for )
   const { retrainQuickModel } = useRetrainQuickModel(projectName || null, currentScheme || null);
   const [updatedQuickModel, setUpdatedQuickModel] = useState(false);
   useEffect(() => {
+    // only the training points for the current phase
+    const trainHistory = history.filter(
+      (hp) => hp.dataset === 'train' && hp.project_slug === projectName,
+    );
     if (
       !updatedQuickModel &&
       freqRefreshQuickModel &&
       activeModel &&
-      history.length > 0 &&
-      history.length % freqRefreshQuickModel == 0 &&
+      trainHistory.length > 0 &&
+      trainHistory.length % freqRefreshQuickModel == 0 &&
       activeModel.type === 'quickmodel'
     ) {
       setUpdatedQuickModel(true);
       retrainQuickModel(activeModel.value);
     }
-    if (updatedQuickModel && freqRefreshQuickModel && history.length % freqRefreshQuickModel != 0) {
+    if (
+      updatedQuickModel &&
+      freqRefreshQuickModel &&
+      trainHistory.length % freqRefreshQuickModel != 0
+    ) {
       setUpdatedQuickModel(false);
     }
   }, [
@@ -326,6 +334,8 @@ export const AnnotationManagement: FC = () => {
     updatedQuickModel,
     retrainQuickModel,
     history.length,
+    projectName,
+    history,
   ]);
 
   // deactivate active model if it has been removed from available models
