@@ -157,7 +157,7 @@ async def post_annotation_file(
     test_rights(ProjectAction.UPDATE, current_user.username, project.name)
     try:
         project.schemes.add_file_annotations(
-            annotationsdata=annotationsdata, user=current_user.username, dataset="train"
+            annotationsdata=annotationsdata, user=current_user.username
         )
         orchestrator.log_action(
             current_user.username,
