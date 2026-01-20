@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { CSSProperties, FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuRefreshCw } from 'react-icons/lu';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -12,6 +12,7 @@ import {
 import { useAppContext } from '../../core/context';
 import { ElementOutModel } from '../../types';
 
+import classNames from 'classnames';
 import { Modal } from 'react-bootstrap';
 import { useNotifications } from '../../core/notifications';
 import { useAnnotationSessionHistory } from '../../core/useHistory';
@@ -184,7 +185,7 @@ export const AnnotationManagement: FC = () => {
 
   const lastTag = element?.history && element.history.length > 0 ? element.history[0].label : null;
 
-  const fetchNextElement = () => {
+  const fetchNextElement = useCallback(() => {
     getNextElementId().then((res) => {
       if (res && res.n_sample) setNSample(res.n_sample);
       if (res && res.element_id) {
@@ -200,7 +201,7 @@ export const AnnotationManagement: FC = () => {
         navigate(`/projects/${projectName}/tag/noelement`);
       }
     });
-  };
+  }, [getNextElementId, notify, setNSample, navigate, projectName, elementId]);
 
   const highlightTextRaw = [selectionConfig.filter, ...displayConfig.highlightText.split('\n')];
   const highlightText = highlightTextRaw.filter(
@@ -376,7 +377,10 @@ export const AnnotationManagement: FC = () => {
 
   useEffect(() => {
     // fetch next element in the new phase
-    fetchNextElement();
+    // only if there is one current element to avoid triggering fetchnext at page load
+    if (element !== null) {
+      fetchNextElement();
+    }
     // disabling echaustive deps as we only want to track phase to avoid unnecessary fetchNext
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
@@ -408,7 +412,18 @@ export const AnnotationManagement: FC = () => {
       {/**
        * ANNOTATION BLOCK
        **/}
-      <div className="annotation-block">
+      <div
+        className={classNames(
+          'annotation-block',
+          (displayConfig.forceOneColumnLayout || kindScheme == 'multilabel') &&
+            'force-one-column-layout',
+        )} // add class to force bottom if settings OR multiclass label
+        style={
+          {
+            '--text-width': `${displayConfig.textFrameWidth}%`,
+          } as CSSProperties
+        }
+      >
         {elementId === 'noelement' ? (
           <div className="alert horizontal center">
             <div>

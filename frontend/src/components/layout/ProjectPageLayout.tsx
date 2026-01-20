@@ -42,8 +42,8 @@ export const ProjectPageLayout: FC<ProjectPageLayoutProps> = ({
   return (
     // NOTE: Axel: I didn't do no css refactor here cause it's highly specific
     <PageLayout currentPage="projects" projectName={projectName || null}>
-      <div className="container-fluid p-relative" style={{ paddingBottom: '30px' }}>
-        <div className="d-flex flex-column flex-md-row gap-1 gap-md-3 gap-lg-5">
+      <div className="container-fluid position-relative" style={{ paddingBottom: '30px' }}>
+        <div className="d-flex flex-column flex-md-row gap-1 gap-md-3 gap-lg-5 w-100">
           <ProjectActionsSidebar
             projectState={project || null}
             currentProjectAction={currentAction}
@@ -52,9 +52,7 @@ export const ProjectPageLayout: FC<ProjectPageLayoutProps> = ({
             currentMode={phase}
             developmentMode={developmentMode}
           />
-          <div className="flex-grow-1 mb-3" style={{ minWidth: 0 }}>
-            {children}
-          </div>
+          <div className="flex-grow-1 mb-3 position-relative">{children}</div>
         </div>
       </div>
       <StatusNotch
