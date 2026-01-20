@@ -146,16 +146,20 @@ export const ProjectionVizSigma: FC<Props> = ({
 
   return (
     <div>
-      <label>Color by: </label>
-      <select
-        value={selectedColumn}
-        onChange={(event) => {
-          setSelectedColumn(event.target.value as 'labels' | 'predictions');
-        }}
-      >
-        <option value="labels">Annotated elements</option>
-        {data.predictions && <option value="predictions">Predicted elements</option>}
-      </select>
+      {data.predictions && (
+        <>
+          <label>Color by: </label>
+          <select
+            value={selectedColumn}
+            onChange={(event) => {
+              setSelectedColumn(event.target.value as 'labels' | 'predictions');
+            }}
+          >
+            <option value="labels">Annotated elements</option>
+            <option value="predictions">Predicted elements</option>
+          </select>
+        </>
+      )}
 
       <div
         style={{

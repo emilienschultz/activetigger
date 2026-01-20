@@ -67,6 +67,7 @@ export const DataTabular: FC<DataTabularModel> = ({
   const [search, setSearch] = useState<string | null>(null);
   const [sample, setSample] = useState<string>('all');
   const [pageSize, setPageSize] = useState(20);
+  const [changeTrigger, setChangeTrigger] = useState<boolean>(false);
 
   // get API elements when table shape change
   const {
@@ -86,7 +87,7 @@ export const DataTabular: FC<DataTabularModel> = ({
 
   useEffect(() => {
     if (page !== null) getPage({ pageIndex: page, pageSize });
-  }, [page, pageSize, getPage, currentDataset]);
+  }, [page, pageSize, getPage, currentDataset, changeTrigger]);
 
   // define table
   const columns: readonly Column<Row>[] = [
@@ -235,6 +236,7 @@ export const DataTabular: FC<DataTabularModel> = ({
             className="form-select"
             value={currentDataset}
             onChange={(e) => {
+              setPage(1);
               changeDataSet(e.target.value);
             }}
           >
@@ -245,7 +247,13 @@ export const DataTabular: FC<DataTabularModel> = ({
         </div>
         <div>
           <label>Tagged</label>
-          <select onChange={(e) => setSample(e.target.value)} value={sample}>
+          <select
+            onChange={(e) => {
+              setPage(1);
+              setSample(e.target.value);
+            }}
+            value={sample}
+          >
             {['tagged', 'untagged', 'all', 'recent'].map((e) => (
               <option key={e}>{e}</option>
             ))}
@@ -258,7 +266,10 @@ export const DataTabular: FC<DataTabularModel> = ({
           </label>
           <input
             placeholder="Regex search to filter on text / for both text and label, use ALL: to start"
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setPage(1);
+              setSearch(e.target.value);
+            }}
           ></input>
         </div>
       </div>
@@ -273,7 +284,7 @@ export const DataTabular: FC<DataTabularModel> = ({
             className="form-select"
             value={pageSize}
           >
-            {[10, 20, 50, 100].map((e) => (
+            {[10, 20, 50].map((e) => (
               <option key={e}>{e}</option>
             ))}
           </select>
@@ -295,7 +306,13 @@ export const DataTabular: FC<DataTabularModel> = ({
 
       <div className="horizontal center">
         {Object.keys(modifiedRows).length > 0 && (
-          <button className="btn-primary-action" onClick={validateChanges}>
+          <button
+            className="btn-primary-action"
+            onClick={() => {
+              validateChanges();
+              setChangeTrigger(!changeTrigger);
+            }}
+          >
             Validate changes
           </button>
         )}

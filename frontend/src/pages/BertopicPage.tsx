@@ -3,6 +3,7 @@ import cx from 'classnames';
 import { FC, useCallback, useEffect, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { FaCloudDownloadAlt, FaPlusCircle } from 'react-icons/fa';
+import { FaGear } from 'react-icons/fa6';
 import { RiFileTransferLine } from 'react-icons/ri';
 import { SlSizeFullscreen } from 'react-icons/sl';
 import { useParams } from 'react-router-dom';
@@ -84,6 +85,7 @@ export const BertopicPage: FC = () => {
   };
 
   const [showComputeNewBertopic, setShowComputeNewBertopic] = useState(false);
+  const [showParameters, setShowParameters] = useState<boolean>(false);
   const [figSize, setFigSize] = useState<number>(40);
   const toogleFigSize = () => {
     if (figSize === 40) {
@@ -151,9 +153,20 @@ export const BertopicPage: FC = () => {
         </Modal>
         {currentBertopic && (
           <>
-            <div>
-              <details>
-                <summary>Parameters</summary>
+            <button className="btn-secondary-action" onClick={() => setShowParameters(true)}>
+              <FaGear size={18} />
+              Parameters
+            </button>
+
+            <Modal
+              show={showParameters}
+              id="parameters-modal"
+              onHide={() => setShowParameters(false)}
+            >
+              <Modal.Header closeButton>
+                <Modal.Title>Parameters of the current visualisation</Modal.Title>
+              </Modal.Header>
+              <Modal.Body>
                 <div
                   style={{
                     display: 'flex',
@@ -223,8 +236,8 @@ export const BertopicPage: FC = () => {
                     </div>
                   </div>
                 </div>
-              </details>
-            </div>
+              </Modal.Body>
+            </Modal>
           </>
         )}
         {projection && (
