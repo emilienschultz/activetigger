@@ -449,7 +449,11 @@ export const ProjectCreationForm: FC = () => {
 
               <div className="explanations">
                 For best practices for machine learning process, see the{' '}
-                <a target="_blank" href="https://emilienschultz.github.io/activetigger/docs/">
+                <a
+                  target="_blank"
+                  href="https://emilienschultz.github.io/activetigger/docs/"
+                  rel="noreferrer"
+                >
                   documentation
                 </a>
               </div>

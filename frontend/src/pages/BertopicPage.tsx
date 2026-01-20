@@ -151,13 +151,11 @@ export const BertopicPage: FC = () => {
             />
           </Modal.Body>
         </Modal>
+
+        <hr className="my-4" />
+
         {currentBertopic && (
           <>
-            <button className="btn-secondary-action" onClick={() => setShowParameters(true)}>
-              <FaGear size={18} />
-              Parameters
-            </button>
-
             <Modal
               show={showParameters}
               id="parameters-modal"
@@ -278,6 +276,10 @@ export const BertopicPage: FC = () => {
             <div style={{ margin: '10px 0px' }} className="d-flex gap-2 align-items-center">
               <button className="btn" onClick={() => toogleFigSize()}>
                 <SlSizeFullscreen />
+              </button>
+              <button className="btn-secondary-action" onClick={() => setShowParameters(true)}>
+                <FaGear size={18} />
+                Parameters
               </button>
               <button
                 className="btn-primary-action"

@@ -241,27 +241,35 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
             <FaGear size={18} />
             Parameters
           </button>
-          <div className="d-flex">
-            <ProjectionVizSigma
-              data={projectionData}
-              selectedId={currentElementId}
-              setSelectedId={setSelectedId}
-              frame={selectionConfig.frame}
-              setFrameBbox={(bbox?: MarqueBoundingBox) => {
-                setAppContext((prev) => ({
-                  ...prev,
-                  selectionConfig: {
-                    ...selectionConfig,
-                    frame: bbox ? [bbox.x.min, bbox.x.max, bbox.y.min, bbox.y.max] : undefined,
-                  },
-                }));
-              }}
-              labelColorMapping={labelColorMapping}
-            />
+          <div className="d-flex" style={{ minWidth: 0 }}>
+            <div>
+              <ProjectionVizSigma
+                data={projectionData}
+                selectedId={currentElementId}
+                setSelectedId={setSelectedId}
+                frame={selectionConfig.frame}
+                setFrameBbox={(bbox?: MarqueBoundingBox) => {
+                  setAppContext((prev) => ({
+                    ...prev,
+                    selectionConfig: {
+                      ...selectionConfig,
+                      frame: bbox ? [bbox.x.min, bbox.x.max, bbox.y.min, bbox.y.max] : undefined,
+                    },
+                  }));
+                }}
+                labelColorMapping={labelColorMapping}
+              />
+            </div>
 
-            <div style={{ flex: '1 1 200px' }}>
+            <>
               {selectedElement ? (
-                <div style={{ width: '100%', padding: '15px' }}>
+                <div
+                  style={{
+                    overflowY: 'auto',
+                    maxHeight: '80vh',
+                  }}
+                  className="mx-4"
+                >
                   <a
                     className="badge m-0 p-1"
                     onClick={() =>
@@ -311,7 +319,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                   Click on an element to display its content
                 </div>
               )}
-            </div>
+            </>
           </div>
 
           <label style={{ display: 'block' }}>
