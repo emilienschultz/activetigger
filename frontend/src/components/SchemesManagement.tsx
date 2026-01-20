@@ -73,6 +73,7 @@ export const SelectCurrentScheme: FC<{ username?: string | null }> = ({ username
     setAppContext((state) => ({
       ...state,
       currentScheme: selectedOption ? selectedOption.value : availableSchemes[0],
+      history: [],
     }));
     notify({
       type: 'success',
