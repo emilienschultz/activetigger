@@ -7,23 +7,18 @@
   margin-top: map.get($spacers, 1);
   display: flex;
   flex-direction: row;
-  @media (max-width: 1800px) {
-    flex-direction: column;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  width: 100%;
+  column-gap: map.get($spacers, 5);
+  row-gap: map.get($spacers, 3);
+
+  justify-content: space-between;
+
+
+  label {
+    margin: 0;
   }
-  row-gap: map.get($spacers, 2);
-
-  .selectors {
-    display: flex;
-    flex-wrap: wrap;
-    width: 100%;
-    column-gap: map.get($spacers, 5);
-    @media (max-width: 1800px) {
-      justify-content: space-between;
-    }
-
-    label {
-      margin: 0;
-    }
 
     > div {
       display: flex;
@@ -38,6 +33,7 @@
         padding: 3px 5px;
         display: flex;
         @extend .gap-1;
+      margin: 0;
 
         align-items: center;
       }
@@ -62,7 +58,6 @@
         max-width: 45vw;
       }
     }
-  }
 
   .submit-container {
     // @media (max-width: 1800px) {
