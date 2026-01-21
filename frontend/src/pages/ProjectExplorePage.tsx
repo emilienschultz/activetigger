@@ -67,6 +67,15 @@ export const ProjectExplorePage: FC = () => {
                   >
                     Bertopic
                   </a>
+                  . You can also find a complete tutorial on BERTopic{' '}
+                  <a
+                    href="https://www.css.cnrs.fr/the-general-inquirer-in-the-time-of-llms-a-bertopic-tutorial/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    here
+                  </a>
+                  .
                 </div>
                 <BertopicPage />
               </Tab>
