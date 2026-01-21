@@ -112,151 +112,146 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
 
   return (
     <form className="annotation-mode">
-      {/* FIRST row  */}
-      <div className="selectors">
-        {/* left container: main selectors */}
-        <div>
-          {/* PHASE - DATASET */}
-          <div className="at-input-group">
-            <label className=" small-gray">Dataset</label>
-            <select
-              value={phase}
-              onChange={(e) => {
-                changeDataSet(e);
-              }}
-            >
-              <option value="train">train</option>
-              {isValid && <option value="valid">validation</option>}
-              {isTest && <option value="test">test</option>}
-            </select>
-          </div>
-          {/* Active Mode */}
-          {phase === 'train' && (
-            <div className="at-input-group">
-              <label className=" small-gray">Active mode</label>
-              <div>
-                <button
-                  className="button active-mode-button"
-                  type="button"
-                  onClick={() => setActiveMenu((prev) => !prev)}
-                >
-                  <GiTigerHead
-                    size={30}
-                    className="activelearning"
-                    style={{ color: activeModel ? 'green' : 'grey', cursor: 'pointer' }}
-                    title="Active learning"
-                  />
-                  <span className="text-muted">{activeModel ? activeModel.value : 'inactive'}</span>{' '}
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div className="at-input-group">
-            <label className="small-gray">Selection method</label>
-            <Select
-              className="react-select"
-              options={selectionModeOptions}
-              value={selectionModeOptions.find(
-                (o) =>
-                  o.value ===
-                  optionValue({
-                    mode: selectionConfig.mode,
-                    label_maxProb: selectionConfig.label_maxprob,
-                  }),
-              )}
-              getOptionLabel={(o) =>
-                o.mode === 'maxprob' ? `Maxprob on ${o.label_maxprob}` : o.mode
-              }
-              onChange={(option) => {
-                if (option !== null) {
-                  setAppContext((prev) => ({
-                    ...prev,
-                    selectionConfig: {
-                      ...selectionConfig,
-                      mode: option.mode,
-                      label_maxprob: option.label_maxprob,
-                    },
-                  }));
-                }
-              }}
-            />
-          </div>
+      {/* left container: main selectors */}
+      <div>
+        {/* PHASE - DATASET */}
+        <div className="at-input-group">
+          <label className=" small-gray">Dataset</label>
+          <select
+            value={phase}
+            onChange={(e) => {
+              changeDataSet(e);
+            }}
+          >
+            <option value="train">train</option>
+            {isValid && <option value="valid">validation</option>}
+            {isTest && <option value="test">test</option>}
+          </select>
         </div>
-        {/* CONTENT */}
-        <div>
+        {/* Active Mode */}
+        {phase === 'train' && (
           <div className="at-input-group">
-            <label className=" small-gray">Filter by Tag/Users</label>
-            <AnnotationTagFilterSelect availableLabels={availableLabels} />
+            <label className=" small-gray">Active mode</label>
+            <div>
+              <button
+                className="button active-mode-button"
+                type="button"
+                onClick={() => setActiveMenu((prev) => !prev)}
+              >
+                <GiTigerHead
+                  size={30}
+                  className="activelearning"
+                  style={{ color: activeModel ? 'green' : 'grey', cursor: 'pointer' }}
+                  title="Active learning"
+                />
+                <span className="text-muted">{activeModel ? activeModel.value : 'inactive'}</span>{' '}
+              </button>
+            </div>
           </div>
+        )}
 
-          {
-            // input validated on deselect
-          }
-          <div className="at-input-group">
-            <label htmlFor="select_regex" className=" small-gray">
-              Filter by content
-              <HiOutlineQuestionMarkCircle id="regex-tooltip" />
-            </label>
-            <input
-              className={classNames(
-                'searchhelp',
-                selectionConfig.filter && !isValidRegex(selectionConfig.filter) ? 'is-invalid' : '',
-              )}
-              type="text"
-              id="select_regex"
-              placeholder="Enter a regex"
-              value={selectionConfig.filter}
-              onChange={(e) => {
+        <div className="at-input-group">
+          <label className="small-gray">Selection method</label>
+          <Select
+            className="react-select"
+            options={selectionModeOptions}
+            value={selectionModeOptions.find(
+              (o) =>
+                o.value ===
+                optionValue({
+                  mode: selectionConfig.mode,
+                  label_maxProb: selectionConfig.label_maxprob,
+                }),
+            )}
+            getOptionLabel={(o) =>
+              o.mode === 'maxprob' ? `Maxprob on ${o.label_maxprob}` : o.mode
+            }
+            onChange={(option) => {
+              if (option !== null) {
                 setAppContext((prev) => ({
                   ...prev,
-                  selectionConfig: { ...prev.selectionConfig, filter: e.target.value },
+                  selectionConfig: {
+                    ...selectionConfig,
+                    mode: option.mode,
+                    label_maxprob: option.label_maxprob,
+                  },
                 }));
-              }}
-            />
-            <div className="invalid-feedback">Regex not valid</div>
-            <Tooltip anchorSelect="#regex-tooltip">
-              Use CONTEXT= or QUERY= for specific requests
-            </Tooltip>
-          </div>
-          {currentProjection && (
-            <div>
-              {/* LOCK on UMAP */}
-
-              <div className="at-input-group">
-                <label className=" small-gray">Filter by Projection</label>
-                <div>
-                  <button
-                    className="button"
-                    type="button"
-                    onClick={() => setShowDisplayViz((p) => !p)}
-                  >
-                    <FaMapMarkedAlt
-                      size={30}
-                      style={{
-                        color: selectionConfig.frameSelection ? 'green' : 'grey',
-                        cursor: 'pointer',
-                      }}
-                      title="Map"
-                      id="map-icon"
-                    />
-
-                    <Tooltip anchorSelect="#map-icon" place="top">
-                      Map frame selection
-                    </Tooltip>
-                  </button>
-                  <span className="badge info">
-                    {selectionConfig.frameSelection ? 'active' : 'inactive'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
+              }
+            }}
+          />
         </div>
       </div>
-      <div className="submit-container">
-        {/* TODO: find a design for this */}
+      {/* CONTENT */}
+      <div>
+        <div className="at-input-group">
+          <label className=" small-gray">Filter by Tag/Users</label>
+          <AnnotationTagFilterSelect availableLabels={availableLabels} />
+        </div>
 
+        {
+          // input validated on deselect
+        }
+        <div className="at-input-group">
+          <label htmlFor="select_regex" className=" small-gray">
+            Filter by content
+            <HiOutlineQuestionMarkCircle id="regex-tooltip" />
+          </label>
+          <input
+            className={classNames(
+              'searchhelp',
+              selectionConfig.filter && !isValidRegex(selectionConfig.filter) ? 'is-invalid' : '',
+            )}
+            type="text"
+            id="select_regex"
+            placeholder="Enter a regex"
+            value={selectionConfig.filter}
+            onChange={(e) => {
+              setAppContext((prev) => ({
+                ...prev,
+                selectionConfig: { ...prev.selectionConfig, filter: e.target.value },
+              }));
+            }}
+          />
+          <div className="invalid-feedback">Regex not valid</div>
+          <Tooltip anchorSelect="#regex-tooltip">
+            Use CONTEXT= or QUERY= for specific requests
+          </Tooltip>
+        </div>
+        {currentProjection && (
+          <div>
+            {/* LOCK on UMAP */}
+
+            <div className="at-input-group">
+              <label className=" small-gray">Filter by Projection</label>
+              <div>
+                <button
+                  className="button"
+                  type="button"
+                  onClick={() => setShowDisplayViz((p) => !p)}
+                >
+                  <FaMapMarkedAlt
+                    size={30}
+                    style={{
+                      color: selectionConfig.frameSelection ? 'green' : 'grey',
+                      cursor: 'pointer',
+                    }}
+                    title="Map"
+                    id="map-icon"
+                  />
+
+                  <Tooltip anchorSelect="#map-icon" place="top">
+                    Map frame selection
+                  </Tooltip>
+                </button>
+                <span className="badge info">
+                  {selectionConfig.frameSelection ? 'active' : 'inactive'}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      <div className="flex-grow-1 align-items-center">
         <small className="d-flex text-muted text-end flex-column justify-content-between flex-grow-1">
           {statistics ? (
             <>
