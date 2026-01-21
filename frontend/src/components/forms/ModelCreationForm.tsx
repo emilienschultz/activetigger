@@ -3,7 +3,7 @@ import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import Select from 'react-select';
 import { Tooltip } from 'react-tooltip';
-import { useTrainBertModel } from '../../core/api';
+import { useTrainBertModel, useGetServer } from '../../core/api';
 import { getRandomName } from '../../core/utils';
 import { newBertModel, ProjectStateModel } from '../../types';
 interface ModelCreationFormProps {
@@ -31,6 +31,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
   // form to train a model
   const { trainBertModel } = useTrainBertModel(projectSlug || null, currentScheme || null);
   const [disableMaxLengthInput, setDisableMaxLengthInput] = useState<boolean>(true);
+  const { gpu } = useGetServer(currentProject || null);
   // available base models suited for the project : sorted by language + priority
   const filteredModels = ((project?.languagemodels.options as unknown as BertModel[]) ?? [])
     .sort((a, b) => b.priority - a.priority)
@@ -77,7 +78,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
       wdecay: 0.01,
       best: true,
       eval: 9,
-      gpu: true,
+      gpu: gpu?.gpu_available,
       adapt: false,
     },
   });
@@ -212,7 +213,11 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
       <input type="number" step="0.001" min={0} {...registerNewModel('parameters.wdecay')} />
 
       <label>
-        <input type="checkbox" {...registerNewModel('parameters.gpu')} />
+        <input
+          type="checkbox"
+          {...registerNewModel('parameters.gpu')}
+          disabled={!gpu?.gpu_available}
+        />
         Use GPU
         <a className="gpu">
           <HiOutlineQuestionMarkCircle />
