@@ -35,7 +35,7 @@ export const MultilabelInput: FC<MulticlassInputProps> = ({
   }, [handleKeyboardEvents]);
 
   return (
-    <div className="d-flex gap-2 align-items-center">
+    <div className="d-flex gap-2 align-items-center w-100">
       <Select
         isMulti
         options={labels.map((e) => ({ value: e, label: e }))}

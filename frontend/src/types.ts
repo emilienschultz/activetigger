@@ -157,6 +157,7 @@ export interface DisplayConfig {
   textFrameWidth: number;
   highlightText: string;
   labelsOrder?: string[];
+  forceOneColumnLayout?: boolean;
 }
 
 export interface newBertModel {

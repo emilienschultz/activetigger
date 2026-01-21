@@ -268,8 +268,7 @@ export const GenPage: FC = () => {
   return (
     <ProjectPageLayout projectName={projectName} currentAction="generate">
       <div className="alert alert-info my-3" role="alert">
-        This module is still experimental, design primarily to test generative models. If you have
-        idea to improve it, please contact us!
+        This panel is still under construction. Have comments? Send them our way.
       </div>
       <div className="container-fluid mt-3">
         <div className="explanations">Use external LLM models for generation</div>

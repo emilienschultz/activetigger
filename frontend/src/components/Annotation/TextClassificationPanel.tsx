@@ -30,7 +30,6 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
   phase,
   frameRef,
 }) => {
-  console.log(displayConfig.textFrameHeight);
   return (
     <>
       <div
@@ -38,7 +37,6 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
         style={
           {
             '--height': `${displayConfig.textFrameHeight}vh`,
-            '--width': `${displayConfig.textFrameWidth}vw`,
           } as CSSProperties
         }
         ref={frameRef as unknown as LegacyRef<HTMLDivElement>}

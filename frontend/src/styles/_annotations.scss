@@ -1,63 +1,60 @@
 @use 'sass:map';
 
+/**
+* ANNOTATION MODE
+*/
 .annotation-mode {
   margin-top: map.get($spacers, 1);
   display: flex;
   flex-direction: row;
-  @media (max-width: 1800px) {
-    flex-direction: column;
-  }
-  row-gap: map.get($spacers, 2);
+  flex-wrap: wrap;
+  align-items: flex-end;
+  width: 100%;
+  column-gap: map.get($spacers, 5);
+  row-gap: map.get($spacers, 3);
 
-  .selectors {
+  justify-content: space-between;
+
+  label {
+    margin: 0;
+  }
+
+  > div {
     display: flex;
     flex-wrap: wrap;
-    width: 100%;
-    column-gap: map.get($spacers, 5);
-    @media (max-width: 1800px) {
-      justify-content: space-between;
-    }
 
-    label {
-      margin: 0;
-    }
+    justify-content: flex-start;
+    column-gap: map.get($spacers, 2);
 
-    > div {
+    align-items: flex-start;
+
+    .active-mode-button {
+      padding: 3px 5px;
       display: flex;
-      flex-wrap: wrap;
+      @extend .gap-1;
+      margin: 0;
 
-      justify-content: flex-start;
-      column-gap: map.get($spacers, 2);
+      align-items: center;
+    }
+    .react-select {
+      width: 100%;
+    }
+    // TODO: replace by react-select styling technics once we switch default input styles back to bootstrap
+    input,
+    select {
+      padding: 9px;
+      margin: 0;
+      line-height: initial;
+    }
 
-      align-items: flex-start;
-
-      .active-mode-button {
-        padding: 3px 5px;
-        display: flex;
-        @extend .gap-1;
-
-        align-items: center;
-      }
-      .react-select {
-        width: 100%;
-      }
-      // TODO: replace by react-select styling technics once we switch default input styles back to bootstrap
-      input,
-      select {
-        padding: 9px;
-        margin: 0;
-        line-height: initial;
-      }
-
-      .at-input-group:has(.react-select) {
-        flex-grow: 1;
-        //max-width: 300px;
-        min-width: 250px;
-        position: relative;
-      }
-      input {
-        max-width: 45vw;
-      }
+    .at-input-group:has(.react-select) {
+      flex-grow: 1;
+      //max-width: 300px;
+      min-width: 250px;
+      position: relative;
+    }
+    input {
+      max-width: 45vw;
     }
   }
 
@@ -86,47 +83,259 @@
   border-radius: $border-radius;
 }
 
-.annotation-frame {
-  position: relative;
-  white-space: pre-wrap;
-  box-shadow: 0px 0px 15px color(from $primary srgb r g b / 50%);
-  font-size: 16px;
-  line-height: 1.6;
+.annotation-block {
+  display: grid;
+  // tag action button/grid size settings
+  --tag-action-width: 200px;
+  --tag-action-column-gap: 1rem;
+  --tag-action-row-gap: 1rem;
 
-  padding: 16px;
-  height: var(--height);
-
-  flex-basis: var(--width);
-  flex-shrink: 1;
   @include media-breakpoint-down(lg) {
-    flex-basis: auto;
-    width: 100%;
+    --tag-action-width: 100%;
+  }
+  // only one column
+  grid-template-columns: 100%;
+
+  @extend .gap-3;
+  @extend .my-3;
+  justify-content: flex-start;
+
+  width: 100%;
+
+  // two column layout when big screen and force one column inactive
+  @include media-breakpoint-up(lg) {
+    &:not(.force-one-column-layout) {
+      // text column take all available space => auto
+      // buttons takes the rest of available width but with a minimum to see the potential second column without having to scroll
+      grid-template-columns:
+        minmax(auto, calc(100% - var(--tag-action-width) - var(--tag-action-column-gap) - 10px))
+        minmax(
+          calc(var(--tag-action-width) + var(--tag-action-column-gap) + 10px),
+          calc(100% - var(--text-width) - var(--tag-action-column-gap))
+        );
+      // only one row
+      grid-template-rows: 100%;
+      // make sure the layout fits into visible space
+      max-height: 90vh;
+
+      .tag-action-container {
+        // respect height to force columns
+        height: 100%;
+        // place element in top-bottom flow before filling second column
+        grid-auto-flow: column;
+        // constraint column widths to avoid long labels spreading
+        grid-template-columns: repeat(auto-fit, var(--tag-action-width));
+        // align columns to the text frame limit
+        justify-content: start;
+      }
+    }
   }
 
-  //max-width: var(--width);
-
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  .element-text {
-    flex-grow: 1;
-    overflow-y: auto;
-    margin: 0;
+  // special one column layout option
+  &.force-one-column-layout {
+    // only one column
+    grid-template-columns: 100%;
+    // center both rows
+    justify-items: center;
+    @include media-breakpoint-up(lg) {
+      // apply width settings to the text frame
+      .annotation-frame {
+        width: var(--text-width);
+      }
+    }
   }
-  dl {
+
+  .annotation-frame {
+    // place in the grid (optional)
+    grid-column: 1;
+    grid-row: 1;
+    //layout
+    padding: 16px;
+    height: var(--height);
+
+    //internal layout
     display: flex;
-    flex-wrap: wrap;
-    row-gap: map.get($spacers, 0);
-    column-gap: map.get($spacers, 3);
-    .dl-item {
-      * {
-        margin: 0;
-      }
-      @extend .gap-1;
+    flex-direction: column;
+    justify-content: space-between;
+
+    @include media-breakpoint-down(lg) {
+      //ignore width settings on small screens
+      width: 100%;
+    }
+
+    // text
+    position: relative;
+    white-space: pre-wrap;
+    box-shadow: 0px 0px 15px color(from $primary srgb r g b / 50%);
+    font-size: 16px;
+    line-height: 1.6;
+
+    .element-text {
+      flex-grow: 1;
+      overflow-y: auto;
+      margin: 0;
+    }
+    // additional information boxes
+    dl {
       display: flex;
-      dt:after {
-        content: ':';
+      flex-wrap: wrap;
+      row-gap: map.get($spacers, 0);
+      column-gap: map.get($spacers, 3);
+      .dl-item {
+        * {
+          margin: 0;
+        }
+        @extend .gap-1;
+        display: flex;
+        dt:after {
+          content: ':';
+        }
       }
+    }
+  }
+
+  /**
+  * TAG ACTION CONTAINER
+  * grid which shows the tag action buttons
+  */
+  .tag-action-container {
+    // buttons height
+    --tag-action-height: 40px;
+
+    display: grid;
+    // we need to allow overflow to make sure the layout can respect the width to spread columns
+    overflow-y: scroll;
+
+    // gaps
+    column-gap: var(--tag-action-column-gap);
+    row-gap: var(--tag-action-row-gap);
+
+    // default layout for small screens/one-column
+    // spread rows
+    grid-auto-flow: row;
+    grid-template-rows: repeat(auto-fill, var(--tag-action-height));
+    // columns width constraints
+    grid-template-columns: repeat(auto-fill, var(--tag-action-width));
+
+    // fill width
+    width: 100%;
+    // as high as needed
+    height: fit-content;
+
+    align-content: start;
+    align-items: center;
+    justify-content: center;
+
+    @include media-breakpoint-down(lg) {
+      // only two columns
+      grid-template-columns: repeat(auto-fill, calc(50% - var(--tag-action-column-gap) / 2));
+
+      @include media-breakpoint-down(sm) {
+        // only one column
+        grid-template-columns: 100%;
+      }
+    }
+
+    .btn-annotate-general-action,
+    .btn-annotate-predicted-action,
+    .btn-annotate-action {
+      //buttons internal layout
+
+      margin: 0;
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      color: white;
+
+      height: fit-content;
+
+      svg,
+      .badge {
+        //icon & key stroke badge
+        flex-shrink: 0;
+      }
+      @include media-breakpoint-down(sm) {
+        // hide key stroke badges on small screen => no keyboard
+        .badge {
+          display: none;
+        }
+      }
+    }
+    .tag-action-button {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: var(--tag-action-width);
+      .truncate-middle {
+        width: 0;
+        flex-grow: 1;
+        flex-shrink: 1;
+      }
+      .badge {
+        flex-shrink: 0;
+        flex-grow: 0;
+      }
+    }
+
+    // button styles
+    .btn-annotate-action {
+      @extend .btn;
+      @extend .btn-primary;
+    }
+    .btn-annotate-general-action {
+      @extend .btn;
+      @extend .btn-secondary;
+      background-color: rgb(250, 153, 74);
+    }
+    .btn-annotate-predicted-action {
+      @extend .btn;
+      @extend .btn-info;
+
+      background-color: $gray-500;
+      border-color: $gray-500;
+    }
+
+    // prediction layout with or without stats
+    .prediction-container {
+      // container does not change layout
+      display: contents;
+      align-self: center;
+      &:has(.prediction-stats) {
+        display: flex;
+        flex-direction: column;
+        @extend .gap-1;
+        align-items: flex-start;
+        // span on two rows
+        grid-row-start: span 2;
+      }
+    }
+    // no tag button special case
+    .no-tag-action {
+      align-items: center;
+      width: var(--tag-action-width);
+      span.text {
+        display: flex;
+        flex-wrap: nowrap;
+        text-wrap: nowrap;
+        align-items: center;
+        flex-grow: 1;
+        @extend .gap-1;
+      }
+    }
+    // comment field layout + placement on grid
+    .annotation-comment {
+      width: 100%;
+      height: var(--tag-action-height);
+      @include media-breakpoint-down(lg) {
+        grid-column-start: span 2;
+      }
+      @include media-breakpoint-down(md) {
+        grid-column-start: span 1;
+      }
+      // @include media-breakpoint-up(lg) {
+      //   grid-row-start: span 2;
+      //   height: calc(var(--tag-action-height) * 2 + var(--tag-action-row-gap));
+      // }
     }
   }
 }
@@ -137,8 +346,12 @@
   font-style: italic;
 }
 
+/**
+* ANNOTATION HISTORY
+*/
 .annotation-history {
   $gapSize: map.get($spacers, 3);
+  width: 100%;
 
   display: flex;
 
@@ -158,7 +371,7 @@
       width: calc(50% - (1 / 2 * $gapSize));
     }
     @include media-breakpoint-down(sm) {
-      width: calc(100%);
+      width: 100%;
     }
 
     text-decoration: none;
@@ -167,128 +380,32 @@
     justify-content: space-between;
     align-items: start;
     .badge {
-      max-width: 100%;
-      width: fit-content;
+      max-width: calc(100% - 2 * map.get($spacers, 2));
       margin: 0;
+
+      .truncate-middle {
+        min-width: 0;
+      }
     }
   }
 }
 
-.annotation-block {
-  display: flex;
-  flex-direction: column;
-  @extend .gap-3;
-  @extend .my-3;
-  justify-content: flex-start;
-  position: relative;
-
-  width: 100%;
-  @include media-breakpoint-up(lg) {
-    flex-direction: row;
-    max-height: 90vh;
-    position: relative;
-  }
-  overflow-y: no;
-  > * {
-    max-height: 100%;
-    overflow-y: auto;
-  }
-}
-
-.tag-action-container {
-  --button-label-width: 25vh;
-  @include media-breakpoint-down(lg) {
-    --button-label-width: 10vh;
-    flex-wrap: wrap;
-  }
-
-  display: flex;
-  flex-shrink: 0;
-  @extend .flex-lg-column;
-  @extend .justify-content-center;
-  @extend .justify-content-lg-start;
-
-  @extend .gap-2;
-  @extend .align-items-end;
-  @extend .align-items-lg-start;
-
-  .btn-annotate-general-action,
-  .btn-annotate-predicted-action,
-  .btn-annotate-action {
-    margin: 0;
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    color: white;
-
-    height: fit-content;
-
-    *:last-child,
-    *:first-child {
-      //icon & key stroke badge
-      flex-shrink: 0;
-    }
-  }
-  .btn-annotate-action {
-    @extend .btn;
-    @extend .btn-primary;
-  }
-  .btn-annotate-general-action {
-    @extend .btn;
-    @extend .btn-secondary;
-    background-color: rgb(250, 153, 74);
-  }
-
-  .btn-annotate-predicted-action {
-    @extend .btn;
-    @extend .btn-info;
-
-    background-color: $gray-500;
-    border-color: $gray-500;
-
- 
-  }
-
-  .tag-action-button {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    .truncate-middle {
-      width: var(--button-label-width);
-    }
-    .badge {
-      flex-shrink: 0;
-      flex-grow: 0;
-    }
-  }
-  .no-tag-action {
-    align-items: center;
-    span.text {
-      display: flex;
-      align-items: center;
-      flex-grow: 1;
-      @extend .gap-1;
-    }
-  }
-  .annotation-comment {
-    width: 100%;
-  }
-}
-
+/**
+* TRUNCATE MIDDLE COMPONENT
+*/
 .truncate-middle {
   display: flex;
   justify-content: start;
   align-items: center;
   position: relative;
   text-align: start;
-
   flex-shrink: 1;
   flex-grow: 1;
+
   span {
     @extend .text-truncate;
     display: inline-block;
-    max-width: 50%;
+    max-width: 100%;
     white-space: preserve nowrap;
   }
   span:first-child {

@@ -3,6 +3,7 @@ import cx from 'classnames';
 import { FC, useCallback, useEffect, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { FaCloudDownloadAlt, FaPlusCircle } from 'react-icons/fa';
+import { FaGear } from 'react-icons/fa6';
 import { RiFileTransferLine } from 'react-icons/ri';
 import { SlSizeFullscreen } from 'react-icons/sl';
 import { useParams } from 'react-router-dom';
@@ -84,6 +85,7 @@ export const BertopicPage: FC = () => {
   };
 
   const [showComputeNewBertopic, setShowComputeNewBertopic] = useState(false);
+  const [showParameters, setShowParameters] = useState<boolean>(false);
   const [figSize, setFigSize] = useState<number>(40);
   const toogleFigSize = () => {
     if (figSize === 40) {
@@ -149,11 +151,20 @@ export const BertopicPage: FC = () => {
             />
           </Modal.Body>
         </Modal>
+
+        <hr className="my-4" />
+
         {currentBertopic && (
           <>
-            <div>
-              <details>
-                <summary>Parameters</summary>
+            <Modal
+              show={showParameters}
+              id="parameters-modal"
+              onHide={() => setShowParameters(false)}
+            >
+              <Modal.Header closeButton>
+                <Modal.Title>Parameters of the current visualisation</Modal.Title>
+              </Modal.Header>
+              <Modal.Body>
                 <div
                   style={{
                     display: 'flex',
@@ -223,8 +234,8 @@ export const BertopicPage: FC = () => {
                     </div>
                   </div>
                 </div>
-              </details>
-            </div>
+              </Modal.Body>
+            </Modal>
           </>
         )}
         {projection && (
@@ -265,6 +276,10 @@ export const BertopicPage: FC = () => {
             <div style={{ margin: '10px 0px' }} className="d-flex gap-2 align-items-center">
               <button className="btn" onClick={() => toogleFigSize()}>
                 <SlSizeFullscreen />
+              </button>
+              <button className="btn-secondary-action" onClick={() => setShowParameters(true)}>
+                <FaGear size={18} />
+                Parameters
               </button>
               <button
                 className="btn-primary-action"

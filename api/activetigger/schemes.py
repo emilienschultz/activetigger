@@ -739,11 +739,9 @@ class Schemes:
             raise Exception("No label")
         return label if label in annotation.split("|") else "not-" + label
 
-    def add_file_annotations(
-        self, annotationsdata: AnnotationsDataModel, user: str, dataset: str
-    ) -> None:
+    def add_file_annotations(self, annotationsdata: AnnotationsDataModel, user: str) -> None:
         """
-        Add annotations from a file
+        Add annotations from a file to the trainset
         Create labels if not exist
         """
         # check if the scheme exist
@@ -752,17 +750,18 @@ class Schemes:
         else:
             labels = self.available()[annotationsdata.scheme].labels
 
-        # convert the data, slugiy the index, set the index, drop empty
+        # convert the data, match the external index, drop empty
         df = pd.read_csv(StringIO(annotationsdata.csv))
-        df[annotationsdata.col_id] = df[annotationsdata.col_id].astype(str).apply(slugify)
+
+        # test if the index is unique
+        df[annotationsdata.col_id] = df[annotationsdata.col_id].astype(str)
         if len(set(df[annotationsdata.col_id])) != len(df):
             raise Exception("Duplicate IDs after slugify in the column selected as ID")
-        df = df.set_index(annotationsdata.col_id)
-        df = df[df[annotationsdata.col_label].notna()]
-        col = df[annotationsdata.col_label]
 
-        # only elements existing in the dataset
-        common_id = [i for i in col.index if i in self.data.train.index]
+        # match to the internal index and keep only annotated
+        df = df.set_index(annotationsdata.col_id)
+        df = self.data.train.join(df, on="id_external")
+        col = df[annotationsdata.col_label].dropna()
 
         # if needed, create the labels in the scheme
         for i in col.unique():
@@ -770,9 +769,9 @@ class Schemes:
                 self.add_label(i, annotationsdata.scheme, user)
 
         # create the elements to add
-        elements_test = [
+        elements = [
             {"element_id": element_id, "annotation": label, "comment": ""}
-            for element_id, label in col.loc[common_id].items()
+            for element_id, label in col.items()
         ]
 
         # add the new tags in batch
@@ -781,14 +780,14 @@ class Schemes:
             user_name=user,
             project_slug=self.project_slug,
             scheme=annotationsdata.scheme,
-            elements=elements_test,
+            elements=elements,
             selection="import",
         )
 
-        if len(common_id) < len(df):
+        if len(col) < len(df):
             print(
                 f"Some elements annoted in the dataset where not added (index mismatch) or not in the trainset. \
-                    Number of elements added : {len(common_id)} (total annotated : {len(df)})"
+                    Number of elements added : {len(col)} (total annotated : {len(df)})"
             )
 
     def state(self) -> SchemesProjectStateModel:

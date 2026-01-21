@@ -15,15 +15,8 @@ form {
 }
 
 label {
-  margin-top: 10px;
-  font-style: italic;
   color: $label-color;
   font-weight: bolder;
-
-  a {
-    // tooltips
-    margin: 0px 4px;
-  }
 }
 
 .form-frame {

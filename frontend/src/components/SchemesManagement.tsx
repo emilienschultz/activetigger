@@ -73,6 +73,7 @@ export const SelectCurrentScheme: FC<{ username?: string | null }> = ({ username
     setAppContext((state) => ({
       ...state,
       currentScheme: selectedOption ? selectedOption.value : availableSchemes[0],
+      history: [],
     }));
     notify({
       type: 'success',
@@ -146,6 +147,11 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
       await addScheme(formData.name, formData.kind || 'multiclass');
       if (reFetchCurrentProject) reFetchCurrentProject();
       notify({ type: 'success', message: `Scheme ${formData.name} created` });
+      // set the new scheme as current
+      setAppContext((state) => ({
+        ...state,
+        currentScheme: formData.name,
+      }));
     } catch (error) {
       notify({ type: 'error', message: error + '' });
     }

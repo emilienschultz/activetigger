@@ -2,7 +2,6 @@ import { FC, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { Tab, Tabs } from 'react-bootstrap';
-import { Tooltip } from 'react-tooltip';
 import { ProjectPageLayout } from '../components/layout/ProjectPageLayout';
 import { ModelPredict } from '../components/ModelPredict';
 import {
@@ -278,13 +277,10 @@ export const ProjectExportPage: FC = () => {
                 href={config.api.url.replace(/\/$/, '') + '/static/' + staticUrls.dataset.path}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-3 downloadraw"
+                className="mt-3"
               >
-                Static link to the raw dataset
+                Static link to the raw dataset (click right, save as...)
               </a>
-              <Tooltip anchorSelect=".downloadraw" place="top">
-                If the download does't start, click right and save the target of the link
-              </Tooltip>
             </>
           ) : (
             <button

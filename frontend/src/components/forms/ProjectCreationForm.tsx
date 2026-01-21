@@ -53,20 +53,20 @@ export const ProjectCreationForm: FC = () => {
     { value: 'ja', label: 'Japanese' },
   ];
 
-  const { register, control, handleSubmit, setValue } = useForm<ProjectModel & { files: FileList }>(
-    {
-      defaultValues: {
-        project_name: getRandomName('Project'),
-        n_train: 100,
-        n_test: 0,
-        n_valid: 0,
-        language: 'en',
-        clear_test: false,
-        random_selection: true,
-        force_label: false,
-      },
+  const { register, control, handleSubmit, setValue, reset } = useForm<
+    ProjectModel & { files: FileList }
+  >({
+    defaultValues: {
+      project_name: getRandomName('Project'),
+      n_train: 100,
+      n_test: 0,
+      n_valid: 0,
+      language: 'en',
+      clear_test: false,
+      random_selection: true,
+      force_label: false,
     },
-  );
+  });
   const { notify } = useNotifications();
   const { datasets } = useGetAvailableDatasets();
 
@@ -119,7 +119,6 @@ export const ProjectCreationForm: FC = () => {
 
   // convert paquet file in csv if needed when event on files
   useEffect(() => {
-    console.log('checking file', files);
     if (files && files.length > 0) {
       const file = files[0];
       if (file.size > maxSize) {
@@ -222,7 +221,7 @@ export const ProjectCreationForm: FC = () => {
               clearInterval(intervalId);
               if (computeFeatures) addFeature(slug, 'sbert', 'sbert', { model: 'generic' });
               resetContext();
-              navigate(`/projects/${slug}?fromProjectPage=true`);
+              navigate(`/projects/${slug}?fromCreatePage=true`);
               return;
             }
 
@@ -265,13 +264,16 @@ export const ProjectCreationForm: FC = () => {
           onClick={handleClickOnText}
         />
 
-        <div className="horizontal">
-          <input type="radio" name="dataset-origin" onClick={() => setDataset('load')} />
-          <label className="horizontal">Load Dataset from disk</label>
-        </div>
-        <div className="horizontal">
-          <input type="radio" name="dataset-origin" onClick={() => setDataset('from-project')} />
-          <label>Load Dataset from another project</label>
+        <div className="my-3">
+          <label style={{ cursor: 'pointer' }}>
+            <input type="radio" name="dataset-origin" onClick={() => setDataset('load')} />
+            Load Dataset from disk
+          </label>
+          <br />
+          <label style={{ cursor: 'pointer' }}>
+            <input type="radio" name="dataset-origin" onClick={() => setDataset('from-project')} />
+            Load Dataset from another project
+          </label>
         </div>
 
         {dataset && (
@@ -281,7 +283,10 @@ export const ProjectCreationForm: FC = () => {
               <select
                 id="existingDataset"
                 value={dataset}
-                onChange={(e) => setDataset(e.target.value)}
+                onChange={(e) => {
+                  reset();
+                  setDataset(e.target.value);
+                }}
               >
                 <option>Select project</option>
                 {(datasets || []).map((d) => (
@@ -341,18 +346,6 @@ export const ProjectCreationForm: FC = () => {
                     ) as Record<keyof DataType['headers'], string>[]
                 }
               />
-              <div className="alert alert-warning" role="alert">
-                ⚠️ <b>Keep in mind</b>
-                <br />
-                Indexes like this: "index
-                <a style={{ background: '#ff000050', paddingBottom: '2px' }}>_</a>
-                01<a style={{ background: '#ff000050', paddingBottom: '2px' }}> </a>02" will
-                transform to "index
-                <a style={{ background: '#ff000050', paddingBottom: '2px' }}>-</a>01
-                <a style={{ background: '#ff000050', paddingBottom: '2px' }}>-</a>02".
-                <br />
-                Safest solution is the indexes to only contain numbers.
-              </div>
             </>
           )
         }
@@ -454,7 +447,16 @@ export const ProjectCreationForm: FC = () => {
                 max={maxTrainSet}
               />
 
-              <div className="explanations">Best practices for machine learning process</div>
+              <div className="explanations">
+                For best practices for machine learning process, see the{' '}
+                <a
+                  target="_blank"
+                  href="https://emilienschultz.github.io/activetigger/docs/"
+                  rel="noreferrer"
+                >
+                  documentation
+                </a>
+              </div>
 
               <label htmlFor="n_valid">
                 Number of elements in the validation set (optional)
@@ -512,7 +514,7 @@ export const ProjectCreationForm: FC = () => {
                     {...register('random_selection')}
                   />
                   <label htmlFor="random_selection">
-                    Random selection of elements{' '}
+                    Select elements at random{' '}
                     <a className="rselect">
                       <HiOutlineQuestionMarkCircle />
                     </a>

@@ -66,6 +66,12 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
     currentScheme,
   );
 
+  // states for dynamic interactions
+  const [forceRefresh, setForceRefresh] = useState<boolean>(false);
+  const [displayNewFeature, setDisplayNewFeature] = useState<boolean>(false);
+  const [showComputeNewProjection, setShowComputeNewProjection] = useState<boolean>(false);
+  const [showParameters, setShowParameters] = useState<boolean>(false);
+
   // unique labels
   const uniqueLabels = projectionData ? [...new Set(projectionData.labels)] : [];
   const colormap = chroma.scale('Paired').colors(uniqueLabels.length);
@@ -151,8 +157,15 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
       currentProjection &&
       currentProjection.status != availableProjections?.available[authenticatedUser?.username]
     ) {
+      //NOTE: Axel: What does it do? Can you add comment?
       reFetchProjectionData();
       setAppContext((prev) => ({ ...prev, currentProjection: projectionData || undefined }));
+    }
+    if (authenticatedUser && currentProjection && forceRefresh) {
+      // After annotating on the fly, force refresh so that the visualisation matches the most recent
+      reFetchProjectionData();
+      setAppContext((prev) => ({ ...prev, currentProjection: projectionData || undefined }));
+      setForceRefresh(false);
     }
   }, [
     availableProjections?.available,
@@ -161,6 +174,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
     reFetchProjectionData,
     projectionData,
     setAppContext,
+    setForceRefresh,
   ]);
 
   // element to display
@@ -175,8 +189,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
     },
     [getElementById, setSelectedElement],
   );
-
-  // const [formNewProjection, setFormNewProjection] = useState<boolean>(false);
 
   type Feature = {
     label: string;
@@ -208,16 +220,12 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
         addAnnotation(elementId, label, '', '');
         setSelectedId(undefined);
         notify({ type: 'success', message: `Annotation added for ${elementId}` });
+        setForceRefresh(true);
       }
     },
     [addAnnotation, setSelectedId, notify],
   );
 
-  const [displayNewFeature, setDisplayNewFeature] = useState<boolean>(false);
-
-  const [showComputeNewProjection, setShowComputeNewProjection] = useState<boolean>(false);
-
-  const [showParameters, setShowParameters] = useState<boolean>(false);
   return (
     <>
       {!isComputing ? (
@@ -233,27 +241,35 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
             <FaGear size={18} />
             Parameters
           </button>
-          <div className="d-flex">
-            <ProjectionVizSigma
-              data={projectionData}
-              selectedId={currentElementId}
-              setSelectedId={setSelectedId}
-              frame={selectionConfig.frame}
-              setFrameBbox={(bbox?: MarqueBoundingBox) => {
-                setAppContext((prev) => ({
-                  ...prev,
-                  selectionConfig: {
-                    ...selectionConfig,
-                    frame: bbox ? [bbox.x.min, bbox.x.max, bbox.y.min, bbox.y.max] : undefined,
-                  },
-                }));
-              }}
-              labelColorMapping={labelColorMapping}
-            />
+          <div className="d-flex" style={{ minWidth: 0 }}>
+            <div>
+              <ProjectionVizSigma
+                data={projectionData}
+                selectedId={currentElementId}
+                setSelectedId={setSelectedId}
+                frame={selectionConfig.frame}
+                setFrameBbox={(bbox?: MarqueBoundingBox) => {
+                  setAppContext((prev) => ({
+                    ...prev,
+                    selectionConfig: {
+                      ...selectionConfig,
+                      frame: bbox ? [bbox.x.min, bbox.x.max, bbox.y.min, bbox.y.max] : undefined,
+                    },
+                  }));
+                }}
+                labelColorMapping={labelColorMapping}
+              />
+            </div>
 
-            <div style={{ flex: '1 1 200px' }}>
+            <>
               {selectedElement ? (
-                <div style={{ width: '100%', padding: '15px' }}>
+                <div
+                  style={{
+                    overflowY: 'auto',
+                    maxHeight: '80vh',
+                  }}
+                  className="mx-4"
+                >
                   <a
                     className="badge m-0 p-1"
                     onClick={() =>
@@ -264,9 +280,19 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                     Text {selectedElement.element_id}
                   </a>
                   <div>{selectedElement.text}</div>
-                  <div className="text-muted mt-2">
-                    Previous annotations : {JSON.stringify(selectedElement.history)}
-                  </div>
+                  <details>
+                    <summary>Previous annotations:</summary>
+                    <ul>
+                      {selectedElement.history?.map((e) => {
+                        return (
+                          <li key={`${e.time}-${e.user}`}>
+                            label: {e.label ? e.label : 'label removed'} ({e.time} by {e.user})
+                            <br />
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </details>
                   <h5 className="subsection">Annotate this element</h5>
                   <div>
                     {kindScheme == 'multiclass' && (
@@ -293,7 +319,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                   Click on an element to display its content
                 </div>
               )}
-            </div>
+            </>
           </div>
 
           <label style={{ display: 'block' }}>
