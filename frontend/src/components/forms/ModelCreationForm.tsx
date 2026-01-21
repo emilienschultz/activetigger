@@ -9,7 +9,7 @@ import { newBertModel, ProjectStateModel } from '../../types';
 interface ModelCreationFormProps {
   projectSlug: string | null;
   currentScheme: string | null;
-  project: ProjectStateModel | null;
+  currentProject: ProjectStateModel | null;
   isComputing: boolean;
   setStatusDisplay?: Dispatch<SetStateAction<boolean>>;
 }
@@ -24,7 +24,7 @@ type BertModel = {
 export const ModelCreationForm: FC<ModelCreationFormProps> = ({
   projectSlug,
   currentScheme,
-  project,
+  currentProject,
   isComputing,
   setStatusDisplay,
 }) => {
@@ -33,11 +33,11 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
   const [disableMaxLengthInput, setDisableMaxLengthInput] = useState<boolean>(true);
   const { gpu } = useGetServer(currentProject || null);
   // available base models suited for the project : sorted by language + priority
-  const filteredModels = ((project?.languagemodels.options as unknown as BertModel[]) ?? [])
+  const filteredModels = ((currentProject?.languagemodels.options as unknown as BertModel[]) ?? [])
     .sort((a, b) => b.priority - a.priority)
     .sort((a, b) => {
-      const aHasFr = a.language === project?.params.language ? -1 : 1;
-      const bHasFr = b.language === project?.params.language ? -1 : 1;
+      const aHasFr = a.language === currentProject?.params.language ? -1 : 1;
+      const bHasFr = b.language === currentProject?.params.language ? -1 : 1;
       return aHasFr - bHasFr;
     });
   const availableBaseModels = filteredModels.map((e) => ({
@@ -47,10 +47,10 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
   // available labels from context
   const availableLabels =
     currentScheme &&
-    project &&
-    project.schemes.available &&
-    project.schemes.available[currentScheme]
-      ? project.schemes.available[currentScheme].labels
+    currentProject &&
+    currentProject.schemes.available &&
+    currentProject.schemes.available[currentScheme]
+      ? currentProject.schemes.available[currentScheme].labels
       : [];
   const existingLabels = Object.entries(availableLabels).map(([key, value]) => ({
     value: key,
@@ -58,8 +58,8 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
   }));
 
   const kindScheme =
-    currentScheme && project && project.schemes.available[currentScheme]
-      ? project.schemes.available[currentScheme].kind
+    currentScheme && currentProject && currentProject.schemes.available[currentScheme]
+      ? currentProject.schemes.available[currentScheme].kind
       : 'multiclass';
 
   const createDefaultValues = () => ({
