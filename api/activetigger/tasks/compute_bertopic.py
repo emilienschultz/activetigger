@@ -444,7 +444,7 @@ class ComputeBertopic(BaseTask):
             topics_df["Count-Bis"] = pd.Series(topics).value_counts()
             topics_df = topics_df.reset_index()
 
-        topics_df.to_csv(self.path_run.joinpath("bertopic_topics.csv"))
+        topics_df.to_csv(self.path_run.joinpath("bertopic_topics.csv"), index=False)
         df["cluster"].to_csv(self.path_run.joinpath("bertopic_clusters.csv"))
 
         with open(self.path_run.joinpath("params.json"), "w") as f:
