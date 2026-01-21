@@ -325,16 +325,17 @@
     // comment field layout + placement on grid
     .annotation-comment {
       width: 100%;
+      height: var(--tag-action-height);
       @include media-breakpoint-down(lg) {
         grid-column-start: span 2;
       }
       @include media-breakpoint-down(md) {
         grid-column-start: span 1;
       }
-      @include media-breakpoint-up(lg) {
-        grid-row-start: span 2;
-        height: calc(var(--tag-action-height) * 2 + var(--tag-action-row-gap));
-      }
+      // @include media-breakpoint-up(lg) {
+      //   grid-row-start: span 2;
+      //   height: calc(var(--tag-action-height) * 2 + var(--tag-action-row-gap));
+      // }
     }
   }
 }
