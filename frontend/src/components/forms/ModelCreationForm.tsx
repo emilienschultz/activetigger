@@ -78,7 +78,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
       wdecay: 0.01,
       best: true,
       eval: 9,
-      gpu: gpu?.gpu_available,
+      gpu: gpu?.gpu_available ? true : false, // gpu_available can be undefined for some reasons
       adapt: false,
     },
   });
@@ -212,20 +212,22 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
       </label>
       <input type="number" step="0.001" min={0} {...registerNewModel('parameters.wdecay')} />
 
-      <label>
-        <input
-          type="checkbox"
-          {...registerNewModel('parameters.gpu')}
-          disabled={!gpu?.gpu_available}
-        />
-        Use GPU
-        <a className="gpu">
-          <HiOutlineQuestionMarkCircle />
-        </a>
-        <Tooltip anchorSelect=".gpu" place="top">
-          Compute the training on GPU.
-        </Tooltip>
-      </label>
+      {gpu?.gpu_available && (
+        <label>
+          <input
+            type="checkbox"
+            {...registerNewModel('parameters.gpu')}
+            disabled={!gpu?.gpu_available}
+          />
+          Use GPU
+          <a className="gpu">
+            <HiOutlineQuestionMarkCircle />
+          </a>
+          <Tooltip anchorSelect=".gpu" place="top">
+            Compute the training on GPU.
+          </Tooltip>
+        </label>
+      )}
       <details className="custom-details">
         <summary>Advanced parameters for the model</summary>
 
