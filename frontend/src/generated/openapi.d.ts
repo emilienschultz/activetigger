@@ -2386,6 +2386,8 @@ export interface components {
              * @default all
              */
             mode: string;
+            /** Prompt Name */
+            prompt_name?: string | null;
         };
         /** GenerationsProjectStateModel */
         GenerationsProjectStateModel: {

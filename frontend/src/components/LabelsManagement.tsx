@@ -127,7 +127,7 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
 }) => {
   const { notify } = useNotifications();
 
-  const { statistics, reFetchStatistics } = useStatistics(projectSlug, currentScheme);
+  const { statistics } = useStatistics(projectSlug, currentScheme);
 
   // hooks to manage labels
   const { addLabel } = useAddLabel(projectSlug || null, currentScheme || null);
@@ -255,6 +255,12 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
             value={createLabelValue}
             onChange={handleCreateLabelChange}
             placeholder="Enter new label"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                createLabel();
+              }
+            }}
           />{' '}
           <button onClick={createLabel} className="btn btn">
             <FaPlusCircle size={20} />

@@ -213,6 +213,8 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
         </span>
         <span className="badge hotkey">DEL</span>
       </button>
+
+      {/* COMMENT */}
       <textarea
         className="form-control annotation-comment"
         placeholder="Comment"

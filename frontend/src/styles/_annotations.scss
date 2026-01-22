@@ -7,60 +7,54 @@
   margin-top: map.get($spacers, 1);
   display: flex;
   flex-direction: row;
-  @media (max-width: 1800px) {
-    flex-direction: column;
-  }
-  row-gap: map.get($spacers, 2);
+  flex-wrap: wrap;
+  align-items: flex-end;
+  width: 100%;
+  column-gap: map.get($spacers, 5);
+  row-gap: map.get($spacers, 3);
 
-  .selectors {
+  justify-content: space-between;
+
+  label {
+    margin: 0;
+  }
+
+  > div {
     display: flex;
     flex-wrap: wrap;
-    width: 100%;
-    column-gap: map.get($spacers, 5);
-    @media (max-width: 1800px) {
-      justify-content: space-between;
-    }
 
-    label {
-      margin: 0;
-    }
+    justify-content: flex-start;
+    column-gap: map.get($spacers, 2);
 
-    > div {
+    align-items: flex-start;
+
+    .active-mode-button {
+      padding: 3px 5px;
       display: flex;
-      flex-wrap: wrap;
+      @extend .gap-1;
+      margin: 0;
 
-      justify-content: flex-start;
-      column-gap: map.get($spacers, 2);
+      align-items: center;
+    }
+    .react-select {
+      width: 100%;
+    }
+    // TODO: replace by react-select styling technics once we switch default input styles back to bootstrap
+    input,
+    select {
+      padding: 9px;
+      margin: 0;
+      line-height: initial;
+    }
 
-      align-items: flex-start;
-
-      .active-mode-button {
-        padding: 3px 5px;
-        display: flex;
-        @extend .gap-1;
-
-        align-items: center;
-      }
-      .react-select {
-        width: 100%;
-      }
-      // TODO: replace by react-select styling technics once we switch default input styles back to bootstrap
-      input,
-      select {
-        padding: 9px;
-        margin: 0;
-        line-height: initial;
-      }
-
-      .at-input-group:has(.react-select) {
-        flex-grow: 1;
-        //max-width: 300px;
-        min-width: 250px;
-        position: relative;
-      }
-      input {
-        max-width: 45vw;
-      }
+    .at-input-group:has(.react-select) {
+      flex-grow: 1;
+      //max-width: 300px;
+      min-width: 250px;
+      position: relative;
+    }
+    input {
+      max-width: 45vw;
     }
   }
 
@@ -99,6 +93,8 @@
   @include media-breakpoint-down(lg) {
     --tag-action-width: 100%;
   }
+  // only one column
+  grid-template-columns: 100%;
 
   @extend .gap-3;
   @extend .my-3;
@@ -111,7 +107,9 @@
     &:not(.force-one-column-layout) {
       // text column take all available space => auto
       // buttons takes the rest of available width but with a minimum to see the potential second column without having to scroll
-      grid-template-columns: auto minmax(
+      grid-template-columns:
+        minmax(auto, calc(100% - var(--tag-action-width) - var(--tag-action-column-gap) - 10px))
+        minmax(
           calc(var(--tag-action-width) + var(--tag-action-column-gap) + 10px),
           calc(100% - var(--text-width) - var(--tag-action-column-gap))
         );
@@ -139,9 +137,11 @@
     grid-template-columns: 100%;
     // center both rows
     justify-items: center;
-    // apply width settings to the text frame
-    .annotation-frame {
-      width: var(--text-width);
+    @include media-breakpoint-up(lg) {
+      // apply width settings to the text frame
+      .annotation-frame {
+        width: var(--text-width);
+      }
     }
   }
 
@@ -325,16 +325,17 @@
     // comment field layout + placement on grid
     .annotation-comment {
       width: 100%;
+      height: var(--tag-action-height);
       @include media-breakpoint-down(lg) {
         grid-column-start: span 2;
       }
       @include media-breakpoint-down(md) {
         grid-column-start: span 1;
       }
-      @include media-breakpoint-up(lg) {
-        grid-row-start: span 2;
-        height: calc(var(--tag-action-height) * 2 + var(--tag-action-row-gap));
-      }
+      // @include media-breakpoint-up(lg) {
+      //   grid-row-start: span 2;
+      //   height: calc(var(--tag-action-height) * 2 + var(--tag-action-row-gap));
+      // }
     }
   }
 }
