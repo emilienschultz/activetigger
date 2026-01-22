@@ -214,6 +214,13 @@ class TrainBert(BaseTask):
         # formatting data
         # alphabetical order
         labels = sorted(list(self.df[self.col_label].dropna().unique()))
+
+        if len(labels) <2: 
+            raise ValueError(
+                (f"Not enough classes. Either you excluded classes or there are "
+                 f"not enough annotations.")
+            )
+
         label2id = {j: i for i, j in enumerate(labels)}
         id2label = {i: j for i, j in enumerate(labels)}
         training_data = self.df[[self.col_text, self.col_label]]

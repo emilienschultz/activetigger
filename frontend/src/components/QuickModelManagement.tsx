@@ -191,9 +191,7 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
           />
           {currentModelInformations.statistics_cv10 && (
             <>
-              <h4 className="subsection">
-                Validation scores from the training data (internal validation)
-              </h4>
+              <h4 className="subsection">Cross Validation results</h4>
               <DisplayScores
                 title="Cross validation CV10"
                 scores={

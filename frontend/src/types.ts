@@ -169,7 +169,7 @@ export interface newBertModel {
   loss?: string;
   class_min_freq?: number;
   test_size?: number;
-  exclude_labels?: string[];
+  exclude_labels: string[];
   max_length?: number;
   auto_max_length: boolean;
 }

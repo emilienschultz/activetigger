@@ -3,13 +3,14 @@ import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import Select from 'react-select';
 import { Tooltip } from 'react-tooltip';
-import { useTrainBertModel } from '../../core/api';
+import { useTrainBertModel, useGetServer } from '../../core/api';
 import { getRandomName } from '../../core/utils';
+import { useNotifications } from '../../core/notifications';
 import { newBertModel, ProjectStateModel } from '../../types';
 interface ModelCreationFormProps {
   projectSlug: string | null;
   currentScheme: string | null;
-  project: ProjectStateModel | null;
+  currentProject: ProjectStateModel | null;
   isComputing: boolean;
   setStatusDisplay?: Dispatch<SetStateAction<boolean>>;
 }
@@ -24,19 +25,21 @@ type BertModel = {
 export const ModelCreationForm: FC<ModelCreationFormProps> = ({
   projectSlug,
   currentScheme,
-  project,
+  currentProject,
   isComputing,
   setStatusDisplay,
 }) => {
   // form to train a model
   const { trainBertModel } = useTrainBertModel(projectSlug || null, currentScheme || null);
   const [disableMaxLengthInput, setDisableMaxLengthInput] = useState<boolean>(true);
+  const { gpu } = useGetServer(currentProject || null);
+  const { notify } = useNotifications();
   // available base models suited for the project : sorted by language + priority
-  const filteredModels = ((project?.languagemodels.options as unknown as BertModel[]) ?? [])
+  const filteredModels = ((currentProject?.languagemodels.options as unknown as BertModel[]) ?? [])
     .sort((a, b) => b.priority - a.priority)
     .sort((a, b) => {
-      const aHasFr = a.language === project?.params.language ? -1 : 1;
-      const bHasFr = b.language === project?.params.language ? -1 : 1;
+      const aHasFr = a.language === currentProject?.params.language ? -1 : 1;
+      const bHasFr = b.language === currentProject?.params.language ? -1 : 1;
       return aHasFr - bHasFr;
     });
   const availableBaseModels = filteredModels.map((e) => ({
@@ -46,10 +49,10 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
   // available labels from context
   const availableLabels =
     currentScheme &&
-    project &&
-    project.schemes.available &&
-    project.schemes.available[currentScheme]
-      ? project.schemes.available[currentScheme].labels
+    currentProject &&
+    currentProject.schemes.available &&
+    currentProject.schemes.available[currentScheme]
+      ? currentProject.schemes.available[currentScheme].labels
       : [];
   const existingLabels = Object.entries(availableLabels).map(([key, value]) => ({
     value: key,
@@ -57,8 +60,8 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
   }));
 
   const kindScheme =
-    currentScheme && project && project.schemes.available[currentScheme]
-      ? project.schemes.available[currentScheme].kind
+    currentScheme && currentProject && currentProject.schemes.available[currentScheme]
+      ? currentProject.schemes.available[currentScheme].kind
       : 'multiclass';
 
   const createDefaultValues = () => ({
@@ -77,9 +80,10 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
       wdecay: 0.01,
       best: true,
       eval: 9,
-      gpu: true,
+      gpu: gpu?.gpu_available ? true : false, // gpu_available can be undefined for some reasons
       adapt: false,
     },
+    exclude_labels: [],
   });
 
   const {
@@ -98,8 +102,18 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
 
   const onSubmitNewModel: SubmitHandler<newBertModel> = async (data) => {
     // setActiveKey('models');
-    await trainBertModel(data);
-    if (setStatusDisplay) setStatusDisplay(false);
+    // Retrieve existing labels and prevent training if only one label
+    if (availableLabels.length - data.exclude_labels?.length < 2) {
+      notify({
+        type: 'error',
+        message:
+          'You are trying to train a model on only one label. You need at least 2 labels to start a training',
+      });
+      return;
+    } else {
+      await trainBertModel(data);
+      if (setStatusDisplay) setStatusDisplay(false);
+    }
   };
   return (
     <form onSubmit={handleSubmitNewModel(onSubmitNewModel)}>
@@ -211,16 +225,22 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
       </label>
       <input type="number" step="0.001" min={0} {...registerNewModel('parameters.wdecay')} />
 
-      <label>
-        <input type="checkbox" {...registerNewModel('parameters.gpu')} />
-        Use GPU
-        <a className="gpu">
-          <HiOutlineQuestionMarkCircle />
-        </a>
-        <Tooltip anchorSelect=".gpu" place="top">
-          Compute the training on GPU.
-        </Tooltip>
-      </label>
+      {gpu?.gpu_available && (
+        <label>
+          <input
+            type="checkbox"
+            {...registerNewModel('parameters.gpu')}
+            disabled={!gpu?.gpu_available}
+          />
+          Use GPU
+          <a className="gpu">
+            <HiOutlineQuestionMarkCircle />
+          </a>
+          <Tooltip anchorSelect=".gpu" place="top">
+            Compute the training on GPU.
+          </Tooltip>
+        </label>
+      )}
       <details className="custom-details">
         <summary>Advanced parameters for the model</summary>
 

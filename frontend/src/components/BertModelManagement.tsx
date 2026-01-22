@@ -179,7 +179,7 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
           <ModelCreationForm
             projectSlug={projectSlug || null}
             currentScheme={currentScheme || null}
-            project={project || null}
+            currentProject={project || null}
             isComputing={isComputing}
             setStatusDisplay={setDisplayNewBertModel}
           />
