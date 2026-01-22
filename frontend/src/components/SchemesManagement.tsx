@@ -60,12 +60,13 @@ export const SelectCurrentScheme: FC<{ username?: string | null }> = ({ username
       });
     }
     // case of the scheme have been deleted
-    if (availableSchemes[0] && currentScheme && !availableSchemes.includes(currentScheme)) {
-      setAppContext((state) => ({
-        ...state,
-        currentScheme: availableSchemes[0],
-      }));
-    }
+    // if (availableSchemes[0] && currentScheme && !availableSchemes.includes(currentScheme)) {
+    //   setAppContext((state) => ({
+    //     ...state,
+    //     currentScheme: availableSchemes[0],
+    //   }));
+    //   console.log('U');
+    // }
   }, [currentScheme, availableSchemes, setAppContext, notify, currentProject, username]);
 
   // put the current scheme in the context on change
