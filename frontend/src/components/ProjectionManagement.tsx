@@ -294,15 +294,14 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                     </ul>
                   </details>
                   <h5 className="subsection">Annotate this element</h5>
-                  <div>
+                  <div className="annotation-block force-one-column-layout">
                     {kindScheme == 'multiclass' && (
                       <MulticlassInput
                         elementId={selectedElement.element_id}
                         element={selectedElement}
                         postAnnotation={postAnnotation}
                         labels={availableLabels}
-                        small={true}
-                        secondaryLabels={false}
+                        phase="train"
                       />
                     )}
                     {kindScheme == 'multilabel' && (

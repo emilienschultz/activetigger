@@ -19,7 +19,9 @@ export const Caption: FC<{ labelColorMapping: { [key: string]: string } }> = ({
   labelColorMapping,
 }) => {
   const entries = toPairs(labelColorMapping);
-  const twoColumns = entries.length > 10;
+  // const twoColumns = entries.length > 10;
+  const twoColumns = false;
+  const fontSize = entries.length > 10 ? '0.75rem' : '0.875rem';
 
   return (
     <div className="p-1">
@@ -34,7 +36,7 @@ export const Caption: FC<{ labelColorMapping: { [key: string]: string } }> = ({
               style={{ backgroundColor: color, width: 12, height: 12, borderRadius: '50%' }}
               aria-hidden="true"
             />
-            <span>{label}</span>
+            <span style={{ fontSize }}>{label}</span>
           </div>
         ))}
       </div>
