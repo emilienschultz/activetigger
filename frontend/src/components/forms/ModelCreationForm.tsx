@@ -5,6 +5,7 @@ import Select from 'react-select';
 import { Tooltip } from 'react-tooltip';
 import { useTrainBertModel, useGetServer } from '../../core/api';
 import { getRandomName } from '../../core/utils';
+import { useNotifications } from '../../core/notifications';
 import { newBertModel, ProjectStateModel } from '../../types';
 interface ModelCreationFormProps {
   projectSlug: string | null;
@@ -32,6 +33,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
   const { trainBertModel } = useTrainBertModel(projectSlug || null, currentScheme || null);
   const [disableMaxLengthInput, setDisableMaxLengthInput] = useState<boolean>(true);
   const { gpu } = useGetServer(currentProject || null);
+  const { notify } = useNotifications();
   // available base models suited for the project : sorted by language + priority
   const filteredModels = ((currentProject?.languagemodels.options as unknown as BertModel[]) ?? [])
     .sort((a, b) => b.priority - a.priority)
@@ -81,6 +83,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
       gpu: gpu?.gpu_available ? true : false, // gpu_available can be undefined for some reasons
       adapt: false,
     },
+    exclude_labels: [],
   });
 
   const {
@@ -99,8 +102,18 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
 
   const onSubmitNewModel: SubmitHandler<newBertModel> = async (data) => {
     // setActiveKey('models');
-    await trainBertModel(data);
-    if (setStatusDisplay) setStatusDisplay(false);
+    // Retrieve existing labels and prevent training if only one label
+    if (availableLabels.length - data.exclude_labels?.length < 2) {
+      notify({
+        type: 'error',
+        message:
+          'You are trying to train a model on only one label. You need at least 2 labels to start a training',
+      });
+      return;
+    } else {
+      await trainBertModel(data);
+      if (setStatusDisplay) setStatusDisplay(false);
+    }
   };
   return (
     <form onSubmit={handleSubmitNewModel(onSubmitNewModel)}>
