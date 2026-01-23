@@ -1112,12 +1112,12 @@ class Project:
         elif scheme == "all":
             schemes = self.schemes.available()
             data = pd.concat(
-                {
-                    s: self.schemes.get_scheme(
-                        s, complete=True, datasets=["train", "valid", "test"], id_external=True
-                    )
-                    for s in schemes
-                },
+                [
+                    self.schemes.get_scheme(scheme_name, complete=True, 
+                        datasets=["train", "valid", "test"], id_external=True).\
+                    rename(columns = lambda col: f"{scheme_name}_{col}")
+                    for scheme_name in schemes
+                ],
                 axis=1,
             )
             file_name = f"export_tags_{self.name}_all.{format}"
@@ -1130,8 +1130,11 @@ class Project:
             data = data.dropna(subset=["labels"])
 
         # select columns + order
-        cols = ["id_external"] + [
-            c for c in data.columns if c not in ["id_internal", "id_external"]
+
+        cols = [
+            col
+            for col in data.columns 
+            if not (col.endswith("id_internal"))
         ]
         data = data[cols]
         if self.params.col_id is not None:
