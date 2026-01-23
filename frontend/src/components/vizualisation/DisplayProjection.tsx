@@ -1,25 +1,27 @@
-import { FC, useEffect, useMemo } from 'react';
+import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { FaLock } from 'react-icons/fa';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
+import { useNavigate } from 'react-router-dom';
 import { Tooltip } from 'react-tooltip';
-import { useGetProjectionData } from '../../core/api';
+import { useGetElementById, useGetProjectionData } from '../../core/api';
 import { useAuth } from '../../core/auth';
 import { useAppContext } from '../../core/context';
+import { ElementOutModel } from '../../types';
 import { ProjectionVizSigma } from '../ProjectionVizSigma';
 import { MarqueBoundingBox } from '../ProjectionVizSigma/MarqueeController';
 
 interface DisplayProjectionProps {
   projectName: string | null;
   currentScheme: string | null;
-  elementId?: string;
+  currentElement?: ElementOutModel | null;
 }
 
 // define the component
 export const DisplayProjection: FC<DisplayProjectionProps> = ({
   projectName,
   currentScheme,
-  elementId,
+  currentElement,
 }) => {
   // hook for all the parameters
   const {
@@ -27,6 +29,7 @@ export const DisplayProjection: FC<DisplayProjectionProps> = ({
     setAppContext,
   } = useAppContext();
   const { authenticatedUser } = useAuth();
+  const navigate = useNavigate();
 
   // fetch projection data with the API (null if no model)
   const { projectionData, reFetchProjectionData } = useGetProjectionData(
@@ -57,10 +60,29 @@ export const DisplayProjection: FC<DisplayProjectionProps> = ({
     setAppContext,
   ]);
 
+  // element to display
+  const { getElementById } = useGetElementById();
+  const [selectedElement, setSelectedElement] = useState<ElementOutModel | null>(null);
+  const setSelectedId = useCallback(
+    (id?: string) => {
+      if (id)
+        getElementById(id, 'train').then((element) => {
+          setSelectedElement(element || null);
+        });
+      else setSelectedElement(null);
+    },
+    [getElementById, setSelectedElement],
+  );
+
+  // if the element changes from outside, update the selectedElement
+  useEffect(() => {
+    setSelectedElement(currentElement || null);
+  }, [currentElement]);
+
   return (
     <div>
       {currentProjection ? (
-        <div className="row align-items-start" style={{ height: '400px', marginBottom: '50px' }}>
+        <>
           <div className="my-2">
             <label style={{ display: 'block' }}>
               <input
@@ -89,23 +111,67 @@ export const DisplayProjection: FC<DisplayProjectionProps> = ({
               </Tooltip>
             </label>
           </div>
-          <ProjectionVizSigma
-            data={currentProjection}
-            selectedId={elementId || undefined}
-            setSelectedId={(id?: string | undefined) => id}
-            frame={selectionConfig.frame}
-            setFrameBbox={(bbox?: MarqueBoundingBox) => {
-              setAppContext((prev) => ({
-                ...prev,
-                selectionConfig: {
-                  ...selectionConfig,
-                  frame: bbox ? [bbox.x.min, bbox.x.max, bbox.y.min, bbox.y.max] : undefined,
-                },
-              }));
-            }}
-            labelColorMapping={labelColorMapping || {}}
-          />
-        </div>
+
+          <div className="d-flex">
+            <div>
+              <ProjectionVizSigma
+                data={currentProjection}
+                selectedId={selectedElement?.element_id || undefined}
+                setSelectedId={setSelectedId}
+                frame={selectionConfig.frame}
+                setFrameBbox={(bbox?: MarqueBoundingBox) => {
+                  setAppContext((prev) => ({
+                    ...prev,
+                    selectionConfig: {
+                      ...selectionConfig,
+                      frame: bbox ? [bbox.x.min, bbox.x.max, bbox.y.min, bbox.y.max] : undefined,
+                    },
+                  }));
+                }}
+                labelColorMapping={labelColorMapping || {}}
+              />
+            </div>
+            <>
+              {selectedElement ? (
+                <div
+                  style={{
+                    overflowY: 'auto',
+                    maxHeight: '80vh',
+                  }}
+                  className="mx-4"
+                >
+                  <a
+                    className="badge m-0 p-1"
+                    onClick={() =>
+                      navigate(`/projects/${projectName}/tag/${selectedElement.element_id}?tab=tag`)
+                    }
+                    style={{ cursor: 'pointer' }}
+                  >
+                    Text {selectedElement.element_id}
+                  </a>
+                  <div>{selectedElement.text}</div>
+                  <details>
+                    <summary>Previous annotations:</summary>
+                    <ul>
+                      {selectedElement.history?.map((e) => {
+                        return (
+                          <li key={`${e.time}-${e.user}`}>
+                            label: {e.label ? e.label : 'label removed'} ({e.time} by {e.user})
+                            <br />
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </details>
+                </div>
+              ) : (
+                <div className="explanations horizontal center" style={{ flex: '1 1 auto' }}>
+                  Click on an element to display its content
+                </div>
+              )}
+            </>
+          </div>
+        </>
       ) : (
         <>No projection computed</>
       )}
