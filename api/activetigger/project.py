@@ -947,8 +947,6 @@ class Project:
     def get_statistics(self, scheme: str | None) -> ProjectDescriptionModel:
         """
         Generate a description of a current project/scheme/user
-        Return:
-            JSON
         """
         if scheme is None:
             raise Exception("Scheme is required")
@@ -958,14 +956,18 @@ class Project:
             raise Exception("Scheme not available")
         kind = schemes[scheme].kind
 
-        # part train
         users = self.db_manager.users_service.get_coding_users(scheme, self.params.project_slug)
-        df_train = self.schemes.get_scheme(scheme, datasets=["train"])
-        train_annotated_distribution = self.compute_annotations_distribution(df_train, kind)
+        df_annotable = self.schemes.get_scheme(scheme, datasets=["train", "valid", "test"])
 
-        # part valid
+        # train
+        df_train = df_annotable[df_annotable["dataset"] == "train"]
+        train_annotated_distribution = self.compute_annotations_distribution(df_train, kind)
+        train_annotated_n = len(df_train.dropna(subset=["labels"]))
+        train_set_n = len(self.data.train) if self.data.train is not None else 0
+
+        # valid
         if self.params.valid and (self.data.valid is not None):
-            df_valid = self.schemes.get_scheme(scheme, datasets=["valid"])
+            df_valid = df_annotable[df_annotable["dataset"] == "valid"]
             valid_set_n = len(self.data.valid)
             valid_annotated_n = len(df_valid.dropna(subset=["labels"]))
             valid_annotated_distribution = self.compute_annotations_distribution(df_valid, kind)
@@ -974,9 +976,9 @@ class Project:
             valid_annotated_n = None
             valid_annotated_distribution = None
 
-        # part test
+        # test
         if self.params.test and (self.data.test is not None):
-            df_test = self.schemes.get_scheme(scheme, datasets=["test"])
+            df_test = df_annotable[df_annotable["dataset"] == "test"]
             test_set_n = len(self.data.test)
             test_annotated_n = len(df_test.dropna(subset=["labels"]))
             test_annotated_distribution = self.compute_annotations_distribution(df_test, kind)
@@ -987,8 +989,8 @@ class Project:
 
         return ProjectDescriptionModel(
             users=users,
-            train_set_n=len(self.data.train) if self.data.train is not None else 0,
-            train_annotated_n=len(df_train.dropna(subset=["labels"])),
+            train_set_n=train_set_n,
+            train_annotated_n=train_annotated_n,
             train_annotated_distribution=train_annotated_distribution,
             valid_set_n=valid_set_n,
             valid_annotated_n=valid_annotated_n,

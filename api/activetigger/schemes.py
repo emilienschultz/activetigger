@@ -120,7 +120,9 @@ class Schemes:
 
         self.cache = SchemeCache()
 
-    def get_scheme_data(self, scheme: str, user: str | None = None) -> DataFrame:
+    def get_scheme_data(
+        self, scheme: str, user: str | None = None, force: bool = False
+    ) -> DataFrame:
         """
         Get complete current label for a scheme
         Use the cache if possible
@@ -131,7 +133,7 @@ class Schemes:
 
         df = self.cache.get(scheme)
         # if no cache, get from database
-        if df is None:
+        if df is None or force:
             # annotations from the database
             results = self.projects_service.get_scheme_elements(
                 self.project_slug, scheme, ["train", "test", "valid"]
@@ -152,6 +154,7 @@ class Schemes:
         complete: bool = False,
         datasets: list[str] = ["train"],
         id_external: bool = False,
+        force: bool = False,
     ) -> DataFrame:
         """
         Get data from a scheme : id, text, context, labels
@@ -159,7 +162,7 @@ class Schemes:
         """
         if scheme not in self.available():
             raise Exception("Scheme doesn't exist")
-        df = self.get_scheme_data(scheme, user)
+        df = self.get_scheme_data(scheme, user, force)
 
         if id_external:
             cols = ["text", "id_external"]

@@ -127,7 +127,7 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
 }) => {
   const { notify } = useNotifications();
 
-  const { statistics } = useStatistics(projectSlug, currentScheme);
+  const { statistics, reFetchStatistics } = useStatistics(projectSlug, currentScheme);
 
   // hooks to manage labels
   const { addLabel } = useAddLabel(projectSlug || null, currentScheme || null);
@@ -143,13 +143,14 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
 
   // update labels when availableLabels change
   useEffect(() => {
+    reFetchStatistics();
     setLabels(
       availableLabels.map((label, index) => ({
         id: index,
         label: label,
       })),
     );
-  }, [availableLabels]);
+  }, [availableLabels, reFetchStatistics]);
 
   // manage label creation
   const [createLabelValue, setCreateLabelValue] = useState('');
