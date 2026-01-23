@@ -117,13 +117,7 @@ class TrainML(BaseTask):
         kf = KFold(n_splits=num_folds, shuffle=True, random_state=self.random_seed)
         f = self.Y.notnull()
         Y_pred_10cv = pd.Series(
-            cross_val_predict(
-                self.model, 
-                self.X[f], 
-                self.Y[f], 
-                cv=kf
-            ), 
-            index=self.Y[f].index
+            cross_val_predict(self.model, self.X[f], self.Y[f], cv=kf), index=self.Y[f].index
         )
 
         statistics_cv10 = get_metrics(
@@ -179,12 +173,19 @@ class TrainML(BaseTask):
             statistics_cv10=statistics_cv10,
         )
 
-        with open(self.model_path / "model.pkl", "wb") as file:
+        path_to_model_tmp = self.model_path / f"model{str(self.unique_id)}.pkl"
+        path_to_model = self.model_path / "model.pkl"
+        with open(path_to_model_tmp, "wb") as file:
             pickle.dump(element, file)
+        os.replace(path_to_model_tmp, path_to_model)
 
         # Write the statistics
+        path_to_metrics_json_tmp = str(
+            self.path.joinpath(self.name).joinpath(f"metrics_training_{str(self.unique_id)}.json")
+        )
         path_to_metrics_json = str(self.path.joinpath(self.name).joinpath("metrics_training.json"))
-        with open(path_to_metrics_json, "w") as file:
+
+        with open(path_to_metrics_json_tmp, "w") as file:
             json.dump(
                 {
                     "train": metrics_train.model_dump(mode="json"),
@@ -193,6 +194,7 @@ class TrainML(BaseTask):
                 },
                 file,
             )
+        os.replace(path_to_metrics_json_tmp, path_to_metrics_json)
 
     def __call__(self) -> None:
         """
@@ -204,54 +206,43 @@ class TrainML(BaseTask):
         X_train, X_test, Y_train, Y_test = self.__split_set()
 
         # Fit model --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
-        try: 
+        try:
             self.model.fit(X_train, Y_train)
         except Exception as e:
-            raise Exception((
-                "Problem fitting the model (TrainML.__call__)\n"
-                "Error: {e}"
-            ))
+            raise Exception(("Problem fitting the model (TrainML.__call__)\nError: {e}"))
 
         # predict on test data --- --- --- --- --- --- --- --- --- --- --- --- -
-        try: 
+        try:
             Y_pred_train = pd.Series(self.model.predict(X_train), index=X_train.index)
             Y_pred_test = pd.Series(self.model.predict(X_test), index=X_test.index)
         except Exception as e:
-            raise Exception((
-                "Problem computing predictions after fitting (TrainML.__call__)\n"
-                "Error: {e}"
-            ))
+            raise Exception(
+                ("Problem computing predictions after fitting (TrainML.__call__)\nError: {e}")
+            )
 
         # compute probabilities for all data
-        try: 
+        try:
             proba_values = self.model.predict_proba(self.X)
             proba = pd.DataFrame(proba_values, columns=self.model.classes_, index=self.X.index)
             proba["prediction"] = proba.idxmax(axis=1)
             proba["entropy"] = evaluate_entropy(proba_values)
         except Exception as e:
-            raise Exception((
-                "Problem calculating the entropy (TrainML.__call__)\n"
-                "Error: {e}"
-            ))
+            raise Exception(("Problem calculating the entropy (TrainML.__call__)\nError: {e}"))
 
         # Compute metrics --- --- --- --- --- --- --- --- --- --- --- --- --- --
         try:
             metrics_train = self.__compute_metrics(y_true=Y_train, y_pred=Y_pred_train)
             metrics_test = self.__compute_metrics(y_true=Y_test, y_pred=Y_pred_test)
         except Exception as e:
-            raise Exception((
-                "Problem computing the metrics (TrainML.__call__)\n"
-                "Error: {e}"
-            ))
-        
+            raise Exception(("Problem computing the metrics (TrainML.__call__)\nError: {e}"))
+
         if self.cv10:
-            try: 
+            try:
                 statistics_cv10 = self.__compute_cv10()
-            except Exception as e: 
-                raise Exception((
-                    "Problem computing the cross valisation (TrainML.__compute_cv10)\n"
-                    "Error: {e}"
-                ))
+            except Exception as e:
+                raise Exception(
+                    ("Problem computing the cross valisation (TrainML.__compute_cv10)\nError: {e}")
+                )
         else:
             statistics_cv10 = None
 

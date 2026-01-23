@@ -15,6 +15,7 @@ interface SelectActiveLearningProps {
   setSelectFirstModelTrained?: (value: boolean) => void;
   selectFirstModelTrained?: boolean;
   numberAnnotated?: number;
+  authorize?: boolean;
 }
 
 export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
@@ -23,6 +24,7 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
   setSelectFirstModelTrained,
   selectFirstModelTrained,
   numberAnnotated = 0,
+  authorize,
 }) => {
   const { notify } = useNotifications();
 
@@ -139,14 +141,14 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
     }
   }, [availableQuickModels, selectFirstModelTrained, setAppContext]);
 
-  // retrain quick model (only for )
+  // retrain quick model
   const { retrainQuickModel } = useRetrainQuickModel(projectSlug || null, currentScheme || null);
   const [updatedQuickModel, setUpdatedQuickModel] = useState(false);
-  useEffect(() => {
-    // only the training points for the current phase
 
+  useEffect(() => {
     if (
       !updatedQuickModel &&
+      authorize &&
       freqRefreshQuickModel &&
       activeModel &&
       numberAnnotated > 0 &&
@@ -171,6 +173,7 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
     retrainQuickModel,
     numberAnnotated,
     projectSlug,
+    authorize,
   ]);
 
   // function to change refresh frequency

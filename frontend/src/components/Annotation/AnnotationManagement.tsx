@@ -48,6 +48,7 @@ export const AnnotationManagement: FC = () => {
   const [showDisplayConfig, setShowDisplayConfig] = useState<boolean>(false);
   const [showDisplayViz, setShowDisplayViz] = useState<boolean>(false);
   const [selectFirstModelTrained, setSelectFirstModelTrained] = useState<boolean>(false);
+  const [authorizeRetraining, setAuthorizeRetraining] = useState<boolean>(false);
   const handleCloseViz = () => setShowDisplayViz(false);
   const handleCloseConfig = () => setShowDisplayConfig(false);
 
@@ -163,6 +164,9 @@ export const AnnotationManagement: FC = () => {
           }, 200);
         }
         // does not do nothing as we remount through navigate reFetchStatistics();
+
+        // authorize retraining after first annotation
+        setAuthorizeRetraining(true);
       }
     },
     [
@@ -369,6 +373,7 @@ export const AnnotationManagement: FC = () => {
         setSelectFirstModelTrained={setSelectFirstModelTrained}
         selectFirstModelTrained={selectFirstModelTrained}
         numberAnnotated={numberAnnotated.length}
+        authorize={authorizeRetraining}
       />
       <Modal show={showDisplayViz} onHide={handleCloseViz} size="xl" id="viz-modal">
         <Modal.Header closeButton>

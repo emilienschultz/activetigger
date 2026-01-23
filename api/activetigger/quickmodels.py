@@ -1,6 +1,7 @@
 import os
 import pickle
 import shutil
+import time
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
@@ -263,6 +264,10 @@ class QuickModels:
             path = self.path.joinpath(name)
             if not path.exists():
                 raise Exception("The model path does not exist")
+            if not (path / "model.pkl").exists():
+                # wait until the model is available if still writing
+                print("Waiting for model file to be available...")
+                time.sleep(1)
             with open(path / "model.pkl", "rb") as file:
                 sm: QuickModelComputed = pickle.load(file)
             return sm
@@ -306,7 +311,6 @@ class QuickModels:
         Test if a quickmodel exists for a user/scheme
         """
         existing = self.language_models_service.available_models(self.project_slug, "quickmodel")
-        print("Existing models:", [m.name for m in existing])
         return name in [m.name for m in existing]
 
     def transform_data(
