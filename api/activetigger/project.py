@@ -1122,6 +1122,14 @@ class Project:
             )
             file_name = f"export_tags_{self.name}_all.{format}"
             dropna = False
+
+            # Combine all columns id_internal into one
+            columns_id_external = [col for col in data.columns if col.endswith("id_external")]
+            id_external_serie = data[columns_id_external[0]].copy()
+            for column_external in columns_id_external:
+                id_external_serie.combine(data[column_external], lambda a,b:a) # if 2 elements exist take the first one
+            data = data.drop(columns=columns_id_external)
+            data.loc[:,"id_external"] = id_external_serie
         else:
             raise Exception("Scheme or dataset not recognized")
 
