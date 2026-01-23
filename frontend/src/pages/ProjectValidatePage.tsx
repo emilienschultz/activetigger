@@ -121,7 +121,7 @@ export const ProjectValidatePage: FC = () => {
                 <div className="explanations">
                   Compute statistics on annotations for BERT models
                 </div>
-                {availableQuickModels ? (
+                {availableBertModels ? (
                   <ModelsPillDisplay
                     modelNames={Object.values(availableBertModels || {})
                       .sort((bertModelA, bertModelB) =>
