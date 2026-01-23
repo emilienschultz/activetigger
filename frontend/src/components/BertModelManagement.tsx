@@ -132,13 +132,10 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
                   Rename
                 </button>
                 <ValidateButtons
-                  projectSlug={projectSlug}
                   modelName={currentBertModel}
                   kind="bert"
-                  currentScheme={currentScheme}
                   id="compute-prediction"
                   buttonLabel="Compute predictions"
-                  isComputing={isComputing}
                 />
               </div>
 

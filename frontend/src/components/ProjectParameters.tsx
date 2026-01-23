@@ -53,7 +53,7 @@ export const ProjectParameters: FC<ProjectParametersModel> = ({ project, project
       />
       <Modal show={showModify} onHide={() => setShowModify(false)} id="addfeature-modal">
         <Modal.Header closeButton>
-          <Modal.Title>Add a new feature</Modal.Title>
+          <Modal.Title>Change project parameters</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <ProjectUpdateForm closeModal={() => setShowModify(false)} />

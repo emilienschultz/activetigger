@@ -174,13 +174,10 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
               Rename
             </button>
             <ValidateButtons
-              projectSlug={projectName}
               modelName={currentQuickModelName}
               kind="quick"
-              currentScheme={currentScheme}
               id="compute-prediction"
               buttonLabel="Compute predictions"
-              isComputing={isComputing}
             />
           </div>
 
