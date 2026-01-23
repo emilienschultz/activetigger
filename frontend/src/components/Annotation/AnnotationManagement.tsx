@@ -379,7 +379,7 @@ export const AnnotationManagement: FC = () => {
             <DisplayProjection
               projectName={projectName}
               currentScheme={currentScheme}
-              elementId={elementId}
+              currentElement={element}
             />
           </div>
         </Modal.Body>

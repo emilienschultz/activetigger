@@ -1,9 +1,13 @@
 import { FC, useEffect, useMemo, useState } from 'react';
 import { Modal } from 'react-bootstrap';
+import { IoIosRefresh } from 'react-icons/io';
+import { PiEmptyBold } from 'react-icons/pi';
+import Select from 'react-select';
+import { Tooltip } from 'react-tooltip';
 import { useRetrainQuickModel, useTrainQuickModel } from '../../core/api';
 import { useAppContext } from '../../core/context';
 import { useNotifications } from '../../core/notifications';
-import { ActiveLearningManagement } from '../ActiveLearningManagement';
+import { ActiveModel } from '../../types';
 
 interface SelectActiveLearningProps {
   display: boolean;
@@ -169,6 +173,14 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
     projectName,
   ]);
 
+  // function to change refresh frequency
+  const refreshFreq = (newValue: number) => {
+    setAppContext((prev) => ({ ...prev, freqRefreshQuickModel: newValue }));
+  };
+  const setActiveQuickModel = (newValue: ActiveModel | null) => {
+    setAppContext((prev) => ({ ...prev, activeModel: newValue }));
+  };
+
   return (
     <Modal show={display} onHide={() => setActiveMenu(false)} id="active-modal" size="lg">
       <Modal.Header closeButton>
@@ -176,14 +188,61 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
       </Modal.Header>
       <Modal.Body>
         {availableQuickModels.length + Object.keys(availableBertModels).length > 0 ? (
-          <ActiveLearningManagement
-            availableModels={groupedModels}
-            setAppContext={setAppContext}
-            freqRefreshQuickModel={freqRefreshQuickModel}
-            activeModel={activeModel}
-            projectName={projectName || ''}
-            currentScheme={currentScheme || ''}
-          />
+          <>
+            <div className="horizontal">
+              <Select
+                options={groupedModels}
+                value={activeModel}
+                onChange={(selectedOption) => {
+                  setActiveQuickModel(selectedOption ? selectedOption : null);
+                }}
+                isSearchable
+                placeholder="Select a model for active learning"
+              />
+
+              {activeModel?.type === 'quickmodel' && (
+                <div>
+                  <PiEmptyBold
+                    size={20}
+                    style={{ color: 'red', cursor: 'pointer', margin: '0px 2px' }}
+                    onClick={() => {
+                      setActiveQuickModel(null);
+                    }}
+                    data-tooltip-id="delete-tooltip"
+                    className="mx-2"
+                  />
+                  <IoIosRefresh
+                    size={20}
+                    style={{ color: 'green', cursor: 'pointer' }}
+                    onClick={() => {
+                      retrainQuickModel(activeModel.value);
+                      console.log('retrain');
+                    }}
+                    data-tooltip-id="retrain-tooltip"
+                  />
+                  <Tooltip id="retrain-tooltip" place="bottom" content="Retrain model" />
+                  <Tooltip id="delete-tooltip" place="bottom" content="Deactivate model" />
+                </div>
+              )}
+            </div>
+            {activeModel?.type === 'quickmodel' && (
+              <div>
+                <span className="me-2">Retrain model every</span>
+                <input
+                  type="number"
+                  id="frequencySlider"
+                  min="0"
+                  max="500"
+                  value={freqRefreshQuickModel}
+                  onChange={(e) => {
+                    refreshFreq(Number(e.currentTarget.value));
+                  }}
+                  step="5"
+                  style={{ flex: '1 1 30%', width: '60px' }}
+                />
+              </div>
+            )}
+          </>
         ) : (
           <>
             <div className="horizontal center">
