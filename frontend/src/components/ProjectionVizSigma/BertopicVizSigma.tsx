@@ -6,6 +6,7 @@ import { FC, useCallback, useMemo, useState } from 'react';
 import { Settings } from 'sigma/settings';
 import { NodeDisplayData } from 'sigma/types';
 // import { Caption } from './Caption';
+import { COLORS } from '../../core/colors';
 import GraphEvents from './GraphEvents';
 
 interface Props {
@@ -56,7 +57,7 @@ export const BertopicVizSigma: FC<Props> = ({
   setSelectedId,
   labelDescription,
 }) => {
-  labelColorMapping['NA'] = '#ebebeb';
+  labelColorMapping['NA'] = COLORS.NA;
   // Special cursor to help interactivity affordances
   const [sigmaCursor, setSigmaCursor] = useState<SigmaCursorTypes>(undefined);
 

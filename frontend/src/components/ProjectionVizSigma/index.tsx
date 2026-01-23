@@ -7,6 +7,7 @@ import { PiSelectionSlashBold } from 'react-icons/pi';
 import { Settings } from 'sigma/settings';
 import { NodeDisplayData } from 'sigma/types';
 import { useWindowSize } from 'usehooks-ts';
+import { COLORS } from '../../core/colors';
 import { Caption } from './Caption';
 import GraphEvents from './GraphEvents';
 import { MarqueBoundingBox, MarqueeController } from './MarqueeController';
@@ -87,7 +88,7 @@ export const ProjectionVizSigma: FC<Props> = ({
 
   const [bbox, setBbox] = useState<MarqueBoundingBox | undefined>(frameBbox);
 
-  labelColorMapping['NA'] = '#ebebeb';
+  labelColorMapping['NA'] = COLORS.NA;
 
   // Special cursor to help interactivity affordances
   const [sigmaCursor, setSigmaCursor] = useState<SigmaCursorTypes>(undefined);
