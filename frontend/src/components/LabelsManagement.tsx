@@ -183,7 +183,27 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
 
   return (
     <>
-      <table id="label-table" className="mt-5">
+      {canEdit && (
+        <div className="d-flex w-50 mt-5">
+          <input
+            type="text"
+            id="new-label"
+            value={createLabelValue}
+            onChange={handleCreateLabelChange}
+            placeholder="Enter new label"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                createLabel();
+              }
+            }}
+          />{' '}
+          <button onClick={createLabel} className="btn btn-link p-0 ms-2">
+            <FaPlusCircle size={25} />
+          </button>
+        </div>
+      )}
+      <table id="label-table" className="mt-1">
         <thead>
           <tr>
             <th scope="col" className="label-col">
@@ -246,27 +266,6 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
           </tr>
         </tbody>
       </table>
-
-      {canEdit && (
-        <div className="horizontal" style={{ width: '420px' }}>
-          <input
-            type="text"
-            id="new-label"
-            value={createLabelValue}
-            onChange={handleCreateLabelChange}
-            placeholder="Enter new label"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                createLabel();
-              }
-            }}
-          />{' '}
-          <button onClick={createLabel} className="btn btn">
-            <FaPlusCircle size={20} />
-          </button>
-        </div>
-      )}
     </>
   );
 };

@@ -1,9 +1,7 @@
 import cx from 'classnames';
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { IoIosRadioButtonOff, IoIosRadioButtonOn } from 'react-icons/io';
-import { MdOnlinePrediction } from 'react-icons/md';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Tooltip } from 'react-tooltip';
 import { useAppContext } from '../../core/context';
 import { useAnnotationSessionHistory } from '../../core/useHistory';
 import { reorderLabels } from '../../core/utils';
@@ -122,45 +120,6 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
   return (
     <div className=" tag-action-container">
       {/* TAGS ACTIONS */}
-      {/* PREDICTION */}
-      {phase == 'train' && displayConfig.displayPrediction && element?.predict.label && (
-        <div className="prediction-container">
-          {displayConfig.displayPredictionStat && (
-            <small className="d-flex align-items-center gap-1 prediction-stats">
-              <MdOnlinePrediction size="20" title="Prediction by model" id="prediction-icon" />{' '}
-              <Tooltip anchorSelect="#prediction-icon" place="top">
-                Prediction by model
-              </Tooltip>
-              <span className="badge m-0" id="predict-probability">
-                P. {predict_proba}
-              </span>
-              <Tooltip anchorSelect="#predict-probability" place="top">
-                prediction's probability: {predict_proba}
-              </Tooltip>
-              <span className="badge m-0" id="predict-entropy">
-                E. {predict_entropy}
-              </span>
-              <Tooltip anchorSelect="#predict-entropy" place="top">
-                prediction's entropy: {predict_entropy}
-              </Tooltip>
-            </small>
-          )}
-          <button
-            type="button"
-            value={element?.predict.label as unknown as string}
-            className={cx(
-              'btn-annotate-predicted-action tag-action-button',
-              small ? ' icon-small' : '',
-            )}
-            onClick={(e) => {
-              postAnnotation(e.currentTarget.value, elementId, comment);
-            }}
-          >
-            <MiddleEllipsis label={element?.predict.label} />{' '}
-            <span className="badge hotkey">P</span>
-          </button>
-        </div>
-      )}
 
       {
         // display buttons for label from the user
@@ -187,18 +146,40 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
         ))
       }
 
-      {/* SKIP */}
-      {skipAnnotation && secondaryLabels && (
-        <button
-          type="button"
-          className="btn-annotate-general-action tag-action-button"
-          onClick={() => {
-            skipAnnotation();
-          }}
-        >
-          Skip <span className="badge hotkey">S</span>
-        </button>
+      {/* PREDICTION */}
+      {phase == 'train' && displayConfig.displayPrediction && element?.predict.label && (
+        <div className="prediction-container">
+          {/* {displayConfig.displayPredictionStat && (
+            <small className="d-flex align-items-center gap-1 prediction-stats">
+              <MdOnlinePrediction size="20" title="Prediction by model" id="prediction-icon" />{' '}
+              <Tooltip anchorSelect="#prediction-icon" place="top">
+                Prediction by model
+              </Tooltip>
+              <Tooltip anchorSelect="#predict-probability" place="top">
+                prediction's probability: {predict_proba}
+              </Tooltip>
+            </small>
+          )} */}
+          <button
+            type="button"
+            value={element?.predict.label as unknown as string}
+            className={cx(
+              'btn-annotate-predicted-action tag-action-button',
+              small ? ' icon-small' : '',
+            )}
+            onClick={(e) => {
+              postAnnotation(e.currentTarget.value, elementId, comment);
+            }}
+          >
+            <MiddleEllipsis label={element?.predict.label} />{' '}
+            <span className="badge m-0 p-1" id="predict-probability">
+              p={predict_proba}
+            </span>
+            <span className="badge hotkey">P</span>
+          </button>
+        </div>
       )}
+
       {/* NO TAG OPTION */}
       <button
         type="button"
@@ -213,6 +194,19 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
         </span>
         <span className="badge hotkey">DEL</span>
       </button>
+
+      {/* SKIP */}
+      {skipAnnotation && secondaryLabels && (
+        <button
+          type="button"
+          className="btn-annotate-general-action tag-action-button"
+          onClick={() => {
+            skipAnnotation();
+          }}
+        >
+          Skip <span className="badge hotkey">S</span>
+        </button>
+      )}
 
       {/* COMMENT */}
       <textarea
