@@ -249,6 +249,24 @@ export const ProjectCreationForm: FC = () => {
     }
   };
 
+  useEffect(() => {
+    console.log('Dataset changed:', dataset);
+    reset({
+      col_id: '',
+      cols_text: [],
+      cols_context: [],
+      cols_label: [],
+      n_train: 100,
+      n_test: 0,
+      n_valid: 0,
+      language: 'en',
+      clear_test: false,
+      random_selection: true,
+      force_label: false,
+    });
+    // reset data when changing dataset
+  }, [dataset, reset]);
+
   return (
     <div>
       <div className="explanations">Create a new project</div>
@@ -284,7 +302,6 @@ export const ProjectCreationForm: FC = () => {
                 id="existingDataset"
                 value={dataset}
                 onChange={(e) => {
-                  reset();
                   setDataset(e.target.value);
                 }}
               >
@@ -375,11 +392,13 @@ export const ProjectCreationForm: FC = () => {
               <Controller
                 name="cols_text"
                 control={control}
-                render={({ field: { onChange } }) => (
+                defaultValue={[]}
+                render={({ field: { value, onChange } }) => (
                   <Select
                     options={availableFields}
                     isMulti
                     isDisabled={creatingProject}
+                    value={value ? availableFields?.filter((opt) => value.includes(opt.value)) : []}
                     onChange={(selectedOptions) => {
                       onChange(
                         selectedOptions ? selectedOptions.map((option) => option.value) : [],
@@ -404,11 +423,13 @@ export const ProjectCreationForm: FC = () => {
               <Controller
                 name="cols_label"
                 control={control}
-                render={({ field: { onChange } }) => (
+                defaultValue={[]}
+                render={({ field: { value, onChange } }) => (
                   <Select
                     id="cols_label"
                     options={availableFields}
                     isMulti
+                    value={value ? availableFields?.filter((opt) => value.includes(opt.value)) : []}
                     isDisabled={creatingProject}
                     onChange={(selectedOptions) => {
                       onChange(
@@ -423,12 +444,14 @@ export const ProjectCreationForm: FC = () => {
               <Controller
                 name="cols_context"
                 control={control}
-                render={({ field: { onChange } }) => (
+                render={({ field: { onChange, value } }) => (
                   <Select
                     id="cols_context"
                     options={availableFields}
                     isMulti
+                    defaultValue={[]}
                     isDisabled={creatingProject}
+                    value={value ? availableFields?.filter((opt) => value.includes(opt.value)) : []}
                     onChange={(selectedOptions) => {
                       onChange(
                         selectedOptions ? selectedOptions.map((option) => option.value) : [],
