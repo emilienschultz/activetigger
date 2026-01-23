@@ -163,9 +163,7 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
                   label_maxProb: selectionConfig.label_maxprob,
                 }),
             )}
-            getOptionLabel={(o) =>
-              o.mode === 'maxprob' ? `Maxprob on ${o.label_maxprob}` : o.mode
-            }
+            getOptionLabel={(o) => (o.mode === 'maxprob' ? `Max ${o.label_maxprob}` : o.mode)}
             onChange={(option) => {
               if (option !== null) {
                 setAppContext((prev) => ({
