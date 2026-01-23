@@ -14,6 +14,7 @@ export const ProjectUpdateForm: FC<{ closeModal: () => void }> = ({ closeModal }
   const {
     appContext: { currentProject: project },
   } = useAppContext();
+
   const columnsSelect =
     project && project.params.all_columns
       ? project.params.all_columns.map((e) => ({ value: e, label: e })) || []
@@ -56,6 +57,14 @@ export const ProjectUpdateForm: FC<{ closeModal: () => void }> = ({ closeModal }
     updateProject(formData);
     closeModal();
   };
+
+  const maxElementsToAdd =
+    project && project?.params?.n_total
+      ? project?.params?.n_total -
+        project.params.n_train -
+        project.params.n_valid -
+        project.params.n_test
+      : 0;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="form-frame">
@@ -107,7 +116,7 @@ export const ProjectUpdateForm: FC<{ closeModal: () => void }> = ({ closeModal }
       />
 
       <label htmlFor="add_n_trai">Add N elements in the train set</label>
-      <input id="add_n_train" type="number" {...register('add_n_train')} />
+      <input id="add_n_train" type="number" {...register('add_n_train')} max={maxElementsToAdd} />
 
       <button type="submit" className="btn-submit">
         Validate modifications

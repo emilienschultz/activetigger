@@ -39,9 +39,13 @@ class UpdateDatasets(BaseTask):
         try:
             # apply the changes
             resetFeatures = False
-            if self.update.cols_context is not None:
+            if self.update.cols_context is not None and set(self.update.cols_context) != set(
+                self.params.cols_context
+            ):
                 self.change_context()
-            if self.update.cols_text is not None:
+            if self.update.cols_text is not None and set(self.update.cols_text) != set(
+                self.params.cols_text
+            ):
                 self.change_text_column()
             if self.update.add_n_train is not None:
                 self.change_n_train()
@@ -51,8 +55,6 @@ class UpdateDatasets(BaseTask):
             return (self.params, resetFeatures)
         except Exception as e:
             raise e
-        finally:
-            print("Exiting UpdateDatasets task")
 
     def change_context(self) -> None:
         """

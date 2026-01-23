@@ -46,6 +46,7 @@ export const ProjectParameters: FC<ProjectParametersModel> = ({ project, project
             'Text Column': project.params.cols_text,
             'Column ID': project.params.col_id,
             'Colums context': project.params.cols_context,
+            'Rows in train set': project.params.n_train,
             'Rows in test set': project.params.test ? project.params.n_test : 'Empty',
             'Rows in valid set': project.params.valid ? project.params.n_valid : 'Empty',
           } as Record<string, unknown>
@@ -56,6 +57,9 @@ export const ProjectParameters: FC<ProjectParametersModel> = ({ project, project
           <Modal.Title>Change project parameters</Modal.Title>
         </Modal.Header>
         <Modal.Body>
+          <div className="alert alert-warning">
+            <strong>Note:</strong> Changing project parameters may affect existing features.
+          </div>
           <ProjectUpdateForm closeModal={() => setShowModify(false)} />
         </Modal.Body>
       </Modal>
