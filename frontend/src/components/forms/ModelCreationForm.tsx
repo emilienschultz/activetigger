@@ -80,7 +80,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
       wdecay: 0.01,
       best: true,
       eval: 9,
-      gpu: gpu?.gpu_available ? true : false, // gpu_available can be undefined for some reasons
+      gpu: true,
       adapt: false,
     },
     exclude_labels: [],
@@ -227,7 +227,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
 
       {gpu?.gpu_available && (
         <label>
-          <input type="checkbox" {...registerNewModel('parameters.gpu')} />
+          <input type="checkbox" {...registerNewModel('parameters.gpu')} checked />
           Use GPU
           <a className="gpu">
             <HiOutlineQuestionMarkCircle />
