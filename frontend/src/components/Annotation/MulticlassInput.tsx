@@ -111,7 +111,7 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
   }, [availableLabels, handleKeyboardEvents]);
 
   const predict_proba = element?.predict.proba ? element.predict.proba.toFixed(2) : 'NA';
-  const predict_entropy = element?.predict.entropy ? element.predict.entropy.toFixed(2) : 'NA';
+  // const predict_entropy = element?.predict.entropy ? element.predict.entropy.toFixed(2) : 'NA';
 
   const lastAnnotation = useMemo(() => {
     return element?.history && element.history.length > 0 ? element?.history[0] : null;
