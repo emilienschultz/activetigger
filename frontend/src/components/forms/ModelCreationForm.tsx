@@ -249,7 +249,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
             How many samples are processed simultaneously. With small GPU, keep it around 4.
           </Tooltip>
         </label>
-        <input type="number" {...registerNewModel('parameters.batchsize')} />
+        <input type="number" {...registerNewModel('parameters.batchsize')} min={1} />
 
         <label>
           Gradient Accumulation{' '}
@@ -260,7 +260,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
             summing gradients over multiple steps before updating the model weights
           </Tooltip>
         </label>
-        <input type="number" step="0.01" {...registerNewModel('parameters.gradacc')} />
+        <input type="number" step="1" {...registerNewModel('parameters.gradacc')} min={1} />
 
         <label>
           Eval{' '}

@@ -1411,10 +1411,11 @@ class Project:
                     case "update_datasets":
                         e = cast(UpdateComputing, e)
                         self.db_manager.projects_service.update_project(
-                            self.params.project_slug, jsonable_encoder(results)
+                            self.params.project_slug, jsonable_encoder(results[0])
                         )
                         # reset the features file and load the dataset again
-                        self.features.reset_features_file()
+                        if results[1]:
+                            self.features.reset_features_file()
                         self.data.load_dataset("all")
                     case "train_bert":
                         model = cast(LMComputing, e)

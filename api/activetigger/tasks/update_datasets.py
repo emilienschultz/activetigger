@@ -35,18 +35,20 @@ class UpdateDatasets(BaseTask):
         self.path_data_test = self.project_path / Path(config.test_file)
         self.update = update
 
-    def __call__(self) -> ProjectModel:
+    def __call__(self) -> tuple[ProjectModel, bool]:
         try:
             # apply the changes
+            resetFeatures = False
             if self.update.cols_context is not None:
                 self.change_context()
             if self.update.cols_text is not None:
                 self.change_text_column()
             if self.update.add_n_train is not None:
                 self.change_n_train()
+                resetFeatures = True
 
             # return the fields to update
-            return self.params
+            return (self.params, resetFeatures)
         except Exception as e:
             raise e
         finally:

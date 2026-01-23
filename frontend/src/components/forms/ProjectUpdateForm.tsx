@@ -8,7 +8,7 @@ import { useAppContext } from '../../core/context';
 import { useNotifications } from '../../core/notifications';
 import { ProjectUpdateModel } from '../../types';
 
-export const ProjectUpdateForm: FC = () => {
+export const ProjectUpdateForm: FC<{ closeModal: () => void }> = ({ closeModal }) => {
   const { projectName } = useParams();
 
   const {
@@ -54,6 +54,7 @@ export const ProjectUpdateForm: FC = () => {
       return;
     }
     updateProject(formData);
+    closeModal();
   };
 
   return (
