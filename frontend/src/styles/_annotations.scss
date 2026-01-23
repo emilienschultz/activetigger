@@ -105,10 +105,14 @@
   // two column layout when big screen and force one column inactive
   @include media-breakpoint-up(lg) {
     &:not(.force-one-column-layout) {
-      // text column take all available space => auto
-      // buttons takes the rest of available width but with a minimum to see the potential second column without having to scroll
       grid-template-columns:
-        minmax(auto, calc(100% - var(--tag-action-width) - var(--tag-action-column-gap) - 10px))
+        // text column takes the settings width but the minimum tag container size
+
+        minmax(
+          calc(var(--text-width) - var(--tag-action-width) - var(--tag-action-column-gap) - 10px),
+          calc(100% - var(--tag-action-width) - var(--tag-action-column-gap) - 10px)
+        )
+        // tag container takes the rest of available width but with a minimum to see the potential second column without having to scroll
         minmax(
           calc(var(--tag-action-width) + var(--tag-action-column-gap) + 10px),
           calc(100% - var(--text-width) - var(--tag-action-column-gap))
