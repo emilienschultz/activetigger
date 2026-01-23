@@ -254,7 +254,7 @@ export const AnnotationManagement: FC = () => {
   if (!projectName || !currentScheme) return;
 
   const numberAnnotated = history.filter(
-    (hp) => hp.dataset === 'train' && hp.project_slug === projectName,
+    (hp) => hp.dataset === 'train' && hp.project_slug === projectName && !hp.skip,
   );
 
   return (

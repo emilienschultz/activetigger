@@ -80,6 +80,7 @@ export type ActiveModel = components['schemas']['ActiveModel'];
 
 export type ElementHistoryPoint = Omit<components['schemas']['AnnotationModel'], 'user'> & {
   element_text: string;
+  skip?: boolean;
 };
 
 export interface FeatureDfmParameters {

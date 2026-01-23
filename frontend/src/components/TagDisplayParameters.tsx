@@ -76,7 +76,7 @@ export const TagDisplayParameters: FC = () => {
         </label>
       )}
 
-      <label>
+      {/* <label>
         <input
           type="checkbox"
           checked={displayConfig.displayContext}
@@ -91,7 +91,7 @@ export const TagDisplayParameters: FC = () => {
           }}
         />
         Contextual information
-      </label>
+      </label> */}
 
       <label>
         <input

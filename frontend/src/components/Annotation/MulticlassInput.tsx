@@ -44,7 +44,14 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
 
   const skipAnnotation = useCallback(() => {
     //update history
-    if (element) addElementInAnnotationSessionHistory(element.element_id, element.text, undefined);
+    if (element)
+      addElementInAnnotationSessionHistory(
+        element.element_id,
+        element.text,
+        undefined,
+        undefined,
+        true,
+      );
 
     // move to next element
     navigate(`/projects/${projectName}/tag/`);
