@@ -3,9 +3,9 @@ import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import Select from 'react-select';
 import { Tooltip } from 'react-tooltip';
-import { useTrainBertModel, useGetServer } from '../../core/api';
-import { getRandomName } from '../../core/utils';
+import { useGetServer, useTrainBertModel } from '../../core/api';
 import { useNotifications } from '../../core/notifications';
+import { getRandomName } from '../../core/utils';
 import { newBertModel, ProjectStateModel } from '../../types';
 interface ModelCreationFormProps {
   projectSlug: string | null;
@@ -227,11 +227,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
 
       {gpu?.gpu_available && (
         <label>
-          <input
-            type="checkbox"
-            {...registerNewModel('parameters.gpu')}
-            disabled={!gpu?.gpu_available}
-          />
+          <input type="checkbox" {...registerNewModel('parameters.gpu')} />
           Use GPU
           <a className="gpu">
             <HiOutlineQuestionMarkCircle />
