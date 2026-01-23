@@ -115,8 +115,16 @@ export const ProjectUpdateForm: FC<{ closeModal: () => void }> = ({ closeModal }
         )}
       />
 
-      <label htmlFor="add_n_trai">Add N elements in the train set</label>
-      <input id="add_n_train" type="number" {...register('add_n_train')} max={maxElementsToAdd} />
+      <label htmlFor="add_n_train">
+        Add N elements in the train set (max : {maxElementsToAdd})
+      </label>
+      <input
+        id="add_n_train"
+        type="number"
+        {...register('add_n_train')}
+        max={maxElementsToAdd}
+        min={0}
+      />
 
       <button type="submit" className="btn-submit">
         Validate modifications

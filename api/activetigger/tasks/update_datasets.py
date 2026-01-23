@@ -47,7 +47,7 @@ class UpdateDatasets(BaseTask):
                 self.params.cols_text
             ):
                 self.change_text_column()
-            if self.update.add_n_train is not None:
+            if self.update.add_n_train is not None and self.update.add_n_train > 0:
                 self.change_n_train()
                 resetFeatures = True
 
