@@ -34,14 +34,7 @@ export const ProjectParameters: FC<ProjectParametersModel> = ({ project, project
   return (
     <>
       <div className="explanations">Parameters of this project</div>
-      <Modal show={showModify} onHide={() => setShowModify(false)} id="addfeature-modal">
-        <Modal.Header closeButton>
-          <Modal.Title>Add a new feature</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <ProjectUpdateForm />
-        </Modal.Body>
-      </Modal>
+
       <ModelParametersTab
         params={
           {
@@ -52,12 +45,20 @@ export const ProjectParameters: FC<ProjectParametersModel> = ({ project, project
             Language: project.params.language,
             'Text Column': project.params.cols_text,
             'Column ID': project.params.col_id,
-            'Colums context': JSON.stringify(project.params.cols_context),
+            'Colums context': project.params.cols_context,
             'Rows in test set': project.params.test ? project.params.n_test : 'Empty',
             'Rows in valid set': project.params.valid ? project.params.n_valid : 'Empty',
           } as Record<string, unknown>
         }
       />
+      <Modal show={showModify} onHide={() => setShowModify(false)} id="addfeature-modal">
+        <Modal.Header closeButton>
+          <Modal.Title>Add a new feature</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <ProjectUpdateForm />
+        </Modal.Body>
+      </Modal>
 
       <div className="horizontal wrap">
         <button className="btn-primary-action" onClick={() => setShowModify(!showModify)}>

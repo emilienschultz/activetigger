@@ -905,6 +905,7 @@ class Project:
                 .astype(str)
                 .to_dict(),
             )
+            context = {i.replace("dataset_", ""): str(context[i]) for i in context}
 
         if text is None:
             raise Exception("Dataset does not exist.")
@@ -1113,9 +1114,12 @@ class Project:
             schemes = self.schemes.available()
             data = pd.concat(
                 [
-                    self.schemes.get_scheme(scheme_name, complete=True, 
-                        datasets=["train", "valid", "test"], id_external=True).\
-                    rename(columns = lambda col: f"{scheme_name}_{col}")
+                    self.schemes.get_scheme(
+                        scheme_name,
+                        complete=True,
+                        datasets=["train", "valid", "test"],
+                        id_external=True,
+                    ).rename(columns=lambda col: f"{scheme_name}_{col}")
                     for scheme_name in schemes
                 ],
                 axis=1,
@@ -1127,9 +1131,11 @@ class Project:
             columns_id_external = [col for col in data.columns if col.endswith("id_external")]
             id_external_serie = data[columns_id_external[0]].copy()
             for column_external in columns_id_external:
-                id_external_serie.combine(data[column_external], lambda a,b:a) # if 2 elements exist take the first one
+                id_external_serie.combine(
+                    data[column_external], lambda a, b: a
+                )  # if 2 elements exist take the first one
             data = data.drop(columns=columns_id_external)
-            data.loc[:,"id_external"] = id_external_serie
+            data.loc[:, "id_external"] = id_external_serie
         else:
             raise Exception("Scheme or dataset not recognized")
 
@@ -1139,11 +1145,7 @@ class Project:
 
         # select columns + order
 
-        cols = [
-            col
-            for col in data.columns 
-            if not (col.endswith("id_internal"))
-        ]
+        cols = [col for col in data.columns if not (col.endswith("id_internal"))]
         data = data[cols]
         if self.params.col_id is not None:
             data.rename(columns={"id_external": self.params.col_id}, inplace=True)
