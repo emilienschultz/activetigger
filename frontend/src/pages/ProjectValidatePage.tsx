@@ -60,7 +60,7 @@ export const ProjectValidatePage: FC = () => {
     if (!isComputing) {
       reFetchBertModelInformations();
       reFetchQuickModelInformations();
-      // notify({ type: 'info', message: 'Score updated' });
+      notify({ type: 'info', message: 'Score updated' });
     }
   }, [isComputing, reFetchBertModelInformations, reFetchQuickModelInformations, notify]);
 
@@ -96,11 +96,8 @@ export const ProjectValidatePage: FC = () => {
                     <ValidateButtons
                       modelName={currentQuickModelName}
                       kind="quick"
-                      currentScheme={currentScheme || null}
-                      projectSlug={projectName || null}
                       id="compute-validate"
                       style={{ margin: '8px 0px', color: 'white' }}
-                      isComputing={isComputing}
                     />
 
                     <DisplayScoresMenu
@@ -159,11 +156,8 @@ export const ProjectValidatePage: FC = () => {
                       <ValidateButtons
                         modelName={currentBertModelName}
                         kind="bert"
-                        currentScheme={currentScheme || null}
-                        projectSlug={projectName || null}
                         id="compute-validate"
                         style={{ margin: '8px 0px', color: 'white' }}
-                        isComputing={isComputing}
                       />
                       <DisplayScoresMenu
                         scores={
