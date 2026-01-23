@@ -47,7 +47,7 @@ export const DEFAULT_CONTEXT: AppContextValue = {
   displayConfig: {
     interfaceType: 'default',
     displayAnnotation: true,
-    displayContext: false,
+    displayContext: true,
     displayPrediction: true,
     displayPredictionStat: true,
     displayHistory: true,

@@ -89,22 +89,24 @@ export const TextClassificationPanel: FC<ClassificationPanelProps> = ({
 
         <div className="footer">
           {
-            //display context
-            phase != 'test' && displayConfig.displayContext && (
-              <details>
-                <summary>Context </summary>
-                <dl>
-                  {Object.entries(element?.context || { None: 'None' }).map(([k, v]) => {
-                    return (
-                      <div className="dl-item" key={k}>
-                        <dt>{k}</dt>
-                        <dd>{v as string}</dd>
-                      </div>
-                    );
-                  })}
-                </dl>
-              </details>
-            )
+            //display context if available
+            phase != 'test' &&
+              displayConfig.displayContext &&
+              Object.entries(element?.context || {}).length > 0 && (
+                <details>
+                  <summary>Context </summary>
+                  <dl>
+                    {Object.entries(element?.context || { None: 'None' }).map(([k, v]) => {
+                      return (
+                        <div className="dl-item" key={k}>
+                          <dt>{k}</dt>
+                          <dd>{v as string}</dd>
+                        </div>
+                      );
+                    })}
+                  </dl>
+                </details>
+              )
           }
           {
             //display history
