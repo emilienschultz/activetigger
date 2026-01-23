@@ -517,26 +517,6 @@ class Project:
         # reset the features file
         self.features.reset_features_file()
 
-    def retrain_quickmodel(self, name: str, scheme: str, username: str) -> None:
-        """
-        Retrain a quickmodel
-        """
-
-        # Get old model parameters in a QuickModelInModel
-        model = self.quickmodels.get(name)
-        quickmodel = QuickModelInModel(
-            name=name,
-            scheme=scheme,
-            model=model.model_type,
-            features=model.features,
-            params=model.model_params,
-            standardize=model.standardize,
-            dichotomize=model.model_params.get("dichotomize", None),
-            cv10=model.cv10,
-            balance_classes=model.balance_classes,
-        )
-        self.train_quickmodel(quickmodel, username, retrain=True)
-
     def train_quickmodel(
         self,
         quickmodel: QuickModelInModel,
@@ -559,7 +539,6 @@ class Project:
             raise Exception("Scheme not available")
         if len(availabe_schemes[quickmodel.scheme].labels) < 2:
             raise Exception("Not enough labels in the scheme")
-        quickmodel.name = slugify(quickmodel.name)
         exist = self.quickmodels.exists(quickmodel.name)
         if exist and not retrain:
             raise Exception("A quickmodel with this name already exists")
@@ -625,6 +604,25 @@ class Project:
             user_name=username,
         )
         return process_id
+
+    def retrain_quickmodel(self, name: str, scheme: str, username: str) -> None:
+        """
+        Retrain a quickmodel
+        """
+        # Get old model parameters in a QuickModelInModel
+        model = self.quickmodels.get(name)
+        quickmodel = QuickModelInModel(
+            name=name,
+            scheme=scheme,
+            model=model.model_type,
+            features=model.features,
+            params=model.model_params,
+            standardize=model.standardize,
+            dichotomize=model.model_params.get("dichotomize", None),
+            cv10=model.cv10,
+            balance_classes=model.balance_classes,
+        )
+        self.train_quickmodel(quickmodel, username, retrain=True)
 
     def get_model_prediction(self, type: str, name: str) -> pd.DataFrame:
         """

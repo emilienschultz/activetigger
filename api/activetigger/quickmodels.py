@@ -256,7 +256,7 @@ class QuickModels:
         (cache in memory)
         """
         if not self.exists(name):
-            raise Exception("The model does not exist")
+            raise Exception("The model does not exist in database")
         if name in self.loaded:
             return self.loaded[name]
         else:
@@ -306,6 +306,7 @@ class QuickModels:
         Test if a quickmodel exists for a user/scheme
         """
         existing = self.language_models_service.available_models(self.project_slug, "quickmodel")
+        print("Existing models:", [m.name for m in existing])
         return name in [m.name for m in existing]
 
     def transform_data(

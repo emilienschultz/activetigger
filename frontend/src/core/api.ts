@@ -860,7 +860,7 @@ export function useRetrainQuickModel(projectSlug: string | null, scheme: string 
 
   const retrainQuickModel = useCallback(
     async (name: string) => {
-      if (projectSlug && scheme) {
+      if (projectSlug && scheme && name) {
         const res = await api.POST('/models/quick/retrain', {
           params: {
             query: {

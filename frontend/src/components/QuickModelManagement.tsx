@@ -163,7 +163,7 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
               className="btn-secondary-action"
               onClick={() => {
                 retrainQuickModel(currentQuickModelName);
-                console.log('retrain');
+                console.log('retrain', currentQuickModelName);
               }}
             >
               <IoIosRefresh size={18} className="me-1" />

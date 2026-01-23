@@ -31,7 +31,7 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
     setAppContext,
   } = useAppContext();
 
-  const projectName = project?.params.project_name;
+  const projectSlug = project?.params.project_slug;
 
   // existing models
   const availableQuickModels = useMemo(
@@ -71,7 +71,7 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
     },
   ];
 
-  const { trainQuickModel } = useTrainQuickModel(projectName || null, currentScheme || null);
+  const { trainQuickModel } = useTrainQuickModel(projectSlug || null, currentScheme || null);
   const startTrainQuickModel = () => {
     // default quickmodel
     const availableFeatures = project?.features.available ? project?.features.available : [];
@@ -140,7 +140,7 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
   }, [availableQuickModels, selectFirstModelTrained, setAppContext]);
 
   // retrain quick model (only for )
-  const { retrainQuickModel } = useRetrainQuickModel(projectName || null, currentScheme || null);
+  const { retrainQuickModel } = useRetrainQuickModel(projectSlug || null, currentScheme || null);
   const [updatedQuickModel, setUpdatedQuickModel] = useState(false);
   useEffect(() => {
     // only the training points for the current phase
@@ -170,7 +170,7 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
     updatedQuickModel,
     retrainQuickModel,
     numberAnnotated,
-    projectName,
+    projectSlug,
   ]);
 
   // function to change refresh frequency
@@ -198,6 +198,7 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
                 }}
                 isSearchable
                 placeholder="Select a model for active learning"
+                className="w-50"
               />
 
               {activeModel?.type === 'quickmodel' && (
@@ -216,7 +217,7 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
                     style={{ color: 'green', cursor: 'pointer' }}
                     onClick={() => {
                       retrainQuickModel(activeModel.value);
-                      console.log('retrain');
+                      console.log('retrain', activeModel.value);
                     }}
                     data-tooltip-id="retrain-tooltip"
                   />
