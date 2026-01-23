@@ -175,7 +175,7 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
         <Modal.Title>Configure active learning</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        {availableQuickModels.length > 0 ? (
+        {availableQuickModels.length + Object.keys(availableBertModels).length > 0 ? (
           <ActiveLearningManagement
             availableModels={groupedModels}
             setAppContext={setAppContext}

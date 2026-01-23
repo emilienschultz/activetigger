@@ -632,6 +632,7 @@ class Project:
         - quickmodel
         - languagemodel
         """
+        print(type)
         if type == "quickmodel":
             if not self.quickmodels.exists(name):
                 raise Exception("Quickmodel doesn't exist")
@@ -645,6 +646,22 @@ class Project:
         else:
             raise Exception("Model type not recognized")
         return prediction
+
+    def get_prediction_element(self, kind: str, name: str, element_id: str) -> PredictedLabel:
+        """
+        Get the prediction for a specific element
+        - quickmodel
+        - languagemodel
+        """
+        prediction = self.get_model_prediction(kind, name)
+        predicted_label = str(prediction.loc[element_id, "prediction"])
+        predicted_proba = round(prediction.loc[element_id, predicted_label], 2)  # type: ignore[type]
+        predicted_entropy = round(prediction.loc[element_id, "entropy"], 2)  # type: ignore[type]
+        return PredictedLabel(
+            label=predicted_label,
+            proba=predicted_proba,
+            entropy=predicted_entropy,
+        )
 
     def get_next(
         self,
@@ -758,14 +775,18 @@ class Project:
             element_id = ss.sample(frac=1).index[0]
 
         # check conditions for active learning and get proba
-        if next.selection in ["maxprob", "active"]:
-            if next.model_active is None:
-                raise Exception("Model active is required")
+        proba = None
+        predict = PredictedLabel(label=None, proba=None, entropy=None)
+        if next.model_active is not None:
             prediction = self.get_model_prediction(next.model_active.type, next.model_active.value)
             proba = prediction.reindex(f.index)
 
+        # be sure that the model has been trained
+        if next.selection in ["maxprob", "active"] and next.model_active is None:
+            raise Exception("An active model is required for this selection method")
+
         # higher prob for the label_maxprob, only possible if the model has been trained
-        if next.selection == "maxprob":
+        if next.selection == "maxprob" and proba is not None:
             if next.label_maxprob is None:  # default label to first
                 raise Exception("Label maxprob is required")
             # use the history to not send already tagged data
@@ -779,7 +800,7 @@ class Project:
             indicator = f"probability: {round(proba.loc[element_id, next.label_maxprob], 2)}"
 
         # higher entropy, only possible if the model has been trained
-        if next.selection == "active":
+        if next.selection == "active" and proba is not None:
             # use the history to not send already tagged data
             ss_active = (
                 proba[f]["entropy"].drop(next.history, errors="ignore").sort_values(ascending=False)
@@ -789,15 +810,15 @@ class Project:
             indicator = round(proba.loc[element_id, "entropy"], 2)
             indicator = f"entropy: {indicator}"
 
-        # get prediction of the id if it exists
-        predict = PredictedLabel(label=None, proba=None, entropy=None)
-
         if (
             next.model_active is not None
-            and self.quickmodels.exists(next.model_active.value)
+            and next.model_active.type is not None
+            and next.model_active.value is not None
             and next.dataset == "train"
         ):
-            predict = self.quickmodels.get_prediction_element(next.model_active.value, element_id)
+            predict = self.get_prediction_element(
+                next.model_active.type, next.model_active.value, element_id
+            )
 
         # get all tags already existing for the element selected
         previous = self.schemes.projects_service.get_annotations_by_element(
@@ -874,11 +895,9 @@ class Project:
             # get prediction if it exists
             predict = PredictedLabel(label=None, proba=None, entropy=None)
             if element.active_model is not None:
-                print("Getting prediction for ", element.active_model.value)
-                predict = self.quickmodels.get_prediction_element(
-                    element.active_model.value, element.element_id
+                predict = self.get_prediction_element(
+                    element.active_model.type, element.active_model.value, element.element_id
                 )
-                print(predict)
 
             # extract context
             context = cast(
