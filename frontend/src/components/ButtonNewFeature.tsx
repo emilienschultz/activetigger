@@ -3,12 +3,12 @@ import { Modal } from 'react-bootstrap';
 import { FaPlusCircle } from 'react-icons/fa';
 import { useAppContext } from '../core/context';
 import { CreateNewFeature } from './forms/CreateNewFeature';
-
 export interface ButtonNewFeatureProps {
   projectSlug: string;
+  className?: string;
 }
 
-export const ButtonNewFeature: FC<ButtonNewFeatureProps> = ({ projectSlug }) => {
+export const ButtonNewFeature: FC<ButtonNewFeatureProps> = ({ projectSlug, className }) => {
   const [displayNewFeature, setDisplayNewFeature] = useState(false);
   const {
     appContext: { currentProject },
@@ -18,9 +18,9 @@ export const ButtonNewFeature: FC<ButtonNewFeatureProps> = ({ projectSlug }) => 
     <>
       <button
         type="button"
-        className="btn-secondary-action"
-        style={{ flex: '1 1 auto' }}
+        className={className ? className : 'btn-secondary-action'}
         onClick={() => setDisplayNewFeature(true)}
+        id="create-new"
       >
         <FaPlusCircle size={18} /> Add a new feature
       </button>

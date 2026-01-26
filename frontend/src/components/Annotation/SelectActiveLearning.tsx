@@ -205,7 +205,7 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
         )}
         {availableQuickModels.length + Object.keys(availableBertModels).length > 0 && (
           <>
-            <div>
+            <div className="horizontal center mb-3">
               <Select
                 options={groupedModels}
                 value={activeModel}
@@ -241,24 +241,24 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
                   <Tooltip id="delete-tooltip" place="bottom" content="Deactivate model" />
                 </div>
               )}
+              {activeModel?.type === 'quickmodel' && (
+                <div className="d-flex align-items-center ms-3">
+                  <span className="me-2">Retrain every</span>
+                  <input
+                    type="number"
+                    id="frequencySlider"
+                    min="0"
+                    max="500"
+                    value={freqRefreshQuickModel}
+                    onChange={(e) => {
+                      refreshFreq(Number(e.currentTarget.value));
+                    }}
+                    step="5"
+                    style={{ flex: '1 1 30%', width: '60px' }}
+                  />
+                </div>
+              )}
             </div>
-            {activeModel?.type === 'quickmodel' && (
-              <div>
-                <span className="me-2">Retrain model every</span>
-                <input
-                  type="number"
-                  id="frequencySlider"
-                  min="0"
-                  max="500"
-                  value={freqRefreshQuickModel}
-                  onChange={(e) => {
-                    refreshFreq(Number(e.currentTarget.value));
-                  }}
-                  step="5"
-                  style={{ flex: '1 1 30%', width: '60px' }}
-                />
-              </div>
-            )}
           </>
         )}
 

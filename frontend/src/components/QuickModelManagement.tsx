@@ -20,7 +20,6 @@ import { ModelParametersTab } from './ModelParametersTab';
 import { ModelsPillDisplay } from './ModelsPillDisplay';
 import { StopProcessButton } from './StopProcessButton';
 import { ValidateButtons } from './ValidateButton';
-import { CreateNewFeature } from './forms/CreateNewFeature';
 import { QuickModelForm } from './forms/QuickModelForm';
 
 // TODO: default values + avoid generic parameters
@@ -104,7 +103,6 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
   const { deleteQuickModel } = useDeleteQuickModel(projectName);
 
   // state for new feature
-  const [displayNewFeature, setDisplayNewFeature] = useState<boolean>(false);
   const [displayNewModel, setDisplayNewModel] = useState<boolean>(false);
 
   const [showParameters, setShowParameters] = useState(false);
@@ -219,24 +217,6 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
             features={features}
             availableLabels={availableLabels}
             setDisplayNewModel={setDisplayNewModel}
-            setDisplayNewFeature={setDisplayNewFeature}
-          />
-        </Modal.Body>
-      </Modal>
-      <Modal
-        show={displayNewFeature}
-        id="features-modal"
-        size="xl"
-        onHide={() => setDisplayNewFeature(false)}
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Add a new feature</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <CreateNewFeature
-            projectName={projectName || ''}
-            featuresOption={featuresOption}
-            columns={columns}
           />
         </Modal.Body>
       </Modal>

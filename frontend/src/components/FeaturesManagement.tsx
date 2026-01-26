@@ -1,6 +1,6 @@
+import cx from 'classnames';
 import { FC, useState } from 'react';
 import { useParams } from 'react-router-dom';
-
 import { useDeleteFeature, useGetFeatureInfo } from '../core/api';
 import { useAppContext } from '../core/context';
 import { sortDatesAsStrings } from '../core/utils';
@@ -56,7 +56,10 @@ export const FeaturesManagement: FC = () => {
         setCurrentModelName={setSelectedFeature}
         deleteModelFunction={deleteSelectedFeature}
       >
-        <ButtonNewFeature projectSlug={projectName || ''} />
+        <ButtonNewFeature
+          projectSlug={projectName || ''}
+          className={cx('model-pill ', isComputing ? 'disabled' : '')}
+        />
       </ModelsPillDisplay>
       {/* Display computing features */}
       {Object.entries(project?.features.training).map(([key, element]) => (
