@@ -605,7 +605,7 @@ class Project:
         )
         self.monitoring.register_process(
             process_name=process_id,
-            kind="quickmodel",
+            kind="train_quickmodel",
             parameters={},
             user_name=username,
         )
@@ -1329,7 +1329,7 @@ class Project:
         )
         self.monitoring.register_process(
             process_name=process_id,
-            kind="train_bert",
+            kind="train_languagemodel",
             parameters={},
             user_name=username,
         )

@@ -108,18 +108,16 @@ export function ProcessTable({ rows }: Props) {
         </tr>
       </thead>
       <tbody>
-        {(rows || [])
-          .sort((a, b) => b.duration - a.duration)
-          .map((row) => (
-            <tr key={row.process_name}>
-              <td title={row.process_name}>{row.process_name.slice(0, 8)}…</td>
-              <td>{row.kind}</td>
-              <td>{row.project_slug}</td>
-              <td>{row.user_name}</td>
-              <td>{JSON.stringify(row.events)}</td>
-              <td>{row.duration.toFixed(2)}</td>
-            </tr>
-          ))}
+        {(rows || []).map((row) => (
+          <tr key={row.process_name}>
+            <td title={row.process_name}>{row.process_name.slice(0, 8)}…</td>
+            <td>{row.kind}</td>
+            <td>{row.project_slug}</td>
+            <td>{row.user_name}</td>
+            <td>{JSON.stringify(row.events)}</td>
+            <td>{row.duration.toFixed(2)}</td>
+          </tr>
+        ))}
       </tbody>
     </table>
   );
@@ -247,7 +245,6 @@ export const MonitorPage: FC = () => {
               </Tab>
               <Tab eventKey="statistics" title="Statistics">
                 {<ModelStatsTable rows={normalizeStats(metrics || {})} />}
-
                 {<ProcessTable rows={data as unknown as ProcessRow[]} />}
               </Tab>
               <Tab eventKey="messages" title="Messages">

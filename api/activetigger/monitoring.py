@@ -108,14 +108,16 @@ class Monitoring:
         """
         Get monitoring metrics
         """
-        df_quickmodels = self.get_completed_processes(kind="quickmodel", username=None, limit=100)
+        df_quickmodels = self.get_completed_processes(
+            kind="train_quickmodel", username=None, limit=100
+        )
         m_quickmodels = MonitoringQuickModelsModel(
             n=len(df_quickmodels),
             mean=0 if len(df_quickmodels) == 0 else df_quickmodels["duration"].mean(),
             std=0 if len(df_quickmodels) < 2 else df_quickmodels["duration"].std(),
         )
         df_languagemodels = self.get_completed_processes(
-            kind="languagemodel", username=None, limit=100
+            kind="train_languagemodel", username=None, limit=100
         )
         m_languagemodels = MonitoringLanguageModelsModel(
             n=len(df_languagemodels),
