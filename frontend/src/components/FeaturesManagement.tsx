@@ -9,8 +9,8 @@ import { useAppContext } from '../core/context';
 import { sortDatesAsStrings } from '../core/utils';
 import { FeatureDescriptionModelOut } from '../types';
 import { CreateNewFeature } from './forms/CreateNewFeature';
-import { ModelsPillDisplay } from './ModelsPillDisplay';
 import { ModelParametersTab } from './ModelParametersTab';
+import { ModelsPillDisplay } from './ModelsPillDisplay';
 
 export default function SimpleTable(data: FeatureDescriptionModelOut) {
   return (
@@ -70,7 +70,7 @@ export const FeaturesManagement: FC = () => {
       </ModelsPillDisplay>
       {/* Display computing features */}
       {Object.entries(project?.features.training).map(([key, element]) => (
-        <div className="card text-bg-light mt-3 bg-warning" key={key}>
+        <div className="card text-bg-light m-3 bg-warning w-75" key={key}>
           <div className="d-flex m-2 align-items-center">
             Currently computing {element ? element.name : ''}
             {element?.progress ? ` (${element.progress}%)` : ''}

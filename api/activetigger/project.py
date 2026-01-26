@@ -1426,10 +1426,12 @@ class Project:
                         self.db_manager.projects_service.update_project(
                             self.params.project_slug, jsonable_encoder(results[0])
                         )
+                        # reload the data in memory
+                        self.data.load_dataset("all")
                         # reset the features file and load the dataset again
                         if results[1]:
                             self.features.reset_features_file()
-                        self.data.load_dataset("all")
+
                     case "train_bert":
                         model = cast(LMComputing, e)
                         self.languagemodels.add(model)
