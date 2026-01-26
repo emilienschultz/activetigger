@@ -3,7 +3,7 @@ import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import Select from 'react-select';
 import { Tooltip } from 'react-tooltip';
-import { useGetServer, useTrainBertModel } from '../../core/api';
+import { useTrainBertModel } from '../../core/api';
 import { useNotifications } from '../../core/notifications';
 import { getRandomName } from '../../core/utils';
 import { newBertModel, ProjectStateModel } from '../../types';
@@ -32,7 +32,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
   // form to train a model
   const { trainBertModel } = useTrainBertModel(projectSlug || null, currentScheme || null);
   const [disableMaxLengthInput, setDisableMaxLengthInput] = useState<boolean>(true);
-  const { gpu } = useGetServer(currentProject || null);
+  // const { gpu } = useGetServer(currentProject || null);
   const { notify } = useNotifications();
   // available base models suited for the project : sorted by language + priority
   const filteredModels = ((currentProject?.languagemodels.options as unknown as BertModel[]) ?? [])
@@ -225,18 +225,17 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
       </label>
       <input type="number" step="0.001" min={0} {...registerNewModel('parameters.wdecay')} />
 
-      {gpu?.gpu_available && (
-        <label>
-          <input type="checkbox" {...registerNewModel('parameters.gpu')} checked />
-          Use GPU
-          <a className="gpu">
-            <HiOutlineQuestionMarkCircle />
-          </a>
-          <Tooltip anchorSelect=".gpu" place="top">
-            Compute the training on GPU.
-          </Tooltip>
-        </label>
-      )}
+      <label>
+        <input type="checkbox" {...registerNewModel('parameters.gpu')} />
+        Use GPU
+        <a className="gpu">
+          <HiOutlineQuestionMarkCircle />
+        </a>
+        <Tooltip anchorSelect=".gpu" place="top">
+          Compute the training on GPU.
+        </Tooltip>
+      </label>
+
       <details className="custom-details">
         <summary>Advanced parameters for the model</summary>
 

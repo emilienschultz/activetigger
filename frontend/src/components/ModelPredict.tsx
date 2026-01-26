@@ -26,13 +26,13 @@ export const ModelPredict: FC<{ currentModel: string | null; batchSize?: number 
     isComputing,
   );
 
-  const availablePrediction =
-    currentScheme &&
-    currentModel &&
-    project?.languagemodels.available[currentScheme] &&
-    project?.languagemodels.available[currentScheme][currentModel]
-      ? project?.languagemodels.available[currentScheme][currentModel]['predicted']
-      : false;
+  // const availablePrediction =
+  //   currentScheme &&
+  //   currentModel &&
+  //   project?.languagemodels.available[currentScheme] &&
+  //   project?.languagemodels.available[currentScheme][currentModel]
+  //     ? project?.languagemodels.available[currentScheme][currentModel]['predicted']
+  //     : false;
 
   // compute model preduction
   const { computeModelPrediction } = useComputeModelPrediction(projectSlug || null, useBatchSize);
@@ -52,7 +52,7 @@ export const ModelPredict: FC<{ currentModel: string | null; batchSize?: number 
       <div className="horizontal">
         {model && (
           <button
-            className="btn-primary-action"
+            className="btn-primary-action mt-4"
             onClick={() => {
               console.log('clickedd');
               setDisplayExternalForm(true);
@@ -62,9 +62,9 @@ export const ModelPredict: FC<{ currentModel: string | null; batchSize?: number 
             Prediction external dataset
           </button>
         )}
-        {model && !availablePrediction && (
+        {model && (
           <button
-            className="btn-primary-action"
+            className="btn-primary-action mt-4"
             onClick={() => {
               setDisplayExternalForm(false);
               computeModelPrediction(currentModel, 'all', currentScheme || '', 'bert');
