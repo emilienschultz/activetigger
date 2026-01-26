@@ -57,7 +57,7 @@ class ModelsService:
         scheme: str,
         params: dict[str, Any],
         path: str,
-        retrain: bool = False
+        retrain: bool = False,
     ):
         session = self.SessionMaker()
 
@@ -66,9 +66,7 @@ class ModelsService:
             session.query(Models).filter(Models.name == name, Models.project_slug == project).all()
         )
         if (len(models) == 1) and retrain:
-            # A model has been retrained so nothing must
-            # happen with regard to the database
-            pass
+            models[0].time = datetime.datetime.now()
         elif len(models) > 0:
             # A model already exists, we can't have another one
             raise Exception("Model already exists")
@@ -86,8 +84,8 @@ class ModelsService:
                 path=path,
             )
             session.add(model)
-            session.commit()
-            session.close()
+        session.commit()
+        session.close()
 
     def model_exists(self, project_slug: str, name: str):
         session = self.SessionMaker()
@@ -152,25 +150,6 @@ class ModelsService:
         model.path = model.path.replace(old_name, new_name)
         session.commit()
         session.close()
-        return {"success": "model renamed"}
-    
-    
-    def change_time_after_retrain(self, project_slug: str, model_name: str):
-        session = self.SessionMaker()
-        # get and rename
-        model = (
-            session.query(Models)
-            .filter(Models.name == model_name, Models.project_slug == project_slug)
-            .first()
-        )
-        if model is None:
-            raise DBException("Model not found")
-
-        model.time = datetime.datetime.now()
-        session.commit()
-        session.close()
-        return {"success": "Time Refreshed"}
-    
 
     def set_model_params(self, project_slug: str, name: str, flag: str, value):
         session = self.SessionMaker()

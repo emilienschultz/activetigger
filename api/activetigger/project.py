@@ -624,10 +624,6 @@ class Project:
             balance_classes=model.balance_classes,
         )
         self.train_quickmodel(quickmodel, username, retrain=True)
-        self.quickmodels.language_models_service.change_time_after_retrain(
-            project_slug=self.project_slug,
-            model_name = name
-        )
 
     def get_model_prediction(self, type: str, name: str) -> pd.DataFrame:
         """
