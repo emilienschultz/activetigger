@@ -129,7 +129,7 @@ export const ProjectExportPage: FC = () => {
                       if (currentScheme) getAnnotationsFile('all', format, 'train');
                     }}
                   >
-                    Tags: all schemes
+                    All annotations/schemes
                   </button>
                 </div>
               </Tab>
