@@ -230,7 +230,7 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
         onHide={() => setDisplayNewFeature(false)}
       >
         <Modal.Header closeButton>
-          <Modal.Title>Configure active learning</Modal.Title>
+          <Modal.Title>Add a new feature</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <CreateNewFeature
