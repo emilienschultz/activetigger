@@ -25,7 +25,13 @@ export const DisplayProjection: FC<DisplayProjectionProps> = ({
 }) => {
   // hook for all the parameters
   const {
-    appContext: { currentProject: project, currentProjection, selectionConfig, labelColorMapping },
+    appContext: {
+      currentProject: project,
+      currentProjection,
+      selectionConfig,
+      labelColorMapping,
+      activeModel,
+    },
     setAppContext,
   } = useAppContext();
   const { authenticatedUser } = useAuth();
@@ -35,6 +41,7 @@ export const DisplayProjection: FC<DisplayProjectionProps> = ({
   const { projectionData, reFetchProjectionData } = useGetProjectionData(
     projectName,
     currentScheme,
+    activeModel || null,
   );
 
   // available projections

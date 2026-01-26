@@ -51,6 +51,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
       selectionConfig,
       isComputing,
       labelColorMapping,
+      activeModel,
     },
     setAppContext,
   } = useAppContext();
@@ -64,6 +65,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
   const { projectionData, reFetchProjectionData } = useGetProjectionData(
     projectName,
     currentScheme,
+    activeModel || null,
   );
 
   // states for dynamic interactions
@@ -151,18 +153,19 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
       reFetchProjectionData();
       setAppContext((prev) => ({ ...prev, currentProjection: projectionData || undefined }));
     }
-    // case if the projection changed
+
+    // case if the projection changed (the available projection in the server is different from the one in the app state)
     if (
       authenticatedUser &&
       currentProjection &&
       currentProjection.status != availableProjections?.available[authenticatedUser?.username]
     ) {
-      //NOTE: Axel: What does it do? Can you add comment?
       reFetchProjectionData();
       setAppContext((prev) => ({ ...prev, currentProjection: projectionData || undefined }));
     }
+
+    // After annotating on the fly, force refresh so that the visualisation matches the most recent
     if (authenticatedUser && currentProjection && forceRefresh) {
-      // After annotating on the fly, force refresh so that the visualisation matches the most recent
       reFetchProjectionData();
       setAppContext((prev) => ({ ...prev, currentProjection: projectionData || undefined }));
       setForceRefresh(false);

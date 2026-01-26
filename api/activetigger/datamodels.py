@@ -399,6 +399,7 @@ class ProjectionOutModel(BaseModel):
     parameters: ProjectionParametersModel
     labels: list[str] | None = None
     predictions: list[str] | None = None
+    active_model: ActiveModel | None = None
 
 
 class FeatureModel(BaseModel):

@@ -354,7 +354,9 @@ class LanguageModels:
         # get the predition file
         path = self.path.joinpath(name).joinpath(file_name)
         if not path.exists():
-            raise FileNotFoundError("file does not exist")
+            raise FileNotFoundError(
+                f"The file {file_name} does not exist for this model, please run prediction again."
+            )
         df = pd.read_parquet(path)
 
         # add index column

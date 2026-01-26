@@ -224,7 +224,7 @@ export const ProjectExportPage: FC = () => {
                   <div>
                     {availablePredictionExternal && (
                       <button
-                        className="btn-secondary-action"
+                        className="btn-secondary-action mt-4"
                         onClick={() => {
                           if (model) {
                             getPredictionsFile(model, format, 'external');

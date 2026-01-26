@@ -3046,6 +3046,7 @@ export interface components {
             labels?: string[] | null;
             /** Predictions */
             predictions?: string[] | null;
+            model?: components["schemas"]["ActiveModel"] | null;
         };
         /**
          * ProjectionParametersModel
@@ -4100,14 +4101,17 @@ export interface operations {
         parameters: {
             query: {
                 scheme: string;
-                model?: string | null;
                 project_slug: string;
             };
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ActiveModel"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

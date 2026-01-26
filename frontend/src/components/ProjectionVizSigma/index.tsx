@@ -8,6 +8,7 @@ import { Settings } from 'sigma/settings';
 import { NodeDisplayData } from 'sigma/types';
 import { useWindowSize } from 'usehooks-ts';
 import { COLORS } from '../../core/colors';
+import { ActiveModel } from '../../types';
 import { Caption } from './Caption';
 import GraphEvents from './GraphEvents';
 import { MarqueBoundingBox, MarqueeController } from './MarqueeController';
@@ -21,6 +22,7 @@ interface Props {
     y: unknown[];
     labels?: string[] | null;
     predictions?: unknown[] | null;
+    active_model?: ActiveModel | null;
   };
   // bbox
   // frameBbox?: MarqueBoundingBox;
@@ -145,6 +147,8 @@ export const ProjectionVizSigma: FC<Props> = ({
     [nodeReducer],
   );
 
+  console.log(data);
+
   return (
     <div>
       {data.predictions && (
@@ -157,7 +161,7 @@ export const ProjectionVizSigma: FC<Props> = ({
             }}
           >
             <option value="labels">Annotated elements</option>
-            <option value="predictions">Predicted elements</option>
+            <option value="predictions">Predicted elements for {data.active_model?.value}</option>
           </select>
         </>
       )}

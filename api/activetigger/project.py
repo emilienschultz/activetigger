@@ -17,6 +17,7 @@ from activetigger.bertopic import Bertopic
 from activetigger.config import config
 from activetigger.data import Data
 from activetigger.datamodels import (
+    ActiveModel,
     AuthUserModel,
     BertModelModel,
     ElementInModel,
@@ -1003,7 +1004,10 @@ class Project:
         )
 
     def get_projection(
-        self, username: str, scheme: str, model: str | None = None
+        self,
+        username: str,
+        scheme: str,
+        active_model: ActiveModel | None = None,
     ) -> ProjectionOutModel | None:
         """
         Get projection if computed
@@ -1017,8 +1021,16 @@ class Project:
         data["labels"] = df["labels"].fillna("NA")
 
         # get & add predictions if available
-        if model and self.quickmodels.exists(model):
-            data["prediction"] = self.quickmodels.get_prediction(model)["prediction"]
+        if active_model is not None and active_model.type == "quickmodel":
+            if not self.quickmodels.exists(active_model.value):
+                raise Exception("Quickmodel doesn't exist")
+            data["prediction"] = self.quickmodels.get_prediction(active_model.value)["prediction"]
+        elif active_model is not None and active_model.type == "languagemodel":
+            if not self.languagemodels.exists(active_model.value):
+                raise Exception("Languagemodel doesn't exist")
+            data["prediction"] = self.languagemodels.get_prediction(active_model.value)[
+                "prediction"
+            ]
 
         return ProjectionOutModel(
             index=list(data.index),
@@ -1028,6 +1040,7 @@ class Project:
             parameters=projection.parameters,
             labels=list(data["labels"]),
             predictions=list(data["prediction"]) if "prediction" in data else None,
+            active_model=active_model,
         )
 
     def state(self) -> ProjectStateModel:

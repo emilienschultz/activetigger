@@ -1708,15 +1708,23 @@ export function useUpdateProjection(
  * Get projection data
  */
 export function useGetProjectionData(
-  project_slug: string | undefined | null,
+  projectSlug: string | undefined | null,
   scheme: string | undefined | null,
+  activeModel: ActiveModel | null,
 ) {
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
 
   const getProjectionData = useAsyncMemo(async () => {
-    if (scheme && project_slug) {
+    if (scheme && projectSlug) {
       const res = await api.GET('/elements/projection', {
-        params: { query: { project_slug: project_slug, scheme: scheme, model: null } },
+        params: {
+          query: {
+            project_slug: projectSlug,
+            scheme: scheme,
+            model_name: activeModel ? activeModel.value : null,
+            model_type: activeModel ? activeModel.type : null,
+          },
+        },
       });
       if (!res.error) {
         if ('data' in res) return res.data;

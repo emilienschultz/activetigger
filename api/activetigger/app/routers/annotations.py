@@ -1,15 +1,11 @@
 from typing import Annotated, cast
 
-from fastapi import (
-    APIRouter,
-    Depends,
-    HTTPException,
-    Query,
-)
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
 
 from activetigger.app.dependencies import ProjectAction, get_project, test_rights, verified_user
 from activetigger.datamodels import (
     ActionModel,
+    ActiveModel,
     AnnotationModel,
     AnnotationsDataModel,
     ElementInModel,
@@ -54,18 +50,20 @@ async def get_next(
 async def get_projection(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    scheme: str,
-    model: str | None = None,
+    scheme: str = Query(),
+    model_name: str | None = Query(None),
+    model_type: str | None = Query(None),
 ) -> ProjectionOutModel | None:
     """
     Get projection if computed
     """
     test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
+        active_model: ActiveModel | None = None
+        if model_name is not None and model_type is not None:
+            active_model = ActiveModel(type=model_type, value=model_name, label=model_name)
         return project.get_projection(
-            username=current_user.username,
-            scheme=scheme,
-            model=model,
+            username=current_user.username, scheme=scheme, active_model=active_model
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
