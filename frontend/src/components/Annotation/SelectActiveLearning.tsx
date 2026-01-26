@@ -189,8 +189,6 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
     setAppContext((prev) => ({ ...prev, activeModel: newValue }));
   };
 
-  console.log(`availableQuickModels: ${availableQuickModels}`, availableQuickModels);
-
   return (
     <Modal show={display} onHide={() => setActiveMenu(false)} id="active-modal" size="lg">
       <Modal.Header closeButton>
