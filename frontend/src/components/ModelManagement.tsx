@@ -21,9 +21,9 @@ import { useNotifications } from '../core/notifications';
 import { sortDatesAsStrings } from '../core/utils';
 import { MLStatisticsModel } from '../types';
 import { DisplayScores } from './DisplayScores';
+import { DisplayTrainingProcesses } from './DisplayTrainingProcesses';
 import { ModelParametersTab } from './ModelParametersTab';
 import { ModelsPillDisplay } from './ModelsPillDisplay';
-import { StopProcessButton } from './StopProcessButton';
 import { ValidateButtons } from './ValidateButton';
 import { ModelCreationForm } from './forms/ModelCreationForm';
 import { QuickModelForm } from './forms/QuickModelForm';
@@ -214,7 +214,13 @@ export const ModelManagement: FC = () => {
         </button>
       </ModelsPillDisplay>
 
-      {isComputing && <StopProcessButton projectSlug={projectSlug || null} />}
+      {isComputing && (
+        <DisplayTrainingProcesses
+          projectSlug={projectSlug || null}
+          processes={currentProject?.languagemodels.training}
+          displayStopButton={isComputing}
+        />
+      )}
 
       <hr className="my-4" />
 

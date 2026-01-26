@@ -6,6 +6,7 @@ import { useNotifications } from '../core/notifications';
 import { sortDatesAsStrings } from '../core/utils';
 import { MLStatisticsModel } from '../types';
 import { DisplayScoresMenu } from './DisplayScoresMenu';
+import { DisplayTrainingProcesses } from './DisplayTrainingProcesses';
 import { ModelsPillDisplay } from './ModelsPillDisplay';
 import { ValidateButtons } from './ValidateButton';
 
@@ -90,6 +91,14 @@ export const ModelEvaluation: FC = () => {
           deleteModelFunction={deleteBertModel}
         />
       </div>
+
+      {isComputing && (
+        <DisplayTrainingProcesses
+          projectSlug={projectSlug || null}
+          processes={currentProject?.languagemodels.training}
+          displayStopButton={isComputing}
+        />
+      )}
 
       <hr className="my-4" />
 

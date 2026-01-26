@@ -659,8 +659,8 @@ class Project:
         """
         prediction = self.get_model_prediction(kind, name)
         predicted_label = str(prediction.loc[element_id, "prediction"])
-        predicted_proba = round(prediction.loc[element_id, predicted_label], 2)  # type: ignore[type]
-        predicted_entropy = round(prediction.loc[element_id, "entropy"], 2)  # type: ignore[type]
+        predicted_proba = round(float(cast(float, prediction.loc[element_id, predicted_label])), 2)
+        predicted_entropy = round(float(cast(float, prediction.loc[element_id, "entropy"])), 2)
         return PredictedLabel(
             label=predicted_label,
             proba=predicted_proba,

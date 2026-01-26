@@ -9,8 +9,8 @@ interface stopProcessButtonProps {
 export const StopProcessButton: FC<stopProcessButtonProps> = ({ projectSlug }) => {
   const { stopProcesses } = useStopProcesses(projectSlug);
   return (
-    <button key="stop" className="btn-stop-process" onClick={() => stopProcesses('bert')}>
-      <PulseLoader color={'white'} /> Stop process
+    <button key="stop" className="btn-stop-process my-2" onClick={() => stopProcesses('bert')}>
+      <PulseLoader color={'white'} className="mx-2" /> Stop
     </button>
   );
 };

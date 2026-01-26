@@ -37,11 +37,15 @@ export const DisplayTrainingProcesses: FC<DisplayTrainingProcessesProps> = ({
   processStatus,
   displayStopButton = false,
 }) => {
-  const displayAdvancement = (val: number | string | null) => {
-    if (!val) return 'process in the queue, waiting to start';
+  const formatProgress = (val: number | string | null) => {
+    if (val === null || val === undefined) {
+      return { label: 'Waiting in queue', value: 0 };
+    }
     const v = Math.round(Number(val));
-    if (v >= 100) return 'completed, please wait';
-    return v + '%';
+    if (v >= 100) {
+      return { label: 'Finalizing…', value: 100 };
+    }
+    return { label: `${v}%`, value: v };
   };
 
   if (
@@ -49,41 +53,68 @@ export const DisplayTrainingProcesses: FC<DisplayTrainingProcessesProps> = ({
     processes &&
     Object.values(processes).filter((p) => p && p.status === processStatus).length === 0
   ) {
-    return <div className="overflow-x-auto"></div>;
+    return <div className="overflow-x-auto" />;
   }
+
+  const entries = Object.entries(
+    processes as Record<string, Record<string, string | number | null>>,
+  );
+
+  if (entries.length === 0) return null;
 
   return (
     <div className="overflow-x-auto my-4">
-      {Object.keys(processes || {}).length > 0 && displayStopButton && (
-        <StopProcessButton projectSlug={projectSlug} />
+      {displayStopButton && (
+        <div className="mb-3">
+          <StopProcessButton projectSlug={projectSlug} />
+        </div>
       )}
-      {Object.keys(processes || {}).length > 0 && (
-        <div>
-          Process running:
-          <ul className="list-group">
-            {Object.entries(
-              processes as Record<string, Record<string, string | number | null>>,
-            ).map(([user, v]) => (
-              <li className="list-group-item" key={v.name}>
-                <div className="horizontal wrap" style={{ justifyContent: 'space-between' }}>
-                  <span style={{ marginRight: '10px' }}>From: {user};</span>
-                  <span style={{ marginRight: '10px' }}>Name: {v.name};</span>
-                  <span style={{ marginRight: '10px' }}>Status: {v.status};</span>
-                  <span style={{ marginRight: '10px' }} className="fw-bold">
-                    {displayAdvancement(v.progress)}
-                  </span>
+
+      <h5 className="mb-3">Running processes</h5>
+
+      <div className="list-group">
+        {entries.map(([user, v]) => {
+          const progress = formatProgress(v.progress);
+
+          return (
+            <div key={v.name as string} className="list-group-item">
+              {/* Header */}
+              <div className="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                  <div className="fw-bold">{v.name}</div>
+                  <div className="text-muted small">
+                    From {user} · Status: {v.status}
+                  </div>
                 </div>
-                {v.status === 'training' && (
+
+                <span className="fw-semibold">{progress.label}</span>
+              </div>
+
+              {/* Progress bar */}
+              <div className="progress mb-2" style={{ height: 6 }}>
+                <div
+                  className="progress-bar"
+                  role="progressbar"
+                  style={{ width: `${progress.value}%` }}
+                  aria-valuenow={progress.value}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                />
+              </div>
+
+              {/* Training details */}
+              {v.status === 'training' && (
+                <div className="mt-3">
                   <LossChart
                     loss={v.loss as unknown as LossData}
                     xmax={(v.epochs as number) || undefined}
                   />
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };

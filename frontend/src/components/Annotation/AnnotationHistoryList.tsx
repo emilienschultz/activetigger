@@ -57,7 +57,9 @@ const AnnotationHistoryEntry: FC<{ elementHistoryPoint: ElementHistoryPoint }> =
             )}
           </span>
         )}
-        <span className="badge ">id: {elementHistoryPoint.element_id}</span>
+        <span className="badge ">
+          <MiddleEllipsis label={'id:' + elementHistoryPoint.element_id} />{' '}
+        </span>
         {date && (
           <span className="badge ">
             {(sameDay ? sameDayTimeFormat : dateTimeFormat).format(date)}
