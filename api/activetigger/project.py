@@ -411,6 +411,7 @@ class Project:
 
         # reset the features file
         self.features.reset_features_file()
+        self.quickmodels.drop_models(which="all")
 
     def add_evalset(
         self, dataset, evalset: EvalSetDataModel, username: str, project_slug: str
@@ -423,6 +424,8 @@ class Project:
         - have a unique id different from the complete dataset
 
         The id will be modified to indicate imported
+
+        TODO : put this task in the queue
 
         """
         if len(evalset.cols_text) == 0:
@@ -518,6 +521,7 @@ class Project:
 
         # reset the features file
         self.features.reset_features_file()
+        self.quickmodels.drop_models(which="all")
 
     def train_quickmodel(
         self,

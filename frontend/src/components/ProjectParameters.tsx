@@ -58,8 +58,8 @@ export const ProjectParameters: FC<ProjectParametersModel> = ({ project, project
         </Modal.Header>
         <Modal.Body>
           <div className="alert alert-warning">
-            <strong>Note:</strong> Changing project parameters may affect existing features (if you
-            add elements, you will need to recompute them).
+            <strong>Note:</strong> Changing project parameters may affect your project : adding
+            elements will delete features and quick models
           </div>
           <ProjectUpdateForm closeModal={() => setShowModify(false)} />
         </Modal.Body>

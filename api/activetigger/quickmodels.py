@@ -491,3 +491,14 @@ class QuickModels:
             raise Exception("Model is currently computing")
         self.language_models_service.rename_model(self.project_slug, former_name, new_name)
         os.rename(model.path, model.path.replace(former_name, new_name))
+
+    def drop_models(self, which: str = "all") -> None:
+        """
+        Drop all quickmodels of a specific kind
+        """
+        existing = self.language_models_service.available_models(self.project_slug, "quickmodel")
+        if which == "all":
+            for m in existing:
+                self.delete(m.name)
+        else:
+            raise ValueError("Kind not recognized")

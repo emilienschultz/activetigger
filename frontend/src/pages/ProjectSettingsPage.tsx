@@ -71,12 +71,14 @@ export const ProjectSettingsPage: FC = () => {
             projectName={project.params.project_slug}
             currentScheme={currentScheme || null}
           />
+          <hr />
           <EvalSetsManagement
             projectSlug={projectSlug}
             currentScheme={currentScheme || ''}
             dataset={'valid'}
             exist={project?.params.valid}
           />
+          <hr />
           <EvalSetsManagement
             projectSlug={projectSlug}
             currentScheme={currentScheme || ''}

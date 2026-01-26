@@ -198,7 +198,7 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
       </Modal.Header>
       <Modal.Body>
         {availableFeatures.length === 0 && (
-          <div>
+          <div className="horizontal center mb-3">
             <div>No features available for quickmodel</div>
             <ButtonNewFeature projectSlug={projectSlug || ''} />
           </div>

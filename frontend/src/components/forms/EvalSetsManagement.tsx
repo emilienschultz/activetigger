@@ -9,6 +9,7 @@ import { useCreateValidSet, useDropEvalSet } from '../../core/api';
 import { useNotifications } from '../../core/notifications';
 import { loadFile } from '../../core/utils';
 
+import { Modal } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { EvalSetModel } from '../../types';
 
@@ -45,6 +46,8 @@ export const EvalSetsManagement: FC<EvalSetsManagementModel> = ({
 
   const dropEvalSet = useDropEvalSet(projectSlug); // API call to drop existing test set
   const navigate = useNavigate(); // for navigation after drop
+
+  const [alertDrop, setAlertDrop] = useState<boolean>(false);
 
   const [data, setData] = useState<DataType | null>(null);
   const files = useWatch({ control, name: 'files' });
@@ -94,21 +97,17 @@ export const EvalSetsManagement: FC<EvalSetsManagementModel> = ({
 
   return (
     <div>
-      <h4 className="subsection">
-        {capFirstLetter(dataset)} set
-        {exist && (
-          <button
-            className="btn-drop-dataset"
-            onClick={() => {
-              dropEvalSet(dataset).then(() => {
-                navigate(0);
-              });
-            }}
-          >
-            Drop
-          </button>
-        )}
-      </h4>
+      <h4 className="subsection">{capFirstLetter(dataset)} set</h4>
+      {exist && (
+        <button
+          className="btn-drop-dataset"
+          onClick={() => {
+            setAlertDrop(true);
+          }}
+        >
+          Drop {dataset} set
+        </button>
+      )}
 
       {!exist && (
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -193,6 +192,31 @@ export const EvalSetsManagement: FC<EvalSetsManagementModel> = ({
           }
         </form>
       )}
+      <Modal show={alertDrop} onHide={() => setAlertDrop(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Drop the eval set</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Do you really want to drop the {dataset} set? All features and quick models will be
+          dropped and need to be recomputed.
+          <div className="horizontal">
+            <button onClick={() => setAlertDrop(false)} style={{ flex: '1 1 auto' }}>
+              Cancel
+            </button>
+            <button
+              className="btn-danger"
+              onClick={() => {
+                dropEvalSet(dataset).then(() => {
+                  navigate(0);
+                });
+              }}
+              style={{ flex: '1 1 auto' }}
+            >
+              Confirm
+            </button>
+          </div>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };

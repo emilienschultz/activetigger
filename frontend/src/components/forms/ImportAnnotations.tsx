@@ -92,7 +92,7 @@ export const ImportAnnotations: FC<ImportPropos> = ({ projectName, currentScheme
     <>
       <h4 className="subsection">Import annotations</h4>
       <form onSubmit={handleSubmit(onSubmit)}>
-        <div>
+        <div className="alert alert-warning">
           You can import annotations for existing elements in the train set. Make sure to maintain a
           consistent identification system of the elements. If elements are already labelled, this
           annotation will prevail. Labels are not checked for existance.
