@@ -209,7 +209,7 @@ class TrainML(BaseTask):
         try:
             self.model.fit(X_train, Y_train)
         except Exception as e:
-            raise Exception(("Problem fitting the model (TrainML.__call__)\nError: {e}"))
+            raise Exception((f"Problem fitting the model (TrainML.__call__)\nError: {e}"))
 
         # predict on test data --- --- --- --- --- --- --- --- --- --- --- --- -
         try:
@@ -217,7 +217,7 @@ class TrainML(BaseTask):
             Y_pred_test = pd.Series(self.model.predict(X_test), index=X_test.index)
         except Exception as e:
             raise Exception(
-                ("Problem computing predictions after fitting (TrainML.__call__)\nError: {e}")
+                (f"Problem computing predictions after fitting (TrainML.__call__)\nError: {e}")
             )
 
         # compute probabilities for all data
@@ -227,21 +227,21 @@ class TrainML(BaseTask):
             proba["prediction"] = proba.idxmax(axis=1)
             proba["entropy"] = evaluate_entropy(proba_values)
         except Exception as e:
-            raise Exception(("Problem calculating the entropy (TrainML.__call__)\nError: {e}"))
+            raise Exception((f"Problem calculating the entropy (TrainML.__call__)\nError: {e}"))
 
         # Compute metrics --- --- --- --- --- --- --- --- --- --- --- --- --- --
         try:
             metrics_train = self.__compute_metrics(y_true=Y_train, y_pred=Y_pred_train)
             metrics_test = self.__compute_metrics(y_true=Y_test, y_pred=Y_pred_test)
         except Exception as e:
-            raise Exception(("Problem computing the metrics (TrainML.__call__)\nError: {e}"))
+            raise Exception((f"Problem computing the metrics (TrainML.__call__)\nError: {e}"))
 
         if self.cv10:
             try:
                 statistics_cv10 = self.__compute_cv10()
             except Exception as e:
                 raise Exception(
-                    ("Problem computing the cross valisation (TrainML.__compute_cv10)\nError: {e}")
+                    (f"Problem computing the cross valisation (TrainML.__compute_cv10)\nError: {e}")
                 )
         else:
             statistics_cv10 = None
