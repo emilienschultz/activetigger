@@ -1,12 +1,11 @@
-import { FC, useMemo, useState } from 'react';
+import { FC, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
+import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { useParams } from 'react-router-dom';
+import { Tooltip } from 'react-tooltip';
 import { ProjectPageLayout } from '../components/layout/ProjectPageLayout';
-import { useAppContext } from '../core/context';
-import { ModelDescriptionModel } from '../types';
-
-import { BertModelManagement } from '../components/BertModelManagement';
-import { QuickModelManagement } from '../components/QuickModelManagement';
+import { ModelEvaluation } from '../components/ModelEvaluation';
+import { ModelManagement } from '../components/ModelManagement';
 
 /**
  * Component to manage model training
@@ -14,32 +13,8 @@ import { QuickModelManagement } from '../components/QuickModelManagement';
 
 export const ProjectModelPage: FC = () => {
   const { projectName: projectSlug } = useParams();
-  const {
-    appContext: { currentScheme, currentProject: project, isComputing },
-  } = useAppContext();
 
-  const [activeKey, setActiveKey] = useState<string>('quick');
-
-  const baseQuickModels = project?.quickmodel.options ? project?.quickmodel.options : {};
-
-  const availableBertModels = currentScheme && project?.languagemodels.available[currentScheme];
-  const availableQuickModels = useMemo(
-    () =>
-      project?.quickmodel.available
-        ? (project?.quickmodel.available as { [key: string]: ModelDescriptionModel[] })
-        : {},
-    [project?.quickmodel.available],
-  );
-  const availableFeatures = project?.features.available ? project?.features.available : [];
-  const availableLabels =
-    currentScheme && project && project.schemes.available[currentScheme]
-      ? project.schemes.available[currentScheme].labels
-      : [];
-  const [kindScheme] = useState<string>(
-    currentScheme && project && project.schemes.available[currentScheme]
-      ? project.schemes.available[currentScheme].kind || 'multiclass'
-      : 'multiclass',
-  );
+  const [activeKey, setActiveKey] = useState<string>('models');
 
   return (
     <ProjectPageLayout projectName={projectSlug} currentAction="model">
@@ -50,38 +25,26 @@ export const ProjectModelPage: FC = () => {
               id="panel"
               className="mt-3"
               activeKey={activeKey}
-              onSelect={(k) => setActiveKey(k || 'quick')}
+              onSelect={(k) => setActiveKey(k || 'models')}
             >
-              <Tab eventKey="quick" title="Quick">
-                <div className="explanations">Train machine learning models based on features</div>
-
-                <QuickModelManagement
-                  projectName={projectSlug || null}
-                  currentScheme={currentScheme || null}
-                  baseQuickModels={
-                    baseQuickModels as unknown as Record<string, Record<string, number>>
-                  }
-                  availableQuickModels={availableQuickModels[currentScheme || ''] || []}
-                  availableFeatures={availableFeatures}
-                  availableLabels={availableLabels}
-                  kindScheme={kindScheme}
-                  featuresOption={project?.features.options || {}}
-                  columns={project?.params.all_columns || []}
-                  isComputing={isComputing}
-                />
+              <Tab eventKey="models" title="Models">
+                <div className="explanations ms-3">Train quick and Bert models</div>
+                <ModelManagement />
               </Tab>
-              <Tab eventKey="models" title="BERT" onSelect={() => setActiveKey('models')}>
-                <div className="explanations">Train BERT models</div>
-                <BertModelManagement
-                  projectSlug={projectSlug || null}
-                  currentScheme={currentScheme || null}
-                  availableBertModels={
-                    (availableBertModels as unknown as { [key: string]: ModelDescriptionModel }) ||
-                    {}
-                  }
-                  isComputing={isComputing}
-                  project={project || null}
-                />
+              <Tab eventKey="evaluation" title="Evaluation">
+                <div className="explanations ms-3">
+                  Evaluate your models on annotations (train, eval and test){' '}
+                  <a className="evaldataset">
+                    <HiOutlineQuestionMarkCircle />
+                  </a>
+                  .
+                </div>
+                <Tooltip anchorSelect=".evaldataset" place="top">
+                  Use validation statistics to choose the best model and test statistics for final
+                  generalization scores of the best model (do not choose models based on this)
+                  <br />
+                </Tooltip>
+                <ModelEvaluation />
               </Tab>
             </Tabs>
           </div>

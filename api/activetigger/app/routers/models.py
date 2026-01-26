@@ -225,6 +225,7 @@ async def predict(
                 )
                 col_label = "labels"
                 path_data = None
+                print(df)
 
             project.languagemodels.start_predicting_process(
                 project_slug=project.name,

@@ -6,8 +6,8 @@ import Select from 'react-select';
 import { Tooltip } from 'react-tooltip';
 import { useRetrainQuickModel, useTrainQuickModel } from '../../core/api';
 import { useAppContext } from '../../core/context';
-import { sortDatesAsStrings } from '../../core/utils';
 import { useNotifications } from '../../core/notifications';
+import { sortDatesAsStrings } from '../../core/utils';
 import { ActiveModel } from '../../types';
 
 interface SelectActiveLearningProps {
@@ -79,9 +79,10 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
   ];
 
   const { trainQuickModel } = useTrainQuickModel(projectSlug || null, currentScheme || null);
+  const availableFeatures = project?.features.available ? project?.features.available : [];
   const startTrainQuickModel = () => {
     // default quickmodel
-    const availableFeatures = project?.features.available ? project?.features.available : [];
+
     if (availableFeatures.length === 0) {
       setActiveMenu(false);
       notify({
@@ -195,6 +196,11 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
         <Modal.Title>Configure active learning</Modal.Title>
       </Modal.Header>
       <Modal.Body>
+        {availableFeatures.length === 0 && (
+          <div className="alert alert-warning">
+            No features available for quickmodel. Create a feature first.
+          </div>
+        )}
         {availableQuickModels.length + Object.keys(availableBertModels).length > 0 ? (
           <>
             <div className="horizontal">

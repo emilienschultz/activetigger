@@ -471,6 +471,7 @@ class Project:
 
         # deal with non-unique id
         # TODO : compare with the general dataset
+        df["id_external"] = df["id"]
         if not ((df["id"].astype(str).apply(slugify)).nunique() == len(df)):
             df["id"] = [str(i) for i in range(len(df))]
             print("ID not unique, changed to default id")
@@ -502,11 +503,11 @@ class Project:
 
         # write the dataset
         if dataset == "test":
-            df[["text"]].to_parquet(self.params.dir.joinpath(config.test_file))
+            df[["id_external", "text"]].to_parquet(self.params.dir.joinpath(config.test_file))
             self.params.test = True
             self.data.load_dataset("test")
         else:
-            df[["text"]].to_parquet(self.params.dir.joinpath(config.valid_file))
+            df[["id_external", "text"]].to_parquet(self.params.dir.joinpath(config.valid_file))
             self.params.valid = True
             self.data.load_dataset("valid")
 

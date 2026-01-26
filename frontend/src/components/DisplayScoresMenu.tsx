@@ -62,6 +62,7 @@ export const DisplayScoresMenu: FC<DisplayScoresMenuPropos> = ({
           scores={scores[currentScore]}
           modelName={modelName}
           projectSlug={projectSlug}
+          dataset={currentScore}
         />
       )}
     </>

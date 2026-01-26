@@ -41,7 +41,8 @@ export const ValidateButtons: FC<validateButtonsProps> = ({
       id={id}
       disabled={isComputing}
     >
-      <GrValidate size={20} /> {buttonLabel ? buttonLabel : 'Compute statistics on annotations'}
+      <GrValidate size={20} />{' '}
+      {buttonLabel ? buttonLabel : 'Compute statistics on current annotations'}
     </button>
   );
 };

@@ -11,6 +11,7 @@ export interface DisplayScoresProps {
   scores: MLStatisticsModel;
   modelName?: string;
   projectSlug?: string | null;
+  dataset?: string;
 }
 
 interface Row {
@@ -29,6 +30,7 @@ export const DisplayScores: FC<DisplayScoresProps> = ({
   scores,
   modelName,
   projectSlug,
+  dataset = 'data',
 }) => {
   const downloadModel = () => {
     if (!scores) return; // Ensure model is not null or undefined
@@ -82,7 +84,7 @@ export const DisplayScores: FC<DisplayScoresProps> = ({
   return (
     <div>
       <span className="explanations">
-        The current model has a f1 macro of <b>{scores.f1_macro}</b>
+        Macro F1 score on {dataset.replace('_scores', '')} set : <b>{scores.f1_macro}</b>
       </span>
       <DisplayTableStatistics scores={scores} title={title} />
       {scores['false_predictions'] && (

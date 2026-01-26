@@ -25,7 +25,7 @@ export const ModelsPillDisplay: FC<ModelsNameInput> = ({
       {(modelNames || []).map((name) => (
         <button
           key={name}
-          className={cx('model-pill', currentModelName === name && 'selected')}
+          className={cx('ms-0 model-pill', currentModelName === name && 'selected')}
           onClick={() => setCurrentModelName(name)}
         >
           {name}

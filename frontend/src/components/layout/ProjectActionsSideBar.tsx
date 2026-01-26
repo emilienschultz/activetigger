@@ -1,7 +1,6 @@
 import classNames from 'classnames';
 import { FC } from 'react';
 import { FaCloudDownloadAlt } from 'react-icons/fa';
-import { FaListCheck } from 'react-icons/fa6';
 import { HiMiniRectangleGroup } from 'react-icons/hi2';
 import { IoBookSharp, IoSettingsSharp } from 'react-icons/io5';
 import { MdModelTraining } from 'react-icons/md';
@@ -106,7 +105,7 @@ export const ProjectActionsSidebar: FC<{
               <span className="ms-1 sidemenulabel">Model</span>
             </Link>
           </li>
-          <li className="nav-item">
+          {/* <li className="nav-item">
             <Link
               to={`/projects/${projectSlug}/validate`}
               className={classNames('nav-link', currentProjectAction === 'validate' && 'active')}
@@ -117,7 +116,7 @@ export const ProjectActionsSidebar: FC<{
 
               <span className="ms-1 sidemenulabel">Evaluate</span>
             </Link>
-          </li>
+          </li> */}
           <li className="nav-item">
             <Link
               to={`/projects/${projectSlug}/export`}
