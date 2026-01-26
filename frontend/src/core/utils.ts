@@ -4,7 +4,6 @@ import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 
 import { DataType } from '../components/forms/ProjectCreationForm';
-import { N } from 'node_modules/framer-motion/dist/types.d-6pKw1mTI';
 
 /**
  * loadParquetFile
@@ -273,7 +272,7 @@ export function getRandomName(prefix: string) {
   const day = String(now.getDate());
   const hour = ('0' + String(now.getHours())).slice(-2);
   const minute = ('0' + String(now.getMinutes())).slice(-2);
-  const year = String(now.getFullYear());
+  // const year = String(now.getFullYear());
 
   return `${random_name}-${hour}h${minute}-${day}-${month}`;
 }

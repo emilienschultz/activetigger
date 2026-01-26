@@ -59,8 +59,6 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
   availableFeatures,
   availableLabels,
   kindScheme,
-  featuresOption,
-  columns,
   isComputing,
 }) => {
   const { notify } = useNotifications();
