@@ -2,7 +2,6 @@ import { FC, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useDeleteBertModel, useDeleteQuickModel, useModelInformations } from '../core/api';
 import { useAppContext } from '../core/context';
-import { useNotifications } from '../core/notifications';
 import { sortDatesAsStrings } from '../core/utils';
 import { MLStatisticsModel } from '../types';
 import { DisplayScoresMenu } from './DisplayScoresMenu';
@@ -12,7 +11,6 @@ import { ValidateButtons } from './ValidateButton';
 
 export const ModelEvaluation: FC = () => {
   const { projectName: projectSlug } = useParams();
-  const { notify } = useNotifications();
   const {
     appContext: { currentScheme, currentProject, isComputing },
   } = useAppContext();
