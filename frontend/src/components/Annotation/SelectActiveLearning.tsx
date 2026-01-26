@@ -6,6 +6,7 @@ import Select from 'react-select';
 import { Tooltip } from 'react-tooltip';
 import { useRetrainQuickModel, useTrainQuickModel } from '../../core/api';
 import { useAppContext } from '../../core/context';
+import { sortDatesAsStrings } from '../../core/utils';
 import { useNotifications } from '../../core/notifications';
 import { ActiveModel } from '../../types';
 
@@ -59,7 +60,11 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
           value: e.name,
           label: e.name,
           type: 'quickmodel',
-        })),
+          time: e.time,
+        }))
+        .sort((quickModelA, quickModelB) =>
+          sortDatesAsStrings(quickModelA?.time, quickModelB?.time, true),
+        ),
     },
     {
       label: 'Language Models',
@@ -183,6 +188,8 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
   const setActiveQuickModel = (newValue: ActiveModel | null) => {
     setAppContext((prev) => ({ ...prev, activeModel: newValue }));
   };
+
+  console.log(`availableQuickModels: ${availableQuickModels}`, availableQuickModels);
 
   return (
     <Modal show={display} onHide={() => setActiveMenu(false)} id="active-modal" size="lg">
