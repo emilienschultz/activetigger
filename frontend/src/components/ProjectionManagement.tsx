@@ -23,7 +23,7 @@ import { useNotifications } from '../core/notifications';
 import { ElementOutModel, ProjectionParametersModel } from '../types';
 import { MulticlassInput } from './Annotation/MulticlassInput';
 import { MultilabelInput } from './Annotation/MultilabelInput';
-import { CreateNewFeature } from './forms/CreateNewFeature';
+import { ButtonNewFeature } from './ButtonNewFeature';
 import { ProjectionVizSigma } from './ProjectionVizSigma';
 import { MarqueBoundingBox } from './ProjectionVizSigma/MarqueeController';
 import { StopProcessButton } from './StopProcessButton';
@@ -70,7 +70,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
 
   // states for dynamic interactions
   const [forceRefresh, setForceRefresh] = useState<boolean>(false);
-  const [displayNewFeature, setDisplayNewFeature] = useState<boolean>(false);
   const [showComputeNewProjection, setShowComputeNewProjection] = useState<boolean>(false);
   const [showParameters, setShowParameters] = useState<boolean>(false);
 
@@ -382,14 +381,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                 )}
               />
             </div>
-            <button
-              type="button"
-              className="btn-secondary-action"
-              style={{ flex: '1 1 auto' }}
-              onClick={() => setDisplayNewFeature(true)}
-            >
-              <FaPlusCircle size={18} /> Add a new feature
-            </button>
+            <ButtonNewFeature projectSlug={projectName || ''} />
             <details>
               <summary>Advanced parameters</summary>
               <label htmlFor="model">Select a model</label>
@@ -446,23 +438,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
             </details>
             <button className="btn-submit">Compute</button>
           </form>
-        </Modal.Body>
-      </Modal>
-      <Modal
-        show={displayNewFeature}
-        id="features-modal"
-        onHide={() => setDisplayNewFeature(false)}
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Add a new feature</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <CreateNewFeature
-            projectName={projectName || ''}
-            featuresOption={project?.features.options || {}}
-            columns={project?.params.all_columns || []}
-            callback={() => setDisplayNewFeature(false)}
-          />
         </Modal.Body>
       </Modal>
       <Modal show={showParameters} id="parameters-modal" onHide={() => setShowParameters(false)}>

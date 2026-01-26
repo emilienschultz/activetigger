@@ -1,14 +1,11 @@
-import cx from 'classnames';
 import { FC, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { Modal } from 'react-bootstrap';
-import { FaPlusCircle } from 'react-icons/fa';
 import { useDeleteFeature, useGetFeatureInfo } from '../core/api';
 import { useAppContext } from '../core/context';
 import { sortDatesAsStrings } from '../core/utils';
 import { FeatureDescriptionModelOut } from '../types';
-import { CreateNewFeature } from './forms/CreateNewFeature';
+import { ButtonNewFeature } from './ButtonNewFeature';
 import { ModelParametersTab } from './ModelParametersTab';
 import { ModelsPillDisplay } from './ModelsPillDisplay';
 
@@ -39,7 +36,6 @@ export const FeaturesManagement: FC = () => {
   const deleteFeature = useDeleteFeature(projectName || null);
 
   // show the menu
-  const [showAddFeature, setShowAddFeature] = useState(false);
   const [selectedFeature, setSelectedFeature] = useState<string | null>(null);
 
   const deleteSelectedFeature = async (element: string) => {
@@ -60,13 +56,7 @@ export const FeaturesManagement: FC = () => {
         setCurrentModelName={setSelectedFeature}
         deleteModelFunction={deleteSelectedFeature}
       >
-        <button
-          onClick={() => setShowAddFeature(true)}
-          className={cx('model-pill ', isComputing ? 'disabled' : '')}
-          id="create-new"
-        >
-          <FaPlusCircle size={20} /> Create new feature
-        </button>
+        <ButtonNewFeature projectSlug={projectName || ''} />
       </ModelsPillDisplay>
       {/* Display computing features */}
       {Object.entries(project?.features.training).map(([key, element]) => (
@@ -80,19 +70,6 @@ export const FeaturesManagement: FC = () => {
       {featuresInfo &&
         selectedFeature &&
         SimpleTable(featuresInfo[selectedFeature] as FeatureDescriptionModelOut)}
-
-      <Modal show={showAddFeature} onHide={() => setShowAddFeature(false)} id="addfeature-modal">
-        <Modal.Header closeButton>
-          <Modal.Title>Add a new feature</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <CreateNewFeature
-            columns={project?.params.all_columns || []}
-            featuresOption={project.features.options || {}}
-            callback={setShowAddFeature}
-          />
-        </Modal.Body>
-      </Modal>
     </div>
   );
 };

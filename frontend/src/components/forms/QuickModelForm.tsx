@@ -1,11 +1,11 @@
 import { FC, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
-import { FaPlusCircle } from 'react-icons/fa';
 import Select from 'react-select';
 import { useTrainQuickModel } from '../../core/api';
 import { useNotifications } from '../../core/notifications';
 import { getRandomName } from '../../core/utils';
 import { QuickModelInModel } from '../../types';
+import { ButtonNewFeature } from '../ButtonNewFeature';
 
 interface QuickModelFormProps {
   projectSlug: string;
@@ -15,7 +15,6 @@ interface QuickModelFormProps {
   availableLabels: string[];
   baseQuickModels: Record<string, Record<string, number>>;
   setDisplayNewModel: (display: boolean) => void;
-  setDisplayNewFeature: (display: boolean) => void;
 }
 
 // build default features selected
@@ -32,7 +31,6 @@ export const QuickModelForm: FC<QuickModelFormProps> = ({
   availableLabels,
   baseQuickModels,
   setDisplayNewModel,
-  setDisplayNewFeature,
 }) => {
   const { notify } = useNotifications();
 
@@ -109,13 +107,7 @@ export const QuickModelForm: FC<QuickModelFormProps> = ({
       <input type="text" id="name" placeholder="Model name" {...register('name')} />
 
       <label htmlFor="features">Features used to predict (X)</label>
-      <button
-        type="button"
-        className="btn-secondary-action"
-        onClick={() => setDisplayNewFeature(true)}
-      >
-        <FaPlusCircle size={18} /> Add a new feature
-      </button>
+      <ButtonNewFeature projectSlug={projectSlug} />
       <Controller
         name="features"
         control={control}

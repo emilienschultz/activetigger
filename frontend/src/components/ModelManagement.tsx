@@ -25,7 +25,6 @@ import { ModelParametersTab } from './ModelParametersTab';
 import { ModelsPillDisplay } from './ModelsPillDisplay';
 import { StopProcessButton } from './StopProcessButton';
 import { ValidateButtons } from './ValidateButton';
-import { CreateNewFeature } from './forms/CreateNewFeature';
 import { ModelCreationForm } from './forms/ModelCreationForm';
 import { QuickModelForm } from './forms/QuickModelForm';
 import { LossChart } from './vizualisation/lossChart';
@@ -58,8 +57,6 @@ export const ModelManagement: FC = () => {
     currentScheme && currentProject && currentProject.schemes.available[currentScheme]
       ? currentProject.schemes.available[currentScheme].labels
       : [];
-  const featuresOption = currentProject?.features.options || {};
-  const columns = currentProject?.params.all_columns || [];
   const features = availableFeatures.map((e) => ({ value: e, label: e }));
 
   // quickmodel
@@ -131,7 +128,6 @@ export const ModelManagement: FC = () => {
   const { deleteQuickModel } = useDeleteQuickModel(projectSlug || null);
 
   // state for new feature
-  const [displayNewFeature, setDisplayNewFeature] = useState<boolean>(false);
   const [displayNewModel, setDisplayNewModel] = useState<boolean>(false);
 
   const [showParameters, setShowParameters] = useState(false);
@@ -327,27 +323,10 @@ export const ModelManagement: FC = () => {
             features={features}
             availableLabels={availableLabels}
             setDisplayNewModel={setDisplayNewModel}
-            setDisplayNewFeature={setDisplayNewFeature}
           />
         </Modal.Body>
       </Modal>
-      <Modal
-        show={displayNewFeature}
-        id="features-modal"
-        size="xl"
-        onHide={() => setDisplayNewFeature(false)}
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Add a new feature</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <CreateNewFeature
-            projectName={projectSlug || ''}
-            featuresOption={featuresOption}
-            columns={columns}
-          />
-        </Modal.Body>
-      </Modal>
+
       <Modal show={showParameters} id="parameters-modal" onHide={() => setShowParameters(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Parameters of {currentQuickModelName}</Modal.Title>

@@ -9,6 +9,7 @@ import { useAppContext } from '../../core/context';
 import { useNotifications } from '../../core/notifications';
 import { sortDatesAsStrings } from '../../core/utils';
 import { ActiveModel } from '../../types';
+import { ButtonNewFeature } from '../ButtonNewFeature';
 
 interface SelectActiveLearningProps {
   display: boolean;
@@ -197,13 +198,14 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
       </Modal.Header>
       <Modal.Body>
         {availableFeatures.length === 0 && (
-          <div className="alert alert-warning">
-            No features available for quickmodel. Create a feature first.
+          <div>
+            <div>No features available for quickmodel</div>
+            <ButtonNewFeature projectSlug={projectSlug || ''} />
           </div>
         )}
-        {availableQuickModels.length + Object.keys(availableBertModels).length > 0 ? (
+        {availableQuickModels.length + Object.keys(availableBertModels).length > 0 && (
           <>
-            <div className="horizontal">
+            <div>
               <Select
                 options={groupedModels}
                 value={activeModel}
@@ -258,7 +260,9 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
               </div>
             )}
           </>
-        ) : (
+        )}
+
+        {availableQuickModels.length === 0 && availableFeatures.length > 0 && (
           <>
             <div className="horizontal center">
               No quick model currently available. Go to model tab or
