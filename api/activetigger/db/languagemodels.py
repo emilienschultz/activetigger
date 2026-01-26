@@ -153,6 +153,24 @@ class ModelsService:
         session.commit()
         session.close()
         return {"success": "model renamed"}
+    
+    
+    def change_time_after_retrain(self, project_slug: str, model_name: str):
+        session = self.SessionMaker()
+        # get and rename
+        model = (
+            session.query(Models)
+            .filter(Models.name == model_name, Models.project_slug == project_slug)
+            .first()
+        )
+        if model is None:
+            raise DBException("Model not found")
+
+        model.time = datetime.datetime.now()
+        session.commit()
+        session.close()
+        return {"success": "Time Refreshed"}
+    
 
     def set_model_params(self, project_slug: str, name: str, flag: str, value):
         session = self.SessionMaker()
