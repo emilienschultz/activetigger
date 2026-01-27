@@ -269,9 +269,6 @@ class PredictBert(BaseTask):
             else:
                 metrics = None
 
-            return ReturnTaskPredictModel(
-                path=str(self.path.joinpath(self.file_name)), metrics=metrics
-            )
         except Exception as e:
             print("Error in prediction", e)
             raise e
@@ -285,3 +282,7 @@ class PredictBert(BaseTask):
                 torch.cuda.synchronize()
                 torch.cuda.empty_cache()
                 torch.cuda.ipc_collect()
+
+        return ReturnTaskPredictModel(
+            path=str(self.path.joinpath(self.file_name)), metrics=metrics
+        )
