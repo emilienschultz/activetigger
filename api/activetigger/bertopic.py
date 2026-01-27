@@ -220,7 +220,7 @@ class Bertopic:
         if path_model.exists():
             df = pd.read_csv(path_model.joinpath("bertopic_topics.csv"), index_col=0)
             df.columns = df.columns.astype(str)
-            df_list = df.to_dict(orient="records")
+            df_list = df.reset_index().to_dict(orient="records")
             return [TopicsOutModel(**item) for item in df_list]  # type: ignore
         else:
             raise FileNotFoundError(f"Model {name} does not exist.")
@@ -270,7 +270,7 @@ class Bertopic:
         labels = {}
         if path_model.exists():
             df = pd.read_csv(path_model.joinpath("bertopic_topics.csv"), index_col=0)
-            labels = dict(df[["Topic", "Name"]].set_index("Topic")["Name"])
+            labels = dict(df["Name"])
         return {
             "x": projection["x"].tolist(),
             "y": projection["y"].tolist(),
