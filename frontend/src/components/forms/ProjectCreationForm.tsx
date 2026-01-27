@@ -1,4 +1,4 @@
-import { omit } from 'lodash';
+import { omit, random } from 'lodash';
 import { FC, useEffect, useState } from 'react';
 import DataTable from 'react-data-table-component';
 import { Controller, SubmitHandler, useForm, useWatch } from 'react-hook-form';
@@ -64,6 +64,7 @@ export const ProjectCreationForm: FC = () => {
       language: 'en',
       clear_test: false,
       random_selection: true,
+      seed: random(0, 10000),
       force_label: false,
     },
   });
@@ -628,7 +629,7 @@ export const ProjectCreationForm: FC = () => {
                   />
                   <label htmlFor="clear_test">Drop annotations for the testset </label>
                 </div>
-                <div>
+                <label htmlFor="clear_test">
                   <input
                     id="compute_feature"
                     type="checkbox"
@@ -638,8 +639,26 @@ export const ProjectCreationForm: FC = () => {
                       setComputeFeatures(!computeFeatures);
                     }}
                   />
-                  <label htmlFor="clear_test">Compute default sentence-bert feature </label>
-                </div>
+                  Compute embeddings
+                </label>
+                <label htmlFor="n_valid" className="d-flex align-items-center">
+                  Seed
+                  <a className="ref_seed">
+                    <HiOutlineQuestionMarkCircle />
+                  </a>
+                  <Tooltip anchorSelect=".ref_seed" place="top">
+                    If you want to have always the same selection, set a seed (any integer)
+                  </Tooltip>
+                  <input
+                    id="seed"
+                    type="number"
+                    disabled={creatingProject}
+                    {...register('seed')}
+                    min={0}
+                    step={1}
+                    className="w-25 ms-3"
+                  />
+                </label>
               </details>
             </>
           )

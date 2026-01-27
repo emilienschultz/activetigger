@@ -31,7 +31,7 @@ class CreateProject(BaseTask):
         random_seed: int = 42,
     ):
         super().__init__()
-        self.random_seed = random_seed
+        self.random_seed = params.seed if hasattr(params, "seed") else random_seed
         self.project_slug = project_slug
         self.params = params
         self.username = username
