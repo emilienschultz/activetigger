@@ -84,6 +84,7 @@ class ProjectBaseModel(BaseModel):
     stratify_test: bool = False
     force_label: bool = False
     force_computation: bool = False
+    seed: int = 42
 
 
 class ProjectModel(ProjectBaseModel):

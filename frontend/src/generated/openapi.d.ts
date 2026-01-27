@@ -2830,6 +2830,11 @@ export interface components {
              * @default false
              */
             force_computation: boolean;
+            /**
+             * Seed
+             * @default 42
+             */
+            seed: number;
         };
         /**
          * ProjectDescriptionModel
@@ -2967,6 +2972,11 @@ export interface components {
              * @default false
              */
             force_computation: boolean;
+            /**
+             * Seed
+             * @default 42
+             */
+            seed: number;
             /** Project Slug */
             project_slug: string;
             /** All Columns */
@@ -3046,7 +3056,7 @@ export interface components {
             labels?: string[] | null;
             /** Predictions */
             predictions?: string[] | null;
-            model?: components["schemas"]["ActiveModel"] | null;
+            active_model?: components["schemas"]["ActiveModel"] | null;
         };
         /**
          * ProjectionParametersModel
@@ -4101,17 +4111,15 @@ export interface operations {
         parameters: {
             query: {
                 scheme: string;
+                model_name?: string | null;
+                model_type?: string | null;
                 project_slug: string;
             };
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["ActiveModel"] | null;
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {

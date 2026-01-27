@@ -48,7 +48,7 @@ interface ModelParametersTabProps {
 
 export const ModelParametersTab: FC<ModelParametersTabProps> = ({ params }) => {
   return (
-    <table id="parameter-tables-thin">
+    <table id="parameter-tables-thin w-100">
       <thead>
         <tr>
           <th scope="col">Key</th>

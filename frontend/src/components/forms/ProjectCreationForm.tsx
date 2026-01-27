@@ -1,4 +1,4 @@
-import { omit } from 'lodash';
+import { omit, random } from 'lodash';
 import { FC, useEffect, useState } from 'react';
 import DataTable from 'react-data-table-component';
 import { Controller, SubmitHandler, useForm, useWatch } from 'react-hook-form';
@@ -64,6 +64,7 @@ export const ProjectCreationForm: FC = () => {
       language: 'en',
       clear_test: false,
       random_selection: true,
+      seed: random(0, 10000),
       force_label: false,
     },
   });
@@ -135,6 +136,7 @@ export const ProjectCreationForm: FC = () => {
         }
         setData(data);
         setValue('n_train', Math.min(data?.data.length || 0, 100));
+        setValue('seed', random(0, 10000));
       });
     }
   }, [files, maxSize, notify, setValue]);
@@ -468,6 +470,7 @@ export const ProjectCreationForm: FC = () => {
                 disabled={creatingProject}
                 {...register('n_train')}
                 max={maxTrainSet}
+                min={1}
               />
 
               <div className="explanations">
@@ -495,6 +498,7 @@ export const ProjectCreationForm: FC = () => {
                 type="number"
                 disabled={creatingProject}
                 {...register('n_valid')}
+                min={0}
               />
 
               <label htmlFor="n_test">
@@ -506,7 +510,13 @@ export const ProjectCreationForm: FC = () => {
                   The test set will be used at the end for the final evaluation
                 </Tooltip>
               </label>
-              <input id="n_test" type="number" disabled={creatingProject} {...register('n_test')} />
+              <input
+                id="n_test"
+                type="number"
+                disabled={creatingProject}
+                {...register('n_test')}
+                min={0}
+              />
 
               <details>
                 <summary>Advanced options</summary>
@@ -620,7 +630,7 @@ export const ProjectCreationForm: FC = () => {
                   />
                   <label htmlFor="clear_test">Drop annotations for the testset </label>
                 </div>
-                <div>
+                <label htmlFor="clear_test">
                   <input
                     id="compute_feature"
                     type="checkbox"
@@ -630,8 +640,26 @@ export const ProjectCreationForm: FC = () => {
                       setComputeFeatures(!computeFeatures);
                     }}
                   />
-                  <label htmlFor="clear_test">Compute default sentence-bert feature </label>
-                </div>
+                  Compute embeddings
+                </label>
+                <label htmlFor="n_valid" className="d-flex align-items-center">
+                  Seed
+                  <a className="ref_seed">
+                    <HiOutlineQuestionMarkCircle />
+                  </a>
+                  <Tooltip anchorSelect=".ref_seed" place="top">
+                    If you want to have always the same selection, set a seed (any integer)
+                  </Tooltip>
+                  <input
+                    id="seed"
+                    type="number"
+                    disabled={creatingProject}
+                    {...register('seed')}
+                    min={0}
+                    step={1}
+                    className="w-25 ms-3"
+                  />
+                </label>
               </details>
             </>
           )

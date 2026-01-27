@@ -338,9 +338,6 @@ class Features:
     def get_available(self) -> dict[str, FeatureDescriptionModelOut]:
         """
         Informations on features + update
-        Comments:
-            Maybe not the best solution
-            Database ? How to avoid a loop ...
         """
         return self.projects_service.get_project_features(self.project_slug)
 
@@ -376,7 +373,7 @@ class Features:
     def compute(self, df: pd.Series, name: str, kind: str, parameters: dict, username: str):
         """
         Compute new feature
-        TODO : manage better the queue launching
+        TODO : the parameters management is really bad
         """
         if len(self.current_user_processes(username)) > 0:
             raise ValueError("A process is already running")
@@ -388,16 +385,12 @@ class Features:
         if self.exists(name):
             raise ValueError("This regex already exists")
 
-        # features without queue
-
         if kind == "regex":
             if "value" not in parameters:
                 raise ValueError("No value for regex")
 
             pattern = re.compile(parameters["value"])
             f = df.apply(lambda x: bool(pattern.search(x)))
-            parameters["count"] = int(f.sum())
-            self.add(name, kind, username, parameters, f)
             parameters = {
                 "name": name,
                 "kind": kind,
@@ -405,6 +398,8 @@ class Features:
                 "count": int(f.sum()),
                 "username": username,
             }
+            self.add(name, kind, username, parameters, f)
+            return None
 
         if kind == "dataset":
             # get the raw column for the train set
@@ -422,7 +417,6 @@ class Features:
                 column = column.apply(str)
 
             # add the feature to the project
-            self.add(name, kind, username, parameters, column)
             parameters = {
                 "name": name,
                 "kind": kind,
@@ -430,6 +424,8 @@ class Features:
                 "dataset_type": parameters["dataset_type"],
                 "username": username,
             }
+            self.add(name, kind, username, parameters, column)
+            return None
 
         # features with queue
         unique_id = None
@@ -494,8 +490,13 @@ class Features:
             parameters = {
                 "name": name,
                 "kind": kind,
-                "parameters": parameters,
                 "username": username,
+                "tfidf": parameters.get("dfm_tfidf", False),
+                "dfm_ngrams": parameters.get("dfm_ngrams", 1),
+                "dfm_max_term_freq": parameters.get("dfm_max_term_freq", 100),
+                "dfm_min_term_freq": parameters.get("dfm_min_term_freq", 5),
+                "dfm_norm": parameters.get("dfm_norm", None),
+                "dfm_log": parameters.get("dfm_log", None),
             }
 
         if unique_id:
@@ -510,7 +511,7 @@ class Features:
                     time=datetime.now(),
                 )
             )
-            return {"success": "Feature in training"}
+            return None
         raise ValueError("Error in the process")
 
     def computing_progress(self, unique_id: str) -> str | None:

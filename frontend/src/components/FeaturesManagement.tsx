@@ -11,15 +11,13 @@ import { ModelsPillDisplay } from './ModelsPillDisplay';
 
 export default function SimpleTable(data: FeatureDescriptionModelOut) {
   return (
-    <ModelParametersTab
-      params={{
-        Name: data.name,
-        User: data.user,
-        Time: data.time,
-        Kind: data.kind,
-        ...data.parameters,
-      }}
-    />
+    <div className="m-3 w-75">
+      <ModelParametersTab
+        params={{
+          ...data.parameters,
+        }}
+      />
+    </div>
   );
 }
 
