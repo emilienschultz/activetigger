@@ -136,6 +136,7 @@ export const ProjectCreationForm: FC = () => {
         }
         setData(data);
         setValue('n_train', Math.min(data?.data.length || 0, 100));
+        setValue('seed', random(0, 10000));
       });
     }
   }, [files, maxSize, notify, setValue]);
