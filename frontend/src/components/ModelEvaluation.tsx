@@ -54,11 +54,11 @@ export const ModelEvaluation: FC = () => {
 
   // reFetch when model or isComputing change
   useEffect(() => {
-    reFetchBertModelInformations();
-  }, [reFetchBertModelInformations, currentBertModel, isComputing]);
+    if (currentBertModel) reFetchBertModelInformations();
+  }, [currentBertModel, isComputing, reFetchBertModelInformations, currentProject]);
   useEffect(() => {
-    reFetchQuickModelInformations();
-  }, [reFetchQuickModelInformations, currentQuickModelName, isComputing]);
+    if (currentQuickModelName) reFetchQuickModelInformations();
+  }, [currentQuickModelName, isComputing, reFetchQuickModelInformations, currentProject]);
 
   return (
     <div>

@@ -35,8 +35,8 @@ export const ValidateButtons: FC<validateButtonsProps> = ({
       className={cx(className ? className : 'btn-primary-action')}
       style={style ? style : { color: 'white' }}
       onClick={() => {
-        computeModelPrediction(modelName || '', 'annotable', currentScheme || '', kind);
         setAppContext((prev) => ({ ...prev, isComputing: true }));
+        computeModelPrediction(modelName || '', 'annotable', currentScheme || '', kind);
       }}
       id={id}
       disabled={isComputing}

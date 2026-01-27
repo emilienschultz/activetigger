@@ -463,6 +463,9 @@ class QuickModels:
         Informations on the bert model from the files
         """
 
+        if not self.exists(model_name):
+            raise Exception(f"The model {model_name} does not exist")
+
         # params = self.get_parameters(model_name)
         metrics = get_model_metrics(self.path.joinpath(model_name))
         if metrics is None:

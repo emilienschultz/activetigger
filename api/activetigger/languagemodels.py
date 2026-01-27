@@ -514,6 +514,9 @@ class LanguageModels:
         Informations on the bert model from the files
         """
 
+        if not self.exists(model_name):
+            raise Exception(f"The model {model_name} does not exist")
+
         metrics = get_model_metrics(self.path.joinpath(model_name))
         if metrics is None:
             metrics = {}

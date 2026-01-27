@@ -468,6 +468,7 @@ export const ProjectCreationForm: FC = () => {
                 disabled={creatingProject}
                 {...register('n_train')}
                 max={maxTrainSet}
+                min={1}
               />
 
               <div className="explanations">
@@ -495,6 +496,7 @@ export const ProjectCreationForm: FC = () => {
                 type="number"
                 disabled={creatingProject}
                 {...register('n_valid')}
+                min={0}
               />
 
               <label htmlFor="n_test">
@@ -506,7 +508,13 @@ export const ProjectCreationForm: FC = () => {
                   The test set will be used at the end for the final evaluation
                 </Tooltip>
               </label>
-              <input id="n_test" type="number" disabled={creatingProject} {...register('n_test')} />
+              <input
+                id="n_test"
+                type="number"
+                disabled={creatingProject}
+                {...register('n_test')}
+                min={0}
+              />
 
               <details>
                 <summary>Advanced options</summary>
