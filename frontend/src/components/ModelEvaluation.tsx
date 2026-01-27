@@ -37,14 +37,6 @@ export const ModelEvaluation: FC = () => {
   const { model: quickModelInformations, reFetch: reFetchQuickModelInformations } =
     useModelInformations(projectSlug || null, currentQuickModelName || null, 'quick', isComputing);
 
-  // refetch model informations when computation is done
-  useEffect(() => {
-    if (!isComputing) {
-      reFetchBertModelInformations();
-      reFetchQuickModelInformations();
-    }
-  }, [isComputing, reFetchBertModelInformations, reFetchQuickModelInformations]);
-
   // meta selector
   const [currentModel, setCurrentModel] = useState<{ name: string; kind: string } | null>(null);
   useEffect(() => {
@@ -59,6 +51,14 @@ export const ModelEvaluation: FC = () => {
       setCurrentQuickModelName(null);
     }
   }, [currentBertModel]);
+
+  // reFetch when model or isComputing change
+  useEffect(() => {
+    reFetchBertModelInformations();
+  }, [reFetchBertModelInformations, currentBertModel, isComputing]);
+  useEffect(() => {
+    reFetchQuickModelInformations();
+  }, [reFetchQuickModelInformations, currentQuickModelName, isComputing]);
 
   return (
     <div>
