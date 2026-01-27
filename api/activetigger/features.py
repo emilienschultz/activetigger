@@ -388,8 +388,6 @@ class Features:
         if self.exists(name):
             raise ValueError("This regex already exists")
 
-        # features without queue
-
         if kind == "regex":
             if "value" not in parameters:
                 raise ValueError("No value for regex")
@@ -405,6 +403,7 @@ class Features:
                 "count": int(f.sum()),
                 "username": username,
             }
+            return None
 
         if kind == "dataset":
             # get the raw column for the train set
@@ -430,6 +429,7 @@ class Features:
                 "dataset_type": parameters["dataset_type"],
                 "username": username,
             }
+            return None
 
         # features with queue
         unique_id = None
@@ -510,7 +510,7 @@ class Features:
                     time=datetime.now(),
                 )
             )
-            return {"success": "Feature in training"}
+            return None
         raise ValueError("Error in the process")
 
     def computing_progress(self, unique_id: str) -> str | None:
