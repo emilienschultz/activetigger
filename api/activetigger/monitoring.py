@@ -1,3 +1,4 @@
+from typing import Any
 from datetime import datetime
 
 import pandas as pd
@@ -43,6 +44,7 @@ class Monitoring:
     def close_process(
         self,
         process_name: str,
+        additional_events : dict[str:Any] = None
     ) -> None:
         """
         Close a monitored process
@@ -52,6 +54,20 @@ class Monitoring:
             raise ValueError(f"Process {process_name} not found")
         events = start_entry.events
         events["end"] = datetime.now().isoformat()
+
+        if isinstance(additional_events, dict):
+            # If additional events are passed on 
+            if  ("start" in additional_events.keys()) or \
+                ("end" in additional_events.keys()):
+                # We do not want to overwrite the "start"; "end" keys, so we remove them prior to merging
+                additional_events = {
+                    key:value 
+                    for key, value in additional_events.items() 
+                    if not(key in ["start", "end"])
+                }
+            # Merge the events with the additional events
+            events.update(additional_events)
+
 
         duration = (datetime.now() - start_entry.time).total_seconds()
 
