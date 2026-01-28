@@ -26,10 +26,11 @@ from transformers import (  # type: ignore[import]  # type: ignore[import]
 )
 
 from activetigger.config import config
-from activetigger.datamodels import LMParametersModel, MLStatisticsModel
+from activetigger.datamodels import LMParametersModel, MLStatisticsModel, ReturnTaskTrainModel
 from activetigger.functions import get_metrics
 from activetigger.tasks.base_task import BaseTask
 from activetigger.tasks.utils import length_after_tokenizing, retrieve_model_max_length
+from activetigger.tasks.TaskTimer import TaskTimer
 
 pd.set_option("future.no_silent_downcasting", True)
 
@@ -423,6 +424,9 @@ class TrainBert(BaseTask):
         """
         Main process to the task
         """
+        task_timer = TaskTimer(compulsory_steps=["setup", "train","evaluate", "save_files"])
+        task_timer.start("setup")
+
         current_path, log_path = self.__init_paths()
         self.logger = self.__init_logger(log_path)
         device = self.__init_device()
@@ -457,11 +461,15 @@ class TrainBert(BaseTask):
         try:
             trainer = self.__load_trainer(current_path, self.ds, bert_model, 
                 self.params, self.loss)
+            task_timer.stop("setup")
             
+            task_timer.start("train")
             trainer.train()  # type: ignore[attr-defined]
             self.logger.info(f"Model trained {current_path}")
+            task_timer.stop("train")
 
             # predict on the data (separation validation set and training set)
+            task_timer.start("evaluate")
             predictions_test  = trainer.predict(self.ds["test"]) # type: ignore[attr-defined]
             predictions_train = trainer.predict(self.ds["train"])# type: ignore[attr-defined]
 
@@ -488,7 +496,9 @@ class TrainBert(BaseTask):
                 texts=df_test_results["text"],
                 labels=labels,
             )
+            task_timer.stop("evaluate")
             
+            task_timer.start("save_files")
             params_to_save = self.params.model_dump()
             params_to_save.update({
                 "test_size" : self.test_size,
@@ -509,6 +519,7 @@ class TrainBert(BaseTask):
                 metrics_train = metrics_train,
                 metrics_test = metrics_test
             )
+            task_timer.stop("save_files")
 
         except Exception as e:
             print("Error in training", e)
@@ -535,4 +546,4 @@ class TrainBert(BaseTask):
                 print("Error in cleaning memory", e)
                 raise e
         
-        return None
+        return ReturnTaskTrainModel(additional_events=task_timer.get_events())

@@ -1039,6 +1039,9 @@ class ReturnTaskPredictModel(BaseModel):
 class ReturnTaskTrainML(BaseModel):
     additional_events : dict
 
+class ReturnTaskTrainModel(BaseModel):
+    additional_events : dict
+
 class ModelScoresModel(BaseModel):
     internalvalid_scores: dict | None = None
     train_scores: dict | None = None
