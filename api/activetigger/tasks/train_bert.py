@@ -7,7 +7,7 @@ import shutil
 from collections import Counter
 from logging import Logger
 from pathlib import Path
-from typing import Optional, Tuple, Any
+from typing import Any, Optional, Tuple
 
 import datasets  # type: ignore[import]  # type: ignore[import]
 import numpy as np
@@ -26,11 +26,11 @@ from transformers import (  # type: ignore[import]  # type: ignore[import]
 )
 
 from activetigger.config import config
-from activetigger.datamodels import LMParametersModel, MLStatisticsModel, ReturnTaskTrainModel
+from activetigger.datamodels import EventsModel, LMParametersModel, MLStatisticsModel
 from activetigger.functions import get_metrics
+from activetigger.monitoring import TaskTimer
 from activetigger.tasks.base_task import BaseTask
 from activetigger.tasks.utils import length_after_tokenizing, retrieve_model_max_length
-from activetigger.tasks.TaskTimer import TaskTimer
 
 pd.set_option("future.no_silent_downcasting", True)
 
@@ -180,7 +180,7 @@ class TrainBert(BaseTask):
         logger.info(f"Start {self.base_model}")
         return logger
 
-    def __init_device(self)->torch.device:
+    def __init_device(self) -> torch.device:
         """Choose the device, first try to use cuda, then mps and finally cpu"""
         # Pick up the type of memory to use
         if torch.cuda.is_available():
@@ -194,7 +194,7 @@ class TrainBert(BaseTask):
             device = torch.device("cpu")
             print("Using CPU for computation")
         return device
-    
+
     def __check_data(self, df: pd.DataFrame, col_label: str, col_text: str) -> pd.DataFrame:
         """Remove rows missing labels or text"""
         df = df.copy()
@@ -208,51 +208,48 @@ class TrainBert(BaseTask):
             df = df[df[col_text].notnull()]
             self.logger.info(f"Missing texts - reducing training data to {len(df)}")
         return df
-    
-    def __retrieve_labels(self, df : pd.DataFrame, col_label):
+
+    def __retrieve_labels(self, df: pd.DataFrame, col_label):
         # formatting data
         # alphabetical order
         labels = sorted(list(df[col_label].dropna().unique()))
 
-        if len(labels) <2: 
+        if len(labels) < 2:
             raise ValueError(
-                (f"Not enough classes. Either you excluded classes or there are "
-                 f"not enough annotations.")
+                "Not enough classes. Either you excluded classes or there are not enough annotations."
             )
 
         label2id = {j: i for i, j in enumerate(labels)}
         id2label = {i: j for i, j in enumerate(labels)}
         return labels, label2id, id2label
-    
-    def __transform_to_dataset(self, 
-        df: pd.DataFrame, 
-        col_label: str, 
-        col_text: str, 
-        label2id: dict[str:int]
+
+    def __transform_to_dataset(
+        self, df: pd.DataFrame, col_label: str, col_text: str, label2id: dict[str, int]
     ) -> datasets.Dataset:
-        """Transform the dataframe into a dataset with the right format for 
+        """Transform the dataframe into a dataset with the right format for
         training"""
         df = df.copy()
         df["text"] = df[col_text]
         df["labels"] = df[col_label].copy().replace(label2id)
         return datasets.Dataset.from_pandas(df[["text", "labels"]])
-    
-    def __load_tokenizer(self, base_model : str):
+
+    def __load_tokenizer(self, base_model: str):
         """Load the tokenize"""
         return AutoTokenizer.from_pretrained(base_model, trust_remote_code=True)
-    
-    def __cap_tokenizer_max_length(self, 
-        texts : pd.Series, 
-        tokenizer, 
-        auto_max_length: bool, 
+
+    def __cap_tokenizer_max_length(
+        self,
+        texts: pd.Series,
+        tokenizer,
+        auto_max_length: bool,
         original_max_length: int,
         base_model_max_length: int,
-        adapt: bool
-    ) -> None:
+        adapt: bool,
+    ) -> Tuple[Any, int]:
         """Cap the tokenizer max length and create a tokenizing function"""
         # if auto_max_length set max_length to the maximum length of tokenized sentences
         # Tokenize the text column
-        get_n_tokens = lambda txt: length_after_tokenizing(txt,tokenizer)
+        get_n_tokens = lambda txt: length_after_tokenizing(txt, tokenizer)
         if auto_max_length:
             max_length = int(texts.apply(get_n_tokens).dropna().max())
 
@@ -260,12 +257,7 @@ class TrainBert(BaseTask):
         max_length = min(original_max_length, base_model_max_length)
         # evaluate the proportion of elements truncated
         percentage_truncated = int(
-            100 * 
-            texts
-            .apply(get_n_tokens)
-            .dropna()
-            .apply(lambda x: x > max_length)
-            .mean()
+            100 * texts.apply(get_n_tokens).dropna().apply(lambda x: x > max_length).mean()
         )
 
         if adapt:
@@ -275,7 +267,7 @@ class TrainBert(BaseTask):
                 padding=True,
                 return_tensors="pt",
                 max_length=int(self.max_length),
-            )   
+            )
         else:
             tokenizing_function = lambda e: tokenizer(
                 e["text"],
@@ -286,13 +278,14 @@ class TrainBert(BaseTask):
             )
         return tokenizing_function, percentage_truncated
 
-    def __load_trainer(self, 
-            current_path: Path, 
-            ds: datasets.DatasetDict,
-            bert_model, 
-            params: LMParametersModel,
-            loss: str
-        ) -> Trainer:
+    def __load_trainer(
+        self,
+        current_path: Path,
+        ds: datasets.DatasetDict,
+        bert_model,
+        params: LMParametersModel,
+        loss: str,
+    ) -> Trainer:
         """Load the training arguments and update the configuration"""
 
         # Calculate the number of steps (total, warmup and eval)
@@ -309,18 +302,15 @@ class TrainBert(BaseTask):
             # Directories
             output_dir=str(current_path.joinpath("train")),
             logging_dir=str(current_path.joinpath("logs")),
-
             # Hyperparameters
             learning_rate=float(params.lrate),
             weight_decay=float(params.wdecay),
             num_train_epochs=float(params.epochs),
             warmup_steps=int(warmup_steps),
-
             # Batch sizes
             gradient_accumulation_steps=int(params.gradacc),
             per_device_train_batch_size=int(params.batchsize),
             per_device_eval_batch_size=int(params.batchsize),
-
             # Logging and saving parameters
             eval_strategy="steps",
             eval_steps=eval_steps,
@@ -357,31 +347,32 @@ class TrainBert(BaseTask):
             raise ValueError(f"Loss function {loss} not recognized.")
 
         return trainer
-    
-    def __create_save_files(self, 
-            current_path: Path,
-            log_path : Path,
-            df_train_results : pd.DataFrame,
-            df_test_results : pd.DataFrame,
-            training_data : pd.DataFrame,
-            bert_model,
-            params_to_save: dict[str:Any],
-            metrics_train: MLStatisticsModel,
-            metrics_test: MLStatisticsModel,
-        ) -> None:
+
+    def __create_save_files(
+        self,
+        current_path: Path,
+        log_path: Path,
+        df_train_results: pd.DataFrame,
+        df_test_results: pd.DataFrame,
+        training_data: pd.DataFrame,
+        bert_model,
+        params_to_save: dict[str, Any],
+        metrics_train: MLStatisticsModel,
+        metrics_test: MLStatisticsModel,
+    ) -> None:
         """Save the model and parameters
-        Save the following objects: 
+        Save the following objects:
         - predictions of the train set (csv)
         - predictions of the test set  (csv)
         - data used during the training (parquet)
-        - the trained model 
+        - the trained model
         - the parameters used during the training (json)
         - metrics (json)
 
         Also delete intermediate files
         """
 
-        # Save results for the train and test set 
+        # Save results for the train and test set
         df_train_results[["true_label", "predicted_label"]].to_csv(
             current_path.joinpath("train_dataset_eval.csv")
         )
@@ -389,7 +380,6 @@ class TrainBert(BaseTask):
             current_path.joinpath("test_dataset_eval.csv")
         )
         training_data.to_parquet(current_path.joinpath("training_data.parquet"))
-
 
         # save the trained bert model
         bert_model.save_pretrained(current_path)
@@ -420,11 +410,11 @@ class TrainBert(BaseTask):
                 f,
             )
 
-    def __call__(self) -> None:
+    def __call__(self) -> EventsModel:
         """
         Main process to the task
         """
-        task_timer = TaskTimer(compulsory_steps=["setup", "train","evaluate", "save_files"])
+        task_timer = TaskTimer(compulsory_steps=["setup", "train", "evaluate", "save_files"])
         task_timer.start("setup")
 
         current_path, log_path = self.__init_paths()
@@ -433,36 +423,40 @@ class TrainBert(BaseTask):
 
         self.df = self.__check_data(self.df, self.col_label, self.col_text)
         labels, label2id, id2label = self.__retrieve_labels(self.df, self.col_label)
-        self.ds = self.__transform_to_dataset(self.df, self.col_label, self.col_text, 
-            label2id)
-        
+        self.ds = self.__transform_to_dataset(self.df, self.col_label, self.col_text, label2id)
+
         tokenizer = self.__load_tokenizer(self.base_model)
         tokenizing_function, percentage_truncated = self.__cap_tokenizer_max_length(
-            texts = self.df[self.col_text],
-            tokenizer = tokenizer,
+            texts=self.df[self.col_text],
+            tokenizer=tokenizer,
             auto_max_length=self.auto_max_length,
             original_max_length=self.max_length,
-            base_model_max_length = retrieve_model_max_length(self.base_model),
-            adapt = self.params.adapt
+            base_model_max_length=retrieve_model_max_length(self.base_model),
+            adapt=self.params.adapt,
         )
         self.ds = self.ds.map(tokenizing_function, batched=True)
-        
 
         # Build train/test dataset for dev eval
         self.ds = self.ds.train_test_split(test_size=self.test_size)  # stratify_by_column="label"
         self.logger.info("Train/test dataset created")
 
         # Model
-        bert_model = AutoModelForSequenceClassification.from_pretrained(self.base_model,
-            num_labels=len(labels),id2label=id2label,label2id=label2id,trust_remote_code=True,
+        bert_model = AutoModelForSequenceClassification.from_pretrained(
+            self.base_model,
+            num_labels=len(labels),
+            id2label=id2label,
+            label2id=label2id,
+            trust_remote_code=True,
         )
-        self.logger.info("Model loaded"); print("Model loaded")
+        self.logger.info("Model loaded")
+        print("Model loaded")
 
         try:
-            trainer = self.__load_trainer(current_path, self.ds, bert_model, 
-                self.params, self.loss)
+            trainer = self.__load_trainer(
+                current_path, self.ds, bert_model, self.params, self.loss or "cross_entropy"
+            )
             task_timer.stop("setup")
-            
+
             task_timer.start("train")
             trainer.train()  # type: ignore[attr-defined]
             self.logger.info(f"Model trained {current_path}")
@@ -470,8 +464,8 @@ class TrainBert(BaseTask):
 
             # predict on the data (separation validation set and training set)
             task_timer.start("evaluate")
-            predictions_test  = trainer.predict(self.ds["test"]) # type: ignore[attr-defined]
-            predictions_train = trainer.predict(self.ds["train"])# type: ignore[attr-defined]
+            predictions_test = trainer.predict(self.ds["test"])  # type: ignore[attr-defined]
+            predictions_train = trainer.predict(self.ds["train"])  # type: ignore[attr-defined]
 
             # Compute the metrics
             df_train_results = self.ds["train"].to_pandas().set_index("id")
@@ -497,27 +491,29 @@ class TrainBert(BaseTask):
                 labels=labels,
             )
             task_timer.stop("evaluate")
-            
+
             task_timer.start("save_files")
             params_to_save = self.params.model_dump()
-            params_to_save.update({
-                "test_size" : self.test_size,
-                "base_model" : self.base_model,
-                "n_train" : len(self.ds["train"]),
-                "max_length" : self.max_length,
-                "device" : str(device),
-                "Proportion of elements truncated (%)" : percentage_truncated,
-            })
+            params_to_save.update(
+                {
+                    "test_size": self.test_size,
+                    "base_model": self.base_model,
+                    "n_train": len(self.ds["train"]),
+                    "max_length": self.max_length,
+                    "device": str(device),
+                    "Proportion of elements truncated (%)": percentage_truncated,
+                }
+            )
             self.__create_save_files(
-                current_path = current_path,
-                log_path = log_path,
-                df_train_results = df_train_results, 
-                df_test_results = df_test_results,
-                training_data = self.df[[self.col_text, self.col_label]],
-                bert_model = bert_model, 
-                params_to_save = params_to_save,
-                metrics_train = metrics_train,
-                metrics_test = metrics_test
+                current_path=current_path,
+                log_path=log_path,
+                df_train_results=df_train_results,
+                df_test_results=df_test_results,
+                training_data=self.df[[self.col_text, self.col_label]],
+                bert_model=bert_model,
+                params_to_save=params_to_save,
+                metrics_train=metrics_train,
+                metrics_test=metrics_test,
             )
             task_timer.stop("save_files")
 
@@ -545,5 +541,5 @@ class TrainBert(BaseTask):
             except Exception as e:
                 print("Error in cleaning memory", e)
                 raise e
-        
-        return ReturnTaskTrainModel(additional_events=task_timer.get_events())
+
+        return EventsModel(events=task_timer.get_events())

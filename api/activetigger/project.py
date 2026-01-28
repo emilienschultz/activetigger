@@ -23,6 +23,7 @@ from activetigger.datamodels import (
     ElementInModel,
     ElementOutModel,
     EvalSetDataModel,
+    EventsModel,
     ExportGenerationsParams,
     FeatureComputing,
     GenerationComputing,
@@ -46,7 +47,6 @@ from activetigger.datamodels import (
     QuickModelInModel,
     StaticFileModel,
     UpdateComputing,
-    ReturnTaskTrainML
 )
 from activetigger.db.manager import DatabaseManager
 from activetigger.features import Features
@@ -1441,22 +1441,9 @@ class Project:
 
                     case "train_bert":
                         model = cast(LMComputing, e)
-
-                        # Retrieve the additional events if they exist
-                        results = cast(ReturnTaskTrainML, results)
-                        if results is None: 
-                            additional_events = None
-                        elif not isinstance(results.additional_events, dict):
-                            additional_events = None
-                        elif len(results.additional_events) < 1 :
-                            additional_events = None
-                        else:
-                            additional_events = results.additional_events
-
+                        events = cast(EventsModel, results)
                         self.languagemodels.add(model)
-                        self.monitoring.close_process(model.unique_id, 
-                            additional_events=additional_events
-                        )
+                        self.monitoring.close_process(model.unique_id, events)
                     case "predict_bert":
                         prediction = cast(LMComputing, e)
                         if (
@@ -1468,22 +1455,11 @@ class Project:
                         self.languagemodels.add(prediction)
                     case "train_quickmodel":
                         sm = cast(QuickModelComputing, e)
-                        
-                        # Retrieve the additional events if they exist
-                        results = cast(ReturnTaskTrainML, results)
-                        if results is None: 
-                            additional_events = None
-                        elif not isinstance(results.additional_events, dict):
-                            additional_events = None
-                        elif len(results.additional_events) < 1 :
-                            additional_events = None
-                        else:
-                            additional_events = results.additional_events
 
+                        # Retrieve the additional events if they exist
+                        events = cast(EventsModel, results)
                         self.quickmodels.add(sm)
-                        self.monitoring.close_process(sm.unique_id, 
-                            additional_events=additional_events
-                        )
+                        self.monitoring.close_process(sm.unique_id, events)
                     case "predict_quickmodel":
                         sm = cast(QuickModelComputing, e)
                     case "feature":

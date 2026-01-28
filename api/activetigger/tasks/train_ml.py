@@ -13,10 +13,10 @@ from sklearn.model_selection import (  # type: ignore[import]
     cross_val_predict,
 )
 
-from activetigger.datamodels import MLStatisticsModel, QuickModelComputed, ReturnTaskTrainML
+from activetigger.datamodels import EventsModel, MLStatisticsModel, QuickModelComputed
 from activetigger.functions import evaluate_entropy, get_metrics
+from activetigger.monitoring import TaskTimer
 from activetigger.tasks.base_task import BaseTask
-from activetigger.tasks.TaskTimer import TaskTimer
 
 
 class TrainML(BaseTask):
@@ -197,12 +197,13 @@ class TrainML(BaseTask):
             )
         os.replace(path_to_metrics_json_tmp, path_to_metrics_json)
 
-    def __call__(self) -> None:
+    def __call__(self) -> EventsModel:
         """
         Fit quickmodel and calculate statistics
         """
-        task_timer = TaskTimer(compulsory_steps=["setup", "train", "evaluate", "save_files"], 
-            optional_steps=["cv10"])
+        task_timer = TaskTimer(
+            compulsory_steps=["setup", "train", "evaluate", "save_files"], optional_steps=["cv10"]
+        )
 
         task_timer.start("setup")
         self.__init_paths(self.retrain)
@@ -263,4 +264,4 @@ class TrainML(BaseTask):
         )
         task_timer.stop("save_files")
 
-        return ReturnTaskTrainML(additional_events=task_timer.get_events())
+        return EventsModel(events=task_timer.get_events())
