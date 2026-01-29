@@ -94,7 +94,7 @@ class Monitoring:
         """
         Start a new monitored process
         """
-        events = {"start": datetime.now().isoformat()}
+        events = {"global":{"start": datetime.now().isoformat()}}
         self.db_manager.monitoring_service.add_process(
             process_name=process_name,
             kind=kind,
@@ -108,28 +108,33 @@ class Monitoring:
         """
         Close a monitored process
         """
-        additional_events = (
-            list_events.events if list_events is not None and len(list_events.events) > 0 else None
-        )
         start_entry = self.db_manager.monitoring_service.get_element_by_process(process_name)
         if start_entry is None:
             raise ValueError(f"Process {process_name} not found")
+        
+        # Save the duration of the global process
         events = start_entry.events
-        events["end"] = datetime.now().isoformat()
+        end = datetime.now()
+        events["global"]["end"] = end.isoformat()
+        duration = (end - start_entry.time).total_seconds()
+        events["global"]["duration"] = duration
+        events["global"]["order"] = -1
 
+        # Add additional events to the events object
+        additional_events = (
+            list_events.events if list_events is not None and len(list_events.events) > 0 else None
+        )
         if isinstance(additional_events, dict):
             # If additional events are passed on
             if ("start" in additional_events.keys()) or ("end" in additional_events.keys()):
-                # We do not want to overwrite the "start"; "end" keys, so we remove them prior to merging
+                # We do not want to overwrite the "global"; keys, so we remove them prior to merging
                 additional_events = {
                     key: value
                     for key, value in additional_events.items()
-                    if key not in ["start", "end"]
+                    if key != "global"
                 }
             # Merge the events with the additional events
             events.update(additional_events)
-
-        duration = (datetime.now() - start_entry.time).total_seconds()
 
         self.db_manager.monitoring_service.update_process(
             process_name=process_name,
