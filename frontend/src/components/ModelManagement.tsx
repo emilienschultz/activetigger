@@ -249,7 +249,12 @@ export const ModelManagement: FC = () => {
               <IoIosRefresh size={18} className="me-1" />
               Retrain
             </button>
-            <button className="btn-secondary-action" onClick={() => setShowParameters(true)}>
+            <button
+              className="btn-secondary-action"
+              onClick={() => {
+                setShowParameters(true);
+              }}
+            >
               <FaGear size={18} className="me-1" />
               Parameters
             </button>

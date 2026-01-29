@@ -56,7 +56,7 @@ export const ModelParametersTab: FC<ModelParametersTabProps> = ({ params }) => {
         </tr>
       </thead>
       <tbody>
-        {Object.entries(params)
+        {Object.entries(params || {})
           .sort(([keyA], [keyB]) => {
             if (keyA === 'base_model') return -1;
             if (keyB === 'base_model') return 1;
