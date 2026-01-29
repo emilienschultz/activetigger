@@ -73,11 +73,13 @@ class Orchestrator:
         # Define path
         self.path = Path(config.data_path) / "projects"
         self.path_models = Path(config.data_path) / "models"
+        self.path_toy_datasets = Path(config.data_path) / "toy-datasets"
 
         # create directories parent/static/models
         self.path.mkdir(parents=True, exist_ok=True)
         (self.path.joinpath("static")).mkdir(parents=True, exist_ok=True)
         self.path_models.mkdir(exist_ok=True)
+        self.path_toy_datasets.mkdir(exist_ok=True)
 
         # attributes of the server
         self.db_manager = DatabaseManager()
