@@ -37,6 +37,13 @@ export const DisplayScoresMenu: FC<DisplayScoresMenuPropos> = ({
     return <div>No scores available</div>;
   }
 
+  const displayScores: { [key: string]: string } = {
+    train_scores: 'Train-All',
+    outofsample_scores: 'Train-Eval',
+    valid_scores: 'Validation set',
+    test_scores: 'Test set',
+  };
+
   return (
     <>
       <div className="horizontal">
@@ -51,7 +58,7 @@ export const DisplayScoresMenu: FC<DisplayScoresMenuPropos> = ({
         >
           {allowedScores.map(([key]) => (
             <option key={key} value={key}>
-              {key}
+              {displayScores[key] || key}
             </option>
           ))}
         </select>

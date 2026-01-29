@@ -3,11 +3,75 @@ from datetime import datetime
 import pandas as pd
 
 from activetigger.datamodels import (
+    EventsModel,
     MonitoringLanguageModelsModel,
     MonitoringMetricsModel,
     MonitoringQuickModelsModel,
 )
 from activetigger.db.manager import DatabaseManager
+
+
+class TaskTimer:
+    """This object centralises the timing component in order to save them as part
+    of the "additional_event" in the Monitoring.close_process function"""
+
+    body = {"start": "FAILED", "end": "FAILED", "duration": "FAILED", "order": None}
+
+    def __init__(
+        self, compulsory_steps: list[str], optional_steps: list[str] | None = None
+    ) -> None:
+        self.__additional_events = {step: self.body for step in compulsory_steps}
+        self.__starts: dict[str, datetime] = {}
+        self.__stops: list[str] = []
+        self.__optional_steps: list[str] = optional_steps if optional_steps is not None else []
+
+    def start(self, step: str) -> None:
+        """
+        Starts the corresponding timer. Make sure that the step exists, if
+        optional, initiate the step body.
+        """
+
+        if step in self.__optional_steps:
+            self.__additional_events[step] = self.body
+        if step not in self.__additional_events:
+            raise Exception(
+                (
+                    f"TaskTimer.start(step): {step} is not one of the compulsory "
+                    f"steps ({self.__additional_events.keys()})"
+                )
+            )
+        if step in self.__starts:
+            raise Exception((f"TaskTimer.start(step): {step} timer has already been started."))
+        self.__starts[step] = datetime.now()
+
+    def stop(self, step: str) -> None:
+        """
+        Stops the timer
+        """
+
+        if step not in self.__starts:
+            raise Exception(
+                (
+                    f"TaskTimer.stop(step): the step {step} timer was not started "
+                    f"or previously stopped."
+                )
+            )
+        if step in self.__stops:
+            raise Exception(
+                (f"TaskTimer.stop(step): the step {step} timer has already been stopped.")
+            )
+
+        end = datetime.now()
+        self.__stops += [str(step)]
+        self.__additional_events[step] = {
+            "start": self.__starts[step].isoformat(),
+            "end": end.isoformat(),
+            "duration": str((end - self.__starts[step]).total_seconds()),
+            "order": str(len(self.__stops)),
+        }
+
+    def get_events(self) -> dict[str, dict[str, str | None]]:
+        return self.__additional_events
 
 
 class Monitoring:
@@ -30,7 +94,7 @@ class Monitoring:
         """
         Start a new monitored process
         """
-        events = {"start": datetime.now().isoformat()}
+        events = {"global":{"start": datetime.now().isoformat()}}
         self.db_manager.monitoring_service.add_process(
             process_name=process_name,
             kind=kind,
@@ -40,20 +104,37 @@ class Monitoring:
             user_name=user_name,
         )
 
-    def close_process(
-        self,
-        process_name: str,
-    ) -> None:
+    def close_process(self, process_name: str, list_events: EventsModel) -> None:
         """
         Close a monitored process
         """
         start_entry = self.db_manager.monitoring_service.get_element_by_process(process_name)
         if start_entry is None:
             raise ValueError(f"Process {process_name} not found")
+        
+        # Save the duration of the global process
         events = start_entry.events
-        events["end"] = datetime.now().isoformat()
+        end = datetime.now()
+        events["global"]["end"] = end.isoformat()
+        duration = (end - start_entry.time).total_seconds()
+        events["global"]["duration"] = duration
+        events["global"]["order"] = -1
 
-        duration = (datetime.now() - start_entry.time).total_seconds()
+        # Add additional events to the events object
+        additional_events = (
+            list_events.events if list_events is not None and len(list_events.events) > 0 else None
+        )
+        if isinstance(additional_events, dict):
+            # If additional events are passed on
+            if ("start" in additional_events.keys()) or ("end" in additional_events.keys()):
+                # We do not want to overwrite the "global"; keys, so we remove them prior to merging
+                additional_events = {
+                    key: value
+                    for key, value in additional_events.items()
+                    if key != "global"
+                }
+            # Merge the events with the additional events
+            events.update(additional_events)
 
         self.db_manager.monitoring_service.update_process(
             process_name=process_name,

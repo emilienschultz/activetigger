@@ -7,7 +7,7 @@ import shutil
 from collections import Counter
 from logging import Logger
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional, Tuple
 
 import datasets  # type: ignore[import]  # type: ignore[import]
 import numpy as np
@@ -16,7 +16,6 @@ import torch
 from pandas import DataFrame
 from torch import nn
 from transformers import (  # type: ignore[import]  # type: ignore[import]
-    AutoConfig,
     AutoModelForSequenceClassification,
     AutoTokenizer,
     Trainer,
@@ -27,9 +26,11 @@ from transformers import (  # type: ignore[import]  # type: ignore[import]
 )
 
 from activetigger.config import config
-from activetigger.datamodels import LMParametersModel
+from activetigger.datamodels import EventsModel, LMParametersModel, MLStatisticsModel
 from activetigger.functions import get_metrics
+from activetigger.monitoring import TaskTimer
 from activetigger.tasks.base_task import BaseTask
+from activetigger.tasks.utils import length_after_tokenizing, retrieve_model_max_length
 
 pd.set_option("future.no_silent_downcasting", True)
 
@@ -159,22 +160,28 @@ class TrainBert(BaseTask):
         self.max_length = max_length
         self.auto_max_length = auto_max_length
 
-    def retrieve_model_max_length(self) -> int:
-        try:
-            model_max_length = AutoConfig.from_pretrained(
-                self.base_model, trust_remote_code=True
-            ).max_position_embeddings
-        except Exception:
-            model_max_length = np.nan
-            raise ValueError(
-                (f"Could not retrieve model's max length. Max length {self.max_length} is used.")
-            )
-        return model_max_length
+    def __init_paths(self) -> Tuple[Path, Path]:
+        """Initiate the current path (directory for the model) and for the logger"""
+        #  create repertory for the specific model
+        current_path = self.path.joinpath(self.name)
+        if not current_path.exists():
+            os.makedirs(current_path)
+        # logging the process
+        log_path = current_path.joinpath("status.log")
+        return current_path, log_path
 
-    def __call__(self) -> None:
-        """
-        Main process to the task
-        """
+    def __init_logger(self, log_path) -> Logger:
+        """Load the logger and set it up"""
+        logger = logging.getLogger("train_bert_model")
+        file_handler = logging.FileHandler(log_path)
+        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+        logger.info(f"Start {self.base_model}")
+        return logger
+
+    def __init_device(self) -> torch.device:
+        """Choose the device, first try to use cuda, then mps and finally cpu"""
         # Pick up the type of memory to use
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
@@ -186,251 +193,329 @@ class TrainBert(BaseTask):
         else:
             device = torch.device("cpu")
             print("Using CPU for computation")
+        return device
 
-        #  create repertory for the specific model
-        current_path = self.path.joinpath(self.name)
-        if not current_path.exists():
-            os.makedirs(current_path)
-
-        # logging the process
-        log_path = current_path.joinpath("status.log")
-        logger = logging.getLogger("train_bert_model")
-        file_handler = logging.FileHandler(log_path)
-        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
-        logger.info(f"Start {self.base_model}")
-
+    def __check_data(self, df: pd.DataFrame, col_label: str, col_text: str) -> pd.DataFrame:
+        """Remove rows missing labels or text"""
+        df = df.copy()
         # test labels missing values and remove them
-        if self.df[self.col_label].isnull().sum() > 0:
-            self.df = self.df[self.df[self.col_label].notnull()]
-            logger.info(f"Missing labels - reducing training data to {len(self.df)}")
+        if df[col_label].isnull().sum() > 0:
+            df = df[df[col_label].notnull()]
+            self.logger.info(f"Missing labels - reducing training data to {len(df)}")
 
         # test empty texts and remove them
-        if self.df[self.col_text].isnull().sum() > 0:
-            self.df = self.df[self.df[self.col_text].notnull()]
-            logger.info(f"Missing texts - reducing training data to {len(self.df)}")
+        if df[col_text].isnull().sum() > 0:
+            df = df[df[col_text].notnull()]
+            self.logger.info(f"Missing texts - reducing training data to {len(df)}")
+        return df
 
+    def __retrieve_labels(self, df: pd.DataFrame, col_label):
         # formatting data
         # alphabetical order
-        labels = sorted(list(self.df[self.col_label].dropna().unique()))
+        labels = sorted(list(df[col_label].dropna().unique()))
 
-        if len(labels) <2: 
+        if len(labels) < 2:
             raise ValueError(
-                (f"Not enough classes. Either you excluded classes or there are "
-                 f"not enough annotations.")
+                "Not enough classes. Either you excluded classes or there are not enough annotations."
             )
 
         label2id = {j: i for i, j in enumerate(labels)}
         id2label = {i: j for i, j in enumerate(labels)}
-        training_data = self.df[[self.col_text, self.col_label]]
-        self.df["labels"] = self.df[self.col_label].copy().replace(label2id)
-        self.df["text"] = self.df[self.col_text]
-        self.df = datasets.Dataset.from_pandas(self.df[["text", "labels"]])
+        return labels, label2id, id2label
 
-        # Tokenizer
-        tokenizer = AutoTokenizer.from_pretrained(self.base_model, trust_remote_code=True)
+    def __transform_to_dataset(
+        self, df: pd.DataFrame, col_label: str, col_text: str, label2id: dict[str, int]
+    ) -> datasets.Dataset:
+        """Transform the dataframe into a dataset with the right format for
+        training"""
+        df = df.copy()
+        df["text"] = df[col_text]
+        df["labels"] = df[col_label].copy().replace(label2id)
+        return datasets.Dataset.from_pandas(df[["text", "labels"]])
 
+    def __load_tokenizer(self, base_model: str):
+        """Load the tokenize"""
+        return AutoTokenizer.from_pretrained(base_model, trust_remote_code=True)
+
+    def __cap_tokenizer_max_length(
+        self,
+        texts: pd.Series,
+        tokenizer,
+        auto_max_length: bool,
+        original_max_length: int,
+        base_model_max_length: int,
+        adapt: bool,
+    ) -> Tuple[Any, int]:
+        """Cap the tokenizer max length and create a tokenizing function"""
         # if auto_max_length set max_length to the maximum length of tokenized sentences
         # Tokenize the text column
-        def length_after_tokenizing(text: str):
-            try:
-                return len(tokenizer(text).input_ids)
-            except:
-                return np.nan
-
-        if self.auto_max_length:
-            self.max_length = int(
-                self.df.to_pandas()["text"].apply(length_after_tokenizing).dropna().max()
-            )
+        get_n_tokens = lambda txt: length_after_tokenizing(txt, tokenizer)
+        if auto_max_length:
+            max_length = int(texts.apply(get_n_tokens).dropna().max())
 
         # cap max_length
-        self.max_length = min(self.max_length, self.retrieve_model_max_length())
+        max_length = min(original_max_length, base_model_max_length)
         # evaluate the proportion of elements truncated
         percentage_truncated = int(
-            100
-            * self.df.to_pandas()["text"]
-            .apply(length_after_tokenizing)
-            .dropna()
-            .apply(lambda x: x > self.max_length)
-            .mean()
+            100 * texts.apply(get_n_tokens).dropna().apply(lambda x: x > max_length).mean()
         )
 
-        if self.params.adapt:
-            self.df = self.df.map(
-                lambda e: tokenizer(
-                    e["text"],
-                    truncation=True,
-                    padding=True,
-                    return_tensors="pt",
-                    max_length=int(self.max_length),
-                ),
-                batched=True,
+        if adapt:
+            tokenizing_function = lambda e: tokenizer(
+                e["text"],
+                truncation=True,
+                padding=True,
+                return_tensors="pt",
+                max_length=int(self.max_length),
             )
         else:
-            self.df = self.df.map(
-                lambda e: tokenizer(
-                    e["text"],
-                    truncation=True,
-                    padding="max_length",
-                    return_tensors="pt",
-                    max_length=self.max_length,
-                ),
-                batched=True,
+            tokenizing_function = lambda e: tokenizer(
+                e["text"],
+                truncation=True,
+                padding="max_length",
+                return_tensors="pt",
+                max_length=self.max_length,
+            )
+        return tokenizing_function, percentage_truncated
+
+    def __load_trainer(
+        self,
+        current_path: Path,
+        ds: datasets.DatasetDict,
+        bert_model,
+        params: LMParametersModel,
+        loss: str,
+    ) -> Trainer:
+        """Load the training arguments and update the configuration"""
+
+        # Calculate the number of steps (total, warmup and eval)
+        total_steps = (float(params.epochs) * len(ds["train"])) // (
+            int(params.batchsize) * float(params.gradacc)
+        )
+        warmup_steps = int((total_steps) // 10)
+        eval_steps = (total_steps - warmup_steps) // params.eval
+        if eval_steps == 0:
+            eval_steps = 1
+
+        # Load the training arguments
+        training_args = TrainingArguments(
+            # Directories
+            output_dir=str(current_path.joinpath("train")),
+            logging_dir=str(current_path.joinpath("logs")),
+            # Hyperparameters
+            learning_rate=float(params.lrate),
+            weight_decay=float(params.wdecay),
+            num_train_epochs=float(params.epochs),
+            warmup_steps=int(warmup_steps),
+            # Batch sizes
+            gradient_accumulation_steps=int(params.gradacc),
+            per_device_train_batch_size=int(params.batchsize),
+            per_device_eval_batch_size=int(params.batchsize),
+            # Logging and saving parameters
+            eval_strategy="steps",
+            eval_steps=eval_steps,
+            save_strategy="best",  # steps
+            metric_for_best_model="eval_loss",
+            save_steps=int(eval_steps),
+            logging_steps=int(eval_steps),
+            do_eval=True,
+            greater_is_better=False,
+            load_best_model_at_end=params.best,
+            use_cpu=not bool(params.gpu),  # deactivate gpu
+        )
+
+        callback = CustomLoggingCallback(self.event, current_path=current_path, logger=self.logger)
+        if loss == "cross_entropy":
+            trainer = Trainer(
+                model=bert_model,
+                args=training_args,
+                train_dataset=ds["train"],
+                eval_dataset=ds["test"],
+                callbacks=[callback],
+            )
+        elif loss == "weighted_cross_entropy":
+            print("Using weighted cross entropy loss - EXPERIMENTAL")
+            trainer = CustomTrainer(
+                model=bert_model,
+                args=training_args,
+                train_dataset=ds["train"],
+                eval_dataset=ds["test"],
+                callbacks=[callback],
+                class_weights=compute_class_weights(ds["train"], label_key="labels"),
+            )
+        else:
+            raise ValueError(f"Loss function {loss} not recognized.")
+
+        return trainer
+
+    def __create_save_files(
+        self,
+        current_path: Path,
+        log_path: Path,
+        df_train_results: pd.DataFrame,
+        df_test_results: pd.DataFrame,
+        training_data: pd.DataFrame,
+        bert_model,
+        params_to_save: dict[str, Any],
+        metrics_train: MLStatisticsModel,
+        metrics_test: MLStatisticsModel,
+    ) -> None:
+        """Save the model and parameters
+        Save the following objects:
+        - predictions of the train set (csv)
+        - predictions of the test set  (csv)
+        - data used during the training (parquet)
+        - the trained model
+        - the parameters used during the training (json)
+        - metrics (json)
+
+        Also delete intermediate files
+        """
+
+        # Save results for the train and test set
+        df_train_results[["true_label", "predicted_label"]].to_csv(
+            current_path.joinpath("train_dataset_eval.csv")
+        )
+        df_test_results[["true_label", "predicted_label"]].to_csv(
+            current_path.joinpath("test_dataset_eval.csv")
+        )
+        training_data.to_parquet(current_path.joinpath("training_data.parquet"))
+
+        # save the trained bert model
+        bert_model.save_pretrained(current_path)
+
+        # Save parameters
+        with open(current_path.joinpath("parameters.json"), "w") as f:
+            json.dump(params_to_save, f)
+
+        # remove intermediate steps and logs if succeed
+        shutil.rmtree(current_path.joinpath("train"))
+        os.rename(log_path, current_path.joinpath("finished"))
+
+        # make archive (create dir if needed)
+        path_static = f"{config.data_path}/projects/static/{self.project_slug}"
+        os.makedirs(path_static, exist_ok=True)
+        shutil.make_archive(
+            f"{path_static}/{self.name}",
+            "gztar",
+            str(self.path.joinpath(self.name)),
+        )
+
+        with open(str(current_path.joinpath("metrics_training.json")), "w") as f:
+            json.dump(
+                {
+                    "train": metrics_train.model_dump(mode="json"),
+                    "trainvalid": metrics_test.model_dump(mode="json"),
+                },
+                f,
             )
 
+    def __call__(self) -> EventsModel:
+        """
+        Main process to the task
+        """
+        task_timer = TaskTimer(compulsory_steps=["setup", "train", "evaluate", "save_files"])
+        task_timer.start("setup")
+
+        current_path, log_path = self.__init_paths()
+        self.logger = self.__init_logger(log_path)
+        device = self.__init_device()
+
+        self.df = self.__check_data(self.df, self.col_label, self.col_text)
+        labels, label2id, id2label = self.__retrieve_labels(self.df, self.col_label)
+        self.ds = self.__transform_to_dataset(self.df, self.col_label, self.col_text, label2id)
+
+        tokenizer = self.__load_tokenizer(self.base_model)
+        tokenizing_function, percentage_truncated = self.__cap_tokenizer_max_length(
+            texts=self.df[self.col_text],
+            tokenizer=tokenizer,
+            auto_max_length=self.auto_max_length,
+            original_max_length=self.max_length,
+            base_model_max_length=retrieve_model_max_length(self.base_model),
+            adapt=self.params.adapt,
+        )
+        self.ds = self.ds.map(tokenizing_function, batched=True)
+
         # Build train/test dataset for dev eval
-        self.df = self.df.train_test_split(test_size=self.test_size)  # stratify_by_column="label"
-        logger.info("Train/test dataset created")
+        self.ds = self.ds.train_test_split(test_size=self.test_size)  # stratify_by_column="label"
+        self.logger.info("Train/test dataset created")
 
         # Model
-        bert = AutoModelForSequenceClassification.from_pretrained(
+        bert_model = AutoModelForSequenceClassification.from_pretrained(
             self.base_model,
             num_labels=len(labels),
             id2label=id2label,
             label2id=label2id,
             trust_remote_code=True,
         )
-
-        logger.info("Model loaded")
+        self.logger.info("Model loaded")
         print("Model loaded")
 
         try:
-            total_steps = (float(self.params.epochs) * len(self.df["train"])) // (
-                int(self.params.batchsize) * float(self.params.gradacc)
+            trainer = self.__load_trainer(
+                current_path, self.ds, bert_model, self.params, self.loss or "cross_entropy"
             )
-            warmup_steps = int((total_steps) // 10)
-            eval_steps = (total_steps - warmup_steps) // self.params.eval
-            if eval_steps == 0:
-                eval_steps = 1
+            task_timer.stop("setup")
 
-            training_args = TrainingArguments(
-                output_dir=str(current_path.joinpath("train")),
-                logging_dir=str(current_path.joinpath("logs")),
-                learning_rate=float(self.params.lrate),
-                weight_decay=float(self.params.wdecay),
-                num_train_epochs=float(self.params.epochs),
-                gradient_accumulation_steps=int(self.params.gradacc),
-                per_device_train_batch_size=int(self.params.batchsize),
-                per_device_eval_batch_size=int(self.params.batchsize),
-                warmup_steps=int(warmup_steps),
-                eval_strategy="steps",
-                eval_steps=eval_steps,
-                save_strategy="best",  # steps
-                save_steps=int(eval_steps),
-                logging_steps=int(eval_steps),
-                do_eval=True,
-                greater_is_better=False,
-                load_best_model_at_end=self.params.best,
-                metric_for_best_model="eval_loss",
-                use_cpu=not bool(self.params.gpu),  # deactivate gpu
-            )
-
-            if self.loss == "cross_entropy":
-                trainer = Trainer(
-                    model=bert,
-                    args=training_args,
-                    train_dataset=self.df["train"],
-                    eval_dataset=self.df["test"],
-                    callbacks=[
-                        CustomLoggingCallback(self.event, current_path=current_path, logger=logger)
-                    ],
-                )
-            elif self.loss == "weighted_cross_entropy":
-                print("Using weighted cross entropy loss - EXPERIMENTAL")
-                trainer = CustomTrainer(
-                    model=bert,
-                    args=training_args,
-                    train_dataset=self.df["train"],
-                    eval_dataset=self.df["test"],
-                    callbacks=[
-                        CustomLoggingCallback(self.event, current_path=current_path, logger=logger)
-                    ],
-                    class_weights=compute_class_weights(self.df["train"], label_key="labels"),
-                )
-            else:
-                raise ValueError(f"Loss function {self.loss} not recognized.")
-
+            task_timer.start("train")
             trainer.train()  # type: ignore[attr-defined]
+            self.logger.info(f"Model trained {current_path}")
+            task_timer.stop("train")
 
             # predict on the data (separation validation set and training set)
-            predictions_test = trainer.predict(self.df["test"])  # type: ignore[attr-defined]
-            predictions_train = trainer.predict(self.df["train"])  # type: ignore[attr-defined]
+            task_timer.start("evaluate")
+            predictions_test = trainer.predict(self.ds["test"])  # type: ignore[attr-defined]
+            predictions_train = trainer.predict(self.ds["train"])  # type: ignore[attr-defined]
 
-            # shape and write the data of the test set
-            test = self.df["test"].to_pandas().set_index("id")
-            test["true_label"] = [id2label[i] for i in predictions_test.label_ids]
-            test["predicted_label"] = [
-                id2label[i] for i in np.argmax(predictions_test.predictions, axis=1)
-            ]
-            test[["true_label", "predicted_label"]].to_csv(
-                current_path.joinpath("test_dataset_eval.csv")
-            )
-
-            # shape and write the data of the train set
-            train = self.df["train"].to_pandas().set_index("id")
-            train["true_label"] = [id2label[i] for i in predictions_train.label_ids]
-            train["predicted_label"] = [
+            # Compute the metrics
+            df_train_results = self.ds["train"].to_pandas().set_index("id")
+            df_train_results["true_label"] = [id2label[i] for i in predictions_train.label_ids]
+            df_train_results["predicted_label"] = [
                 id2label[i] for i in np.argmax(predictions_train.predictions, axis=1)
             ]
-            train[["true_label", "predicted_label"]].to_csv(
-                current_path.joinpath("train_dataset_eval.csv")
-            )
-
-            # save model
-            bert.save_pretrained(current_path)
-            logger.info(f"Model trained {current_path}")
-
-            # save training data in a file
-            training_data.to_parquet(current_path.joinpath("training_data.parquet"))
-
-            # save parameters of the trained model in a file
-            params_to_save = self.params.model_dump()
-            params_to_save["test_size"] = self.test_size
-            params_to_save["base_model"] = self.base_model
-            params_to_save["n_train"] = len(self.df["train"])
-            params_to_save["max_length"] = self.max_length
-            params_to_save["Proportion of elements truncated (%)"] = percentage_truncated
-
-            with open(current_path.joinpath("parameters.json"), "w") as f:
-                json.dump(params_to_save, f)
-
-            # compute metrics and write
             metrics_train = get_metrics(
-                Y_true=train["true_label"],
-                Y_pred=train["predicted_label"],
-                texts=train["text"],
+                Y_true=df_train_results["true_label"],
+                Y_pred=df_train_results["predicted_label"],
+                texts=df_train_results["text"],
                 labels=labels,
             )
+            df_test_results = self.ds["test"].to_pandas().set_index("id")
+            df_test_results["true_label"] = [id2label[i] for i in predictions_test.label_ids]
+            df_test_results["predicted_label"] = [
+                id2label[i] for i in np.argmax(predictions_test.predictions, axis=1)
+            ]
             metrics_test = get_metrics(
-                Y_true=test["true_label"],
-                Y_pred=test["predicted_label"],
-                texts=test["text"],
+                Y_true=df_test_results["true_label"],
+                Y_pred=df_test_results["predicted_label"],
+                texts=df_test_results["text"],
                 labels=labels,
             )
-            with open(str(current_path.joinpath("metrics_training.json")), "w") as f:
-                json.dump(
-                    {
-                        "train": metrics_train.model_dump(mode="json"),
-                        "trainvalid": metrics_test.model_dump(mode="json"),
-                    },
-                    f,
-                )
+            task_timer.stop("evaluate")
 
-            # remove intermediate steps and logs if succeed
-            shutil.rmtree(current_path.joinpath("train"))
-            os.rename(log_path, current_path.joinpath("finished"))
-
-            # make archive (create dir if needed)
-            path_static = f"{config.data_path}/projects/static/{self.project_slug}"
-            os.makedirs(path_static, exist_ok=True)
-            shutil.make_archive(
-                f"{path_static}/{self.name}",
-                "gztar",
-                str(self.path.joinpath(self.name)),
+            task_timer.start("save_files")
+            params_to_save = self.params.model_dump()
+            params_to_save.update(
+                {
+                    "test_size": self.test_size,
+                    "base_model": self.base_model,
+                    "n_train": len(self.ds["train"]),
+                    "max_length": self.max_length,
+                    "device": str(device),
+                    "Proportion of elements truncated (%)": percentage_truncated,
+                }
             )
-
-            return None
+            self.__create_save_files(
+                current_path=current_path,
+                log_path=log_path,
+                df_train_results=df_train_results,
+                df_test_results=df_test_results,
+                training_data=self.df[[self.col_text, self.col_label]],
+                bert_model=bert_model,
+                params_to_save=params_to_save,
+                metrics_train=metrics_train,
+                metrics_test=metrics_test,
+            )
+            task_timer.stop("save_files")
 
         except Exception as e:
             print("Error in training", e)
@@ -441,8 +526,9 @@ class TrainBert(BaseTask):
             try:
                 del (
                     trainer,
-                    bert,
+                    bert_model,
                     self.df,
+                    self.ds,
                     device,
                     self.event,
                 )
@@ -455,3 +541,5 @@ class TrainBert(BaseTask):
             except Exception as e:
                 print("Error in cleaning memory", e)
                 raise e
+
+        return EventsModel(events=task_timer.get_events())

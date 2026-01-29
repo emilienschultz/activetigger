@@ -415,6 +415,8 @@ class Features:
                     raise Exception("The column can't be transform into numerical feature")
             else:
                 column = column.apply(str)
+                column = pd.get_dummies(column, prefix=parameters["dataset_col"], drop_first=True)
+                assert all(dtype != "object" for dtype in column.dtypes)
 
             # add the feature to the project
             parameters = {

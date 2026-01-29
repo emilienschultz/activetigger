@@ -13,8 +13,9 @@ from sklearn.model_selection import (  # type: ignore[import]
     cross_val_predict,
 )
 
-from activetigger.datamodels import MLStatisticsModel, QuickModelComputed
+from activetigger.datamodels import EventsModel, MLStatisticsModel, QuickModelComputed
 from activetigger.functions import evaluate_entropy, get_metrics
+from activetigger.monitoring import TaskTimer
 from activetigger.tasks.base_task import BaseTask
 
 
@@ -196,18 +197,25 @@ class TrainML(BaseTask):
             )
         os.replace(path_to_metrics_json_tmp, path_to_metrics_json)
 
-    def __call__(self) -> None:
+    def __call__(self) -> EventsModel:
         """
         Fit quickmodel and calculate statistics
         """
-        start = datetime.datetime.now()
+        task_timer = TaskTimer(
+            compulsory_steps=["setup", "train", "evaluate", "save_files"], optional_steps=["cv10"]
+        )
+
+        task_timer.start("setup")
         self.__init_paths(self.retrain)
 
         X_train, X_test, Y_train, Y_test = self.__split_set()
+        task_timer.stop("setup")
 
         # Fit model --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
         try:
+            task_timer.start("train")
             self.model.fit(X_train, Y_train)
+            task_timer.stop("train")
         except Exception as e:
             raise Exception((f"Problem fitting the model (TrainML.__call__)\nError: {e}"))
 
@@ -222,6 +230,7 @@ class TrainML(BaseTask):
 
         # compute probabilities for all data
         try:
+            task_timer.start("evaluate")
             proba_values = self.model.predict_proba(self.X)
             proba = pd.DataFrame(proba_values, columns=self.model.classes_, index=self.X.index)
             proba["prediction"] = proba.idxmax(axis=1)
@@ -233,12 +242,15 @@ class TrainML(BaseTask):
         try:
             metrics_train = self.__compute_metrics(y_true=Y_train, y_pred=Y_pred_train)
             metrics_test = self.__compute_metrics(y_true=Y_test, y_pred=Y_pred_test)
+            task_timer.stop("evaluate")
         except Exception as e:
             raise Exception((f"Problem computing the metrics (TrainML.__call__)\nError: {e}"))
 
         if self.cv10:
             try:
+                task_timer.start("cv10")
                 statistics_cv10 = self.__compute_cv10()
+                task_timer.stop("cv10")
             except Exception as e:
                 raise Exception(
                     (f"Problem computing the cross valisation (TrainML.__compute_cv10)\nError: {e}")
@@ -246,9 +258,10 @@ class TrainML(BaseTask):
         else:
             statistics_cv10 = None
 
+        task_timer.start("save_files")
         self.__create_saving_files(
             proba, X_train, Y_train, metrics_train, metrics_test, statistics_cv10
         )
+        task_timer.stop("save_files")
 
-        end = datetime.datetime.now()
-        print(f"Training completed in {(end - start).total_seconds()} seconds")
+        return EventsModel(events=task_timer.get_events())

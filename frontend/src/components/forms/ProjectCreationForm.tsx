@@ -89,6 +89,7 @@ export const ProjectCreationForm: FC = () => {
   const [availableFields, setAvailableFields] = useState<Option[] | undefined>(undefined);
   const [columns, setColumns] = useState<string[]>([]);
   const [lengthData, setLengthData] = useState<number>(0);
+  setValue('seed', random(0, 10000));
   useEffect(() => {
     // case of loading external file
     if (dataset === 'load' && data) {
@@ -136,7 +137,6 @@ export const ProjectCreationForm: FC = () => {
         }
         setData(data);
         setValue('n_train', Math.min(data?.data.length || 0, 100));
-        setValue('seed', random(0, 10000));
       });
     }
   }, [files, maxSize, notify, setValue]);
@@ -654,10 +654,11 @@ export const ProjectCreationForm: FC = () => {
                     id="seed"
                     type="number"
                     disabled={creatingProject}
-                    {...register('seed')}
+                    {...register('seed', { valueAsNumber: true })}
                     min={0}
                     step={1}
                     className="w-25 ms-3"
+                    placeholder="0"
                   />
                 </label>
               </details>

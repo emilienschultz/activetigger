@@ -247,6 +247,8 @@ class CreateProject(BaseTask):
         project["all_columns"] = all_columns
         project["n_total"] = n_total
 
+        raise Exception("Debug CreateProject before import schemes")
+
         # schemes/labels to import (in the main process)
         import_trainset = None
         import_testset = None

@@ -23,6 +23,7 @@ from activetigger.datamodels import (
     ElementInModel,
     ElementOutModel,
     EvalSetDataModel,
+    EventsModel,
     ExportGenerationsParams,
     FeatureComputing,
     GenerationComputing,
@@ -1406,7 +1407,7 @@ class Project:
                 print(f"Error in {e.kind} : {exception}")
                 self.errors.add(f"Error for process {e.kind} : {exception}")
 
-                # specific case for project creation
+                # specific case for project creation ; delete the project
                 if e.kind == "create_project":
                     print("Error in project creation")
                     self.status = "error"
@@ -1440,8 +1441,9 @@ class Project:
 
                     case "train_bert":
                         model = cast(LMComputing, e)
+                        events = cast(EventsModel, results)
                         self.languagemodels.add(model)
-                        self.monitoring.close_process(model.unique_id)
+                        self.monitoring.close_process(model.unique_id, events)
                     case "predict_bert":
                         prediction = cast(LMComputing, e)
                         if (
@@ -1453,8 +1455,11 @@ class Project:
                         self.languagemodels.add(prediction)
                     case "train_quickmodel":
                         sm = cast(QuickModelComputing, e)
-                        self.monitoring.close_process(sm.unique_id)
+
+                        # Retrieve the additional events if they exist
+                        events = cast(EventsModel, results)
                         self.quickmodels.add(sm)
+                        self.monitoring.close_process(sm.unique_id, events)
                     case "predict_quickmodel":
                         sm = cast(QuickModelComputing, e)
                     case "feature":

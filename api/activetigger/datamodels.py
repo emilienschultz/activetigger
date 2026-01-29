@@ -1037,6 +1037,10 @@ class ReturnTaskPredictModel(BaseModel):
     metrics: dict[str, MLStatisticsModel] | None = None
 
 
+class EventsModel(BaseModel):
+    events: dict[str, dict[str, str | None]]
+
+
 class ModelScoresModel(BaseModel):
     internalvalid_scores: dict | None = None
     train_scores: dict | None = None

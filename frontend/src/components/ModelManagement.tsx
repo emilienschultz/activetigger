@@ -236,7 +236,7 @@ export const ModelManagement: FC = () => {
             title={'Validation scores from the training data (internal validation)'}
             scores={currentQuickModelInformations.statistics_test as MLStatisticsModel}
             projectSlug={projectSlug}
-            dataset="train-test"
+            dataset="Train-Eval"
           />
           <div className="horizontal wrap">
             <button
@@ -249,7 +249,12 @@ export const ModelManagement: FC = () => {
               <IoIosRefresh size={18} className="me-1" />
               Retrain
             </button>
-            <button className="btn-secondary-action" onClick={() => setShowParameters(true)}>
+            <button
+              className="btn-secondary-action"
+              onClick={() => {
+                setShowParameters(true);
+              }}
+            >
               <FaGear size={18} className="me-1" />
               Parameters
             </button>
@@ -289,7 +294,7 @@ export const ModelManagement: FC = () => {
             scores={currentBertModelInformations.scores.internalvalid_scores as MLStatisticsModel}
             modelName={currentBertModel || ''}
             projectSlug={projectSlug}
-            dataset="train-test"
+            dataset="Train-Eval"
           />
           <div className="horizontal wrap">
             <button className="btn-secondary-action" onClick={() => setShowParameters(true)}>

@@ -49,7 +49,7 @@ export const ProjectExplorePage: FC = () => {
                 />
               </Tab>
               <Tab eventKey="visualization" title="Visualization" unmountOnExit={true}>
-                <div className="explanations">Explore your train data as a projection</div>
+                <div className="explanations">Explore your annotable data as a projection</div>
                 <ProjectionManagement
                   projectName={projectName || null}
                   currentScheme={currentScheme || null}
