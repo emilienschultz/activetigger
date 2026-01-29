@@ -138,6 +138,77 @@ class CreateProject(BaseTask):
 
             # save a complete copy of the dataset
             content.to_parquet(self.params.dir.joinpath(self.data_all), index=True)
+        elif self.params.from_project.startswith("-toy-dataset-"):
+            # case the flle comes from a toy problem
+            # data_all.parquet already exists in the folder
+            content = pd.read_parquet(self.params.dir.joinpath(self.data_all))
+            
+            # Check that the file has the right format (not been controlled before
+            # a priori)
+            # rename columns both for data & params to avoid confusion (use internal dataset_ prefix)
+            content.columns = ["dataset_" + i for i in content.columns]  # type: ignore[assignment]
+            if self.params.col_id is not None:
+                self.params.col_id = "dataset_" + self.params.col_id
+
+            # change also the name in the parameters
+            self.params.cols_text = ["dataset_" + i for i in self.params.cols_text if i]
+            self.params.cols_context = ["dataset_" + i for i in self.params.cols_context if i]
+            self.params.cols_label = ["dataset_" + i for i in self.params.cols_label if i]
+            self.params.cols_stratify = ["dataset_" + i for i in self.params.cols_stratify if i]
+
+            all_columns = list(content.columns)
+            n_total = len(content)
+
+            # test if the size of the sample requested is possible
+            if len(content) < self.params.n_test + self.params.n_valid + self.params.n_train:
+                shutil.rmtree(self.params.dir)
+                raise Exception(
+                    f"Not enough data for creating the train/valid/test dataset. "
+                    f"Current : {len(content)} ; Selected : "
+                    f"{self.params.n_test + self.params.n_valid + self.params.n_train}"
+                )
+
+            # create the internal/external index
+            # CAREFUL : external id has no constraint of uniqueness
+            # case where the index is the row number
+            if self.params.col_id == "dataset_row_number":
+                content["id_internal"] = [str(i) for i in range(len(content))]
+                content["id_external"] = content["id_internal"]
+
+            # case the index is a column, use slugify for internal if unique after slugify
+            else:
+                content["id_external"] = content[self.params.col_id].astype(str)
+                col_slugified = content["id_external"].apply(slugify)
+                if col_slugified.nunique() == len(content):
+                    content["id_internal"] = col_slugified
+                else:
+                    content["id_internal"] = [str(i) for i in range(len(content))]
+
+            content.set_index("id_internal", inplace=True)
+
+            # convert columns that can be numeric or force text, exception for the text/labels
+            for col in [i for i in content.columns if i not in self.params.cols_label]:
+                try:
+                    content[col] = pd.to_numeric(content[col], errors="raise")
+                except Exception:
+                    content[col] = content[col].astype(str).replace("nan", None)
+            for col in self.params.cols_label:
+                try:
+                    content[col] = content[col].astype(str).replace("nan", None)
+                except Exception:
+                    # if the column is not convertible to string, keep it as is
+                    pass
+
+            # create the text column, merging the different columns
+            content["text"] = content[self.params.cols_text].apply(
+                lambda x: "\n\n".join([str(i) for i in x if pd.notnull(i)]), axis=1
+            )
+
+            # convert NA texts in empty string
+            content["text"] = content["text"].fillna("")
+
+            # save a complete copy of the dataset
+            content.to_parquet(self.params.dir.joinpath(self.data_all), index=True)
         else:
             # case the file is already processed (coming from another project)
             content = pd.read_parquet(self.params.dir.joinpath(self.data_all))

@@ -2447,11 +2447,20 @@ export function useAddFile() {
  */
 export function useCopyExistingData() {
   const copyExistingData = useCallback(async (project_name: string, source_project: string) => {
-    await api.POST('/files/copy/project', {
-      params: {
-        query: { project_name: project_name, source_project: source_project },
-      },
-    });
+    if (source_project.startsWith('-toy-dataset-')) {
+      source_project = source_project.slice(13); // Remove the "-toy-dataset- to only keep the actual name"
+      await api.POST('/files/copy/project', {
+        params: {
+          query: { project_name: project_name, source_project: source_project, from_toy: true },
+        },
+      });
+    } else {
+      await api.POST('/files/copy/project', {
+        params: {
+          query: { project_name: project_name, source_project: source_project, from_toy: false },
+        },
+      });
+    }
   }, []);
   return copyExistingData;
 }
@@ -2746,11 +2755,11 @@ export function useDeleteMessage() {
   return { deleteMessage };
 }
 
-export function useGetAvailableDatasets() {
+export function useGetAvailableProjectDatasets() {
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
 
   const getDatasets = useAsyncMemo(async () => {
-    const res = await api.GET('/datasets');
+    const res = await api.GET('/project-datasets');
     if (res.data && !res.error) return res.data;
     else {
       return null;
@@ -2758,7 +2767,22 @@ export function useGetAvailableDatasets() {
   }, [fetchTrigger]);
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
 
-  return { datasets: getAsyncMemoData(getDatasets) || null, reFetchProjects: reFetch };
+  return { projectDatasets: getAsyncMemoData(getDatasets) || null, reFetchProjects: reFetch };
+}
+
+export function useGetAvailableToyDatasets() {
+  const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
+
+  const getDatasets = useAsyncMemo(async () => {
+    const res = await api.GET('/toy-datasets');
+    if (res.data && !res.error) return res.data;
+    else {
+      return null;
+    }
+  }, [fetchTrigger]);
+  const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
+
+  return { toyDatasets: getAsyncMemoData(getDatasets) || null, reFetchProjects: reFetch };
 }
 
 /**
