@@ -79,12 +79,19 @@ function normalizeStats(data: ApiResponse): ModelStats[] {
   }));
 }
 
+type ProcessEvent = {
+  start: string;
+  end: string;
+  duration: number;
+  order: number;
+};
+
 type ProcessRow = {
   process_name: string;
   kind: string;
   time: string;
   parameters: Record<string, unknown>;
-  events: Record<string, unknown>;
+  events: Record<string, ProcessEvent>;
   project_slug: string;
   user_name: string;
   duration: number;
@@ -95,6 +102,33 @@ type Props = {
 };
 
 export function ProcessTable({ rows }: Props) {
+  const displayAllEvent = (events: Record<string, ProcessEvent>) => {
+    console.log(events);
+    return (
+      <ul>
+        {Object.entries(events)
+          .filter((event) => !['start', 'end'].includes(event[0])) // Is meant to disappear, this is to prevent problems with events created before refactor
+          .sort((entryA, entryB) => (entryA[1].order > entryB[1].order ? 1 : 0))
+          .map((entry) => {
+            if (entry[0] == 'global') {
+              const start = new Date(entry[1].start);
+              const end = new Date(entry[1].end);
+              return (
+                <li>
+                  {start.getHours()}:{start.getMinutes()} — {end.getHours()}:{end.getMinutes()}
+                </li>
+              );
+            } else {
+              return (
+                <li>
+                  {entry[0]} : {Math.round(entry[1].duration * 100) / 100} s
+                </li>
+              );
+            }
+          })}
+      </ul>
+    );
+  };
   return (
     <table style={{ borderCollapse: 'collapse', width: '100%' }}>
       <thead>
@@ -114,7 +148,7 @@ export function ProcessTable({ rows }: Props) {
             <td>{row.kind}</td>
             <td>{row.project_slug}</td>
             <td>{row.user_name}</td>
-            <td>{JSON.stringify(row.events)}</td>
+            <td>{displayAllEvent(row.events)}</td>
             <td>{row.duration.toFixed(2)}</td>
           </tr>
         ))}
