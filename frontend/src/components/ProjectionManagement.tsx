@@ -231,9 +231,14 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
   return (
     <>
       {!isComputing ? (
-        <button onClick={() => setShowComputeNewProjection(true)} className="btn-primary-action">
-          <FaPlusCircle size={20} className="me-1" /> Compute new projection
-        </button>
+        <div>
+          <button
+            onClick={() => setShowComputeNewProjection(true)}
+            className="btn-primary-action mb-4"
+          >
+            <FaPlusCircle size={20} className="me-1" /> Compute new projection
+          </button>
+        </div>
       ) : (
         <StopProcessButton projectSlug={projectName} />
       )}
@@ -243,6 +248,30 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
             <FaGear size={18} />
             Parameters
           </button>
+          <label style={{ display: 'block' }}>
+            <input
+              type="checkbox"
+              checked={selectionConfig.frameSelection}
+              onChange={(_) => {
+                setAppContext((prev) => ({
+                  ...prev,
+                  selectionConfig: {
+                    ...selectionConfig,
+                    frameSelection: !selectionConfig.frameSelection,
+                  },
+                }));
+              }}
+            />
+            <FaLock /> Lock on selection
+            <a className="lockhelp">
+              <HiOutlineQuestionMarkCircle />
+            </a>
+            <Tooltip anchorSelect=".lockhelp" place="top">
+              Once a vizualisation computed, you can use the square tool to select an area (or
+              remove the square).<br></br> Then you can lock the selection, and only elements in the
+              selected area will be available for annoation.
+            </Tooltip>
+          </label>
           <div className="d-flex" style={{ minWidth: 0 }}>
             <div>
               <ProjectionVizSigma
@@ -322,31 +351,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
               )}
             </>
           </div>
-
-          <label style={{ display: 'block' }}>
-            <input
-              type="checkbox"
-              checked={selectionConfig.frameSelection}
-              onChange={(_) => {
-                setAppContext((prev) => ({
-                  ...prev,
-                  selectionConfig: {
-                    ...selectionConfig,
-                    frameSelection: !selectionConfig.frameSelection,
-                  },
-                }));
-              }}
-            />
-            <FaLock /> Lock on selection
-            <a className="lockhelp">
-              <HiOutlineQuestionMarkCircle />
-            </a>
-            <Tooltip anchorSelect=".lockhelp" place="top">
-              Once a vizualisation computed, you can use the square tool to select an area (or
-              remove the square).<br></br> Then you can lock the selection, and only elements in the
-              selected area will be available for annoation.
-            </Tooltip>
-          </label>
         </>
       )}
       <Modal

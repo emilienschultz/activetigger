@@ -168,10 +168,8 @@ export const ProjectionVizSigma: FC<Props> = ({
 
       <div
         style={{
-          width: widthWindow < 500 ? '300px' : '500px',
-          height: widthWindow < 500 ? '300px' : '500px',
-          minWidth: '300px',
-          minHeight: '300px',
+          width: 'clamp(300px, 50vw, 1000px)',
+          height: 'clamp(300px, 100vh, 1000px)',
         }}
       >
         <SigmaContainer
