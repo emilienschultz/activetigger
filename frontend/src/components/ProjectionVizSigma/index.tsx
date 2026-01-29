@@ -6,7 +6,6 @@ import { FC, useCallback, useMemo, useState } from 'react';
 import { PiSelectionSlashBold } from 'react-icons/pi';
 import { Settings } from 'sigma/settings';
 import { NodeDisplayData } from 'sigma/types';
-import { useWindowSize } from 'usehooks-ts';
 import { COLORS } from '../../core/colors';
 import { ActiveModel } from '../../types';
 import { Caption } from './Caption';
@@ -73,7 +72,6 @@ export const ProjectionVizSigma: FC<Props> = ({
   // color dictionary
   labelColorMapping,
 }) => {
-  const { width: widthWindow } = useWindowSize();
   // internal bbox used by marquee. This state will be updated with setFrameBbox once drawing is done.
   // app state is used as default value
   // transform frame type to bbox type
