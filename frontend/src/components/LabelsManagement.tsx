@@ -185,7 +185,7 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
   return (
     <>
       {canEdit && (
-        <div className="d-flex w-50 mt-5">
+        <div className="d-flex mt-5" style={{ width: '75vw', maxWidth: '400px' }}>
           <input
             type="text"
             id="new-label"
