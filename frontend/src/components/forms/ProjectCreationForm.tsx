@@ -65,8 +65,9 @@ export const ProjectCreationForm: FC = () => {
       language: 'en',
       clear_test: false,
       random_selection: true,
-      seed: random(0, 10000),
+      seed: 42,
       force_label: false,
+      col_id: 'row_number',
     },
   });
   const { notify } = useNotifications();
@@ -154,7 +155,6 @@ export const ProjectCreationForm: FC = () => {
         }
         setData(data);
         setValue('n_train', Math.min(data?.data.length || 0, 100));
-        setValue('seed', random(0, 10000));
       });
     }
   }, [files, maxSize, notify, setValue]);
@@ -272,7 +272,7 @@ export const ProjectCreationForm: FC = () => {
   useEffect(() => {
     console.log('Dataset changed:', dataset);
     reset({
-      col_id: '',
+      col_id: 'row_number',
       cols_text: [],
       cols_context: [],
       cols_label: [],
@@ -283,6 +283,7 @@ export const ProjectCreationForm: FC = () => {
       clear_test: false,
       random_selection: true,
       force_label: false,
+      seed: random(0, 100_000),
     });
     // reset data when changing dataset
   }, [dataset, reset]);
