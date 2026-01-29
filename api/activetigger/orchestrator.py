@@ -188,6 +188,7 @@ class Orchestrator:
                         print(f"Error while updating project {p}: {e}")
                         to_del.append(p)
                 for p in to_del:
+                    self.clean_unfinished_project(project_slug=p)
                     del self.project_creation_ongoing[p]
 
                 # update the information on the state of the project

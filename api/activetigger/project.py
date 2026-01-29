@@ -1407,7 +1407,7 @@ class Project:
                 print(f"Error in {e.kind} : {exception}")
                 self.errors.add(f"Error for process {e.kind} : {exception}")
 
-                # specific case for project creation
+                # specific case for project creation ; delete the project
                 if e.kind == "create_project":
                     print("Error in project creation")
                     self.status = "error"
