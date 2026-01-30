@@ -262,4 +262,6 @@ class CreateProject(BaseTask):
         if self.params.filename is not None:
             self.params.dir.joinpath(self.params.filename).unlink()
 
+        print("Project created")
+
         return ProjectModel(**project), import_trainset, import_validset, import_testset
