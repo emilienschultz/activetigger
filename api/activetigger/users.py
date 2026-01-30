@@ -1,7 +1,8 @@
 import secrets
 from datetime import datetime
+import os
 from pathlib import Path
-
+import pyarrow.parquet as pq
 import yaml
 
 from activetigger.config import config
@@ -104,6 +105,22 @@ class Users:
         Get user auth
         """
         return self.db_manager.projects_service.get_user_auth_projects(username, auth)
+
+    def get_toy_datasets(self) -> list:
+        """
+        Get toy datasets
+        """
+        toy_datasets = []
+        for file in os.listdir("./projects/toy-datasets"):
+            if file.endswith(".parquet"):
+                toy_problem_name = file.removesuffix(".parquet")
+                file = pq.ParquetFile(f"./projects/toy-datasets/{file}")
+                toy_datasets += [DatasetModel(
+                    project_slug=toy_problem_name,
+                    columns=[el.name for el in list(file.schema)],
+                    n_rows=file.metadata.num_rows
+                )]
+        return toy_datasets
 
     def get_auth(self, username: str, project_slug: str = "all") -> list:
         """

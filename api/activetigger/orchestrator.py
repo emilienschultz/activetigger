@@ -73,11 +73,13 @@ class Orchestrator:
         # Define path
         self.path = Path(config.data_path) / "projects"
         self.path_models = Path(config.data_path) / "models"
+        self.path_toy_datasets = Path(config.data_path) / "toy-datasets"
 
         # create directories parent/static/models
         self.path.mkdir(parents=True, exist_ok=True)
         (self.path.joinpath("static")).mkdir(parents=True, exist_ok=True)
         self.path_models.mkdir(exist_ok=True)
+        self.path_toy_datasets.mkdir(exist_ok=True)
 
         # attributes of the server
         self.db_manager = DatabaseManager()
@@ -269,11 +271,14 @@ class Orchestrator:
             messages=self.messages.get_messages_system(),
         )
 
-    def exists(self, project_name: str) -> bool:
+    def exists(self, project_name: str, is_toy_dataset : bool = False) -> bool:
         """
         Test if a project exists in the database
         with a sluggified form (to be able to use it in URL)
         """
+        if is_toy_dataset:
+            return [file.removesuffix(".parquet") 
+                for file in os.listdir("./projects/toy-datasets/")]
         return slugify(project_name) in self.existing_projects()
 
     def check_project_name(self, project_name: str) -> str:

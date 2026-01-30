@@ -233,7 +233,7 @@ async def get_projects(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/datasets", dependencies=[Depends(verified_user)])
+@router.get("/project-datasets", dependencies=[Depends(verified_user)])
 async def get_project_datasets(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
 ) -> list[DatasetModel]:
@@ -242,6 +242,18 @@ async def get_project_datasets(
     """
     try:
         return orchestrator.users.get_auth_datasets(current_user.username)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+@router.get("/toy-datasets", dependencies=[Depends(verified_user)])
+async def get_project_datasets(
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+) -> list[DatasetModel]:
+    """
+    Get all datasets already available for a specific user
+    """
+    try:
+        return orchestrator.users.get_toy_datasets()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
