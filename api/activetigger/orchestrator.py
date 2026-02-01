@@ -173,7 +173,6 @@ class Orchestrator:
                         print(f"Error while updating project {p}: {e}")
                         to_del.append(p)
                 for p in to_del:
-                    self.clean_unfinished_project(project_slug=p)
                     del self.projects[p]
 
                 # loop on creating projects
@@ -184,6 +183,7 @@ class Orchestrator:
                         if project.status == "created":
                             to_del.append(p)
                         if project.status == "error":
+                            self.clean_unfinished_project(project_slug=p)  # destroy everything
                             to_del.append(p)
                     except Exception as e:
                         print(f"Error while updating project {p}: {e}")
@@ -459,6 +459,7 @@ class Orchestrator:
     ) -> None:
         """
         Clean a project that is not loadable
+        Careful : this will delete all the data of the project
         """
 
         if project_slug is not None:
