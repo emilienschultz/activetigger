@@ -204,14 +204,14 @@ def get_metrics(
         labels = list(Y_true.unique())
 
     # Compute scores per label --- --- --- --- --- --- --- --- --- --- --- --- -
-    precision_label = precision_score(Y_true,Y_pred,average=None,labels=labels,zero_division=1)
-    precision_label = [round(score, decimals)for score in precision_label]
+    precision_label = precision_score(Y_true, Y_pred, average=None, labels=labels, zero_division=1)
+    precision_label = [round(score, decimals) for score in precision_label]
 
     f1_label = f1_score(Y_true, Y_pred, average=None, labels=labels)
     f1_label = [round(score, decimals) for score in f1_label]
 
     recall_label = recall_score(Y_true, Y_pred, average=None, labels=labels)
-    recall_label = [round(score, decimals)for score in recall_label]
+    recall_label = [round(score, decimals) for score in recall_label]
 
     # Compute score averaged (micro, macro, weighted) --- --- --- --- --- --- --
     f1_weighted = f1_score(Y_true, Y_pred, average="weighted")
@@ -219,10 +219,10 @@ def get_metrics(
 
     f1_macro = f1_score(Y_true, Y_pred, average="macro")
     f1_macro = round(f1_macro, decimals)
-    
+
     f1_micro = f1_score(Y_true, Y_pred, average="micro")
     f1_micro = round(f1_micro, decimals)
-    
+
     precision_micro = precision_score(Y_true, Y_pred, average="micro", zero_division=1)
     precision_micro = round(precision_micro, decimals)
 
@@ -239,18 +239,15 @@ def get_metrics(
     filter_false_prediction = Y_true != Y_pred
     if texts is not None:
         # Conca
-        tab = (
-            pd.concat(
-                [
-                    pd.Series(Y_true[filter_false_prediction]), 
-                    pd.Series(Y_pred[filter_false_prediction]), 
-                    pd.Series(texts)
-                ],
-                axis=1,
-                join="inner",
-            )
-            .reset_index()
-        )
+        tab = pd.concat(
+            [
+                pd.Series(Y_true[filter_false_prediction]),
+                pd.Series(Y_pred[filter_false_prediction]),
+                pd.Series(texts),
+            ],
+            axis=1,
+            join="inner",
+        ).reset_index()
         tab.columns = pd.Index(["id", "label", "prediction", "text"])
         false_prediction = tab.to_dict(orient="records")
     else:
@@ -258,17 +255,14 @@ def get_metrics(
         false_prediction = filter_false_prediction.loc[lambda x: x].index.tolist()
 
     statistics = MLStatisticsModel(
-        f1_label=dict(zip(labels,f1_label)),
-        precision_label=dict(zip(labels,precision_label)),
-        recall_label=dict(zip(labels,recall_label)),
-
+        f1_label=dict(zip(labels, f1_label)),
+        precision_label=dict(zip(labels, precision_label)),
+        recall_label=dict(zip(labels, recall_label)),
         confusion_matrix=confusion.tolist(),
-
-        f1_weighted=f1_weighted, 
-        f1_macro=f1_macro, 
-        f1_micro=f1_micro, 
-        precision=precision_micro, 
-
+        f1_weighted=f1_weighted,
+        f1_macro=f1_macro,
+        f1_micro=f1_micro,
+        precision=precision_micro,
         false_predictions=false_prediction,
         table=cast(dict[str, Any], table.to_dict(orient="split")),
     )
@@ -333,8 +327,3 @@ def get_model_metrics(path_model: Path) -> dict | None:
         scores = {**scores, **stats}
 
     return scores
-
-
-def evaluate_entropy(proba : np.ndarray) -> np.ndarray:
-    """Compute the entropy"""
-    return -1 * (proba * np.log(proba)).sum(axis=1)
