@@ -102,6 +102,7 @@ export const CodebookDisplay: FC<CodebookDisplayProps> = ({
               backgroundColor: 'transparent',
               fontSize: '0.95rem',
               lineHeight: '1.6',
+              maxWidth: '100%',
             }}
           />
         </div>

@@ -7,6 +7,7 @@ import shutil
 from pathlib import Path
 
 import pandas as pd
+from scipy.stats import entropy  # type: ignore[import]
 from sklearn.base import BaseEstimator  # type: ignore[import]
 from sklearn.model_selection import (  # type: ignore[import]
     KFold,
@@ -14,7 +15,7 @@ from sklearn.model_selection import (  # type: ignore[import]
 )
 
 from activetigger.datamodels import EventsModel, MLStatisticsModel, QuickModelComputed
-from activetigger.functions import evaluate_entropy, get_metrics
+from activetigger.functions import get_metrics
 from activetigger.monitoring import TaskTimer
 from activetigger.tasks.base_task import BaseTask
 
@@ -234,7 +235,7 @@ class TrainML(BaseTask):
             proba_values = self.model.predict_proba(self.X)
             proba = pd.DataFrame(proba_values, columns=self.model.classes_, index=self.X.index)
             proba["prediction"] = proba.idxmax(axis=1)
-            proba["entropy"] = evaluate_entropy(proba_values)
+            proba["entropy"] = entropy(proba_values, axis=1)
         except Exception as e:
             raise Exception((f"Problem calculating the entropy (TrainML.__call__)\nError: {e}"))
 

@@ -247,8 +247,6 @@ class CreateProject(BaseTask):
         project["all_columns"] = all_columns
         project["n_total"] = n_total
 
-        raise Exception("Debug CreateProject before import schemes")
-
         # schemes/labels to import (in the main process)
         import_trainset = None
         import_testset = None
@@ -263,5 +261,7 @@ class CreateProject(BaseTask):
         # delete the initial file
         if self.params.filename is not None:
             self.params.dir.joinpath(self.params.filename).unlink()
+
+        print("Project created")
 
         return ProjectModel(**project), import_trainset, import_validset, import_testset

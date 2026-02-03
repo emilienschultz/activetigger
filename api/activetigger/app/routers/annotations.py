@@ -1,6 +1,6 @@
 from typing import Annotated, cast
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from activetigger.app.dependencies import ProjectAction, get_project, test_rights, verified_user
 from activetigger.datamodels import (
