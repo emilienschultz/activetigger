@@ -40,3 +40,6 @@ docker/api/models/
 docker/api/postgresql/
 
 api/.env
+
+## CLAUDE
+CLAUDE.md

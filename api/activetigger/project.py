@@ -510,10 +510,12 @@ class Project:
             df[["id_external", "text"]].to_parquet(self.params.dir.joinpath(config.test_file))
             self.params.test = True
             self.data.load_dataset("test")
-        else:
+        elif dataset == "valid":
             df[["id_external", "text"]].to_parquet(self.params.dir.joinpath(config.valid_file))
             self.params.valid = True
             self.data.load_dataset("valid")
+        else:
+            raise Exception("Dataset should be test or valid")
 
         # update the database
         self.db_manager.projects_service.update_project(
@@ -1175,7 +1177,8 @@ class Project:
         if format == "parquet":
             data.to_parquet(path.joinpath(file_name))
         if format == "xlsx":
-            data["timestamp"] = data["timestamp"].dt.tz_localize(None)
+            if "timestamp" in data.columns:
+                data["timestamp"] = data["timestamp"].dt.tz_localize(None)
             data.to_excel(path.joinpath(file_name))
 
         return FileResponse(path.joinpath(file_name), filename=file_name)
