@@ -276,6 +276,7 @@ export const ProjectCreationForm: FC = () => {
       force_label: false,
       seed: random(0, 10000),
     });
+    setData(null);
     // reset data when changing dataset
   }, [dataset, reset]);
 
@@ -320,7 +321,7 @@ export const ProjectCreationForm: FC = () => {
                 <option key="from-project" value="from-project"></option>
                 <optgroup label="Select project">
                   {(datasets?.projects || []).map((d) => (
-                  <option key={d.project_slug} value={d.project_slug}>
+                    <option key={d.project_slug} value={d.project_slug}>
                       {d.project_slug}
                     </option>
                   ))}
@@ -333,8 +334,8 @@ export const ProjectCreationForm: FC = () => {
                         value={`-toy-dataset-${d.project_slug}`}
                       >
                         {d.project_slug}
-                  </option>
-                ))}
+                      </option>
+                    ))}
                   </optgroup>
                 )}
               </select>
