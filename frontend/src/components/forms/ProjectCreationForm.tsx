@@ -253,6 +253,7 @@ export const ProjectCreationForm: FC = () => {
           }
         }, 1000);
       } catch (error) {
+        setCreatingProject(false);
         if (!(error instanceof CanceledError)) notify({ type: 'error', message: error + '' });
         else notify({ type: 'success', message: 'Project creation aborted' });
       }
@@ -262,7 +263,7 @@ export const ProjectCreationForm: FC = () => {
   useEffect(() => {
     console.log('Dataset changed:', dataset);
     reset({
-      col_id: '',
+      col_id: 'row_number',
       cols_text: [],
       cols_context: [],
       cols_label: [],
@@ -273,6 +274,7 @@ export const ProjectCreationForm: FC = () => {
       clear_test: false,
       random_selection: true,
       force_label: false,
+      seed: random(0, 10000),
     });
     // reset data when changing dataset
   }, [dataset, reset]);
