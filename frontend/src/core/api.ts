@@ -2746,12 +2746,14 @@ export function useDeleteMessage() {
   return { deleteMessage };
 }
 
-export function useGetAvailableDatasets() {
+export function useGetAvailableDatasets(include_toy_datasets: boolean = false) {
   const [fetchTrigger, setFetchTrigger] = useState<boolean>(false);
 
   const getDatasets = useAsyncMemo(async () => {
-    const res = await api.GET('/datasets');
-    if (res.data && !res.error) return res.data;
+    const res = await api.GET('/datasets', {
+      params: { query: { include_toy_datasets: include_toy_datasets } },
+    });
+    if (res.data && !res.error) return { projects: res.data[0], toy_datasets: res.data[1] };
     else {
       return null;
     }

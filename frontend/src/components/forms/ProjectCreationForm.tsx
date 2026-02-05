@@ -69,7 +69,7 @@ export const ProjectCreationForm: FC = () => {
     },
   });
   const { notify } = useNotifications();
-  const { datasets } = useGetAvailableDatasets();
+  const { datasets } = useGetAvailableDatasets(true); // Include toy datasets
 
   const [creatingProject, setCreatingProject] = useState<boolean>(false); // state for the data
   const [dataset, setDataset] = useState<string | null>(null); // state for the data
@@ -307,12 +307,26 @@ export const ProjectCreationForm: FC = () => {
                   setDataset(e.target.value);
                 }}
               >
-                <option>Select project</option>
-                {(datasets || []).map((d) => (
+                <option key="from-project" value="from-project"></option>
+                <optgroup label="Select project">
+                  {(datasets?.projects || []).map((d) => (
                   <option key={d.project_slug} value={d.project_slug}>
-                    Dataset project {d.project_slug}
+                      {d.project_slug}
+                    </option>
+                  ))}
+                </optgroup>
+                {datasets?.toy_datasets && datasets?.toy_datasets?.length > 0 && (
+                  <optgroup label="Select toy dataset">
+                    {(datasets?.toy_datasets || []).map((d) => (
+                      <option
+                        key={`-toy-dataset-${d.project_slug}`}
+                        value={`-toy-dataset-${d.project_slug}`}
+                      >
+                        {d.project_slug}
                   </option>
                 ))}
+                  </optgroup>
+                )}
               </select>
             )}
             {dataset === 'load' && (
