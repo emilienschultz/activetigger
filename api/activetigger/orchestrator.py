@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import cast
 
 import pandas as pd
+import pyarrow.parquet as pq
 import psutil
 from jose import jwt
 
@@ -26,6 +27,7 @@ from activetigger.datamodels import (
     LMComputing,
     ProjectBaseModel,
     ServerStateModel,
+    DatasetModel
 )
 from activetigger.db import DBException
 from activetigger.db.manager import DatabaseManager
@@ -526,6 +528,22 @@ class Orchestrator:
         if self.users.get_storage(username) > limit * 1000:
             return False
         return True
+    
+    def get_toy_datasets(self) -> list[DatasetModel]:
+        """
+        Get the name of available toy datasets
+        """
+        toy_datasets = []
+        for file in os.listdir(self.path_toy_datasets):
+            if file.endswith(".parquet"):
+                toy_dataset_name = file.removesuffix(".parquet")
+                pq_file = pq.ParquetFile(self.path_toy_datasets.joinpath(file))
+                toy_datasets += [DatasetModel(
+                    project_slug = toy_dataset_name,
+                    columns = [col.name for col in list(pq_file.schema)],
+                    n_rows = pq_file.metadata.num_rows
+                )]
+        return toy_datasets
 
 
 # launch the instance
