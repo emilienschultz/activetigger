@@ -2446,13 +2446,20 @@ export function useAddFile() {
  * Copy existing data
  */
 export function useCopyExistingData() {
-  const copyExistingData = useCallback(async (project_name: string, source_project: string) => {
-    await api.POST('/files/copy/project', {
-      params: {
-        query: { project_name: project_name, source_project: source_project },
-      },
-    });
-  }, []);
+  const copyExistingData = useCallback(
+    async (project_name: string, source_project: string, from_toy_dataset: boolean) => {
+      await api.POST('/files/copy/project', {
+        params: {
+          query: {
+            project_name: project_name,
+            source_project: source_project,
+            from_toy_dataset: from_toy_dataset,
+          },
+        },
+      });
+    },
+    [],
+  );
   return copyExistingData;
 }
 

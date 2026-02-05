@@ -100,7 +100,12 @@ export const ProjectCreationForm: FC = () => {
       setLengthData(data.data.length);
       // case of existing project
     } else if (dataset !== 'load' && datasets) {
-      const element = datasets.find((e) => e.project_slug === dataset);
+      const element =
+        dataset?.startsWith('-toy-dataset-') && datasets.toy_datasets
+          ? datasets.toy_datasets.find((e) => `-toy-dataset-${e.project_slug}` === dataset)
+          : datasets.projects.find((e) => e.project_slug === dataset);
+
+      console.log(element);
       setAvailableFields(
         element?.columns.filter((h) => h !== '').map((e) => ({ value: e, label: e })),
       );
@@ -183,7 +188,9 @@ export const ProjectCreationForm: FC = () => {
         }
         // case to use a project existing
         else if (dataset !== 'load' && dataset) {
-          await copyExistingData(formData.project_name, dataset);
+          const from_toy_dataset = dataset.startsWith('-toy-dataset-');
+          const source_project = from_toy_dataset ? dataset.slice(13) : dataset; // if from toy dataset remove prefix
+          await copyExistingData(formData.project_name, source_project, from_toy_dataset);
         } else {
           notify({ type: 'error', message: 'Unknown dataset' });
           throw new Error('Unknown dataset');
@@ -194,6 +201,7 @@ export const ProjectCreationForm: FC = () => {
           ...omit(formData, 'files'),
           filename: data ? data.filename : null,
           from_project: dataset == 'load' ? null : dataset,
+          from_toy_dataset: dataset.startsWith('-toy-dataset-'),
         });
 
         // create a limit for waiting the project creation

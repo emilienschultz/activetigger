@@ -273,12 +273,17 @@ class Orchestrator:
             messages=self.messages.get_messages_system(),
         )
 
-    def exists(self, project_name: str) -> bool:
+    def exists(self, project_name: str, include_toy_datasets: bool = False) -> bool:
         """
         Test if a project exists in the database
         with a sluggified form (to be able to use it in URL)
         """
-        return slugify(project_name) in self.existing_projects()
+        if include_toy_datasets:
+            existing_projects : list[str] = self.existing_projects()
+            toy_datasets : list[str] = [dataset.project_slug for dataset in self.get_toy_datasets()]
+            return slugify(project_name) in existing_projects + toy_datasets
+        else: 
+            return slugify(project_name) in self.existing_projects()
 
     def check_project_name(self, project_name: str) -> str:
         """
