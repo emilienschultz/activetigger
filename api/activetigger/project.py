@@ -1,5 +1,6 @@
 import io
 import json
+import math
 import os
 import shutil
 import time
@@ -662,12 +663,12 @@ class Project:
         """
         prediction = self.get_model_prediction(kind, name)
         predicted_label = str(prediction.loc[element_id, "prediction"])
-        predicted_proba = round(float(cast(float, prediction.loc[element_id, predicted_label])), 2)
-        predicted_entropy = round(float(cast(float, prediction.loc[element_id, "entropy"])), 2)
+        predicted_proba = float(cast(float, prediction.loc[element_id, predicted_label]))
+        predicted_entropy = float(cast(float, prediction.loc[element_id, "entropy"]))
         return PredictedLabel(
             label=predicted_label,
-            proba=predicted_proba,
-            entropy=predicted_entropy,
+            proba=round(predicted_proba, 2) if not math.isnan(predicted_proba) else None,
+            entropy=round(predicted_entropy, 2) if not math.isnan(predicted_entropy) else None,
         )
 
     def get_next(
