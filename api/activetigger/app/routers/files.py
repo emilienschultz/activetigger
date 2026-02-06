@@ -117,9 +117,12 @@ async def copy_existing_data(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project_name: str,
     source_project: str,
+    from_toy_dataset: bool = False,
 ) -> None:
     """
     Copy an existing project to create a new one
+    if copy dataset from toy datasets: orchestrator.path_toy_datasets/NAME.parquet
+    if copy from project: orchestrator.path/NAME/data_all.parquet
     """
     test_rights(ServerAction.CREATE_PROJECT, current_user.username)
 
@@ -128,20 +131,20 @@ async def copy_existing_data(
         raise HTTPException(
             status_code=500, detail="Project already exists, please choose another name"
         )
-    # check if the source project exists
-    if not orchestrator.exists(source_project):
-        raise HTTPException(status_code=500, detail="Source project does not exist")
     # try to copy the project
     try:
         # create a folder for the project to be created
         project_slug = orchestrator.check_project_name(project_name)
-        source_path = Path(f"{config.data_path}/projects/{source_project}")
-        project_path = Path(f"{config.data_path}/projects/{project_slug}")
+        if from_toy_dataset:
+            source_path = Path(f"{orchestrator.path_toy_datasets}/{source_project}.parquet")
+        else:
+            source_path = Path(f"{orchestrator.path}/{source_project}/{config.data_all}")
+        project_path = Path(f"{orchestrator.path}/{project_slug}")
         os.makedirs(project_path)
 
         # copy the full dataset
         shutil.copyfile(
-            source_path.joinpath(config.data_all),
+            source_path,
             project_path.joinpath(config.data_all),
         )
 

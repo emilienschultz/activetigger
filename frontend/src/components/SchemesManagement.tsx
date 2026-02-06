@@ -26,7 +26,7 @@ export const SelectCurrentScheme: FC<{ username?: string | null }> = ({ username
 
   // get element from the context
   const {
-    appContext: { currentProject, currentScheme },
+    appContext: { currentProject, currentScheme, selectionConfig },
     setAppContext,
   } = useAppContext();
 
@@ -48,11 +48,13 @@ export const SelectCurrentScheme: FC<{ username?: string | null }> = ({ username
         setAppContext((state) => ({
           ...state,
           currentScheme: currentProject.users.last_schemes[username],
+          activeModel: null,
         }));
       else
         setAppContext((state) => ({
           ...state,
           currentScheme: nonDefaultSchemes[0],
+          activeModel: null,
         }));
       notify({
         type: 'success',
@@ -74,6 +76,11 @@ export const SelectCurrentScheme: FC<{ username?: string | null }> = ({ username
     setAppContext((state) => ({
       ...state,
       currentScheme: selectedOption ? selectedOption.value : availableSchemes[0],
+      activeModel: null,
+      selectionConfig: {
+        ...selectionConfig,
+        mode: 'fixed',
+      },
       history: [],
     }));
     notify({
@@ -152,6 +159,7 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
       setAppContext((state) => ({
         ...state,
         currentScheme: formData.name,
+        activeModel: null,
       }));
     } catch (error) {
       notify({ type: 'error', message: error + '' });
@@ -169,6 +177,7 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
     setAppContext((state) => ({
       ...state,
       currentScheme: otherSchemes[0],
+      activeModel: null,
     }));
     notify({ type: 'success', message: 'Scheme changed to ' + otherSchemes[0] });
 

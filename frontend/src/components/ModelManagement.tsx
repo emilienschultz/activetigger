@@ -130,7 +130,8 @@ export const ModelManagement: FC = () => {
   // state for new feature
   const [displayNewModel, setDisplayNewModel] = useState<boolean>(false);
 
-  const [showParameters, setShowParameters] = useState(false);
+  const [showParametersQuickModel, setShowParametersQuickModel] = useState(false);
+  const [showParametersBertModel, setShowParametersBertModel] = useState(false);
 
   const cleanDisplay = (listOfFeatures: string, sep?: string) => {
     if (!sep) {
@@ -252,7 +253,7 @@ export const ModelManagement: FC = () => {
             <button
               className="btn-secondary-action"
               onClick={() => {
-                setShowParameters(true);
+                setShowParametersQuickModel(true);
               }}
             >
               <FaGear size={18} className="me-1" />
@@ -297,7 +298,10 @@ export const ModelManagement: FC = () => {
             dataset="Train-Eval"
           />
           <div className="horizontal wrap">
-            <button className="btn-secondary-action" onClick={() => setShowParameters(true)}>
+            <button
+              className="btn-secondary-action"
+              onClick={() => setShowParametersBertModel(true)}
+            >
               <FaGear size={18} />
               Parameters
             </button>
@@ -330,7 +334,7 @@ export const ModelManagement: FC = () => {
             projectSlug={projectSlug || ''}
             currentScheme={currentScheme || ''}
             kindScheme={kindScheme}
-            baseQuickModels={baseQuickModels}
+            baseQuickModels={baseQuickModels as Record<string, Record<string, number>>}
             features={features}
             availableLabels={availableLabels}
             setDisplayNewModel={setDisplayNewModel}
@@ -338,9 +342,13 @@ export const ModelManagement: FC = () => {
         </Modal.Body>
       </Modal>
 
-      <Modal show={showParameters} id="parameters-modal" onHide={() => setShowParameters(false)}>
+      <Modal
+        show={showParametersQuickModel}
+        id="parameters-modal"
+        onHide={() => setShowParametersQuickModel(false)}
+      >
         <Modal.Header closeButton>
-          <Modal.Title>Parameters of {currentQuickModelName}</Modal.Title>
+          <Modal.Title>Parameters of {currentQuickModelInformations?.name}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {currentQuickModelInformations && (
@@ -394,7 +402,11 @@ export const ModelManagement: FC = () => {
           />
         </Modal.Body>
       </Modal>
-      <Modal show={showParameters} id="parameters-modal" onHide={() => setShowParameters(false)}>
+      <Modal
+        show={showParametersBertModel}
+        id="parameters-modal"
+        onHide={() => setShowParametersBertModel(false)}
+      >
         <Modal.Header closeButton>
           <Modal.Title>Parameters of {currentBertModel}</Modal.Title>
         </Modal.Header>
