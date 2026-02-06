@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import cast
 
 import pandas as pd
+import pyarrow.parquet as pq
 import psutil
 from jose import jwt
 
@@ -26,6 +27,7 @@ from activetigger.datamodels import (
     LMComputing,
     ProjectBaseModel,
     ServerStateModel,
+    DatasetModel
 )
 from activetigger.db import DBException
 from activetigger.db.manager import DatabaseManager
@@ -71,13 +73,15 @@ class Orchestrator:
         self.n_workers_gpu = config.n_workers_gpu
 
         # Define path
-        self.path = Path(config.data_path) / "projects"
-        self.path_models = Path(config.data_path) / "models"
+        self.path : Path = Path(config.data_path) / "projects"
+        self.path_models : Path = Path(config.data_path) / "models"
+        self.path_toy_datasets : Path = Path(self.path) / "toy-datasets"
 
         # create directories parent/static/models
         self.path.mkdir(parents=True, exist_ok=True)
         (self.path.joinpath("static")).mkdir(parents=True, exist_ok=True)
         self.path_models.mkdir(exist_ok=True)
+        self.path_toy_datasets.mkdir(exist_ok=True)
 
         # attributes of the server
         self.db_manager = DatabaseManager()
@@ -269,12 +273,17 @@ class Orchestrator:
             messages=self.messages.get_messages_system(),
         )
 
-    def exists(self, project_name: str) -> bool:
+    def exists(self, project_name: str, include_toy_datasets: bool = False) -> bool:
         """
         Test if a project exists in the database
         with a sluggified form (to be able to use it in URL)
         """
-        return slugify(project_name) in self.existing_projects()
+        if include_toy_datasets:
+            existing_projects : list[str] = self.existing_projects()
+            toy_datasets : list[str] = [dataset.project_slug for dataset in self.get_toy_datasets()]
+            return slugify(project_name) in existing_projects + toy_datasets
+        else: 
+            return slugify(project_name) in self.existing_projects()
 
     def check_project_name(self, project_name: str) -> str:
         """
@@ -524,6 +533,22 @@ class Orchestrator:
         if self.users.get_storage(username) > limit * 1000:
             return False
         return True
+    
+    def get_toy_datasets(self) -> list[DatasetModel]:
+        """
+        Get the name of available toy datasets
+        """
+        toy_datasets = []
+        for file in os.listdir(self.path_toy_datasets):
+            if file.endswith(".parquet"):
+                toy_dataset_name = file.removesuffix(".parquet")
+                pq_file = pq.ParquetFile(self.path_toy_datasets.joinpath(file))
+                toy_datasets += [DatasetModel(
+                    project_slug = toy_dataset_name,
+                    columns = [col.name for col in list(pq_file.schema)],
+                    n_rows = pq_file.metadata.num_rows
+                )]
+        return toy_datasets
 
 
 # launch the instance
