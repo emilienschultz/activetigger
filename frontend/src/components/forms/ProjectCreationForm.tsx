@@ -89,7 +89,6 @@ export const ProjectCreationForm: FC = () => {
   const [availableFields, setAvailableFields] = useState<Option[] | undefined>(undefined);
   const [columns, setColumns] = useState<string[]>([]);
   const [lengthData, setLengthData] = useState<number>(0);
-  setValue('seed', random(0, 10000));
   useEffect(() => {
     // case of loading external file
     if (dataset === 'load' && data) {
@@ -105,12 +104,11 @@ export const ProjectCreationForm: FC = () => {
           ? datasets.toy_datasets.find((e) => `-toy-dataset-${e.project_slug}` === dataset)
           : datasets.projects.find((e) => e.project_slug === dataset);
 
-      console.log(element);
       setAvailableFields(
         element?.columns.filter((h) => h !== '').map((e) => ({ value: e, label: e })),
       );
       setColumns(element?.columns || []);
-      setLengthData(element?.n_rows as number);
+      setLengthData(element?.n_rows ?? 0);
     } else {
       setAvailableFields(undefined);
       setColumns([]);
@@ -261,7 +259,6 @@ export const ProjectCreationForm: FC = () => {
   };
 
   useEffect(() => {
-    console.log('Dataset changed:', dataset);
     reset({
       col_id: 'row_number',
       cols_text: [],

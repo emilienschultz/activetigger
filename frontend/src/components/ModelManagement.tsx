@@ -167,7 +167,6 @@ export const ModelManagement: FC = () => {
     }
   }, [currentBertModel]);
 
-  console.log(`currentQuickModelName: ${currentQuickModelName}`);
   return (
     <>
       <span className="fw-semibold text-muted small">Quick Models</span>
@@ -348,7 +347,7 @@ export const ModelManagement: FC = () => {
         id="parameters-modal"
         onHide={() => setShowParametersQuickModel(false)}
       >
-        <Modal.Header>
+        <Modal.Header closeButton>
           <Modal.Title>Parameters of {currentQuickModelInformations?.name}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
