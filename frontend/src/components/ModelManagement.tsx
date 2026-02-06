@@ -334,7 +334,7 @@ export const ModelManagement: FC = () => {
             projectSlug={projectSlug || ''}
             currentScheme={currentScheme || ''}
             kindScheme={kindScheme}
-            baseQuickModels={baseQuickModels}
+            baseQuickModels={baseQuickModels as Record<string, Record<string, number>>}
             features={features}
             availableLabels={availableLabels}
             setDisplayNewModel={setDisplayNewModel}
