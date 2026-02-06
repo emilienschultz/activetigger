@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, cast
 
+import numpy as np
 import pandas as pd
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse
@@ -572,6 +573,13 @@ class Project:
         # get data
         df_features = self.features.get(quickmodel.features, dataset=["train"])
         df_scheme = self.schemes.get_scheme(scheme=quickmodel.scheme)
+
+        # Filter out labels to exclude
+        if len(quickmodel.exclude_labels) > 0:
+            df_scheme = df_scheme.loc[
+                np.isin(df_scheme["labels"],quickmodel.exclude_labels,invert=True), 
+                :
+            ]
 
         # management for multilabels / dichotomize
         if quickmodel.dichotomize is not None:
