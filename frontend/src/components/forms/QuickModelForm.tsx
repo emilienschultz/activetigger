@@ -56,7 +56,7 @@ export const QuickModelForm: FC<QuickModelFormProps> = ({
 
   const createDefaultValues = () => ({
     name: getRandomName('QuickModel'),
-    model: 'logistic-l1',
+    model: 'logistic-l2',
     scheme: currentScheme || undefined,
     params: {
       costLogL1: 1,
