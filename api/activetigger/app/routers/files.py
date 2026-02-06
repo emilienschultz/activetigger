@@ -117,7 +117,7 @@ async def copy_existing_data(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project_name: str,
     source_project: str,
-    from_toy_dataset: bool = False
+    from_toy_dataset: bool = False,
 ) -> None:
     """
     Copy an existing project to create a new one
@@ -131,9 +131,6 @@ async def copy_existing_data(
         raise HTTPException(
             status_code=500, detail="Project already exists, please choose another name"
         )
-    # check if the source project exists
-    if not orchestrator.exists(source_project, include_toy_datasets=True):
-        raise HTTPException(status_code=500, detail="Source project does not exist")
     # try to copy the project
     try:
         # create a folder for the project to be created

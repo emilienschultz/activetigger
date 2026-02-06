@@ -60,13 +60,16 @@ class CreateProject(BaseTask):
         # Step 1 : load all data, rename columns and define index
         # Only for new file: if data from a previous project, no need to reprocess it
         if (self.params.filename is not None) or self.params.from_toy_dataset:
-            if (self.params.filename is not None) and not(self.params.from_toy_dataset):
+            if (self.params.filename is not None) and not (self.params.from_toy_dataset):
                 # if a file was uploaded
                 # load the uploaded file
                 file_path = self.params.dir.joinpath(self.params.filename)
-            if self.params.from_toy_dataset:
+            elif self.params.from_toy_dataset:
                 # if the file was copied from a toy dataset
                 file_path = self.params.dir.joinpath(config.data_all)
+                print(f"Loading data from toy dataset : {file_path}")
+            else:
+                raise Exception("No file provided for the project")
 
             if not file_path.exists():
                 raise Exception("File not found, problem when uploading")
