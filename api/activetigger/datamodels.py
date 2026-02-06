@@ -676,6 +676,7 @@ class QuickModelComputed(BaseModel):
     standardize: bool = False
     cv10: bool = False
     balance_classes: bool = False
+    exclude_labels: list[str] = []
     retrain: bool = False
     proba: DataFrame | None = None
     model: BaseEstimator

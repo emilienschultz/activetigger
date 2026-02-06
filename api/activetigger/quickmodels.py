@@ -99,6 +99,7 @@ class QuickModels:
         model_params: dict | None = None,
         cv10: bool = False,
         balance_classes: bool = False,
+        exclude_labels: list[str] = [],
         retrain: bool = False,
         texts: pd.Series | None = None,
     ) -> str:
@@ -197,6 +198,7 @@ class QuickModels:
             "model_params": model_params,
             "texts": texts,
             "random_seed": config.random_seed,
+            "exclude_labels": exclude_labels
         }
         unique_id = self.queue.add_task("quickmodel", project_slug, TrainML(**args))
         del args

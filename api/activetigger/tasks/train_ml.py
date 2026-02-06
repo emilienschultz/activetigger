@@ -43,6 +43,7 @@ class TrainML(BaseTask):
         standardize: bool = False,
         cv10: bool = False,
         balance_classes: bool = False,
+        exclude_labels : list[str] = [],
         retrain: bool = False,
         texts: pd.Series | None = None,
         random_seed: int = 42,
@@ -57,6 +58,7 @@ class TrainML(BaseTask):
         self.user = user
         self.cv10 = cv10
         self.balance_classes = balance_classes
+        self.exclude_labels = exclude_labels    # labels are excluded earlier on in the pipeline, but we must save this information somewhere
         self.path = path
         self.model_path = path.joinpath(name)
         self.retrain = retrain
@@ -168,6 +170,7 @@ class TrainML(BaseTask):
             standardize=self.standardize,
             cv10=self.cv10,
             balance_classes=self.balance_classes,
+            exclude_labels=self.exclude_labels,
             retrain=self.retrain,
             proba=proba,
             statistics_train=metrics_train,
