@@ -636,6 +636,7 @@ class QuickModelInModel(BaseModel):
     dichotomize: str | None = None
     cv10: bool = False
     balance_classes: bool = False
+    exclude_labels: list[str] = []
 
 
 class QuickModelComputing(ProcessComputing):

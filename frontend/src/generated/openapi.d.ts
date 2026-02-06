@@ -2038,7 +2038,10 @@ export interface components {
             grant_type?: string | null;
             /** Username */
             username: string;
-            /** Password */
+            /**
+             * Password
+             * Format: password
+             */
             password: string;
             /**
              * Scope
@@ -2047,7 +2050,10 @@ export interface components {
             scope: string;
             /** Client Id */
             client_id?: string | null;
-            /** Client Secret */
+            /**
+             * Client Secret
+             * Format: password
+             */
             client_secret?: string | null;
         };
         /** Body_upload_file_dataset_files_add_dataset_post */
@@ -2215,7 +2221,9 @@ export interface components {
             /** Text */
             text: string;
             /** Context */
-            context: Record<string, never>;
+            context: {
+                [key: string]: unknown;
+            };
             /** Selection */
             selection: string;
             /** Info */
@@ -2260,7 +2268,9 @@ export interface components {
             /** Name */
             name: string;
             /** Parameters */
-            parameters: Record<string, never>;
+            parameters: {
+                [key: string]: unknown;
+            };
             /** User */
             user: string;
             /** Time */
@@ -2286,7 +2296,9 @@ export interface components {
         FeaturesProjectStateModel: {
             /** Options */
             options: {
-                [key: string]: Record<string, never> | undefined;
+                [key: string]: {
+                    [key: string]: unknown;
+                } | undefined;
             };
             /** Available */
             available: string[];
@@ -2420,7 +2432,9 @@ export interface components {
             progress?: number | null;
             /** Loss */
             loss?: {
-                [key: string]: Record<string, never> | undefined;
+                [key: string]: {
+                    [key: string]: unknown;
+                } | undefined;
             } | null;
             /** Epochs */
             epochs?: number | null;
@@ -2501,7 +2515,9 @@ export interface components {
         /** LanguageModelsProjectStateModel */
         LanguageModelsProjectStateModel: {
             /** Options */
-            options: Record<string, never>[];
+            options: {
+                [key: string]: unknown;
+            }[];
             /** Available */
             available: {
                 [key: string]: {
@@ -2545,9 +2561,13 @@ export interface components {
             /** Confusion Matrix */
             confusion_matrix?: number[][] | null;
             /** False Predictions */
-            false_predictions?: Record<string, never> | unknown[] | null;
+            false_predictions?: {
+                [key: string]: unknown;
+            } | unknown[] | null;
             /** Table */
-            table?: Record<string, never> | null;
+            table?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** MessagesInModel */
         MessagesInModel: {
@@ -2582,7 +2602,9 @@ export interface components {
             /** Scheme */
             scheme: string;
             /** Parameters */
-            parameters: Record<string, never>;
+            parameters: {
+                [key: string]: unknown;
+            };
             /** Path */
             path: string;
             /** Time */
@@ -2591,23 +2613,37 @@ export interface components {
         /** ModelInformationsModel */
         ModelInformationsModel: {
             /** Params */
-            params?: Record<string, never> | null;
+            params?: {
+                [key: string]: unknown;
+            } | null;
             /** Loss */
-            loss?: Record<string, never> | null;
+            loss?: {
+                [key: string]: unknown;
+            } | null;
             scores: components["schemas"]["ModelScoresModel"];
         };
         /** ModelScoresModel */
         ModelScoresModel: {
             /** Internalvalid Scores */
-            internalvalid_scores?: Record<string, never> | null;
+            internalvalid_scores?: {
+                [key: string]: unknown;
+            } | null;
             /** Train Scores */
-            train_scores?: Record<string, never> | null;
+            train_scores?: {
+                [key: string]: unknown;
+            } | null;
             /** Valid Scores */
-            valid_scores?: Record<string, never> | null;
+            valid_scores?: {
+                [key: string]: unknown;
+            } | null;
             /** Test Scores */
-            test_scores?: Record<string, never> | null;
+            test_scores?: {
+                [key: string]: unknown;
+            } | null;
             /** Outofsample Scores */
-            outofsample_scores?: Record<string, never> | null;
+            outofsample_scores?: {
+                [key: string]: unknown;
+            } | null;
         };
         /**
          * MonitoringLanguageModelsModel
@@ -2848,7 +2884,9 @@ export interface components {
             /** Train Annotated N */
             train_annotated_n: number;
             /** Train Annotated Distribution */
-            train_annotated_distribution: Record<string, never>;
+            train_annotated_distribution: {
+                [key: string]: unknown;
+            };
             /** Test Set N */
             test_set_n?: number | null;
             /** Valid Set N */
@@ -2858,9 +2896,13 @@ export interface components {
             /** Valid Annotated N */
             valid_annotated_n?: number | null;
             /** Test Annotated Distribution */
-            test_annotated_distribution?: Record<string, never> | null;
+            test_annotated_distribution?: {
+                [key: string]: unknown;
+            } | null;
             /** Valid Annotated Distribution */
-            valid_annotated_distribution?: Record<string, never> | null;
+            valid_annotated_distribution?: {
+                [key: string]: unknown;
+            } | null;
             /** Sm 10Cv */
             sm_10cv?: unknown | null;
         };
@@ -3084,7 +3126,9 @@ export interface components {
         ProjectionsProjectStateModel: {
             /** Options */
             options: {
-                [key: string]: Record<string, never> | undefined;
+                [key: string]: {
+                    [key: string]: unknown;
+                } | undefined;
             };
             /** Available */
             available: {
@@ -3109,7 +3153,9 @@ export interface components {
             /** Text */
             text: string;
             /** Parameters */
-            parameters: Record<string, never>;
+            parameters: {
+                [key: string]: unknown;
+            };
         };
         /**
          * QuickModelInModel
@@ -3146,6 +3192,11 @@ export interface components {
              * @default false
              */
             balance_classes: boolean;
+            /**
+             * Exclude Labels
+             * @default []
+             */
+            exclude_labels: string[];
         };
         /**
          * QuickModelOutModel
@@ -3182,7 +3233,9 @@ export interface components {
         /** QuickModelsProjectStateModel */
         QuickModelsProjectStateModel: {
             /** Options */
-            options: Record<string, never>;
+            options: {
+                [key: string]: unknown;
+            };
             /** Available */
             available: {
                 [key: string]: components["schemas"]["ModelDescriptionModel"][] | undefined;
@@ -3265,11 +3318,17 @@ export interface components {
             };
             gpu: components["schemas"]["GpuInformationModel"];
             /** Cpu */
-            cpu: Record<string, never>;
+            cpu: {
+                [key: string]: unknown;
+            };
             /** Memory */
-            memory: Record<string, never>;
+            memory: {
+                [key: string]: unknown;
+            };
             /** Disk */
-            disk: Record<string, never>;
+            disk: {
+                [key: string]: unknown;
+            };
             /** Mail Available */
             mail_available: boolean;
             /** Messages */
@@ -5996,7 +6055,9 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        [key: string]: (unknown[] | Record<string, never>) | undefined;
+                        [key: string]: (unknown[] | {
+                            [key: string]: unknown;
+                        }) | undefined;
                     };
                 };
             };

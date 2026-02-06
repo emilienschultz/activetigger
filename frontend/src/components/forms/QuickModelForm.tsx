@@ -50,7 +50,10 @@ export const QuickModelForm: FC<QuickModelFormProps> = ({
 
     return filtered;
   };
-
+  const existingLabels = Object.entries(availableLabels).map(([key, value]) => ({
+    value: key,
+    label: value,
+  }));
   const predictions = filterFeatures(features);
   const defaultFeatures = predictions.length > 0 ? [predictions[predictions.length - 1]] : [];
 
@@ -239,6 +242,19 @@ export const QuickModelForm: FC<QuickModelFormProps> = ({
           <input type="checkbox" id="cv10" {...register('cv10')} />
           10-fold cross validation
         </label>
+        <Controller
+          name="exclude_labels"
+          control={control}
+          render={({ field: { onChange } }) => (
+            <Select
+              options={existingLabels}
+              isMulti
+              onChange={(selectedOptions) => {
+                onChange(selectedOptions ? selectedOptions.map((option) => option.label) : []);
+              }}
+            />
+          )}
+        />
       </details>
 
       <button className="btn-submit">Train quick model</button>
