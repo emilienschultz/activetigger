@@ -90,6 +90,14 @@ export const QuickModelForm: FC<QuickModelFormProps> = ({
       notify({ type: 'error', message: 'Please select at least one feature' });
       return;
     }
+    if (availableLabels.length - formData.exclude_labels?.length < 2) {
+      notify({
+        type: 'error',
+        message:
+          'You are trying to train a model on only one label. You need at least 2 labels to start a training',
+      });
+      return;
+    }
     await trainQuickModel(formData);
     setDisplayNewModel(false);
   };
