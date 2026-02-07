@@ -268,8 +268,13 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
           />
           <button
             className="btn-submit"
-            onClick={() => {
-              renameScheme(newSchemeName);
+            onClick={async () => {
+              await renameScheme(newSchemeName);
+              setAppContext((state) => ({
+                ...state,
+                currentScheme: newSchemeName,
+              }));
+              if (reFetchCurrentProject) reFetchCurrentProject();
               setShowRename(false);
             }}
           >
