@@ -70,7 +70,12 @@ export const CreateNewFeature: FC<CreateNewFeatureProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit(createNewFeature)}>
+    <form
+      onSubmit={(e) => {
+        e.stopPropagation();
+        handleSubmit(createNewFeature)(e);
+      }}
+    >
       <label htmlFor="newFeature">Feature type</label>
       <select id="newFeature" {...register('type')}>
         <option key="empty"></option>
