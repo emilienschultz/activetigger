@@ -1,5 +1,5 @@
 import MDEditor from '@uiw/react-md-editor';
-import { Dispatch, FC, useEffect, SetStateAction } from 'react';
+import { Dispatch, FC, SetStateAction, useEffect } from 'react';
 import rehypeSanitize from 'rehype-sanitize';
 
 interface CodebookManagementProps {
@@ -8,6 +8,7 @@ interface CodebookManagementProps {
   modifiedCodebook: string | undefined;
   setModifiedCodebook: Dispatch<SetStateAction<string | undefined>>;
   saveCodebook: () => Promise<void>;
+  callbackOnClose?: (arg: boolean) => void;
 }
 
 /**
@@ -20,13 +21,21 @@ export const CodebookManagement: FC<CodebookManagementProps> = ({
   modifiedCodebook,
   setModifiedCodebook,
   saveCodebook,
+  callbackOnClose,
 }) => {
   // update the text zone once (if undefined)
   useEffect(() => {
     if (codebook && modifiedCodebook === undefined) {
       setModifiedCodebook(codebook);
     }
-  }, [codebook, modifiedCodebook, time]);
+  }, [codebook, modifiedCodebook, time, setModifiedCodebook]);
+
+  const handleClose = () => {
+    saveCodebook();
+    if (callbackOnClose) {
+      callbackOnClose(false);
+    }
+  };
 
   return (
     <div>
@@ -37,7 +46,7 @@ export const CodebookManagement: FC<CodebookManagementProps> = ({
           rehypePlugins: [[rehypeSanitize]],
         }}
       />
-      <button className="btn-submit" onClick={saveCodebook}>
+      <button className="btn-submit" onClick={handleClose}>
         Save
       </button>
     </div>
