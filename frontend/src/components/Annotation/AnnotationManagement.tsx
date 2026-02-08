@@ -1,4 +1,4 @@
-import { CSSProperties, FC, useCallback, useEffect, useRef, useState } from 'react';
+import { CSSProperties, FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuRefreshCw } from 'react-icons/lu';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -61,11 +61,12 @@ export const AnnotationManagement: FC = () => {
   };
 
   // hooks to manage element
+  const historyIds = useMemo(() => history.map((h) => h.element_id), [history]);
   const { getNextElementId } = useGetNextElementId(
     projectName || null,
     currentScheme || null,
     selectionConfig,
-    history.map((h) => h.element_id),
+    historyIds,
     phase,
     activeModel || null,
   );
