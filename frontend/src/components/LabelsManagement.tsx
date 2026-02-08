@@ -90,7 +90,7 @@ export const LabelCard: FC<LabelCardProps> = ({
       </Modal>
       <Modal show={showRename} onHide={() => setShowRename(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>Rename {label}</Modal.Title>
+          <Modal.Title>Rename label {label}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <input
