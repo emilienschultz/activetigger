@@ -43,7 +43,8 @@ export const ModelManagement: FC = () => {
   const { notify } = useNotifications();
   const { projectName: projectSlug } = useParams();
   const {
-    appContext: { currentScheme, currentProject, isComputing },
+    appContext: { currentScheme, currentProject, isComputing, activeModel },
+    setAppContext,
   } = useAppContext();
   const availableFeatures = currentProject?.features.available
     ? currentProject?.features.available
@@ -166,6 +167,43 @@ export const ModelManagement: FC = () => {
       setCurrentQuickModelName(null);
     }
   }, [currentBertModel]);
+
+  // deactivate currents active model if it has been deleted from the list
+  useEffect(() => {
+    console.log('available quick models', availableQuickModels);
+    console.log(activeModel);
+    if (
+      activeModel &&
+      activeModel.type === 'quick' &&
+      !availableQuickModels.map((m) => m.name).includes(activeModel.value)
+    ) {
+      setAppContext((prev) => ({ ...prev, activeModel: null }));
+      notify({
+        type: 'warning',
+        message: `The active model ${activeModel.value} has been deleted, it has been deactivated for active learning.`,
+      });
+    }
+    if (
+      activeModel &&
+      activeModel.type === 'bert' &&
+      !Object.values(availableBertModels)
+        .map((m) => m?.name)
+        .includes(activeModel.value)
+    ) {
+      setAppContext((prev) => ({ ...prev, activeModel: null }));
+      notify({
+        type: 'warning',
+        message: `The active model ${activeModel.value} has been deleted, it has been deactivated for active learning.`,
+      });
+    }
+  }, [
+    availableQuickModels,
+    availableBertModels,
+    activeModel,
+    setAppContext,
+    notify,
+    currentProject,
+  ]);
 
   return (
     <>
