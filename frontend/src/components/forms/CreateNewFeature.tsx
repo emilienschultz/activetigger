@@ -86,13 +86,6 @@ export const CreateNewFeature: FC<CreateNewFeatureProps> = ({
         ))}{' '}
       </select>
 
-      <label htmlFor="name">Feature name</label>
-      <input
-        type="text"
-        placeholder="Enter the feature name"
-        {...register('name', { required: true })}
-      />
-
       {selectedFeatureToCreate === 'sbert' && (
         <details>
           <summary>Advanced settings</summary>
@@ -202,6 +195,16 @@ export const CreateNewFeature: FC<CreateNewFeatureProps> = ({
             <option key="numeric">Numeric</option>
             <option key="categorical">Categorical</option>
           </select>
+        </>
+      )}
+      {selectedFeatureToCreate !== 'dataset' && (
+        <>
+          <label htmlFor="name">Feature name</label>
+          <input
+            type="text"
+            placeholder="Enter the feature name"
+            {...register('name', { required: true })}
+          />
         </>
       )}
       <button className="btn-submit">Compute</button>
