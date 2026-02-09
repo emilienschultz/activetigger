@@ -1,7 +1,7 @@
 import datetime
 from typing import Any, TypedDict
 
-from sqlalchemy import and_, delete, func, select, update
+from sqlalchemy import and_, case, delete, func, select, update
 from sqlalchemy.orm import Session as SessionType
 from sqlalchemy.orm import sessionmaker
 
@@ -343,6 +343,32 @@ class ProjectsService:
                 delete(Annotations).filter_by(project_slug=project_slug, dataset=dataset)
             )
 
+    def rename_label(self, project_slug: str, scheme: str, former_label: str, new_label: str):
+        """
+        Rename a label in the database
+        - get all annotations with the former label and update them with the new label
+        - update the scheme labels
+        """
+        with self.Session.begin() as session:
+            # update annotations
+            _ = session.execute(
+                update(Annotations)
+                .filter_by(project_slug=project_slug, scheme_name=scheme, annotation=former_label)
+                .values(
+                    annotation=new_label,
+                    commentary=case(
+                        # If commentary exists, append the rename info
+                        (
+                            Annotations.comment.isnot(None),
+                            Annotations.comment
+                            + f" | Renamed from '{former_label}' to '{new_label}'",
+                        ),
+                        # If no commentary, create new one
+                        else_=f"Renamed from '{former_label}' to '{new_label}'",
+                    ),
+                )
+            )
+
     def add_annotations(
         self,
         dataset: str,
@@ -357,7 +383,9 @@ class ProjectsService:
             annotation = Annotations(
                 time=datetime.datetime.now(),
                 dataset=dataset,
-                user_name=user_name,
+                user_name=e.get(
+                    "user_name", user_name
+                ),  # allow overriding user_name for each annotation
                 project_slug=project_slug,
                 element_id=e["element_id"],
                 scheme_name=scheme,
