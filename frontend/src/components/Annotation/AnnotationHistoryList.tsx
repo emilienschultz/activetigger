@@ -1,11 +1,14 @@
 import classNames from 'classnames';
 import { truncate } from 'lodash';
-import { FC } from 'react';
+import { FC, useState } from 'react';
 import { FaRegTrashAlt } from 'react-icons/fa';
+import { HiOutlineEye, HiOutlineViewGrid } from 'react-icons/hi';
+import { HiOutlineTableCells } from 'react-icons/hi2';
 import { Link, useParams } from 'react-router-dom';
 import { Tooltip } from 'react-tooltip';
 import { useAppContext } from '../../core/context';
 import { useAnnotationSessionHistory } from '../../core/useHistory';
+import { displayTime } from '../../core/utils';
 import { ElementHistoryPoint } from '../../types';
 import { AnnotationIcon, NoAnnotationIcon } from '../Icons';
 import { MiddleEllipsis } from './MiddleEllipsis';
@@ -70,17 +73,63 @@ const AnnotationHistoryEntry: FC<{ elementHistoryPoint: ElementHistoryPoint }> =
   );
 };
 
+const AnnotationHistoryTable: FC<{ items: ElementHistoryPoint[] }> = ({ items }) => {
+  const { projectName, elementId: currentElementId } = useParams();
+
+  return (
+    <table id="history-table">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Label</th>
+          <th>Text</th>
+          <th>Element ID</th>
+        </tr>
+      </thead>
+      <tbody>
+        {items.map((hp, index) => (
+          <tr
+            className={classNames(index % 2 === 0 ? 'darker' : '', {
+              'fw-bold': hp.element_id === currentElementId,
+            })}
+            key={`${hp.element_id}-${index}`}
+          >
+            <td>{hp.time ? displayTime(hp.time) : ''}</td>
+            <td>{hp.label || ''}</td>
+            <td>
+              <Link to={`/projects/${projectName}/tag/${hp.element_id}`}>
+                {truncate(hp.element_text, { length: 80 })}
+              </Link>
+            </td>
+            <td>{hp.element_id}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+};
+
 export const AnnotationHistoryList: FC = () => {
   const { appContext, setAppContext } = useAppContext();
   const { history, phase, currentProject, displayConfig } = appContext;
 
   const { clearAnnotationSessionHistory } = useAnnotationSessionHistory();
 
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+
+  const toggleViewMode = () => {
+    setViewMode((prev) => (prev === 'cards' ? 'table' : 'cards'));
+  };
+
+  const filteredHistory = history
+    .slice(0, 100)
+    .filter(
+      (hp) => hp.dataset === phase && hp.project_slug === currentProject?.params.project_slug,
+    );
+
   return (
     <div className="horizontal center flex-column">
       <div className="d-flex justify-content-start gap-4 w-100 mb-4 align-items-center">
-        {/* <h5 className="text-muted mb-0 annotationtitle">Current history : {history.length}</h5> */}
-
         <button
           className="btn-secondary-action d-flex align-items-center gap-2 clearhistory"
           onClick={() => {
@@ -92,28 +141,36 @@ export const AnnotationHistoryList: FC = () => {
         <Tooltip anchorSelect=".clearhistory" style={{ zIndex: 99 }}>
           Clear history to be able to see again elements during this session.
         </Tooltip>
-        <span
-          style={{ cursor: 'pointer', color: 'gray' }}
-          onClick={(_) => {
+        <button
+          className="btn btn-link p-0"
+          onClick={toggleViewMode}
+          title={viewMode === 'cards' ? 'Switch to table view' : 'Switch to card view'}
+        >
+          {viewMode === 'cards' ? (
+            <HiOutlineTableCells size={20} />
+          ) : (
+            <HiOutlineViewGrid size={20} />
+          )}
+        </button>
+        <button
+          className="btn btn-link p-0"
+          onClick={() => {
             setAppContext((prev) => ({
               ...prev,
               displayConfig: {
                 ...displayConfig,
-                displayHistory: !displayConfig.displayHistory,
+                displayHistory: false,
               },
             }));
           }}
+          title="Hide history"
         >
-          hide
-        </span>
+          <HiOutlineEye size={20} />
+        </button>
       </div>
-      <div className="annotation-history">
-        {history
-          .slice(0, 100)
-          .filter(
-            (hp) => hp.dataset === phase && hp.project_slug === currentProject?.params.project_slug,
-          )
-          .map((historyPoint, i) => {
+      {viewMode === 'cards' ? (
+        <div className="annotation-history">
+          {filteredHistory.map((historyPoint, i) => {
             return (
               <AnnotationHistoryEntry
                 key={`${historyPoint.element_id}-${i}`}
@@ -121,7 +178,12 @@ export const AnnotationHistoryList: FC = () => {
               />
             );
           })}
-      </div>
+        </div>
+      ) : (
+        <div style={{ width: '100%', overflowX: 'auto' }}>
+          <AnnotationHistoryTable items={filteredHistory} />
+        </div>
+      )}
     </div>
   );
 };
