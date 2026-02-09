@@ -1,15 +1,14 @@
 import classNames from 'classnames';
 import { truncate } from 'lodash';
-import { FC } from 'react';
+import { FC, useState } from 'react';
 import { FaRegTrashAlt } from 'react-icons/fa';
-import { HiOutlineViewGrid } from 'react-icons/hi';
-import { HiOutlineEye } from 'react-icons/hi';
+import { HiOutlineEye, HiOutlineViewGrid } from 'react-icons/hi';
 import { HiOutlineTableCells } from 'react-icons/hi2';
 import { Link, useParams } from 'react-router-dom';
 import { Tooltip } from 'react-tooltip';
 import { useAppContext } from '../../core/context';
-import { displayTime } from '../../core/utils';
 import { useAnnotationSessionHistory } from '../../core/useHistory';
+import { displayTime } from '../../core/utils';
 import { ElementHistoryPoint } from '../../types';
 import { AnnotationIcon, NoAnnotationIcon } from '../Icons';
 import { MiddleEllipsis } from './MiddleEllipsis';
@@ -116,16 +115,10 @@ export const AnnotationHistoryList: FC = () => {
 
   const { clearAnnotationSessionHistory } = useAnnotationSessionHistory();
 
-  const viewMode = displayConfig.historyViewMode || 'cards';
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
 
   const toggleViewMode = () => {
-    setAppContext((prev) => ({
-      ...prev,
-      displayConfig: {
-        ...prev.displayConfig,
-        historyViewMode: viewMode === 'cards' ? 'table' : 'cards',
-      },
-    }));
+    setViewMode((prev) => (prev === 'cards' ? 'table' : 'cards'));
   };
 
   const filteredHistory = history
