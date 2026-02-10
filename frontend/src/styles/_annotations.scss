@@ -261,7 +261,7 @@
       @include media-breakpoint-down(sm) {
         // hide key stroke badges on small screen => no keyboard
         .badge {
-          display: none;
+          // display: none; // AM: Replaced the behaviour with the react-device-detect package; github issue: https://github.com/emilienschultz/activetigger/issues/813#issuecomment-3876645650
         }
       }
     }

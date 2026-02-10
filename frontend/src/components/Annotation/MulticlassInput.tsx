@@ -2,6 +2,7 @@ import cx from 'classnames';
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { IoIosRadioButtonOff, IoIosRadioButtonOn } from 'react-icons/io';
 import { useNavigate, useParams } from 'react-router-dom';
+import { isMobile } from 'react-device-detect';
 import { useAppContext } from '../../core/context';
 import { useAnnotationSessionHistory } from '../../core/useHistory';
 import { reorderLabels } from '../../core/utils';
@@ -148,7 +149,9 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
               )
             ) : null}
             <MiddleEllipsis label={e.label} />
-            {availableLabels.length < 10 && <span className="badge hotkey">{i + 1}</span>}
+            {availableLabels.length < 10 && !isMobile && (
+              <span className="badge hotkey">{i + 1}</span>
+            )}
           </button>
         ))
       }
@@ -182,7 +185,7 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
             <span className="badge m-0 p-1" id="predict-probability">
               p={predict_proba}
             </span>
-            <span className="badge hotkey">P</span>
+            {!isMobile && <span className="badge hotkey">P</span>}
           </button>
         </div>
       )}
@@ -199,7 +202,7 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
         <span className="text">
           <NoAnnotationIcon /> No tag
         </span>
-        <span className="badge hotkey">DEL</span>
+        {!isMobile && <span className="badge hotkey">DEL</span>}
       </button>
 
       {/* SKIP */}
@@ -211,7 +214,7 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
             skipAnnotation();
           }}
         >
-          Skip <span className="badge hotkey">S</span>
+          Skip {!isMobile && <span className="badge hotkey">S</span>}
         </button>
       )}
 
