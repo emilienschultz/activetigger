@@ -193,15 +193,13 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
       {/* NO TAG OPTION */}
       <button
         type="button"
-        className="btn-annotate-general-action no-tag-action"
+        className="btn-annotate-general-action tag-action-button"
         onClick={() => {
           postAnnotation(null, elementId, comment);
         }}
       >
         {lastAnnotation === null ? <IoIosRadioButtonOn /> : <IoIosRadioButtonOff />}
-        <span className="text">
-          <NoAnnotationIcon /> No tag
-        </span>
+        <NoAnnotationIcon /> <MiddleEllipsis label={'No tag'} />
         {!isMobile && <span className="badge hotkey">DEL</span>}
       </button>
 
