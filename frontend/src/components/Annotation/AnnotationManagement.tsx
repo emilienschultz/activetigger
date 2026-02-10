@@ -1,4 +1,5 @@
 import { CSSProperties, FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { HiOutlineEyeOff } from 'react-icons/hi';
 import { LuRefreshCw } from 'react-icons/lu';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -349,20 +350,21 @@ export const AnnotationManagement: FC = () => {
         {displayConfig.displayHistory ? (
           <AnnotationHistoryList />
         ) : (
-          <span
-            style={{ cursor: 'pointer', color: 'gray' }}
-            onClick={(_) => {
+          <button
+            className="btn btn-link p-0"
+            onClick={() => {
               setAppContext((prev) => ({
                 ...prev,
                 displayConfig: {
                   ...displayConfig,
-                  displayHistory: !displayConfig.displayHistory,
+                  displayHistory: true,
                 },
               }));
             }}
+            title="Show history"
           >
-            History hidden - click to show
-          </span>
+            <HiOutlineEyeOff size={20} />
+          </button>
         )}
       </div>
       {/**
