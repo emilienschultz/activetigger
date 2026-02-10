@@ -166,8 +166,8 @@ export const ProjectionVizSigma: FC<Props> = ({
 
       <div
         style={{
-          width: 'clamp(300px, 50vw, 1000px)',
-          height: 'clamp(300px, 100vh, 1000px)',
+          width: '100%',
+          height: 'clamp(300px, 75vh, 1000px)',
         }}
       >
         <SigmaContainer
