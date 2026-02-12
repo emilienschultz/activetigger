@@ -439,6 +439,7 @@ class QuickModels:
                 file_name=file_name,
                 statistics=statistics,
                 col_text=col_text,
+                exclude_labels=sm.exclude_labels
             ),
             queue="cpu",
         )

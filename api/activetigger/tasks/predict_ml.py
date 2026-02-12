@@ -3,6 +3,7 @@ import time
 from pathlib import Path
 from typing import Optional
 
+import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator  # type: ignore[import]
 
@@ -30,6 +31,7 @@ class PredictML(BaseTask):
         col_text: str | None = None,
         unique_id: Optional[str] = None,
         statistics: list[str] | None = None,
+        exclude_labels : list[str] = [],
         **kwargs,
     ):
         super().__init__()
@@ -45,8 +47,17 @@ class PredictML(BaseTask):
         expected_cols = self.model.feature_names_in_
         self.__check_data_and_features(col_dataset, expected_cols, col_features)
 
-        self.X = self.df.reindex(columns=list(expected_cols) + [col_dataset])
-        self.Y = self.df[col_label] if col_label is not None else None
+        self.X : pd.DataFrame = self.df.reindex(columns=list(expected_cols) + [col_dataset])
+        self.Y : pd.Series = self.df[col_label] if col_label is not None else None
+
+        # Remove rows for which the label is to be excluded
+        rows_to_keep = np.logical_and(
+            self.Y.notna(),
+            np.isin(self.Y, exclude_labels, invert=True)
+        )
+        self.X = self.X.loc[rows_to_keep, :]
+        self.Y = self.Y.loc[rows_to_keep]
+
 
     def __check_data_and_features(self, col_dataset, expected_cols, col_features):
         """Check that the dafatrame profided contains the required columns (text
@@ -75,17 +86,15 @@ class PredictML(BaseTask):
         metrics: dict[str, MLStatisticsModel] = {}
 
         # Compute the statistics for each dataset
-        filter_existing_labels = self.df[self.col_label].notna()  # only non null values
         for dataset in statistics:
             # Select the correct rows
             filter_dataset = Y_pred_full["dataset"] == dataset
-            filter = filter_existing_labels & filter_dataset
 
-            if filter.sum() < 5:
+            if filter_dataset.sum() < 5:
                 # TODO: Warn user that there are not enough elements to compute statistics
                 continue
 
-            sub_Y_pred_full = Y_pred_full[filter]
+            sub_Y_pred_full = Y_pred_full[filter_dataset]
             metrics[dataset] = get_metrics(
                 sub_Y_pred_full["predicted_label"],
                 sub_Y_pred_full["prediction"],
@@ -99,7 +108,7 @@ class PredictML(BaseTask):
 
         not_in_training = ~Y_pred_full.index.isin(index_of_texts_used_during_training)
         filter_dataset = Y_pred_full["dataset"] == "train"
-        filter_oos = not_in_training & filter_existing_labels & filter_dataset
+        filter_oos = not_in_training & filter_dataset
 
         if filter_oos.sum() > 10:
             metrics["outofsample"] = get_metrics(
