@@ -119,7 +119,12 @@ class TrainML(BaseTask):
         """
         if self.texts is not None:
             texts = self.texts.loc[y_true.index]
-        metrics = get_metrics(y_true, y_pred, texts=texts, labels=self.labels)
+        metrics = get_metrics(
+            y_true, 
+            y_pred, 
+            texts=texts, 
+            labels=[l for l in self.labels if l not in self.exclude_labels]
+        )
         return metrics
 
     def __compute_cv10(self) -> MLStatisticsModel:
