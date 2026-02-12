@@ -574,13 +574,6 @@ class Project:
         df_features = self.features.get(quickmodel.features, dataset=["train"])
         df_scheme = self.schemes.get_scheme(scheme=quickmodel.scheme)
 
-        # Filter out labels to exclude
-        if len(quickmodel.exclude_labels) > 0:
-            rows_to_keep = np.isin(df_scheme["labels"],quickmodel.exclude_labels,invert=True)
-            df_scheme = df_scheme.loc[rows_to_keep, :]
-            df_features = df_features.loc[rows_to_keep,:]
-            print("train_quickmodel : ", df_scheme["labels"].unique())
-
         # management for multilabels / dichotomize
         if quickmodel.dichotomize is not None:
             df_scheme["labels"] = df_scheme["labels"].apply(
