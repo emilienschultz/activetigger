@@ -476,7 +476,7 @@ class Project:
 
         # deal with non-unique id
         # TODO : compare with the general dataset
-        df["id_external"] = df["id"]
+        df["id_external"] = df["id"].apply(str)
         if not ((df["id"].astype(str).apply(slugify)).nunique() == len(df)):
             df["id"] = [str(i) for i in range(len(df))]
             print("ID not unique, changed to default id")
@@ -526,6 +526,9 @@ class Project:
         # reset the features file
         self.features.reset_features_file()
         self.quickmodels.drop_models(which="all")
+
+        # reload the data
+        self.data.load_dataset(dataset)
 
     def train_quickmodel(
         self,
