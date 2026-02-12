@@ -115,7 +115,7 @@ export const ProjectionVizSigma: FC<Props> = ({
       return graph;
     }
     return undefined;
-  }, [data, selectedColumn]);
+  }, [data, selectedColumn, selectedId]);
 
   // nodeReducer change node appearance from colorMapping and selection state
   const nodeReducer = useCallback(
@@ -145,8 +145,6 @@ export const ProjectionVizSigma: FC<Props> = ({
     [nodeReducer],
   );
 
-  console.log(data);
-
   return (
     <div>
       {data.predictions && (
@@ -166,8 +164,8 @@ export const ProjectionVizSigma: FC<Props> = ({
 
       <div
         style={{
-          width: 'clamp(300px, 50vw, 1000px)',
-          height: 'clamp(300px, 100vh, 1000px)',
+          width: '100%',
+          height: 'clamp(300px, 75vh, 1000px)',
         }}
       >
         <SigmaContainer

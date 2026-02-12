@@ -37,7 +37,7 @@ async def rename_label(
         project.schemes.rename_label(former_label, new_label, scheme, current_user.username)
         orchestrator.log_action(
             current_user.username,
-            f"RENAME LABEL: in {scheme} label {former_label} to {new_label}",
+            f"RENAME LABEL: scheme:{scheme} before:{former_label} after:{new_label}",
             project.name,
         )
         return None
@@ -63,7 +63,7 @@ async def add_label(
 
             orchestrator.log_action(
                 current_user.username,
-                f"ADD LABEL: in {scheme} label {label}",
+                f"ADD LABEL: scheme:{scheme} label:{label}",
                 project.name,
             )
             return None
@@ -76,7 +76,7 @@ async def add_label(
             project.schemes.delete_label(label, scheme, current_user.username)
             orchestrator.log_action(
                 current_user.username,
-                f"DELETE LABEL: in {scheme} label {label}",
+                f"DELETE LABEL: scheme:{scheme} label:{label}",
                 project.name,
             )
             return None

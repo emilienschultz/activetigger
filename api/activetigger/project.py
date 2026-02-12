@@ -476,7 +476,7 @@ class Project:
 
         # deal with non-unique id
         # TODO : compare with the general dataset
-        df["id_external"] = df["id"]
+        df["id_external"] = df["id"].apply(str)
         if not ((df["id"].astype(str).apply(slugify)).nunique() == len(df)):
             df["id"] = [str(i) for i in range(len(df))]
             print("ID not unique, changed to default id")
@@ -526,6 +526,9 @@ class Project:
         # reset the features file
         self.features.reset_features_file()
         self.quickmodels.drop_models(which="all")
+
+        # reload the data
+        self.data.load_dataset(dataset)
 
     def train_quickmodel(
         self,
@@ -700,8 +703,10 @@ class Project:
             if self.data.valid is None:
                 raise ValueError("No valid dataset available")
             df = self.schemes.get_scheme(next.scheme, complete=True, datasets=["valid"])
-        else:
+        elif next.dataset == "train":
             df = self.schemes.get_scheme(next.scheme, complete=True, datasets=["train"])
+        else:
+            raise ValueError("Dataset should be test, valid or train")
 
         # filter based on the labels
         if next.sample == "untagged":
@@ -721,7 +726,18 @@ class Project:
             f = df["labels"].apply(lambda x: True)
 
         # filter based on the text (field, context)
+
         if next.filter:
+            # add context in the dataframe (it is ugly but ...)
+            if next.dataset == "train":
+                df = df.join(self.data.train[self.params.cols_context])
+            elif next.dataset == "valid" and self.data.valid is not None:
+                df = df.join(self.data.valid[self.params.cols_context])
+            elif next.dataset == "test" and self.data.test is not None:
+                df = df.join(self.data.test[self.params.cols_context])
+            else:
+                raise ValueError("Dataset should be test, valid or train")
+
             # sanitize
             df["ID"] = df.index  # duplicate the id column
             filter_san = clean_regex(next.filter)
@@ -1442,6 +1458,8 @@ class Project:
                         # reset the features file and load the dataset again
                         if results[1]:
                             self.features.reset_features_file()
+                            self.bertopic.clear_bertopic()
+                            self.projections.clear_projections()
 
                     case "train_bert":
                         model = cast(LMComputing, e)
@@ -1484,7 +1502,7 @@ class Project:
                             list[GenerationResult],
                             results,
                         )
-                        batch = e.prompt_name + "_" + e.unique_id
+                        batch = str(e.prompt_name) + "_" + e.unique_id
                         for row in r:
                             self.generations.add(
                                 user=row.user,

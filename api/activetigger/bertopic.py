@@ -210,6 +210,13 @@ class Bertopic:
         else:
             raise FileNotFoundError(f"Model {name} does not exist.")
 
+    def clear_bertopic(self) -> None:
+        """
+        Delete all bertopics for a scheme
+        """
+        for name in self.available():
+            self.delete(name)
+
     def get_topics(self, name: str) -> list[TopicsOutModel]:
         """
         Get topics from a BERTopic model.

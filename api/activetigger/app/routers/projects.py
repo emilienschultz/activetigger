@@ -236,8 +236,8 @@ async def get_projects(
 @router.get("/datasets", dependencies=[Depends(verified_user)])
 async def get_project_datasets(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-    include_toy_datasets: bool = False
-) -> tuple[list[DatasetModel], list[DatasetModel]|None]:
+    include_toy_datasets: bool = False,
+) -> tuple[list[DatasetModel], list[DatasetModel] | None]:
     """
     Get all datasets already available for a specific user
     """

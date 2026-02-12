@@ -14,9 +14,9 @@ export const ModalErrors: FC<{
 
   return (
     <>
-      <div onClick={handleShow} className="badge danger" style={{ cursor: 'pointer' }}>
+      <button onClick={handleShow} className="badge danger" style={{ cursor: 'pointer' }}>
         <MdRunningWithErrors /> Errors
-      </div>
+      </button>
 
       <Modal show={show} onHide={handleClose}>
         <Modal.Header closeButton>

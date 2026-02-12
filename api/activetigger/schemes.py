@@ -270,44 +270,25 @@ class Schemes:
         """
         Convert tags from a specific label to another
         """
+        available = self.available()
+        if scheme not in available:
+            raise Exception("Scheme doesn't exist")
         # test if the new label exist, either create it
         if not self.exists_label(scheme, new_label):
             self.add_label(new_label, scheme, username)
 
-        # add a new tag for the annotated id in the trainset
-        df_train = self.get_scheme(scheme, datasets=["train"])
-        elements_train = [
-            {"element_id": element_id, "annotation": new_label, "comment": "label renamed"}
-            for element_id in list(df_train[df_train["labels"] == former_label].index)
-        ]
-        df_test = self.get_scheme(scheme, datasets=["test"])
-        elements_test = [
-            {"element_id": element_id, "annotation": new_label, "comment": "label renamed"}
-            for element_id in list(df_test[df_test["labels"] == former_label].index)
-        ]
-
-        # add the new tags in train/test
-        self.db_manager.projects_service.add_annotations(
-            dataset="train",
-            user_name=username,
+        # convert the tags in the database (add new tag and delete old one)
+        self.db_manager.projects_service.rename_label(
             project_slug=self.project_slug,
             scheme=scheme,
-            elements=elements_train,
-        )
-        self.db_manager.projects_service.add_annotations(
-            dataset="test",
-            user_name=username,
-            project_slug=self.project_slug,
-            scheme=scheme,
-            elements=elements_test,
+            former_label=former_label,
+            new_label=new_label,
         )
 
         # update the scheme (no need to add empty annotation in the database)
-        available = self.available()
-        if scheme not in available:
-            raise Exception("Scheme doesn't exist")
         labels = available[scheme].labels
         labels.remove(former_label)
+        labels.append(new_label)
         self.update_scheme(scheme, labels)
 
     def get_total(self, dataset: str = "train") -> int:
@@ -407,6 +388,13 @@ class Schemes:
                     f_l = df["labels"].str.contains(clean_regex(contains_f)).fillna(False)
                     f_text = df["text"].str.contains(clean_regex(contains_f)).fillna(False)
                     f_contains = f_l | f_text
+                elif batch.contains == "HAS_COMMENT":
+                    f_contains = df["comment"].fillna("").str.len() > 0
+                elif batch.contains.startswith("COMMENT:") and len(batch.contains) > 8:
+                    contains_f = batch.contains.replace("COMMENT:", "")
+                    f_contains = df["comment"].str.contains(
+                        clean_regex(contains_f)
+                    ).fillna(False)
                 else:
                     f_contains = df["text"].str.contains(clean_regex(batch.contains))
 

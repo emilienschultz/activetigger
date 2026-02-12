@@ -75,10 +75,15 @@ export const HomePage: FC = () => {
                   style={{ width: '200px', height: '200px' }}
                 />
               </div>
+              {n_users == null && (
+                <div className="alert alert-danger mt-3">
+                  ⚠️ The server is down. You can reach out on the discord for more information.
+                </div>
+              )}
 
-              {!authenticatedUser ? (
-                <LoginForm />
-              ) : (
+              {!authenticatedUser && n_users != null && <LoginForm />}
+
+              {authenticatedUser && n_users != null && (
                 <div>
                   <div className="text-center">
                     <div>
@@ -141,10 +146,6 @@ export const HomePage: FC = () => {
                     </div>
                   </div>
                 </div>
-              )}
-
-              {n_users === null && n_users === undefined && (
-                <div className="alert alert-alert mt-3">Problem connecting to the server</div>
               )}
             </center>
             <div style={{ height: '50px' }}></div>
