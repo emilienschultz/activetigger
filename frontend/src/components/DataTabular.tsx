@@ -265,7 +265,7 @@ export const DataTabular: FC<DataTabularModel> = ({
             {!isValidRegex(search || '') && <span className="badge danger">Regex not valid</span>}
           </label>
           <input
-            placeholder="Regex search to filter on text / for both text and label, use ALL: to start"
+            placeholder="Regex filter on text (ALL: text+label, COMMENT: in comments, HAS_COMMENT)"
             onChange={(e) => {
               setPage(1);
               setSearch(e.target.value);

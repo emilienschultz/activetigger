@@ -388,6 +388,13 @@ class Schemes:
                     f_l = df["labels"].str.contains(clean_regex(contains_f)).fillna(False)
                     f_text = df["text"].str.contains(clean_regex(contains_f)).fillna(False)
                     f_contains = f_l | f_text
+                elif batch.contains == "HAS_COMMENT":
+                    f_contains = df["comment"].fillna("").str.len() > 0
+                elif batch.contains.startswith("COMMENT:") and len(batch.contains) > 8:
+                    contains_f = batch.contains.replace("COMMENT:", "")
+                    f_contains = df["comment"].str.contains(
+                        clean_regex(contains_f)
+                    ).fillna(False)
                 else:
                     f_contains = df["text"].str.contains(clean_regex(batch.contains))
 
