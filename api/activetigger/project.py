@@ -1458,6 +1458,8 @@ class Project:
                         # reset the features file and load the dataset again
                         if results[1]:
                             self.features.reset_features_file()
+                            self.bertopic.clear_bertopic()
+                            self.projections.clear_projections()
 
                     case "train_bert":
                         model = cast(LMComputing, e)
