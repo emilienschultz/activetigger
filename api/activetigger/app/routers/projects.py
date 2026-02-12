@@ -209,7 +209,6 @@ async def add_testdata(
         if evalset is None:
             raise Exception("No evalset sent")
         project.add_evalset(dataset, evalset, current_user.username, project.project_slug)
-        project.data.load_dataset(dataset)
         orchestrator.log_action(
             current_user.username, f"ADD EVALSET {dataset}", project.project_slug
         )
