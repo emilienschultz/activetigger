@@ -7,7 +7,9 @@ import Highlighter from 'react-highlight-words';
 import { MdSkipNext, MdSkipPrevious } from 'react-icons/md';
 
 import { Modal } from 'react-bootstrap';
+import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Link } from 'react-router-dom';
+import { Tooltip } from 'react-tooltip';
 import { useAddTableAnnotations, useTableElements } from '../core/api';
 import { AppContextValue } from '../core/context';
 import { AnnotationModel } from '../types';
@@ -260,17 +262,22 @@ export const DataTabular: FC<DataTabularModel> = ({
           </select>
         </div>
         <div>
-          <label>
-            Filter{' '}
+          <label htmlFor="filter-input">
+            Filter
+            <HiOutlineQuestionMarkCircle className="searchtooltip" />
             {!isValidRegex(search || '') && <span className="badge danger">Regex not valid</span>}
           </label>
           <input
-            placeholder="Regex filter on text (ALL: text+label, COMMENT: in comments, HAS_COMMENT)"
+            placeholder="Regex filter on text"
+            id="filter-input"
             onChange={(e) => {
               setPage(1);
               setSearch(e.target.value);
             }}
-          ></input>
+          />
+          <Tooltip anchorSelect=".searchtooltip" place="bottom">
+            Special search: ALL: text/label, COMMENT: in comments, HAS_COMMENT
+          </Tooltip>
         </div>
       </div>
       <div className="horizontal wrap" id="tabular-view-page-control">
