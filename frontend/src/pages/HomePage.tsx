@@ -77,7 +77,8 @@ export const HomePage: FC = () => {
               </div>
               {n_users == null && (
                 <div className="alert alert-danger mt-3">
-                  ⚠️ The server is down. You can reach out on the discord for more information.
+                  ⚠️ Can't reach the API (either temporary lag or server down). You can reach out on
+                  the discord for more information.
                 </div>
               )}
 
