@@ -258,7 +258,7 @@
         //icon & key stroke badge
         flex-shrink: 0;
       }
-      @include media-breakpoint-down(sm) {
+      @media (pointer: coarse) {
         // hide key stroke badges on small screen => no keyboard
         .badge {
           display: none;
