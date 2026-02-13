@@ -479,7 +479,7 @@ class QuickModels:
             metrics = {}
 
         return ModelInformationsModel(
-            params={"exclude_labels": sm.exclude_labels},
+            params= {"exclude_labels": sm.exclude_labels if "exclude_labels" in sm else []},
             scores=ModelScoresModel(
                 internalvalid_scores=metrics.get("trainvalid", None),
                 valid_scores=metrics.get("valid", None),
