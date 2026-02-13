@@ -263,7 +263,10 @@ export const ModelManagement: FC = () => {
 
       <hr className="my-4" />
 
-      {currentModel && currentModel.kind === 'quick' && currentQuickModelInformations && (
+      {currentModel &&
+        currentModel.kind === 'quick' &&
+        currentQuickModelInformations &&
+        currentQuickModelInformations.params && (
         <>
           {/* <ValidateButtons
             modelName={currentBertModel}
@@ -276,6 +279,7 @@ export const ModelManagement: FC = () => {
             scores={currentQuickModelInformations.statistics_test as MLStatisticsModel}
             projectSlug={projectSlug}
             dataset="Train-Eval"
+              exclude_labels={currentQuickModelInformations.exclude_labels}
           />
           <div className="horizontal wrap">
             <button
@@ -309,7 +313,10 @@ export const ModelManagement: FC = () => {
               <DisplayScores
                 title="Cross validation CV10"
                 scores={
-                  currentQuickModelInformations.statistics_cv10 as unknown as Record<string, number>
+                    currentQuickModelInformations.statistics_cv10 as unknown as Record<
+                      string,
+                      number
+                    >
                 }
                 dataset="train test"
               />
