@@ -57,12 +57,16 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
       label: 'Quick Models',
       options: (availableQuickModels ?? [])
         .filter((e) => e?.name) // <-- protect against undefined/missing name
-        .map((e) => ({
+        .map((e) => {
+          const toDisable = ((e.parameters.exclude_labels as string[]) || []).length > 0;
+          return {
           value: e.name,
-          label: e.name,
+            label: toDisable ? e.name + ' (labels dropped)' : e.name,
           type: 'quickmodel',
           time: e.time,
-        }))
+            isDisabled: toDisable,
+          };
+        })
         .sort((quickModelA, quickModelB) =>
           sortDatesAsStrings(quickModelA?.time, quickModelB?.time, true),
         ),
