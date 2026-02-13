@@ -128,6 +128,7 @@ async def get_quickmodel(
             balance_classes=sm.balance_classes,
             scheme=sm.scheme,
             username=sm.user,
+            exclude_labels=sm.exclude_labels
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -218,6 +218,7 @@ class QuickModels:
             standardize=standardize,
             cv10=cv10,
             balance_classes=balance_classes,
+            exclude_labels=exclude_labels,
             retrain=retrain,
             dataset="train",
         )
@@ -235,7 +236,10 @@ class QuickModels:
             user=element.user,
             project=self.project_slug,
             scheme=element.scheme,
-            params=element.model_params,
+            params={
+                **element.model_params,
+                "exclude_labels": element.exclude_labels
+            },
             path=str(model_path),
             status="trained",
             retrain=element.retrain,
@@ -468,14 +472,14 @@ class QuickModels:
 
         if not self.exists(model_name):
             raise Exception(f"The model {model_name} does not exist")
-
+        sm = self.get(model_name)
         # params = self.get_parameters(model_name)
         metrics = get_model_metrics(self.path.joinpath(model_name))
         if metrics is None:
             metrics = {}
 
         return ModelInformationsModel(
-            params=None,
+            params={"exclude_labels": sm.exclude_labels},
             scores=ModelScoresModel(
                 internalvalid_scores=metrics.get("trainvalid", None),
                 valid_scores=metrics.get("valid", None),

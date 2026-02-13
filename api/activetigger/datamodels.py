@@ -656,6 +656,7 @@ class QuickModelComputing(ProcessComputing):
     standardize: bool = False
     cv10: bool = False
     balance_classes: bool = False
+    exclude_labels: list[str] = []
     retrain: bool = False
 
 
@@ -704,7 +705,8 @@ class QuickModelOutModel(BaseModel):
     statistics_train: MLStatisticsModel | None = None
     statistics_test: MLStatisticsModel | None = None
     statistics_cv10: MLStatisticsModel | None = None
-    balance_classes: bool = False
+    balance_classes: bool = False,
+    exclude_labels: list[str] = []
 
 
 class GenerationComputingOut(BaseModel):

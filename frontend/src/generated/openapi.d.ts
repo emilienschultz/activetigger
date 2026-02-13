@@ -3238,9 +3238,16 @@ export interface components {
             statistics_cv10?: components["schemas"]["MLStatisticsModel"] | null;
             /**
              * Balance Classes
-             * @default false
+             * @default [
+             *       false
+             *     ]
              */
             balance_classes: boolean;
+            /**
+             * Exclude Labels
+             * @default []
+             */
+            exclude_labels: string[];
         };
         /** QuickModelsProjectStateModel */
         QuickModelsProjectStateModel: {
