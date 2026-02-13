@@ -662,6 +662,16 @@ class ComputeBertopic(BaseTask):
             # Case an error happens
             if self.path_run.exists():
                 shutil.rmtree(self.path_run)
+            if "Found array with 0 sample(s)".lower() in str(e).lower():
+                # TODO Make it nicer with proper notification center
+                e = Exception((
+                    f"{str(e)}"
+                    "\n"
+                    f"[Found array with 0 sample(s)] errors are likely due to"
+                    f"your dataset being to small ({len(df)}). We advise you "
+                    f"to add more elements to your dataset."
+                )) 
+
             raise e
 
     def update_progress(self, message: str) -> None:
