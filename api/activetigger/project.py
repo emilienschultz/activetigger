@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, cast
 
+import numpy as np
 import pandas as pd
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse
@@ -607,6 +608,7 @@ class Project:
             standardize=quickmodel.standardize or False,
             cv10=quickmodel.cv10 or False,
             balance_classes=quickmodel.balance_classes or False,
+            exclude_labels=quickmodel.exclude_labels,
             retrain=retrain,
             texts=self.data.train["text"] if self.data.train is not None else None,
         )
@@ -634,6 +636,7 @@ class Project:
             dichotomize=model.model_params.get("dichotomize", None),
             cv10=model.cv10,
             balance_classes=model.balance_classes,
+            exclude_labels=model.exclude_labels
         )
         self.train_quickmodel(quickmodel, username, retrain=True)
 

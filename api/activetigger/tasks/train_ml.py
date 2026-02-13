@@ -6,6 +6,7 @@ import pickle
 import shutil
 from pathlib import Path
 
+import numpy as np 
 import pandas as pd
 from scipy.stats import entropy  # type: ignore[import]
 from sklearn.base import BaseEstimator  # type: ignore[import]
@@ -43,6 +44,7 @@ class TrainML(BaseTask):
         standardize: bool = False,
         cv10: bool = False,
         balance_classes: bool = False,
+        exclude_labels : list[str] = [],
         retrain: bool = False,
         texts: pd.Series | None = None,
         random_seed: int = 42,
@@ -57,6 +59,7 @@ class TrainML(BaseTask):
         self.user = user
         self.cv10 = cv10
         self.balance_classes = balance_classes
+        self.exclude_labels = exclude_labels    # labels are excluded earlier on in the pipeline, but we must save this information somewhere
         self.path = path
         self.model_path = path.joinpath(name)
         self.retrain = retrain
@@ -81,25 +84,33 @@ class TrainML(BaseTask):
                 raise Exception("The model already exists")
             os.mkdir(self.model_path)
 
-    def __split_set(
-        self, test_size: float = 0.2
+    def __check_data(self, X:pd.DataFrame, Y: pd.Series, exclude_labels: list[str]
+    ) -> tuple[pd.DataFrame, pd.Series] :
+        """Remove labels to exclude and nan values"""
+        rows_to_exclude = np.logical_or(
+            np.isin(Y, exclude_labels),
+            Y.isna()
+        )
+        rows_to_keep = np.invert(rows_to_exclude)
+        return X.loc[rows_to_keep, :], Y[rows_to_keep]
+    
+    def __split_set(self, X, Y, test_size: float = 0.2
     ) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
         """
         Remove null elements and return train/test splits
         (equivalent of train_test_split from sklearn)
         """
-        f = self.Y.notnull()  # filter drop NA values
-        index = self.X[f].copy().index.to_series()
+        index = X.copy().index.to_series()
         index = index.sample(frac=1.0, random_state=self.random_seed)
         n_total = len(index)
         n_test = math.ceil(n_total * test_size)
         n_train = n_total - n_test
         index_train = index.head(n_train)
         index_test = index.tail(n_test)
-        X_train = self.X[f].loc[index_train.index, :]
-        Y_train = self.Y[f].loc[index_train.index]
-        X_test = self.X[f].loc[index_test.index, :]
-        Y_test = self.Y[f].loc[index_test.index]
+        X_train = X.loc[index_train.index, :]
+        Y_train = Y.loc[index_train.index]
+        X_test = X.loc[index_test.index, :]
+        Y_test = Y.loc[index_test.index]
         return X_train, X_test, Y_train, Y_test
 
     def __compute_metrics(self, y_true: pd.Series, y_pred: pd.Series) -> MLStatisticsModel:
@@ -108,7 +119,12 @@ class TrainML(BaseTask):
         """
         if self.texts is not None:
             texts = self.texts.loc[y_true.index]
-        metrics = get_metrics(y_true, y_pred, texts=texts, labels=self.labels)
+        metrics = get_metrics(
+            y_true, 
+            y_pred, 
+            texts=texts, 
+            labels=[l for l in self.labels if l not in self.exclude_labels]
+        )
         return metrics
 
     def __compute_cv10(self) -> MLStatisticsModel:
@@ -168,6 +184,7 @@ class TrainML(BaseTask):
             standardize=self.standardize,
             cv10=self.cv10,
             balance_classes=self.balance_classes,
+            exclude_labels=self.exclude_labels,
             retrain=self.retrain,
             proba=proba,
             statistics_train=metrics_train,
@@ -209,7 +226,9 @@ class TrainML(BaseTask):
         task_timer.start("setup")
         self.__init_paths(self.retrain)
 
-        X_train, X_test, Y_train, Y_test = self.__split_set()
+        self.X, self.Y = self.__check_data(self.X, self.Y, self.exclude_labels)
+
+        X_train, X_test, Y_train, Y_test = self.__split_set(self.X, self.Y)
         task_timer.stop("setup")
 
         # Fit model --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---

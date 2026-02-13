@@ -12,6 +12,7 @@ interface DisplayScoresMenuPropos {
   modelName?: string;
   displayTitle?: boolean;
   skip?: string[];
+  exclude_labels?: string[];
 }
 
 export const DisplayScoresMenu: FC<DisplayScoresMenuPropos> = ({
@@ -20,6 +21,7 @@ export const DisplayScoresMenu: FC<DisplayScoresMenuPropos> = ({
   displayTitle,
   skip,
   projectSlug,
+  exclude_labels,
 }) => {
   const allowedScores = Object.entries(scores)
     .filter(([_, value]) => value != null)
@@ -70,6 +72,7 @@ export const DisplayScoresMenu: FC<DisplayScoresMenuPropos> = ({
           modelName={modelName}
           projectSlug={projectSlug}
           dataset={currentScore}
+          exclude_labels={exclude_labels}
         />
       )}
     </>
