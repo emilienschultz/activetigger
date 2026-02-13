@@ -402,6 +402,8 @@ class Features:
             return None
 
         if kind == "dataset":
+            # force the name
+            name = f"{parameters['dataset_col']}_{parameters['dataset_type'].lower()}_{name.replace('Feature-', '')}"
             # get the raw column for the train set
             column = self.get_column_raw(parameters["dataset_col"])
 

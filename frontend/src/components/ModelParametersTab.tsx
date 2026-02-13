@@ -48,13 +48,7 @@ interface ModelParametersTabProps {
 
 export const ModelParametersTab: FC<ModelParametersTabProps> = ({ params }) => {
   return (
-    <table id="parameter-tables-thin w-100">
-      <thead>
-        <tr>
-          <th scope="col">Key</th>
-          <th scope="col">Value</th>
-        </tr>
-      </thead>
+    <table id="parameter-tables-thin">
       <tbody>
         {Object.entries(params || {})
           .sort(([keyA], [keyB]) => {

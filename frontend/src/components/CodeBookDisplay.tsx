@@ -1,4 +1,4 @@
-import { FC, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 
 import { marked } from 'marked';
 import { useGetSchemeCodebook, usePostSchemeCodebook } from '../core/api';
@@ -29,6 +29,12 @@ export const CodebookDisplay: FC<CodebookDisplayProps> = ({
   // hooks and states to modify the codebook
   const { postCodebook } = usePostSchemeCodebook(projectSlug || null, currentScheme || null);
   const [modifiedCodebook, setModifiedCodebook] = useState<string | undefined>(undefined);
+
+  // reset modified codebook when scheme changes
+  useEffect(() => {
+    setModifiedCodebook(undefined);
+  }, [currentScheme]);
+
   const saveCodebook = async () => {
     postCodebook(modifiedCodebook || '', time || '');
     reFetchCodebook();
@@ -127,6 +133,7 @@ export const CodebookDisplay: FC<CodebookDisplayProps> = ({
             modifiedCodebook={modifiedCodebook}
             setModifiedCodebook={setModifiedCodebook}
             saveCodebook={saveCodebook}
+            callbackOnClose={setShowCodebookModal}
           />
         </Modal.Body>
       </Modal>

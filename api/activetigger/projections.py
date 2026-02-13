@@ -90,7 +90,7 @@ class Projections:
         username: str,
         projection: ProjectionParametersModel,
         features: DataFrame,
-        normalize_features: bool = False
+        normalize_features: bool = False,
     ) -> None:
         """
         Launch the projection computation in the queue
@@ -99,10 +99,10 @@ class Projections:
             "projection",
             project_slug,
             ComputeProjection(
-                kind=projection.method, 
-                features=features, 
+                kind=projection.method,
+                features=features,
                 params=projection.parameters,
-                normalize_features=normalize_features
+                normalize_features=normalize_features,
             ),
         )
         self.computing.append(
@@ -114,7 +114,7 @@ class Projections:
                 kind="projection",
                 method=projection.method,
                 params=projection,
-                normalize_features=normalize_features
+                normalize_features=normalize_features,
             )
         )
 
@@ -157,3 +157,10 @@ class Projections:
             path=self.path.joinpath(file_name),
             filename=file_name,
         )
+
+    def clear_projections(self):
+        """
+        Clear the projections
+        """
+        self.available = {}
+        pickle.dump(self.available, open(self.path.joinpath("projections.pickle"), "wb"))

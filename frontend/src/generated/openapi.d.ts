@@ -1513,6 +1513,8 @@ export interface paths {
         /**
          * Copy Existing Data
          * @description Copy an existing project to create a new one
+         *     if copy dataset from toy datasets: orchestrator.path_toy_datasets/NAME.parquet
+         *     if copy from project: orchestrator.path/NAME/data_all.parquet
          */
         post: operations["copy_existing_data_files_copy_project_post"];
         delete?: never;
@@ -2780,6 +2782,11 @@ export interface components {
             n_valid: number;
             /** From Project */
             from_project?: string | null;
+            /**
+             * From Toy Dataset
+             * @default false
+             */
+            from_toy_dataset: boolean;
             /** Filename */
             filename?: string | null;
             /** Dir */
@@ -2928,6 +2935,11 @@ export interface components {
             n_valid: number;
             /** From Project */
             from_project?: string | null;
+            /**
+             * From Toy Dataset
+             * @default false
+             */
+            from_toy_dataset: boolean;
             /** Filename */
             filename?: string | null;
             /** Dir */
@@ -4082,7 +4094,9 @@ export interface operations {
     };
     get_project_datasets_datasets_get: {
         parameters: {
-            query?: never;
+            query?: {
+                include_toy_datasets?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -4095,7 +4109,19 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DatasetModel"][];
+                    "application/json": [
+                        components["schemas"]["DatasetModel"][],
+                        components["schemas"]["DatasetModel"][] | null
+                    ];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -5942,6 +5968,7 @@ export interface operations {
             query: {
                 project_name: string;
                 source_project: string;
+                from_toy_dataset?: boolean;
             };
             header?: never;
             path?: never;

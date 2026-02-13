@@ -65,6 +65,7 @@ class ProjectBaseModel(BaseModel):
     n_test: int
     n_valid: int = 0
     from_project: str | None = None
+    from_toy_dataset: bool = False
     filename: str | None = None
     dir: Path | None = None
     embeddings: list[str] = []

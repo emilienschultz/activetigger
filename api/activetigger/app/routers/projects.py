@@ -236,12 +236,15 @@ async def get_projects(
 @router.get("/datasets", dependencies=[Depends(verified_user)])
 async def get_project_datasets(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
-) -> list[DatasetModel]:
+    include_toy_datasets: bool = False,
+) -> tuple[list[DatasetModel], list[DatasetModel] | None]:
     """
     Get all datasets already available for a specific user
     """
     try:
-        return orchestrator.users.get_auth_datasets(current_user.username)
+        toy_datasets = orchestrator.get_toy_datasets() if include_toy_datasets else []
+        auth_datasets = orchestrator.users.get_auth_datasets(current_user.username)
+        return auth_datasets, toy_datasets
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 

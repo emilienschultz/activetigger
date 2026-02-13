@@ -103,12 +103,12 @@ class Data:
             raise ValueError(f"Unknown dataset: {dataset}")
 
         # temporary fix for index (to remove when the index will be properly set in the raw file)
-        if "external_id" not in self.train.columns:
-            self.train["external_id"] = self.train.index.astype(str)
-        if self.valid is not None and "external_id" not in self.valid.columns:
-            self.valid["external_id"] = self.valid.index.astype(str)
-        if self.test is not None and "external_id" not in self.test.columns:
-            self.test["external_id"] = self.test.index.astype(str)
+        if "id_external" not in self.train.columns:
+            self.train["id_external"] = self.train.index.astype(str)
+        if self.valid is not None and "id_external" not in self.valid.columns:
+            self.valid["id_external"] = self.valid.index.astype(str)
+        if self.test is not None and "id_external" not in self.test.columns:
+            self.test["id_external"] = self.test.index.astype(str)
 
         # update the general index of annotable
         self.index = self.get_index()

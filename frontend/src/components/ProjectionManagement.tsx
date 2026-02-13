@@ -272,8 +272,8 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
               selected area will be available for annoation.
             </Tooltip>
           </label>
-          <div className="d-flex" style={{ minWidth: 0 }}>
-            <div>
+          <div className="d-flex flex-wrap justify-content-around" style={{ minWidth: 0 }}>
+            <div style={{ flex: '3 1 25rem', minWidth: '15rem' }}>
               <ProjectionVizSigma
                 data={projectionData}
                 selectedId={currentElementId}
@@ -298,6 +298,8 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                   style={{
                     overflowY: 'auto',
                     maxHeight: '80vh',
+                    flex: '1 1 10rem',
+                    minWidth: '8rem',
                   }}
                   className="mx-4"
                 >

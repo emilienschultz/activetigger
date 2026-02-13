@@ -215,3 +215,14 @@ table {
   color: #28a745;
   font-weight: bold;
 }
+
+// hide internal links in MDeditor
+.wmde-markdown h1 a,
+.wmde-markdown h2 a,
+.wmde-markdown h3 a,
+.wmde-markdown h4 a,
+.wmde-markdown h5 a,
+.wmde-markdown h6 a {
+  display: none;
+  pointer-events: none;
+}
