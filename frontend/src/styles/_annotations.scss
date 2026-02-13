@@ -260,8 +260,10 @@
       }
       @media (pointer: coarse) {
         // hide key stroke badges on small screen => no keyboard
-        .badge {
+        .badge{
+          &:not(#predict-probability){
           display: none;
+          }
         }
       }
     }
