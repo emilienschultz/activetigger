@@ -636,7 +636,7 @@ class Project:
             dichotomize=model.model_params.get("dichotomize", None),
             cv10=model.cv10,
             balance_classes=model.balance_classes,
-            exclude_labels=model.exclude_labels
+            exclude_labels=model.exclude_labels,
         )
         self.train_quickmodel(quickmodel, username, retrain=True)
 
@@ -1350,6 +1350,7 @@ class Project:
             loss=bert.loss,
             max_length=bert.max_length,
             auto_max_length=bert.auto_max_length,
+            class_balance=bert.class_balance,
         )
         self.monitoring.register_process(
             process_name=process_id,

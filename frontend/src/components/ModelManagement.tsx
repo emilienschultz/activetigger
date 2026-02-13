@@ -403,6 +403,7 @@ export const ModelManagement: FC = () => {
                     JSON.stringify(currentQuickModelInformations?.features) as unknown as string,
                     ', ',
                   ),
+                  'Balanced classes': currentQuickModelInformations?.balance_classes,
                   ...currentQuickModelInformations?.params,
                 } as Record<string, unknown>
               }

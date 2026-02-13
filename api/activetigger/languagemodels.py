@@ -190,6 +190,7 @@ class LanguageModels:
         loss: str = "cross_entropy",
         max_length: int = 512,
         auto_max_length: bool = False,
+        class_balance: bool = False,
     ) -> str:
         """
         Manage the training of a model from the API
@@ -235,6 +236,7 @@ class LanguageModels:
                 loss=loss,
                 max_length=max_length,
                 auto_max_length=auto_max_length,
+                class_balance=class_balance,
             ),
             queue="gpu",
         )
