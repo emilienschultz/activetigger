@@ -112,6 +112,7 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
       cv10: false,
       standardize: false,
       balance_classes: false,
+      exclude_labels: [],
     };
     trainQuickModel(formData);
     setActiveMenu(false);
@@ -191,7 +192,7 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
   const refreshFreq = (newValue: number) => {
     setAppContext((prev) => ({ ...prev, freqRefreshQuickModel: newValue }));
   };
-  const setActiveQuickModel = (newValue: ActiveModel | null) => {
+  const setActiveModel = (newValue: ActiveModel | null) => {
     setAppContext((prev) => ({ ...prev, activeModel: newValue }));
   };
 
@@ -214,24 +215,24 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
                 options={groupedModels}
                 value={activeModel}
                 onChange={(selectedOption) => {
-                  setActiveQuickModel(selectedOption ? selectedOption : null);
+                  setActiveModel(selectedOption ? selectedOption : null);
                 }}
                 isSearchable
                 placeholder="Select a model for active learning"
                 className="w-50"
               />
 
-              {activeModel?.type === 'quickmodel' && (
-                <div>
-                  <PiEmptyBold
-                    size={20}
-                    style={{ color: 'red', cursor: 'pointer', margin: '0px 2px' }}
-                    onClick={() => {
-                      setActiveQuickModel(null);
-                    }}
-                    data-tooltip-id="delete-tooltip"
-                    className="mx-2"
-                  />
+              <div>
+                <PiEmptyBold
+                  size={20}
+                  style={{ color: 'red', cursor: 'pointer', margin: '0px 2px' }}
+                  onClick={() => {
+                    setActiveModel(null);
+                  }}
+                  data-tooltip-id="delete-tooltip"
+                  className="mx-2"
+                />
+                {activeModel?.type === 'quickmodel' && (
                   <IoIosRefresh
                     size={20}
                     style={{ color: 'green', cursor: 'pointer' }}
@@ -240,10 +241,10 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
                     }}
                     data-tooltip-id="retrain-tooltip"
                   />
-                  <Tooltip id="retrain-tooltip" place="bottom" content="Retrain model" />
-                  <Tooltip id="delete-tooltip" place="bottom" content="Deactivate model" />
-                </div>
-              )}
+                )}
+                <Tooltip id="retrain-tooltip" place="bottom" content="Retrain model" />
+                <Tooltip id="delete-tooltip" place="bottom" content="Deactivate model" />
+              </div>
               {activeModel?.type === 'quickmodel' && (
                 <div className="d-flex align-items-center ms-3">
                   <span className="me-2">Retrain every</span>
