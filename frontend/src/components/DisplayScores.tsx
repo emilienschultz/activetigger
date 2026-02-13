@@ -94,7 +94,9 @@ export const DisplayScores: FC<DisplayScoresProps> = ({
           <span className="explanations">
             Labels{' '}
             {(exclude_labels || []).map((l) => (
-              <span className="badge">{l}</span>
+              <span className="badge" key={l}>
+                {l}
+              </span>
             ))}{' '}
             are excluded from training
           </span>
