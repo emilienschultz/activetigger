@@ -1,3 +1,4 @@
+import asyncio
 from enum import Enum
 from typing import Annotated
 
@@ -22,24 +23,44 @@ def get_orchestrator():
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+# per-project locks to avoid duplicate loading without blocking unrelated projects
+_project_locks: dict[str, asyncio.Lock] = {}
+
+
+def _get_lock(project_slug: str) -> asyncio.Lock:
+    if project_slug not in _project_locks:
+        _project_locks[project_slug] = asyncio.Lock()
+    return _project_locks[project_slug]
+
 
 async def get_project(project_slug: str) -> Project:
     """
     Dependency to get existing project
     - if already loaded, return it
-    - if not loaded, load it first
+    - if not loaded, load it first (in a thread to avoid blocking the event loop)
     """
 
     # test if project exists
     if not orchestrator.exists(project_slug):
         raise HTTPException(status_code=404, detail="Project not found")
-    try:
-        if project_slug not in orchestrator.projects:
-            orchestrator.manage_fifo_queue()
-            orchestrator.start_project(project_slug)
+
+    # fast path: project already loaded
+    if project_slug in orchestrator.projects:
         return orchestrator.projects[project_slug]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+
+    # slow path: load in a background thread, with a per-project lock
+    # so concurrent requests for the same project wait instead of loading twice
+    async with _get_lock(project_slug):
+        # re-check after acquiring the lock (another request may have loaded it)
+        if project_slug in orchestrator.projects:
+            return orchestrator.projects[project_slug]
+        try:
+            await asyncio.to_thread(orchestrator.manage_fifo_queue)
+            await asyncio.to_thread(orchestrator.start_project, project_slug)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e)) from e
+
+    return orchestrator.projects[project_slug]
 
 
 async def verified_user(

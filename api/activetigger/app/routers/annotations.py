@@ -137,7 +137,7 @@ async def post_list_elements(
             project.name,
         )
         if errors is not None:
-            Exception(f"Errors during annotations update: {errors}")
+            raise Exception(f"Errors during annotations update: {errors}")
         return None
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
