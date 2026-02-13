@@ -170,8 +170,6 @@ export const ModelManagement: FC = () => {
 
   // deactivate currents active model if it has been deleted from the list
   useEffect(() => {
-    console.log('available quick models', availableQuickModels);
-    console.log(activeModel);
     if (
       activeModel &&
       activeModel.type === 'quick' &&
@@ -267,63 +265,63 @@ export const ModelManagement: FC = () => {
         currentModel.kind === 'quick' &&
         currentQuickModelInformations &&
         currentQuickModelInformations.params && (
-        <>
-          {/* <ValidateButtons
+          <>
+            {/* <ValidateButtons
             modelName={currentBertModel}
             kind="bert"
             id="compute-prediction"
             buttonLabel="Compute predictions"
           /> */}
-          <DisplayScores
-            title={'Validation scores from the training data (internal validation)'}
-            scores={currentQuickModelInformations.statistics_test as MLStatisticsModel}
-            projectSlug={projectSlug}
-            dataset="Train-Eval"
+            <DisplayScores
+              title={'Validation scores from the training data (internal validation)'}
+              scores={currentQuickModelInformations.statistics_test as MLStatisticsModel}
+              projectSlug={projectSlug}
+              dataset="Train-Eval"
               exclude_labels={currentQuickModelInformations.exclude_labels}
-          />
-          <div className="horizontal wrap">
-            <button
-              className="btn-secondary-action"
-              onClick={() => {
-                retrainQuickModel(currentQuickModelName || '');
-                console.log('retrain', currentQuickModelName);
-              }}
-            >
-              <IoIosRefresh size={18} className="me-1" />
-              Retrain
-            </button>
-            <button
-              className="btn-secondary-action"
-              onClick={() => {
-                setShowParametersQuickModel(true);
-              }}
-            >
-              <FaGear size={18} className="me-1" />
-              Parameters
-            </button>
+            />
+            <div className="horizontal wrap">
+              <button
+                className="btn-secondary-action"
+                onClick={() => {
+                  retrainQuickModel(currentQuickModelName || '');
+                  console.log('retrain', currentQuickModelName);
+                }}
+              >
+                <IoIosRefresh size={18} className="me-1" />
+                Retrain
+              </button>
+              <button
+                className="btn-secondary-action"
+                onClick={() => {
+                  setShowParametersQuickModel(true);
+                }}
+              >
+                <FaGear size={18} className="me-1" />
+                Parameters
+              </button>
 
-            <button className="btn-secondary-action" onClick={() => setShowRename(true)}>
-              <MdDriveFileRenameOutline size={18} className="me-1" />
-              Rename
-            </button>
-          </div>
-          {currentQuickModelInformations.statistics_cv10 && (
-            <>
-              <h4 className="subsection">Cross Validation results</h4>
-              <DisplayScores
-                title="Cross validation CV10"
-                scores={
+              <button className="btn-secondary-action" onClick={() => setShowRename(true)}>
+                <MdDriveFileRenameOutline size={18} className="me-1" />
+                Rename
+              </button>
+            </div>
+            {currentQuickModelInformations.statistics_cv10 && (
+              <>
+                <h4 className="subsection">Cross Validation results</h4>
+                <DisplayScores
+                  title="Cross validation CV10"
+                  scores={
                     currentQuickModelInformations.statistics_cv10 as unknown as Record<
                       string,
                       number
                     >
-                }
-                dataset="train test"
-              />
-            </>
-          )}
-        </>
-      )}
+                  }
+                  dataset="train test"
+                />
+              </>
+            )}
+          </>
+        )}
 
       {currentModel && currentModel.kind === 'bert' && currentBertModelInformations && (
         <div>

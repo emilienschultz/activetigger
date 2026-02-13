@@ -60,10 +60,10 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
         .map((e) => {
           const toDisable = ((e.parameters.exclude_labels as string[]) || []).length > 0;
           return {
-          value: e.name,
+            value: e.name,
             label: toDisable ? e.name + ' (labels dropped)' : e.name,
-          type: 'quickmodel',
-          time: e.time,
+            type: 'quickmodel',
+            time: e.time,
             isDisabled: toDisable,
           };
         })
@@ -237,7 +237,6 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
                     style={{ color: 'green', cursor: 'pointer' }}
                     onClick={() => {
                       retrainQuickModel(activeModel.value);
-                      console.log('retrain', activeModel.value);
                     }}
                     data-tooltip-id="retrain-tooltip"
                   />
