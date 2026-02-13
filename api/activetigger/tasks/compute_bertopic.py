@@ -325,19 +325,20 @@ class ComputeBertopic(BaseTask):
         errors are flagged beforehand"""
         return pd.read_parquet(path_embeddings)
 
-    def __check_embeddings(self, df_embeddings: pd.DataFrame, df: pd.DataFrame):
-        """Retrieve the embeddings for the each text element in the dataframe. If
+    def __check_embeddings(
+        self, df_embeddings: pd.DataFrame, df: pd.DataFrame
+    ) -> pd.DataFrame | None:
+        """
+        Retrieve the embeddings for the each text element in the dataframe. If
         some are missing, restart embedding computation.
         Make sure that the embeddings loaded have the right form and that the index
-        of the embeddings_df and the df (text) match"""
+        of the embeddings_df and the df (text) match
+        """
         # Check if all text have it's embedding
         if False in np.isin(df.index, df_embeddings.index):
-            # Some texts don't have their corresponding embedding, return None 
-            # in order to force recumpute embeddings
-            # TODO: Warn User
             print("Some elements did not have their embedding")
             return None
-        
+
         try:
             df_embeddings = df_embeddings.loc[df.index, :]
         except Exception as e:
@@ -615,13 +616,13 @@ class ComputeBertopic(BaseTask):
 
             df_embeddings = self.__load_embeddings(path_embeddings)
             df_embeddings = self.__check_embeddings(df_embeddings, df)
-            
+
             if df_embeddings is None:
-                # If issue when checking the embeddings, force compute the embeddings 
+                # If issue when checking the embeddings, force compute the embeddings
                 self.__compute_embeddings(df, path_embeddings)
                 df_embeddings = self.__load_embeddings(path_embeddings)
                 df_embeddings = self.__check_embeddings(df_embeddings, df)
-            
+
             embeddings: np.ndarray = df_embeddings.values
             self.__create_projection(df_embeddings, path_projection)
 
@@ -685,13 +686,15 @@ class ComputeBertopic(BaseTask):
                 shutil.rmtree(self.path_run)
             if "Found array with 0 sample(s)".lower() in str(e).lower():
                 # TODO Make it nicer with proper notification center
-                e = Exception((
-                    f"{str(e)}"
-                    "\n"
-                    f"[Found array with 0 sample(s)] errors are likely due to"
-                    f"your dataset being to small ({len(df)}). We advise you "
-                    f"to add more elements to your dataset."
-                )) 
+                e = Exception(
+                    (
+                        f"{str(e)}"
+                        "\n"
+                        f"[Found array with 0 sample(s)] errors are likely due to"
+                        f"your dataset being to small ({len(df)}). We advise you "
+                        f"to add more elements to your dataset."
+                    )
+                )
 
             raise e
 
