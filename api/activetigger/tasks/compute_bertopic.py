@@ -326,13 +326,26 @@ class ComputeBertopic(BaseTask):
         return pd.read_parquet(path_embeddings)
 
     def __check_embeddings(self, df_embeddings: pd.DataFrame, df: pd.DataFrame):
-        """Make sure that the embeddings loaded have the right form and that the index
+        """Retrieve the embeddings for the each text element in the dataframe. If
+        some are missing, restart embedding computation.
+        Make sure that the embeddings loaded have the right form and that the index
         of the embeddings_df and the df (text) match"""
-        # Test if the embeddings & the texts have the same index
-        if not df.index.equals(df_embeddings.index) or len(df) != len(df_embeddings):
+        # Check if all text have it's embedding
+        if False in np.isin(df.index, df_embeddings.index):
+            # Some texts don't have their corresponding embedding, return None 
+            # in order to force recumpute embeddings
+            # TODO: Warn User
+            print("Some elements did not have their embedding")
+            return None
+        
+        try:
+            df_embeddings = df_embeddings.loc[df.index, :]
+        except Exception as e:
             raise ValueError(
                 "The index of the embeddings and the texts do not match. "
                 "Please force the computation of embeddings or check your data."
+                "\n"
+                "Python error: {e}"
             )
         if self.cols_embeddings:
             # NOTE: AM: Artefact?
@@ -602,6 +615,13 @@ class ComputeBertopic(BaseTask):
 
             df_embeddings = self.__load_embeddings(path_embeddings)
             df_embeddings = self.__check_embeddings(df_embeddings, df)
+            
+            if df_embeddings is None:
+                # If issue when checking the embeddings, force compute the embeddings 
+                self.__compute_embeddings(df, path_embeddings)
+                df_embeddings = self.__load_embeddings(path_embeddings)
+                df_embeddings = self.__check_embeddings(df_embeddings, df)
+            
             embeddings: np.ndarray = df_embeddings.values
             self.__create_projection(df_embeddings, path_projection)
 
@@ -621,7 +641,8 @@ class ComputeBertopic(BaseTask):
                 hdbscan_model=hdbscan_model,
             )
 
-            self.update_progress("Fitting the model")
+            self.update_progress(f"Fitting the model on {embeddings.shape[0]} elements")
+            print(f"Fitting the model on {embeddings.shape} / {len(df)} elements")
             # Fit the BERTopic model
             topics, _ = topic_model.fit_transform(
                 documents=df[self.col_text],
@@ -662,6 +683,16 @@ class ComputeBertopic(BaseTask):
             # Case an error happens
             if self.path_run.exists():
                 shutil.rmtree(self.path_run)
+            if "Found array with 0 sample(s)".lower() in str(e).lower():
+                # TODO Make it nicer with proper notification center
+                e = Exception((
+                    f"{str(e)}"
+                    "\n"
+                    f"[Found array with 0 sample(s)] errors are likely due to"
+                    f"your dataset being to small ({len(df)}). We advise you "
+                    f"to add more elements to your dataset."
+                )) 
+
             raise e
 
     def update_progress(self, message: str) -> None:
