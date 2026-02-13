@@ -250,6 +250,10 @@ export const QuickModelForm: FC<QuickModelFormProps> = ({
           <input type="checkbox" id="cv10" {...register('cv10')} />
           10-fold cross validation
         </label>
+      </details>
+      <details>
+        <summary>Advanced parameters for the data</summary>
+        <label>Labels to ignore</label>
         <Controller
           name="exclude_labels"
           control={control}
