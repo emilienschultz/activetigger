@@ -1,3 +1,4 @@
+import asyncio
 from typing import Annotated, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -38,7 +39,8 @@ async def get_next(
     """
     test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
-        return project.get_next(
+        return await asyncio.to_thread(
+            project.get_next,
             next=next,
             username=current_user.username,
         )

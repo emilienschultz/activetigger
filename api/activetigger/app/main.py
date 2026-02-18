@@ -1,12 +1,17 @@
 import importlib
+import logging
+import time
 from contextlib import asynccontextmanager
 from importlib.abc import Traversable
+from logging.handlers import TimedRotatingFileHandler
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import (
     Depends,
     FastAPI,
     HTTPException,
+    Request,
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
@@ -50,6 +55,65 @@ async def lifespan(app: FastAPI):
 
 # starting the app
 app = FastAPI(lifespan=lifespan)
+
+# setup file logger for fastapi events
+log_dir = Path(orchestrator.path).joinpath("logs")
+log_dir.mkdir(parents=True, exist_ok=True)
+log_file = log_dir.joinpath("fastapi_events.log")
+
+fastapi_logger = logging.getLogger("activetigger.fastapi")
+fastapi_logger.setLevel(logging.INFO)
+fastapi_logger.propagate = False
+
+if not fastapi_logger.handlers:
+    handler = TimedRotatingFileHandler(
+        filename=str(log_file),
+        when="H",
+        interval=1,
+        backupCount=24,
+        encoding="utf-8",
+        utc=False,
+    )
+    handler.setFormatter(
+        logging.Formatter(
+            "%(asctime)s | %(levelname)s | %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S%z",
+        )
+    )
+    fastapi_logger.addHandler(handler)
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    warning_delay = 1000
+    start = time.perf_counter()
+    client = request.client.host if request.client else "-"
+    path = request.url.path
+    method = request.method
+    try:
+        response = await call_next(request)
+        duration_ms = int((time.perf_counter() - start) * 1000)
+        fastapi_logger.info(
+            '%s "%s %s" status=%s duration_ms=%s %s',
+            client,
+            method,
+            path,
+            response.status_code,
+            duration_ms,
+            "DELAY" if duration_ms > warning_delay else "",
+        )
+        return response
+    except Exception:
+        duration_ms = int((time.perf_counter() - start) * 1000)
+        fastapi_logger.exception(
+            '%s "%s %s" status=500 duration_ms=%s',
+            client,
+            method,
+            path,
+            duration_ms,
+        )
+        raise
+
 
 # add static folder
 app.mount("/static", StaticFiles(directory=orchestrator.path.joinpath("static")), name="static")
