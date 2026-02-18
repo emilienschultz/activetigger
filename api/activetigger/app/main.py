@@ -106,7 +106,7 @@ async def log_requests(request: Request, call_next):
     except Exception:
         duration_ms = int((time.perf_counter() - start) * 1000)
         fastapi_logger.exception(
-            '%s "%s %s" status=500 duration_ms=%s',
+            '%s "%s %s" status=500 duration_ms=%s PB',
             client,
             method,
             path,
