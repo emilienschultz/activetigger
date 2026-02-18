@@ -111,7 +111,7 @@ export const ImportPredictionDataset: FC<ImportPredictionDatasetProps> = ({
               href="#"
               onClick={(e) => {
                 e.preventDefault();
-                getPredictionsFile(modelName, 'csv', 'external');
+                getPredictionsFile(modelName, 'csv', 'external', scheme);
               }}
               className="text-blue-600 hover:underline"
             >

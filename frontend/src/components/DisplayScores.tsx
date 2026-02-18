@@ -12,6 +12,7 @@ export interface DisplayScoresProps {
   modelName?: string;
   projectSlug?: string | null;
   dataset?: string;
+  exclude_labels?: string[];
 }
 
 interface Row {
@@ -31,6 +32,7 @@ export const DisplayScores: FC<DisplayScoresProps> = ({
   modelName,
   projectSlug,
   dataset = 'data',
+  exclude_labels,
 }) => {
   const downloadModel = () => {
     if (!scores) return; // Ensure model is not null or undefined
@@ -83,9 +85,23 @@ export const DisplayScores: FC<DisplayScoresProps> = ({
   if (!scores) return;
   return (
     <div>
-      <span className="explanations">
-        Macro F1 score on {dataset.replace('_scores', '')} set : <b>{scores.f1_macro}</b>
-      </span>
+      <div className="d-flex flex-column">
+        <span className="explanations">
+          Macro F1 score on {dataset.replace('_scores', '')} set : <b>{scores.f1_macro}</b>
+        </span>
+
+        {(exclude_labels || []).length > 0 && (
+          <span className="explanations">
+            Labels{' '}
+            {(exclude_labels || []).map((l) => (
+              <span className="badge" key={l}>
+                {l}
+              </span>
+            ))}{' '}
+            are excluded from training
+          </span>
+        )}
+      </div>
       <DisplayTableStatistics scores={scores} title={title} />
       {scores['false_predictions'] && (
         <button className="btn-secondary-action" onClick={() => setShowFalsePredictions(true)}>

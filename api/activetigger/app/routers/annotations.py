@@ -1,3 +1,4 @@
+import asyncio
 from typing import Annotated, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -38,7 +39,8 @@ async def get_next(
     """
     test_rights(ProjectAction.GET, current_user.username, project.name)
     try:
-        return project.get_next(
+        return await asyncio.to_thread(
+            project.get_next,
             next=next,
             username=current_user.username,
         )
@@ -137,7 +139,7 @@ async def post_list_elements(
             project.name,
         )
         if errors is not None:
-            Exception(f"Errors during annotations update: {errors}")
+            raise Exception(f"Errors during annotations update: {errors}")
         return None
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e

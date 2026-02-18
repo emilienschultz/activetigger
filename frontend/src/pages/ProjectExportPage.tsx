@@ -199,7 +199,7 @@ export const ProjectExportPage: FC = () => {
                         className="btn-secondary-action"
                         onClick={() => {
                           if (model) {
-                            getPredictionsFile(model, format);
+                            getPredictionsFile(model, format, 'all', currentScheme);
                           }
                         }}
                       >
@@ -213,7 +213,7 @@ export const ProjectExportPage: FC = () => {
                         className="btn-secondary-action"
                         onClick={() => {
                           if (model) {
-                            getPredictionsFile(model, format, 'test');
+                            getPredictionsFile(model, format, 'test', currentScheme);
                           }
                         }}
                       >
@@ -227,7 +227,7 @@ export const ProjectExportPage: FC = () => {
                         className="btn-secondary-action mt-4"
                         onClick={() => {
                           if (model) {
-                            getPredictionsFile(model, format, 'external');
+                            getPredictionsFile(model, format, 'external', currentScheme);
                           }
                         }}
                       >

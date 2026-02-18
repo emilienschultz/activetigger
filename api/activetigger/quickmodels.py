@@ -99,6 +99,7 @@ class QuickModels:
         model_params: dict | None = None,
         cv10: bool = False,
         balance_classes: bool = False,
+        exclude_labels: list[str] = [],
         retrain: bool = False,
         texts: pd.Series | None = None,
     ) -> str:
@@ -197,6 +198,7 @@ class QuickModels:
             "model_params": model_params,
             "texts": texts,
             "random_seed": config.random_seed,
+            "exclude_labels": exclude_labels
         }
         unique_id = self.queue.add_task("quickmodel", project_slug, TrainML(**args))
         del args
@@ -216,6 +218,7 @@ class QuickModels:
             standardize=standardize,
             cv10=cv10,
             balance_classes=balance_classes,
+            exclude_labels=exclude_labels,
             retrain=retrain,
             dataset="train",
         )
@@ -233,7 +236,10 @@ class QuickModels:
             user=element.user,
             project=self.project_slug,
             scheme=element.scheme,
-            params=element.model_params,
+            params={
+                **element.model_params,
+                "exclude_labels": element.exclude_labels
+            },
             path=str(model_path),
             status="trained",
             retrain=element.retrain,
@@ -437,6 +443,7 @@ class QuickModels:
                 file_name=file_name,
                 statistics=statistics,
                 col_text=col_text,
+                exclude_labels=sm.exclude_labels
             ),
             queue="cpu",
         )
@@ -465,14 +472,14 @@ class QuickModels:
 
         if not self.exists(model_name):
             raise Exception(f"The model {model_name} does not exist")
-
+        sm = self.get(model_name)
         # params = self.get_parameters(model_name)
         metrics = get_model_metrics(self.path.joinpath(model_name))
         if metrics is None:
             metrics = {}
 
         return ModelInformationsModel(
-            params=None,
+            params= {"exclude_labels": sm.exclude_labels if "exclude_labels" in sm else []},
             scores=ModelScoresModel(
                 internalvalid_scores=metrics.get("trainvalid", None),
                 valid_scores=metrics.get("valid", None),

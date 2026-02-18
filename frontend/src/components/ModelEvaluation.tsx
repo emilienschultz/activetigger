@@ -114,6 +114,9 @@ export const ModelEvaluation: FC = () => {
             modelName={currentQuickModelName || ''}
             skip={['internalvalid_scores']}
             projectSlug={projectSlug || null}
+            exclude_labels={
+              (quickModelInformations?.params?.exclude_labels as unknown as string[]) || []
+            }
           />
         </>
       )}

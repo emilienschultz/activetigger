@@ -901,6 +901,7 @@ export function useTrainQuickModel(projectSlug: string | null, scheme: string | 
             dichotomize: formData.dichotomize,
             cv10: formData.cv10,
             balance_classes: formData.balance_classes,
+            exclude_labels: formData.exclude_labels,
           },
         });
 
@@ -1402,7 +1403,7 @@ export function useGetAnnotationsFile(projectSlug: string | null) {
 export function useGetPredictionsFile(projectSlug: string | null) {
   const { notify } = useNotifications();
   const getPredictionsFile = useCallback(
-    async (model: string, format: string, dataset: string = 'all') => {
+    async (model: string, format: string, dataset: string = 'all', scheme: string = '') => {
       if (projectSlug) {
         const res = await api.GET('/export/prediction', {
           params: {
@@ -1418,7 +1419,7 @@ export function useGetPredictionsFile(projectSlug: string | null) {
 
         if (!res.error) {
           notify({ type: 'success', message: 'Exporting the predictions data' });
-          saveAs(res.data, `predictions_${projectSlug}_${model}_${dataset}.${format}`);
+          saveAs(res.data, `predictions_${projectSlug}_${model}_${scheme}_${dataset}.${format}`);
         }
         return true;
       }

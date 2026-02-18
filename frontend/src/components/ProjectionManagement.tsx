@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
 
 import chroma from 'chroma-js';
+import classNames from 'classnames';
 import { Modal } from 'react-bootstrap';
 import { FaLock, FaPlusCircle } from 'react-icons/fa';
 import { FaGear } from 'react-icons/fa6';
@@ -229,132 +230,127 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
   );
 
   return (
-    <>
-      {!isComputing ? (
-        <div>
-          <button
-            onClick={() => setShowComputeNewProjection(true)}
-            className="btn-primary-action mb-4"
-          >
-            <FaPlusCircle size={20} className="me-1" /> Compute new projection
-          </button>
-        </div>
-      ) : (
-        <StopProcessButton projectSlug={projectName} />
-      )}
-      {projectionData && labelColorMapping && (
-        <>
-          <button className="btn-secondary-action" onClick={() => setShowParameters(true)}>
-            <FaGear size={18} />
-            Parameters
-          </button>
-          <label style={{ display: 'block' }}>
-            <input
-              type="checkbox"
-              checked={selectionConfig.frameSelection}
-              onChange={(_) => {
-                setAppContext((prev) => ({
-                  ...prev,
-                  selectionConfig: {
-                    ...selectionConfig,
-                    frameSelection: !selectionConfig.frameSelection,
-                  },
-                }));
-              }}
-            />
-            <FaLock /> Lock on selection
-            <a className="lockhelp">
-              <HiOutlineQuestionMarkCircle />
-            </a>
-            <Tooltip anchorSelect=".lockhelp" place="top">
-              Once a vizualisation computed, you can use the square tool to select an area (or
-              remove the square).<br></br> Then you can lock the selection, and only elements in the
-              selected area will be available for annoation.
-            </Tooltip>
-          </label>
-          <div className="d-flex flex-wrap justify-content-around" style={{ minWidth: 0 }}>
-            <div style={{ flex: '3 1 25rem', minWidth: '15rem' }}>
-              <ProjectionVizSigma
-                data={projectionData}
-                selectedId={currentElementId}
-                setSelectedId={setSelectedId}
-                frame={selectionConfig.frame}
-                setFrameBbox={(bbox?: MarqueBoundingBox) => {
+    <div className="explore-container">
+      <div>
+        {!isComputing ? (
+          <div>
+            <button
+              onClick={() => setShowComputeNewProjection(true)}
+              className="btn-primary-action mb-4"
+            >
+              <FaPlusCircle size={20} className="me-1" /> Compute new projection
+            </button>
+          </div>
+        ) : (
+          <StopProcessButton projectSlug={projectName} />
+        )}
+        {projectionData && labelColorMapping && (
+          <>
+            <button className="btn-secondary-action" onClick={() => setShowParameters(true)}>
+              <FaGear size={18} />
+              Parameters
+            </button>
+            <label style={{ display: 'block' }}>
+              <input
+                type="checkbox"
+                checked={selectionConfig.frameSelection}
+                onChange={(_) => {
                   setAppContext((prev) => ({
                     ...prev,
                     selectionConfig: {
                       ...selectionConfig,
-                      frame: bbox ? [bbox.x.min, bbox.x.max, bbox.y.min, bbox.y.max] : undefined,
+                      frameSelection: !selectionConfig.frameSelection,
                     },
                   }));
                 }}
-                labelColorMapping={labelColorMapping}
               />
-            </div>
-
-            <>
-              {selectedElement ? (
-                <div
-                  style={{
-                    overflowY: 'auto',
-                    maxHeight: '80vh',
-                    flex: '1 1 10rem',
-                    minWidth: '8rem',
-                  }}
-                  className="mx-4"
-                >
-                  <a
-                    className="badge m-0 p-1"
-                    onClick={() =>
-                      navigate(`/projects/${projectName}/tag/${selectedElement.element_id}?tab=tag`)
-                    }
-                    style={{ cursor: 'pointer' }}
-                  >
-                    Text {selectedElement.element_id}
-                  </a>
-                  <div>{selectedElement.text}</div>
-                  <details>
-                    <summary>Previous annotations:</summary>
-                    <ul>
-                      {selectedElement.history?.map((e) => {
-                        return (
-                          <li key={`${e.time}-${e.user}`}>
-                            label: {e.label ? e.label : 'label removed'} ({e.time} by {e.user})
-                            <br />
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </details>
-                  <h5 className="subsection">Annotate this element</h5>
-                  <div className="annotation-block force-one-column-layout">
-                    {kindScheme == 'multiclass' && (
-                      <MulticlassInput
-                        elementId={selectedElement.element_id}
-                        element={selectedElement}
-                        postAnnotation={postAnnotation}
-                        labels={availableLabels}
-                        phase="train"
-                      />
-                    )}
-                    {kindScheme == 'multilabel' && (
-                      <MultilabelInput
-                        elementId={selectedElement.element_id}
-                        postAnnotation={postAnnotation}
-                        labels={availableLabels}
-                      />
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="explanations horizontal center" style={{ flex: '1 1 auto' }}>
-                  Click on an element to display its content
-                </div>
-              )}
-            </>
+              <FaLock /> Lock on selection
+              <a className="lockhelp">
+                <HiOutlineQuestionMarkCircle />
+              </a>
+              <Tooltip anchorSelect=".lockhelp" place="top">
+                Once a vizualisation computed, you can use the square tool to select an area (or
+                remove the square).<br></br> Then you can lock the selection, and only elements in
+                the selected area will be available for annoation.
+              </Tooltip>
+            </label>
+          </>
+        )}
+      </div>
+      {projectionData && labelColorMapping && (
+        <div className="explore-viz-container">
+          <div className="explore-viz-column">
+            <ProjectionVizSigma
+              data={projectionData}
+              selectedId={currentElementId}
+              setSelectedId={setSelectedId}
+              frame={selectionConfig.frame}
+              setFrameBbox={(bbox?: MarqueBoundingBox) => {
+                setAppContext((prev) => ({
+                  ...prev,
+                  selectionConfig: {
+                    ...selectionConfig,
+                    frame: bbox ? [bbox.x.min, bbox.x.max, bbox.y.min, bbox.y.max] : undefined,
+                  },
+                }));
+              }}
+              labelColorMapping={labelColorMapping}
+            />
           </div>
-        </>
+
+          <div className={classNames('explore-annotation-column', selectedElement && 'active')}>
+            {selectedElement ? (
+              <>
+                <a
+                  className="badge m-0 p-1"
+                  onClick={() =>
+                    navigate(`/projects/${projectName}/tag/${selectedElement.element_id}?tab=tag`)
+                  }
+                  style={{ cursor: 'pointer' }}
+                >
+                  Text {selectedElement.element_id}
+                </a>
+                <div>{selectedElement.text}</div>
+                <details>
+                  <summary>Previous annotations:</summary>
+                  <ul>
+                    {selectedElement.history?.map((e) => {
+                      return (
+                        <li key={`${e.time}-${e.user}`}>
+                          label: {e.label ? e.label : 'label removed'} ({e.time} by {e.user})
+                          <br />
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </details>
+                <h5 className="subsection">Annotate this element</h5>
+                <div className="annotation-block force-one-column-layout">
+                  {kindScheme == 'multiclass' && (
+                    <MulticlassInput
+                      elementId={selectedElement.element_id}
+                      element={selectedElement}
+                      postAnnotation={postAnnotation}
+                      labels={availableLabels}
+                      phase="train"
+                    />
+                  )}
+                  {kindScheme == 'multilabel' && (
+                    <MultilabelInput
+                      elementId={selectedElement.element_id}
+                      postAnnotation={postAnnotation}
+                      labels={availableLabels}
+                    />
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="explanations ">Click on an element to display its content</div>
+            )}
+          </div>
+        </div>
       )}
+
       <Modal
         show={showComputeNewProjection}
         onHide={() => setShowComputeNewProjection(false)}
@@ -464,6 +460,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
           />
         </Modal.Body>
       </Modal>
-    </>
+    </div>
   );
 };

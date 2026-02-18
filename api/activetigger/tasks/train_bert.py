@@ -142,6 +142,7 @@ class TrainBert(BaseTask):
         loss: Optional[str] = "cross_entropy",
         max_length: int = 512,
         auto_max_length: bool = False,
+        class_balance: bool = False,
         **kwargs,
     ):
         self.path = path
@@ -159,6 +160,7 @@ class TrainBert(BaseTask):
         self.loss = loss
         self.max_length = max_length
         self.auto_max_length = auto_max_length
+        self.class_balance = class_balance
 
     def __init_paths(self) -> Tuple[Path, Path]:
         """Initiate the current path (directory for the model) and for the logger"""
@@ -502,6 +504,9 @@ class TrainBert(BaseTask):
                     "max_length": self.max_length,
                     "device": str(device),
                     "Proportion of elements truncated (%)": percentage_truncated,
+                    "loss": self.loss,
+                    "auto context length": self.params.adapt,
+                    "balance classes": self.class_balance,
                 }
             )
             self.__create_save_files(

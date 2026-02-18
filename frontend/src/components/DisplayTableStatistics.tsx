@@ -1,6 +1,8 @@
 import cx from 'classnames';
-import { FC } from 'react';
+import { FC, useMemo } from 'react';
 import { useWindowSize } from 'usehooks-ts';
+import { useAppContext } from '../core/context';
+import { reorderLabels } from '../core/utils';
 import { MLStatisticsModel } from '../types';
 
 export interface DisplayTableStatisticsProps {
@@ -16,23 +18,21 @@ interface TableModel {
 
 export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores }) => {
   const { width: widthWindow } = useWindowSize();
+  const {
+    appContext: { displayConfig },
+  } = useAppContext();
   const table = scores.table ? (scores.table as unknown as TableModel) : null;
-  const labels = (scores?.table?.index as unknown as string[]) || [];
+
+  // sort labels
+  const labels = useMemo<string[]>(
+    () =>
+      reorderLabels(
+        (scores?.table?.index as unknown as string[]) || [],
+        displayConfig.labelsOrder || [],
+      ),
+    [displayConfig.labelsOrder, scores],
+  );
   const nLabels = Object.entries(labels).length;
-  // const colCount = table?.columns.length || 0;
-
-  // const isLabelColumn = (colIndex: number, rowIndex: number, labels: string[]) => {
-  //   return (
-  //     colIndex < Object.entries(labels).length - 1 && rowIndex < Object.entries(labels).length - 1
-  //   );
-  // };
-
-  // const isTotalCell = (colIndex: number, rowIndex: number, labels: string[]) => {
-  //   return (
-  //     colIndex === Object.entries(labels).length - 1 ||
-  //     rowIndex === Object.entries(labels).length - 1
-  //   );
-  // };
 
   const isDiag = (colIndex: number, rowIndex: number) => {
     return colIndex < nLabels - 1 && colIndex === rowIndex;
