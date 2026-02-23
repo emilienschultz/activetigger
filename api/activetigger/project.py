@@ -921,10 +921,18 @@ class Project:
 
             # get prediction if it exists
             predict = PredictedLabel(label=None, proba=None, entropy=None)
-            if element.active_model is not None:
-                predict = self.get_prediction_element(
-                    element.active_model.type, element.active_model.value, element.element_id
-                )
+            try: 
+                if element.active_model is not None:
+                    predict = self.get_prediction_element(
+                        element.active_model.type, element.active_model.value, element.element_id
+                    )
+            except Exception as e:
+                # TODO: warn user to retrain the model
+                print((
+                    f"No prediction found for element {element.element_id}."
+                    f"Please retrain the model.\n"
+                    f"Error: \n{e}"
+                ))
 
             # extract context
             context = cast(
