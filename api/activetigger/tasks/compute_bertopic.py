@@ -451,7 +451,7 @@ class ComputeBertopic(BaseTask):
 
         # Save the topics and documents informations
         topics_df: pd.DataFrame = topic_model.get_topic_info()
-        if self.parameters.outlier_reduction and self.parameters.outlier_reduction != "Failed":
+        if self.parameters.outlier_reduction:
             topics_df = topics_df.loc[topics_df.Topic != -1, :]
             # Update the counts
             topics_df = topics_df.set_index("Topic")
@@ -661,7 +661,7 @@ class ComputeBertopic(BaseTask):
                         strategy="embeddings",
                     )
                 except Exception as e:
-                    self.parameters.outlier_reduction = "Failed"
+                    self.parameters.outlier_reduction = False
                     print(
                         f"Error during outlier reduction: {e} — Most likely "
                         "because there are not enough elements in your dataset"
