@@ -937,7 +937,10 @@ class Project:
             context = {i.replace("dataset_", ""): str(context[i]) for i in context}
 
         if text is None:
-            raise Exception("Dataset does not exist.")
+            raise Exception((
+                f"Element {element.element_id} was not found in dataset"
+                f" {element.dataset}"
+            ))
 
         return ElementOutModel(
             element_id=element.element_id,
