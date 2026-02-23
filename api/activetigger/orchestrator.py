@@ -94,6 +94,11 @@ class Orchestrator:
         # projects in creation
         self.project_creation_ongoing = {}
 
+        # cached heavy system stats (refreshed every _heavy_stats_interval seconds)
+        self._heavy_stats_interval = 30
+        self._heavy_stats_last_update = 0.0
+        self._heavy_stats_cache: dict = self._collect_heavy_stats()
+
         # update the projects asynchronously
         self._running = True
         self._update_task = asyncio.create_task(self._update(timeout=config.update_timeout))
@@ -147,50 +152,91 @@ class Orchestrator:
         )
         return project_slug
 
+    def _sync_update_processes(self, project_lifetime: int) -> None:
+        """
+        Synchronous work for the update loop (runs in a thread to avoid
+        blocking the async event loop).
+        """
+        self.queue.clean_old_processes()
+        timer = time.time()
+
+        # loop on loaded projects
+        to_del = []
+        for p, project in list(self.projects.items()):
+            try:
+                if (timer - project.starting_time) > project_lifetime:
+                    to_del.append(p)
+                    continue
+                project.update_processes()
+            except Exception as e:
+                print(f"Error while updating project {p}: {e}")
+                to_del.append(p)
+        for p in to_del:
+            del self.projects[p]
+
+        # loop on creating projects
+        to_del = []
+        for p, project in list(self.project_creation_ongoing.items()):
+            try:
+                project.update_processes()
+                if project.status == "created":
+                    to_del.append(p)
+                if project.status == "error":
+                    self.clean_unfinished_project(project_slug=p)
+                    to_del.append(p)
+            except Exception as e:
+                print(f"Error while updating project {p}: {e}")
+                to_del.append(p)
+        for p in to_del:
+            del self.project_creation_ongoing[p]
+
+    def _collect_heavy_stats(self) -> dict:
+        """
+        Collect expensive system metrics (CPU, memory, disk, GPU).
+        Designed to run in a background thread.
+        """
+        cpu = psutil.cpu_percent()
+        cpu_count = psutil.cpu_count()
+        memory_info = psutil.virtual_memory()
+        disk_info = psutil.disk_usage("/")
+        at_memory = get_dir_size(config.data_path + "/projects")
+        gpu = get_gpu_memory_info()
+        return {
+            "cpu": {"proportion": cpu, "total": cpu_count},
+            "memory": {
+                "proportion": memory_info.percent,
+                "total": memory_info.total / (1024**3),
+                "available": memory_info.available / (1024**3),
+            },
+            "disk": {
+                "activetigger": at_memory,
+                "proportion": disk_info.percent,
+                "total": disk_info.total / (1024**3),
+            },
+            "gpu": gpu,
+        }
+
     async def _update(self, timeout: int = 1, project_lifetime: int = 7200) -> None:
         """
         Update each project in memory every X seconds.
         - loaded project
         - project in creation
         Remove projects that are older than project_lifetime seconds.
+        Heavy system stats are refreshed every _heavy_stats_interval seconds.
+        All synchronous work runs in a thread to avoid blocking the event loop.
         """
         try:
             while self._running:
-                self.queue.clean_old_processes()
-                timer = time.time()
+                # run synchronous update_processes in a thread
+                await asyncio.to_thread(self._sync_update_processes, project_lifetime)
 
-                # loop on loaded projects
-                to_del = []
-                for p, project in self.projects.items():
-                    try:
-                        # if project existing since one day, remove it from memory
-                        if (timer - project.starting_time) > project_lifetime:
-                            to_del.append(p)
-                            continue
-                        project.update_processes()
-                    except Exception as e:
-                        print(f"Error while updating project {p}: {e}")
-                        to_del.append(p)
-                for p in to_del:
-                    del self.projects[p]
+                # refresh heavy system stats periodically in a thread
+                now = time.time()
+                if (now - self._heavy_stats_last_update) >= self._heavy_stats_interval:
+                    self._heavy_stats_cache = await asyncio.to_thread(self._collect_heavy_stats)
+                    self._heavy_stats_last_update = now
 
-                # loop on creating projects
-                to_del = []
-                for p, project in self.project_creation_ongoing.items():
-                    try:
-                        project.update_processes()
-                        if project.status == "created":
-                            to_del.append(p)
-                        if project.status == "error":
-                            self.clean_unfinished_project(project_slug=p)  # destroy everything
-                            to_del.append(p)
-                    except Exception as e:
-                        print(f"Error while updating project {p}: {e}")
-                        to_del.append(p)
-                for p in to_del:
-                    del self.project_creation_ongoing[p]
-
-                # update the information on the state of the project
+                # build server state (cheap parts only, heavy stats come from cache)
                 self.server_state = self.get_server_state()
                 await asyncio.sleep(timeout)
         except asyncio.CancelledError:
@@ -223,7 +269,10 @@ class Orchestrator:
 
     def get_server_state(self) -> ServerStateModel:
         """
-        Build server state
+        Build server state.
+        Light data (active projects, queue) is computed inline.
+        Heavy system stats (CPU, memory, disk, GPU) come from the
+        periodically refreshed cache (_heavy_stats_cache).
         """
         # active projects in the orchestrator
         active_projects = {
@@ -241,29 +290,17 @@ class Orchestrator:
             if i.state in ["pending", "running"]
         }
 
-        # server state
-        cpu = psutil.cpu_percent()
-        cpu_count = psutil.cpu_count()
-        memory_info = psutil.virtual_memory()
-        disk_info = psutil.disk_usage("/")
-        at_memory = get_dir_size(config.data_path + "/projects")
+        # use cached heavy stats
+        stats = self._heavy_stats_cache
 
         return ServerStateModel(
             version=__version__,
             active_projects=active_projects,
             queue=queue,
-            gpu=get_gpu_memory_info(),
-            cpu={"proportion": cpu, "total": cpu_count},
-            memory={
-                "proportion": memory_info.percent,
-                "total": memory_info.total / (1024**3),
-                "available": memory_info.available / (1024**3),
-            },
-            disk={
-                "activetigger": at_memory,
-                "proportion": disk_info.percent,
-                "total": disk_info.total / (1024**3),
-            },
+            gpu=stats["gpu"],
+            cpu=stats["cpu"],
+            memory=stats["memory"],
+            disk=stats["disk"],
             mail_available=self.messages.mail_available,
             messages=self.messages.get_messages_system(),
         )
