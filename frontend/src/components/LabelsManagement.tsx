@@ -1,7 +1,7 @@
 import { FC, useEffect, useState } from 'react';
 import { FaPlusCircle, FaRegTrashAlt } from 'react-icons/fa';
 
-import { FaEdit } from 'react-icons/fa';
+import { MdDriveFileRenameOutline } from 'react-icons/md';
 import { useAddLabel, useDeleteLabel, useRenameLabel, useStatistics } from '../core/api';
 import { useNotifications } from '../core/notifications';
 
@@ -66,7 +66,7 @@ export const LabelCard: FC<LabelCardProps> = ({
               title="Rename"
               onClick={() => setShowRename(!showRename)}
             >
-              <FaEdit />
+              <MdDriveFileRenameOutline size={21}/>
             </button>
           </td>
         </>
