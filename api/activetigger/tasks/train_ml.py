@@ -226,9 +226,9 @@ class TrainML(BaseTask):
         task_timer.start("setup")
         self.__init_paths(self.retrain)
 
-        self.X, self.Y = self.__check_data(self.X, self.Y, self.exclude_labels)
+        X_for_training, Y_for_training = self.__check_data(self.X, self.Y, self.exclude_labels)
 
-        X_train, X_test, Y_train, Y_test = self.__split_set(self.X, self.Y)
+        X_train, X_test, Y_train, Y_test = self.__split_set(X_for_training, Y_for_training)
         task_timer.stop("setup")
 
         # Fit model --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
