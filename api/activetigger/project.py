@@ -150,6 +150,11 @@ class Project:
         self.messages = messages
         self.monitoring = Monitoring(db_manager, project_slug)
 
+        # cached project directory size (refreshed every _memory_cache_interval seconds)
+        self._memory_cache: float = 0.0
+        self._memory_cache_time: float = 0.0
+        self._memory_cache_interval: float = 60
+
         # load the project if exist
         if self.exists():
             self.status = "created"
@@ -726,7 +731,7 @@ class Project:
                 f_user = df["user"].isin(next.on_users)
                 f = f & f_user
         else:
-            f = df["labels"].apply(lambda x: True)
+            f = pd.Series(True, index=df.index)
 
         # filter based on the text (field, context)
 
@@ -781,7 +786,7 @@ class Project:
                 raise ValueError("No vizualisation available")
 
         # test if there is at least one element available
-        if sum(f) == 0:
+        if f.sum() == 0:
             raise ValueError("No element available with this selection mode.")
 
         # filter by history
@@ -799,7 +804,7 @@ class Project:
             element_id = ss.index[0]
 
         if next.selection == "random":  # random row
-            element_id = ss.sample(frac=1).index[0]
+            element_id = ss.sample(n=1).index[0]
 
         # check conditions for active learning and get proba
         proba = None
@@ -857,14 +862,18 @@ class Project:
         else:
             if self.data.train is None:
                 raise Exception("Train dataset is not defined")
-            # get context
+            # get context for the single selected element
             context = dict(
-                self.data.train.fillna("NA").loc[element_id, self.params.cols_context].apply(str)
+                self.data.train.loc[element_id, self.params.cols_context].fillna("NA").apply(str)
             )
+
+        text = df.loc[element_id, "text"]
+        if pd.isna(text):
+            text = "NA"
 
         return ElementOutModel(
             element_id=element_id,
-            text=df.fillna("NA").loc[element_id, "text"],
+            text=text,
             context=context,
             selection=next.selection,
             info=indicator,
@@ -1082,6 +1091,17 @@ class Project:
             active_model=active_model,
         )
 
+    def _get_cached_memory(self) -> float:
+        """
+        Return cached project directory size (MB).
+        Refreshes at most every _memory_cache_interval seconds.
+        """
+        now = time.time()
+        if (now - self._memory_cache_time) >= self._memory_cache_interval:
+            self._memory_cache = get_dir_size(str(self.params.dir))
+            self._memory_cache_time = now
+        return self._memory_cache
+
     def state(self) -> ProjectStateModel:
         """
         State of the project
@@ -1102,7 +1122,7 @@ class Project:
             generations=self.generations.state(),
             bertopic=self.bertopic.state(),
             errors=self.errors.state(),
-            memory=get_dir_size(str(self.params.dir)),
+            memory=self._get_cached_memory(),
             last_activity=self.db_manager.logs_service.get_last_activity_project(
                 self.params.project_slug
             ),

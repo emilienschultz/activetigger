@@ -457,8 +457,6 @@ class ComputeBertopic(BaseTask):
             topics_df = topics_df.set_index("Topic")
             topics_df["Count-Bis"] = pd.Series(topics).value_counts()
             topics_df = topics_df.reset_index()
-        else:
-            self.parameters.outlier_reduction = False
 
         topics_df.to_csv(self.path_run.joinpath("bertopic_topics.csv"), index=False)
         df["cluster"].to_csv(self.path_run.joinpath("bertopic_clusters.csv"))

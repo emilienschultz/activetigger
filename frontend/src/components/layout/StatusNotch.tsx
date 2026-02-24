@@ -93,7 +93,7 @@ export const StatusNotch: FC<{
           </span>
           {/* Display number of process running 1 version (computer) */}
           <span className="d-none d-md-inline">
-            Processes running: {Object.values(queueState || []).length}
+            Global queue: {Object.values(queueState || []).length}
           </span>
           {/* Display GPU memory 1 version (computer) */}
           <span className="d-none d-md-inline">

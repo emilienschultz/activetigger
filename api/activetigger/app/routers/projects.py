@@ -1,3 +1,4 @@
+import asyncio
 from typing import Annotated
 
 from fastapi import (
@@ -262,6 +263,6 @@ async def get_project_state(
     """
     test_rights(ProjectAction.GET, current_user.username, project.project_slug)
     try:
-        return project.state()
+        return await asyncio.to_thread(project.state)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
