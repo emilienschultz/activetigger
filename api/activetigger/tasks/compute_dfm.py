@@ -11,10 +11,10 @@ from activetigger.tasks.base_task import BaseTask
 
 class ComputeDfm(BaseTask):
     """
-    Compute sbert feature
+    Compute DFM feature
     """
 
-    kind = "compute_feature_sbert"
+    kind = "compute_feature_dfm"
 
     def __init__(
         self,

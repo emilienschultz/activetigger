@@ -227,7 +227,8 @@ export const ProjectCreationForm: FC = () => {
             // if the project has been created
             if (status === 'existing') {
               clearInterval(intervalId);
-              if (computeFeatures) addFeature(slug, 'sbert', 'sbert', { model: 'generic' });
+              if (computeFeatures)
+                addFeature(slug, 'embeddings', 'embeddings', { model: 'generic' });
               resetContext();
               navigate(`/projects/${slug}?fromCreatePage=true`);
               return;

@@ -38,12 +38,12 @@ export const QuickModelForm: FC<QuickModelFormProps> = ({
   const { trainQuickModel } = useTrainQuickModel(projectSlug, currentScheme);
 
   const filterFeatures = (features: Feature[]) => {
-    const filtered = features.filter((e) => /sbert|fasttext/i.test(e.label));
+    const filtered = features.filter((e) => /embeddings|fasttext/i.test(e.label));
     const predictFeature = features.find((e) => /predict/i.test(e.label)); // Trouve le premier "predict"
-    const sbertFeature = features.find((e) => /sbert/i.test(e.label)); // Trouve le premier "sbert"
+    const embeddingsFeature = features.find((e) => /embeddings/i.test(e.label)); // Trouve le premier "embeddings"
 
-    if (sbertFeature) {
-      filtered.push(sbertFeature);
+    if (embeddingsFeature) {
+      filtered.push(embeddingsFeature);
     } else if (predictFeature) {
       filtered.push(predictFeature);
     }

@@ -198,7 +198,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
     value: string;
   };
   const filterFeatures = (features: Feature[]) => {
-    const filtered = features.filter((e) => /sbert|fasttext/i.test(e.label));
+    const filtered = features.filter((e) => /embeddings|fasttext/i.test(e.label));
     return filtered;
   };
   const defaultFeatures = filterFeatures(features);

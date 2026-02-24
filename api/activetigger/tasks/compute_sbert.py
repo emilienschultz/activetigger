@@ -15,10 +15,10 @@ from activetigger.tasks.base_task import BaseTask
 
 class ComputeSbert(BaseTask):
     """
-    Compute sbert feature
+    Compute Embeddings features
     """
 
-    kind = "compute_feature_sbert"
+    kind = "compute_feature_embeddings"
 
     def __init__(
         self,
@@ -59,7 +59,7 @@ class ComputeSbert(BaseTask):
 
     def __call__(self) -> DataFrame:
         """
-        Compute sbert embedding
+        Compute embeddings
         """
         # update temporary file with the current ID
         if self.progress_file_temporary:
