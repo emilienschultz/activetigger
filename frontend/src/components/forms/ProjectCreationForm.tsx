@@ -432,7 +432,7 @@ export const ProjectCreationForm: FC = () => {
                     }
                     onChange={(selectedOptions) => {
                       onChange(
-                        selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                        selectedOptions ? selectedOptions.map((option) => option?.value) : [],
                       );
                     }}
                   />
@@ -470,7 +470,7 @@ export const ProjectCreationForm: FC = () => {
                     isDisabled={creatingProject}
                     onChange={(selectedOptions) => {
                       onChange(
-                        selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                        selectedOptions ? selectedOptions.map((option) => option?.value) : [],
                       );
                     }}
                   />
@@ -497,7 +497,7 @@ export const ProjectCreationForm: FC = () => {
                     }
                     onChange={(selectedOptions) => {
                       onChange(
-                        selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                        selectedOptions ? selectedOptions.map((option) => option?.value) : [],
                       );
                     }}
                   />

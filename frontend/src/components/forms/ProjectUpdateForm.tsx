@@ -87,7 +87,7 @@ export const ProjectUpdateForm: FC<{ closeModal: () => void }> = ({ closeModal }
                 : []
             }
             onChange={(selectedOptions) => {
-              onChange(selectedOptions ? selectedOptions.map((option) => option.value) : []);
+              onChange(selectedOptions ? selectedOptions.map((option) => option?.value) : []);
             }}
           />
         )}
@@ -121,7 +121,7 @@ export const ProjectUpdateForm: FC<{ closeModal: () => void }> = ({ closeModal }
                 : []
             }
             onChange={(selectedOptions) => {
-              onChange(selectedOptions ? selectedOptions.map((option) => option.value) : []);
+              onChange(selectedOptions ? selectedOptions.map((option) => option?.value) : []);
             }}
           />
         )}
