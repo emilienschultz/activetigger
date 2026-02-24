@@ -651,7 +651,6 @@ class Project:
         - quickmodel
         - languagemodel
         """
-        print(type)
         if type == "quickmodel":
             if not self.quickmodels.exists(name):
                 raise Exception("Quickmodel doesn't exist")
@@ -930,18 +929,20 @@ class Project:
 
             # get prediction if it exists
             predict = PredictedLabel(label=None, proba=None, entropy=None)
-            try: 
+            try:
                 if element.active_model is not None:
                     predict = self.get_prediction_element(
                         element.active_model.type, element.active_model.value, element.element_id
                     )
             except Exception as e:
                 # TODO: warn user to retrain the model
-                print((
-                    f"No prediction found for element {element.element_id}."
-                    f"Please retrain the model.\n"
-                    f"Error: \n{e}"
-                ))
+                print(
+                    (
+                        f"No prediction found for element {element.element_id}."
+                        f"Please retrain the model.\n"
+                        f"Error: \n{e}"
+                    )
+                )
 
             # extract context
             context = cast(
@@ -954,10 +955,9 @@ class Project:
             context = {i.replace("dataset_", ""): str(context[i]) for i in context}
 
         if text is None:
-            raise Exception((
-                f"Element {element.element_id} was not found in dataset"
-                f" {element.dataset}"
-            ))
+            raise Exception(
+                (f"Element {element.element_id} was not found in dataset {element.dataset}")
+            )
 
         return ElementOutModel(
             element_id=element.element_id,

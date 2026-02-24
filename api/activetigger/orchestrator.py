@@ -135,7 +135,7 @@ class Orchestrator:
         Start the project creation
         """
         project_slug = self.check_project_name(project.project_name)
-        if project_slug in ["new"]:
+        if project_slug in ["new", "demo", "logs"]:
             raise Exception("This project name is not valid - reserved word")
         self.project_creation_ongoing[project_slug] = Project(
             project_slug,
