@@ -516,6 +516,10 @@ class Orchestrator:
             if Path(f"{config.data_path}/projects/static/{project_slug_verif}").exists():
                 shutil.rmtree(f"{config.data_path}/projects/static/{project_slug_verif}")
 
+        # remove from memory
+        if project_slug_verif in self.project_creation_ongoing:
+            del self.project_creation_ongoing[project_slug_verif]
+
     def create_demo_project(self, project_name: str, username: str) -> None:
         """
         Create a demo project for a specific user
