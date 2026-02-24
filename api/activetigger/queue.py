@@ -54,7 +54,9 @@ class Queue:
         self.current = []
 
         # create the executor
-        self.executor = get_reusable_executor(max_workers=self.nb_workers, timeout=10)
+        self.executor = get_reusable_executor(
+            max_workers=self.nb_workers, timeout=None
+        )  # timeout = 10
 
         # launch a regular update on the queue
         self.task = asyncio.create_task(self._update_queue(timeout=0.5))
@@ -92,7 +94,9 @@ class Queue:
             and (nb_active_processes_gpu + nb_active_processes_cpu) < self.nb_workers
             and len(task_gpu) > 0
         ):
-            executor = get_reusable_executor(max_workers=(self.nb_workers))
+            executor = get_reusable_executor(
+                max_workers=(self.nb_workers), timeout=None
+            )  # timeout = 10
             task_gpu[0].future = executor.submit(task_gpu[0].task)
             task_gpu[0].state = "running"
 
@@ -102,9 +106,22 @@ class Queue:
             and (nb_active_processes_gpu + nb_active_processes_cpu) < self.nb_workers
             and len(task_cpu) > 0
         ):
-            executor = get_reusable_executor(max_workers=(self.nb_workers))
+            executor = get_reusable_executor(
+                max_workers=(self.nb_workers), timeout=None
+            )  # timeout = 10
             task_cpu[0].future = executor.submit(task_cpu[0].task)
             task_cpu[0].state = "running"
+
+        # if there is nothing in the queue, shutdown the executor
+        # if nb_active_processes_cpu + nb_active_processes_gpu == 0:
+        #     executor = get_reusable_executor(max_workers=(self.nb_workers), timeout=None)
+        #     executor.shutdown(wait=False)
+        # print(
+        #     "nb_active_processes_cpu",
+        #     nb_active_processes_cpu,
+        #     "nb_active_processes_gpu",
+        #     nb_active_processes_gpu,
+        # )
 
     async def _update_queue(self, timeout: float = 1) -> None:
         """
@@ -229,7 +246,9 @@ class Queue:
         """
         Restart the queue by getting the executor and closing it
         """
-        executor = get_reusable_executor(max_workers=(self.nb_workers), timeout=10)
+        executor = get_reusable_executor(
+            max_workers=(self.nb_workers), timeout=None
+        )  # timeout = 10
         executor.shutdown(wait=False)
         self.manager.shutdown()
         self.manager = Manager()
