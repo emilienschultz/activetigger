@@ -1,7 +1,7 @@
 import cx from 'classnames';
 import { Dispatch, FC, ReactNode, SetStateAction, useState } from 'react';
 import { Modal } from 'react-bootstrap';
-import { MdOutlineDeleteOutline } from 'react-icons/md';
+import { FaRegTrashAlt } from 'react-icons/fa';
 
 interface ModelsNameInput {
   modelNames: string[];
@@ -35,8 +35,9 @@ export const ModelsPillDisplay: FC<ModelsNameInput> = ({
               e.stopPropagation();
               setModelToDelete(name);
             }}
+            className="mx-2"
           >
-            <MdOutlineDeleteOutline size={18} />
+            <FaRegTrashAlt size={12} />
           </span>
         </button>
       ))}
