@@ -79,7 +79,13 @@ export const ProjectUpdateForm: FC<{ closeModal: () => void }> = ({ closeModal }
           <Select
             options={columnsSelect}
             isMulti
-            value={columnsSelect.filter((option) => value?.includes(option.value))}
+            value={
+              value
+                ? value
+                    .map((v: string) => columnsSelect.find((opt) => opt.value === v))
+                    .filter(Boolean)
+                : []
+            }
             onChange={(selectedOptions) => {
               onChange(selectedOptions ? selectedOptions.map((option) => option.value) : []);
             }}
@@ -107,7 +113,13 @@ export const ProjectUpdateForm: FC<{ closeModal: () => void }> = ({ closeModal }
           <Select
             options={columnsSelect}
             isMulti
-            value={columnsSelect.filter((option) => value?.includes(option.value))}
+            value={
+              value
+                ? value
+                    .map((v: string) => columnsSelect.find((opt) => opt.value === v))
+                    .filter(Boolean)
+                : []
+            }
             onChange={(selectedOptions) => {
               onChange(selectedOptions ? selectedOptions.map((option) => option.value) : []);
             }}

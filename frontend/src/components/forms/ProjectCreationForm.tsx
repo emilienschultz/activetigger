@@ -423,7 +423,13 @@ export const ProjectCreationForm: FC = () => {
                     options={availableFields}
                     isMulti
                     isDisabled={creatingProject}
-                    value={value ? availableFields?.filter((opt) => value.includes(opt.value)) : []}
+                    value={
+                      value
+                        ? value
+                            .map((v: string) => availableFields?.find((opt) => opt.value === v))
+                            .filter(Boolean)
+                        : []
+                    }
                     onChange={(selectedOptions) => {
                       onChange(
                         selectedOptions ? selectedOptions.map((option) => option.value) : [],
@@ -454,7 +460,13 @@ export const ProjectCreationForm: FC = () => {
                     id="cols_label"
                     options={availableFields}
                     isMulti
-                    value={value ? availableFields?.filter((opt) => value.includes(opt.value)) : []}
+                    value={
+                      value
+                        ? value
+                            .map((v: string) => availableFields?.find((opt) => opt.value === v))
+                            .filter(Boolean)
+                        : []
+                    }
                     isDisabled={creatingProject}
                     onChange={(selectedOptions) => {
                       onChange(
@@ -476,7 +488,13 @@ export const ProjectCreationForm: FC = () => {
                     isMulti
                     defaultValue={[]}
                     isDisabled={creatingProject}
-                    value={value ? availableFields?.filter((opt) => value.includes(opt.value)) : []}
+                    value={
+                      value
+                        ? value
+                            .map((v: string) => availableFields?.find((opt) => opt.value === v))
+                            .filter(Boolean)
+                        : []
+                    }
                     onChange={(selectedOptions) => {
                       onChange(
                         selectedOptions ? selectedOptions.map((option) => option.value) : [],
