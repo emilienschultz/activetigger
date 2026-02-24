@@ -1,6 +1,6 @@
 import classNames from 'classnames';
 import { truncate } from 'lodash';
-import { FC, useState } from 'react';
+import { FC } from 'react';
 import { FaRegTrashAlt } from 'react-icons/fa';
 import { HiOutlineEye, HiOutlineViewGrid } from 'react-icons/hi';
 import { HiOutlineTableCells } from 'react-icons/hi2';
@@ -115,10 +115,14 @@ export const AnnotationHistoryList: FC = () => {
 
   const { clearAnnotationSessionHistory } = useAnnotationSessionHistory();
 
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
-
   const toggleViewMode = () => {
-    setViewMode((prev) => (prev === 'cards' ? 'table' : 'cards'));
+    setAppContext((prev) => ({
+      ...prev,
+      displayConfig: {
+        ...prev.displayConfig,
+        displayFormat: prev.displayConfig.displayFormat === 'table' ? 'cards' : 'table',
+      },
+    }));
   };
 
   const filteredHistory = history
@@ -144,9 +148,11 @@ export const AnnotationHistoryList: FC = () => {
         <button
           className="btn btn-link p-0"
           onClick={toggleViewMode}
-          title={viewMode === 'cards' ? 'Switch to table view' : 'Switch to card view'}
+          title={
+            displayConfig.displayFormat === 'cards' ? 'Switch to table view' : 'Switch to card view'
+          }
         >
-          {viewMode === 'cards' ? (
+          {displayConfig.displayFormat === 'cards' ? (
             <HiOutlineTableCells size={20} />
           ) : (
             <HiOutlineViewGrid size={20} />
@@ -168,7 +174,7 @@ export const AnnotationHistoryList: FC = () => {
           <HiOutlineEye size={20} />
         </button>
       </div>
-      {viewMode === 'cards' ? (
+      {displayConfig.displayFormat === 'cards' ? (
         <div className="annotation-history">
           {filteredHistory.map((historyPoint, i) => {
             return (
