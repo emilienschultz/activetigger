@@ -479,6 +479,7 @@ class Project:
                     evalset.col_label: "label",
                 }
             )
+            df["label"] = df["label"].apply(lambda x: str(x) if pd.notna(x) else None)
 
         # deal with non-unique id
         # TODO : compare with the general dataset
@@ -488,7 +489,7 @@ class Project:
             print("ID not unique, changed to default id")
 
         # identify the dataset as imported and set the id
-        df["id"] = df["id"].apply(lambda x: f"imported-{x}")
+        df["id"] = df["id"].apply(lambda x: f"imported-{str(x)}")
         df = df.set_index("id")
 
         # import labels if specified + scheme // check if the labels are in the scheme

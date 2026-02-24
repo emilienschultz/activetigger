@@ -111,85 +111,87 @@ export const EvalSetsManagement: FC<EvalSetsManagementModel> = ({
 
       {!exist && (
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="explanations">
-            No {dataset} data set has been created. You can upload a {dataset} set. Careful : all
-            features will be dropped and need to be computed again, and id will be modified with
-            "imported_".
-          </div>
-          <label htmlFor="csvFile">File to upload</label>
-          <input id="csvFile" className="form-control" type="file" {...register('files')} />
-          {
-            // display datable if data available
-            data !== null && (
-              <div>
-                <div className="explanations">Preview</div>
+          <div className="col-lg-6">
+            <div className="explanations">
+              No {dataset} data set has been created. You can upload a {dataset} set. Careful : all
+              features will be dropped and need to be computed again, and id will be modified with
+              "imported-".
+            </div>
+            <label htmlFor="csvFile">File to upload</label>
+            <input id="csvFile" className="form-control" type="file" {...register('files')} />
+            {
+              // display datable if data available
+              data !== null && (
                 <div>
-                  Size of the dataset : <b>{data.data.length - 1}</b>
+                  <div className="explanations">Preview</div>
+                  <div>
+                    Size of the dataset : <b>{data.data.length - 1}</b>
+                  </div>
+                  {/* TODO: AXEL if too many rows, the page expands and it messes everything */}
+                  <DataTable<Record<DataType['headers'][number], string | number>>
+                    columns={data.headers.map((h) => ({
+                      name: h,
+                      selector: (row) => row[h],
+                      format: (row) => {
+                        const v = row[h];
+                        return typeof v === 'bigint' ? Number(v) : v;
+                      },
+                      width: '200px',
+                    }))}
+                    data={
+                      data.data.slice(0, 5) as Record<keyof DataType['headers'], string | number>[]
+                    }
+                  />
                 </div>
-                {/* TODO: AXEL if too many rows, the page expands and it messes everything */}
-                <DataTable<Record<DataType['headers'][number], string | number>>
-                  columns={data.headers.map((h) => ({
-                    name: h,
-                    selector: (row) => row[h],
-                    format: (row) => {
-                      const v = row[h];
-                      return typeof v === 'bigint' ? Number(v) : v;
-                    },
-                    width: '200px',
-                  }))}
-                  data={
-                    data.data.slice(0, 5) as Record<keyof DataType['headers'], string | number>[]
-                  }
-                />
-              </div>
-            )
-          }
-          {
-            // only display if data
-            data != null && (
-              <div>
-                <label htmlFor="col_id">Column for id (they need to be unique)</label>
-                <select id="col_id" disabled={data === null} {...register('col_id')}>
-                  {columns}
-                </select>
+              )
+            }
+            {
+              // only display if data
+              data != null && (
+                <div>
+                  <label htmlFor="col_id">Column for id (they need to be unique)</label>
+                  <select id="col_id" disabled={data === null} {...register('col_id')}>
+                    {columns}
+                  </select>
 
-                <label htmlFor="cols_text">
-                  Text columns (all the selected fields will be concatenated)
-                </label>
-                <Controller
-                  name="cols_text"
-                  control={control}
-                  render={({ field: { onChange } }) => (
-                    <Select
-                      options={(data?.headers || []).map((e) => ({ value: e, label: e }))}
-                      isMulti
-                      onChange={(selectedOptions) => {
-                        onChange(
-                          selectedOptions ? selectedOptions.map((option) => option.value) : [],
-                        );
-                      }}
-                    />
-                  )}
-                />
-                <label htmlFor="col_label">
-                  Column for label (optional but they need to exist in the scheme)
-                </label>
-                <select id="col_label" disabled={data === null} {...register('col_label')}>
-                  <option key="none" value="">
-                    No label
-                  </option>
+                  <label htmlFor="cols_text">
+                    Text columns (all the selected fields will be concatenated)
+                  </label>
+                  <Controller
+                    name="cols_text"
+                    control={control}
+                    render={({ field: { onChange } }) => (
+                      <Select
+                        options={(data?.headers || []).map((e) => ({ value: e, label: e }))}
+                        isMulti
+                        onChange={(selectedOptions) => {
+                          onChange(
+                            selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                          );
+                        }}
+                      />
+                    )}
+                  />
+                  <label htmlFor="col_label">
+                    Column for label (optional but they need to exist in the scheme)
+                  </label>
+                  <select id="col_label" disabled={data === null} {...register('col_label')}>
+                    <option key="none" value="">
+                      No label
+                    </option>
 
-                  {columns}
-                </select>
-                <label htmlFor="n_test">Number of elements</label>
-                <input id="n_test" type="number" {...register('n_eval')} />
+                    {columns}
+                  </select>
+                  <label htmlFor="n_test">Number of elements</label>
+                  <input id="n_test" type="number" {...register('n_eval')} />
 
-                <button type="submit" className="btn-submit">
-                  Create
-                </button>
-              </div>
-            )
-          }
+                  <button type="submit" className="btn-submit">
+                    Create
+                  </button>
+                </div>
+              )
+            }
+          </div>
         </form>
       )}
       <Modal show={alertDrop} onHide={() => setAlertDrop(false)}>

@@ -91,59 +91,61 @@ export const ImportAnnotations: FC<ImportPropos> = ({ projectName, currentScheme
   return (
     <>
       <h4 className="subsection">Import annotations</h4>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="alert alert-warning">
-          You can import annotations for existing elements in the train set. Make sure to maintain a
-          consistent identification system of the elements. If elements are already labelled, this
-          annotation will prevail. Labels are not checked for existance.
-          {/* TODO: Axel: Precise what happens: are unexisting labels created? are they skipped? */}
+      <form onSubmit={handleSubmit(onSubmit)} className="row">
+        <div className="col-lg-6">
+          <div className="alert alert-warning">
+            You can import annotations for existing elements in the train set. Make sure to maintain
+            a consistent identification system of the elements. If elements are already labelled,
+            this annotation will prevail. Labels are not checked for existance.
+            {/* TODO: Axel: Precise what happens: are unexisting labels created? are they skipped? */}
+          </div>
+          <label htmlFor="csvFile">File to upload</label>
+          <input className="form-control" id="csvFile" type="file" {...register('files')} />
+          {
+            // display datable if data available
+            data !== null && (
+              <>
+                <div className="explanations">Preview</div>
+                <div>
+                  Size of the dataset : <b>{data.data.length - 1}</b>
+                </div>
+
+                <div>
+                  <DataTable<Record<DataType['headers'][number], string | number>>
+                    columns={data.headers.map((h) => ({
+                      name: h,
+                      selector: (row) => row[h],
+                      format: (row) => {
+                        const v = row[h];
+                        return typeof v === 'bigint' ? Number(v) : v;
+                      },
+                      width: '200px',
+                    }))}
+                    data={
+                      data.data.slice(0, 5) as Record<keyof DataType['headers'], string | number>[]
+                    }
+                  />
+                </div>
+
+                <label htmlFor="col_id">
+                  Column for id (they need to match exactly the original data)
+                </label>
+                <select id="col_id" disabled={data === null} {...register('col_id')}>
+                  {columns}
+                </select>
+
+                <label htmlFor="col_label">Column for label to import (empty will be droped)</label>
+                <select id="col_label" disabled={data === null} {...register('col_label')}>
+                  {columns}
+                </select>
+
+                <button type="submit" className="btn-submit">
+                  Import annotations
+                </button>
+              </>
+            )
+          }
         </div>
-        <label htmlFor="csvFile">File to upload</label>
-        <input className="form-control" id="csvFile" type="file" {...register('files')} />
-        {
-          // display datable if data available
-          data !== null && (
-            <>
-              <div className="explanations">Preview</div>
-              <div>
-                Size of the dataset : <b>{data.data.length - 1}</b>
-              </div>
-
-              <div>
-                <DataTable<Record<DataType['headers'][number], string | number>>
-                  columns={data.headers.map((h) => ({
-                    name: h,
-                    selector: (row) => row[h],
-                    format: (row) => {
-                      const v = row[h];
-                      return typeof v === 'bigint' ? Number(v) : v;
-                    },
-                    width: '200px',
-                  }))}
-                  data={
-                    data.data.slice(0, 5) as Record<keyof DataType['headers'], string | number>[]
-                  }
-                />
-              </div>
-
-              <label htmlFor="col_id">
-                Column for id (they need to match exactly the original data)
-              </label>
-              <select id="col_id" disabled={data === null} {...register('col_id')}>
-                {columns}
-              </select>
-
-              <label htmlFor="col_label">Column for label to import (empty will be droped)</label>
-              <select id="col_label" disabled={data === null} {...register('col_label')}>
-                {columns}
-              </select>
-
-              <button type="submit" className="btn-submit">
-                Import annotations
-              </button>
-            </>
-          )
-        }
       </form>
     </>
   );
