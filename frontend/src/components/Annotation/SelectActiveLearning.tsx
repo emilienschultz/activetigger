@@ -20,6 +20,19 @@ interface SelectActiveLearningProps {
   authorize?: boolean;
 }
 
+type ModelOption = {
+  type: string;
+  value: string;
+  label: string;
+  time?: string; // optional because you use availableBertModels?.[e]?.time
+  labels_excluded: string[]; // always present
+};
+
+type GroupedModels = Array<{
+  label: string;
+  options: ModelOption[];
+}>;
+
 export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
   display,
   setActiveMenu,
@@ -51,20 +64,19 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
     .filter(([_, v]) => v && v.predicted)
     .map(([k, _]) => k);
 
-  // TODO only keep those with prediction
-  const groupedModels = [
+  const groupedModels: GroupedModels = [
     {
       label: 'Quick Models',
       options: (availableQuickModels ?? [])
         .filter((e) => e?.name) // <-- protect against undefined/missing name
         .map((e) => {
-          const toDisable = ((e.parameters.exclude_labels as string[]) || []).length > 0;
+          const labelsDropped = ((e.parameters.exclude_labels as string[]) || []).length > 0;
           return {
             value: e.name,
-            label: toDisable ? e.name + ' (labels dropped)' : e.name,
+            label: labelsDropped ? e.name + ' (labels dropped)' : e.name,
             type: 'quickmodel',
-            time: e.time,
-            isDisabled: toDisable,
+            time: e.time ?? '',
+            labels_excluded: e.parameters.exclude_labels as string[],
           };
         })
         .sort((quickModelA, quickModelB) =>
@@ -79,6 +91,8 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
           value: e,
           label: e,
           type: 'languagemodel',
+          time: availableBertModels?.[e]?.time ?? '',
+          labels_excluded: [],
         })),
     },
   ];
@@ -147,6 +161,8 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
           type: 'quickmodel',
           value: availableQuickModels[0].name,
           label: availableQuickModels[0].name,
+          time: availableQuickModels[0].time,
+          labels_excluded: availableQuickModels[0].parameters.exclude_labels as string[],
         },
         selectionConfig: { ...prev.selectionConfig, mode: 'active' },
       }));
@@ -211,11 +227,11 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
         {availableQuickModels.length + Object.keys(availableBertModels).length > 0 && (
           <>
             <div className="horizontal center mb-3">
-              <Select
+              <Select<ModelOption, false, { label: string; options: ModelOption[] }>
                 options={groupedModels}
-                value={activeModel}
+                value={activeModel as ModelOption | null}
                 onChange={(selectedOption) => {
-                  setActiveModel(selectedOption ? selectedOption : null);
+                  setActiveModel(selectedOption ? (selectedOption as ActiveModel) : null);
                 }}
                 isSearchable
                 placeholder="Select a model for active learning"

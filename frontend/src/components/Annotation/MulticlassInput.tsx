@@ -76,7 +76,6 @@ export const MulticlassInput: FC<MulticlassInputProps> = ({
 
   const handleKeyboardEvents = useCallback(
     (ev: KeyboardEvent) => {
-      console.log(ev.code);
       // prevent shortkey to perturb the inputs
       const activeElement = document.activeElement;
       const isFormField =

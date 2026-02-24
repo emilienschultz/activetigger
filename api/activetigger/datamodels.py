@@ -141,6 +141,8 @@ class ActiveModel(BaseModel):
     type: str
     value: str
     label: str
+    time: str = ""
+    labels_excluded: list[str] = []
 
 
 class NextInModel(BaseModel):
