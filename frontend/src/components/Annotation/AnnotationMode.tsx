@@ -23,6 +23,8 @@ interface AnnotationModeFormProps {
   statistics: ReturnType<typeof useStatistics>['statistics'];
 }
 
+type SelectionModeOption = { mode: string; label_maxprob?: string; value: string };
+
 function optionValue(option: Record<string, string | undefined>) {
   const value = sortBy(keys(option))
     .map((k) => option[k])
@@ -93,23 +95,50 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
   const isValid = project?.params.valid;
   const isTest = project?.params.test;
 
-  const selectionModeOptions: { mode: string; label_maxprob?: string; value: string }[] =
-    useMemo(() => {
-      const modes = (
-        (phase === 'train' && activeModel
-          ? project?.next.methods.filter((m) => m !== 'maxprob')
-          : project?.next.methods_min) || []
-      ).map((mode) => ({ mode, label_maxprob: undefined }));
-      const probLabels =
-        phase === 'train' && activeModel
-          ? availableLabels.map((l) => ({
-              mode: 'maxprob',
-              label_maxprob: l,
-            }))
-          : [];
-      return [...modes, ...probLabels].map((o) => ({ ...o, value: optionValue(o) }));
-    }, [phase, activeModel, project?.next.methods, project?.next.methods_min, availableLabels]);
+  const selectionModeOptions: SelectionModeOption[] = useMemo(() => {
+    const modes = (
+      (phase === 'train' && activeModel
+        ? project?.next.methods.filter((m) => m !== 'maxprob')
+        : project?.next.methods_min) || []
+    ).map((mode) => ({ mode, label_maxprob: undefined }));
+    const probLabels =
+      phase === 'train' && activeModel
+        ? availableLabels.map((l) => ({
+            mode: 'maxprob',
+            label_maxprob: l,
+          }))
+        : [];
+    const selectionModeOptions = [...modes, ...probLabels].map((o) => ({
+      ...o,
+      value: optionValue(o),
+    }));
 
+    return selectionModeOptions as SelectionModeOption[];
+  }, [phase, activeModel, project?.next.methods, project?.next.methods_min, availableLabels]);
+
+  const selectionModeValue = (
+    selectionModeOptions: SelectionModeOption[],
+    isActiveModel: boolean,
+  ) => {
+    // This function resets the selection mode to "fixed" when dropping the quick model
+    // for active mode
+    const toReturn = selectionModeOptions
+      .filter((o) => isActiveModel || o.mode !== 'maxprob')
+      .find(
+        (o) =>
+          o.value ===
+          optionValue({
+            mode: selectionConfig.mode,
+            label_maxProb: selectionConfig.label_maxprob,
+          }),
+      );
+    if (toReturn) return toReturn;
+    else
+      return {
+        mode: 'fixed',
+        value: '|fixed',
+      };
+  };
   return (
     <form className="annotation-mode">
       {/* left container: main selectors */}
@@ -155,14 +184,7 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
           <Select
             className="react-select"
             options={selectionModeOptions}
-            value={selectionModeOptions.find(
-              (o) =>
-                o.value ===
-                optionValue({
-                  mode: selectionConfig.mode,
-                  label_maxProb: selectionConfig.label_maxprob,
-                }),
-            )}
+            value={selectionModeValue(selectionModeOptions, activeModel ? true : false)}
             getOptionLabel={(o) => (o.mode === 'maxprob' ? `Max ${o.label_maxprob}` : o.mode)}
             onChange={(option) => {
               if (option !== null) {
