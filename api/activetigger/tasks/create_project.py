@@ -59,10 +59,10 @@ class CreateProject(BaseTask):
 
         # Step 1 : load all data, rename columns and define index
         processed_corpus = False
-        if (self.params.filename is not None) or self.params.from_toy_dataset:
+        if self.params.filename is None or self.params.from_toy_dataset:
             processed_corpus = True
 
-        if (self.params.filename is not None) and not (self.params.from_toy_dataset):
+        if (self.params.filename is not None) and not self.params.from_toy_dataset:
             # if a file was uploaded
             # load the uploaded file
             file_path = self.params.dir.joinpath(self.params.filename)
@@ -99,6 +99,11 @@ class CreateProject(BaseTask):
 
             # remove completely empty lines
             content = content.dropna(how="all")
+
+        # quickfix : case where the index is the row number
+        if self.params.col_id == "row_number":
+            self.params.col_id = "dataset_row_number"
+
         all_columns = list(content.columns)
         n_total = len(content)
 
