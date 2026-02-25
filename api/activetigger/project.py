@@ -155,6 +155,11 @@ class Project:
         self._memory_cache_time: float = 0.0
         self._memory_cache_interval: float = 60
 
+        # cached project state (avoids recomputing for every polling user)
+        self._state_cache: ProjectStateModel | None = None
+        self._state_cache_time: float = 0.0
+        self._state_cache_interval: float = 2  # seconds
+
         # load the project if exist
         if self.exists():
             self.status = "created"
@@ -1107,8 +1112,14 @@ class Project:
         """
         State of the project
         Collecting states for submodules
+        Cached with a short TTL so multiple users polling don't each trigger
+        the full computation (DB queries, file reads, pandas work).
         """
-        return ProjectStateModel(
+        now = time.time()
+        if self._state_cache is not None and (now - self._state_cache_time) < self._state_cache_interval:
+            return self._state_cache
+
+        result = ProjectStateModel(
             params=self.params,
             next=NextProjectStateModel(
                 methods_min=["fixed", "random"],
@@ -1129,6 +1140,9 @@ class Project:
             ),
             users=self.users.state(self.params.project_slug),
         )
+        self._state_cache = result
+        self._state_cache_time = now
+        return result
 
     def export_features(self, features: list, format: str = "parquet") -> FileResponse:
         """

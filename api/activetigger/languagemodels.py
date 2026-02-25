@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Optional, Tuple, cast
@@ -62,6 +63,8 @@ class LanguageModels:
         self.language_models_service = db_manager.language_models_service
         self.path: Path = Path(path).joinpath("bert")
         self.cache_predictions = {}
+        self._loss_cache: dict[str, Tuple[float, dict | None]] = {}  # model_name -> (time, loss)
+        self._loss_cache_interval: float = 5  # seconds
 
         # load the list of models
         if list_models is not None:
@@ -480,6 +483,11 @@ class LanguageModels:
         return progress_predicting
 
     def get_loss(self, model_name) -> dict | None:
+        now = time.time()
+        if model_name in self._loss_cache:
+            cached_time, cached_loss = self._loss_cache[model_name]
+            if (now - cached_time) < self._loss_cache_interval:
+                return cached_loss
         try:
             with open(self.path.joinpath(model_name).joinpath("log_history.txt"), "r") as f:
                 log = json.load(f)
@@ -494,9 +502,11 @@ class LanguageModels:
                 ],
                 columns=["epoch", "val_loss", "val_eval_loss"],
             ).to_json()
-            return json.loads(loss)
+            result = json.loads(loss)
         except Exception:
-            return None
+            result = None
+        self._loss_cache[model_name] = (now, result)
+        return result
 
     def get_parameters(self, model_name) -> dict | None:
         """
