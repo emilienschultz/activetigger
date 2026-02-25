@@ -356,14 +356,14 @@ class ProjectsService:
                 .filter_by(project_slug=project_slug, scheme_name=scheme, annotation=former_label)
                 .values(
                     annotation=new_label,
-                    commentary=case(
-                        # If commentary exists, append the rename info
+                    comment=case(
+                        # If comment exists, append the rename info
                         (
                             Annotations.comment.isnot(None),
                             Annotations.comment
                             + f" | Renamed from '{former_label}' to '{new_label}'",
                         ),
-                        # If no commentary, create new one
+                        # If no comment, create new one
                         else_=f"Renamed from '{former_label}' to '{new_label}'",
                     ),
                 )
