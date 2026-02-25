@@ -7,7 +7,7 @@ import { Tooltip } from 'react-tooltip';
 import { useRetrainQuickModel, useTrainQuickModel } from '../../core/api';
 import { useAppContext } from '../../core/context';
 import { useNotifications } from '../../core/notifications';
-import { sortDatesAsStrings } from '../../core/utils';
+import { getRandomName, sortDatesAsStrings } from '../../core/utils';
 import { ActiveModel } from '../../types';
 import { ButtonNewFeature } from '../ButtonNewFeature';
 
@@ -110,7 +110,7 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
       });
     }
     const formData = {
-      name: 'basic-quickmodel',
+      name: getRandomName('QuickModel') + '-default',
       model: 'logistic-l1',
       scheme: currentScheme || '',
       params: {
