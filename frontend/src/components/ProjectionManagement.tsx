@@ -250,30 +250,32 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
               <FaGear size={18} />
               Parameters
             </button>
-            <label style={{ display: 'block' }}>
-              <input
-                type="checkbox"
-                checked={selectionConfig.frameSelection}
-                onChange={(_) => {
-                  setAppContext((prev) => ({
-                    ...prev,
-                    selectionConfig: {
-                      ...selectionConfig,
-                      frameSelection: !selectionConfig.frameSelection,
-                    },
-                  }));
-                }}
-              />
-              <FaLock /> Lock on selection
-              <a className="lockhelp">
-                <HiOutlineQuestionMarkCircle />
-              </a>
-              <Tooltip anchorSelect=".lockhelp" place="top">
-                Once a vizualisation computed, you can use the square tool to select an area (or
-                remove the square).<br></br> Then you can lock the selection, and only elements in
-                the selected area will be available for annoation.
-              </Tooltip>
-            </label>
+            {(selectionConfig.frame || []).length > 0 && (
+              <label style={{ display: 'block' }}>
+                <input
+                  type="checkbox"
+                  checked={selectionConfig.frameSelection}
+                  onChange={(_) => {
+                    setAppContext((prev) => ({
+                      ...prev,
+                      selectionConfig: {
+                        ...selectionConfig,
+                        frameSelection: !selectionConfig.frameSelection,
+                      },
+                    }));
+                  }}
+                />
+                <FaLock /> Lock on selection
+                <a className="lockhelp">
+                  <HiOutlineQuestionMarkCircle />
+                </a>
+                <Tooltip anchorSelect=".lockhelp" place="top">
+                  Once a vizualisation computed, you can use the square tool to select an area (or
+                  remove the square).<br></br> Then you can lock the selection, and only elements in
+                  the selected area will be available for annoation.
+                </Tooltip>
+              </label>
+            )}
           </>
         )}
       </div>
@@ -436,7 +438,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
                 </>
               )}
               <input type="checkbox" {...register('normalize_features')} />
-              <label>Normalize features</label>
+              <label>Feature scaling</label>
             </details>
             <button className="btn-submit">Compute</button>
           </form>

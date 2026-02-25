@@ -27,7 +27,7 @@ export const ProjectModelPage: FC = () => {
               activeKey={activeKey}
               onSelect={(k) => setActiveKey(k || 'models')}
             >
-              <Tab eventKey="models" title="Models">
+              <Tab eventKey="models" title="Training">
                 <div className="explanations ms-3">Train quick and Bert models</div>
                 <ModelManagement />
               </Tab>
