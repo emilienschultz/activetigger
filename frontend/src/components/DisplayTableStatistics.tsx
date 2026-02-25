@@ -23,7 +23,7 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
   } = useAppContext();
   const table = scores.table ? (scores.table as unknown as TableModel) : null;
 
-  // sort labels
+  // sort labels and build a permutation to reorder data rows/columns accordingly
   const labels = useMemo<string[]>(
     () =>
       reorderLabels(
@@ -33,6 +33,18 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
     [displayConfig.labelsOrder, scores],
   );
   const nLabels = Object.entries(labels).length;
+
+  // permutation: for each position in `labels`, the original index in table.index
+  const perm = useMemo<number[]>(() => {
+    if (!table) return [];
+    return labels.map((label) => table.index.indexOf(label));
+  }, [labels, table]);
+
+  // reordered data: rows and columns permuted to match `labels` order
+  const reorderedData = useMemo<number[][]>(() => {
+    if (!table) return [];
+    return perm.map((origRow) => perm.map((origCol) => table.data[origRow][origCol]));
+  }, [table, perm]);
 
   const isDiag = (colIndex: number, rowIndex: number) => {
     return colIndex < nLabels - 1 && colIndex === rowIndex;
@@ -124,7 +136,7 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
                     </div>
                   ))}
                 </div>
-                {table.data.map((row, rowIndex) => (
+                {reorderedData.map((row, rowIndex) => (
                   // All data
                   <div className="row" key={rowIndex}>
                     {row.map((cell, colIndex) => (
@@ -154,13 +166,13 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
                   <div className="table-cell">{limitLabelSize('Recall', 'col')}</div>
                   <div className="table-cell">{limitLabelSize('F1', 'col')}</div>
                 </div>
-                {table.data.map((_, rowIndex) => (
+                {labels.map((label, rowIndex) => (
                   <div className="row" key={rowIndex}>
                     <div className="table-cell number-cell">
-                      {scores.recall_label && displayScore(scores.recall_label[labels[rowIndex]])}
+                      {scores.recall_label && displayScore(scores.recall_label[label])}
                     </div>
                     <div className="table-cell number-cell">
-                      {scores.f1_label && displayScore(scores.f1_label[labels[rowIndex]])}
+                      {scores.f1_label && displayScore(scores.f1_label[label])}
                     </div>
                   </div>
                 ))}
@@ -195,23 +207,23 @@ export const DisplayTableStatistics: FC<DisplayTableStatisticsProps> = ({ scores
             </div>
             <div className="table">
               <div className="row">
-                {table.columns.map((col, colIndex) => (
+                {labels.map((label, colIndex) => (
                   <div key={colIndex} className="table-cell number-cell">
-                    {scores.precision_label && displayScore(scores.precision_label[col])}
+                    {scores.precision_label && displayScore(scores.precision_label[label])}
                   </div>
                 ))}
               </div>
               <div className="row">
-                {table.columns.map((col, colIndex) => (
+                {labels.map((label, colIndex) => (
                   <div key={colIndex} className="table-cell number-cell">
-                    {scores.f1_label && displayScore(scores.f1_label[col])}
+                    {scores.f1_label && displayScore(scores.f1_label[label])}
                   </div>
                 ))}
               </div>
               <div className="row">
-                {table.columns.map((col, colIndex) => (
-                  <div key={colIndex} className="table-cell label-name recall" title={col}>
-                    {col !== 'Total' ? limitLabelSize(col, 'col') : ''}
+                {labels.map((label, colIndex) => (
+                  <div key={colIndex} className="table-cell label-name recall" title={label}>
+                    {label !== 'Total' ? limitLabelSize(label, 'col') : ''}
                   </div>
                 ))}
               </div>

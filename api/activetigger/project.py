@@ -150,6 +150,11 @@ class Project:
         self.messages = messages
         self.monitoring = Monitoring(db_manager, project_slug)
 
+        # cached project directory size (refreshed every _memory_cache_interval seconds)
+        self._memory_cache: float = 0.0
+        self._memory_cache_time: float = 0.0
+        self._memory_cache_interval: float = 60
+
         # load the project if exist
         if self.exists():
             self.status = "created"
@@ -474,6 +479,7 @@ class Project:
                     evalset.col_label: "label",
                 }
             )
+            df["label"] = df["label"].apply(lambda x: str(x) if pd.notna(x) else None)
 
         # deal with non-unique id
         # TODO : compare with the general dataset
@@ -483,7 +489,7 @@ class Project:
             print("ID not unique, changed to default id")
 
         # identify the dataset as imported and set the id
-        df["id"] = df["id"].apply(lambda x: f"imported-{x}")
+        df["id"] = df["id"].apply(lambda x: f"imported-{str(x)}")
         df = df.set_index("id")
 
         # import labels if specified + scheme // check if the labels are in the scheme
@@ -646,7 +652,6 @@ class Project:
         - quickmodel
         - languagemodel
         """
-        print(type)
         if type == "quickmodel":
             if not self.quickmodels.exists(name):
                 raise Exception("Quickmodel doesn't exist")
@@ -726,7 +731,7 @@ class Project:
                 f_user = df["user"].isin(next.on_users)
                 f = f & f_user
         else:
-            f = df["labels"].apply(lambda x: True)
+            f = pd.Series(True, index=df.index)
 
         # filter based on the text (field, context)
 
@@ -781,7 +786,7 @@ class Project:
                 raise ValueError("No vizualisation available")
 
         # test if there is at least one element available
-        if sum(f) == 0:
+        if f.sum() == 0:
             raise ValueError("No element available with this selection mode.")
 
         # filter by history
@@ -799,7 +804,7 @@ class Project:
             element_id = ss.index[0]
 
         if next.selection == "random":  # random row
-            element_id = ss.sample(frac=1).index[0]
+            element_id = ss.sample(n=1).index[0]
 
         # check conditions for active learning and get proba
         proba = None
@@ -857,14 +862,18 @@ class Project:
         else:
             if self.data.train is None:
                 raise Exception("Train dataset is not defined")
-            # get context
+            # get context for the single selected element
             context = dict(
-                self.data.train.fillna("NA").loc[element_id, self.params.cols_context].apply(str)
+                self.data.train.loc[element_id, self.params.cols_context].fillna("NA").apply(str)
             )
+
+        text = df.loc[element_id, "text"]
+        if pd.isna(text):
+            text = "NA"
 
         return ElementOutModel(
             element_id=element_id,
-            text=df.fillna("NA").loc[element_id, "text"],
+            text=text,
             context=context,
             selection=next.selection,
             info=indicator,
@@ -921,9 +930,19 @@ class Project:
 
             # get prediction if it exists
             predict = PredictedLabel(label=None, proba=None, entropy=None)
-            if element.active_model is not None:
-                predict = self.get_prediction_element(
-                    element.active_model.type, element.active_model.value, element.element_id
+            try:
+                if element.active_model is not None:
+                    predict = self.get_prediction_element(
+                        element.active_model.type, element.active_model.value, element.element_id
+                    )
+            except Exception as e:
+                # TODO: warn user to retrain the model
+                print(
+                    (
+                        f"No prediction found for element {element.element_id}."
+                        f"Please retrain the model.\n"
+                        f"Error: \n{e}"
+                    )
                 )
 
             # extract context
@@ -937,7 +956,9 @@ class Project:
             context = {i.replace("dataset_", ""): str(context[i]) for i in context}
 
         if text is None:
-            raise Exception("Dataset does not exist.")
+            raise Exception(
+                (f"Element {element.element_id} was not found in dataset {element.dataset}")
+            )
 
         return ElementOutModel(
             element_id=element.element_id,
@@ -1071,6 +1092,17 @@ class Project:
             active_model=active_model,
         )
 
+    def _get_cached_memory(self) -> float:
+        """
+        Return cached project directory size (MB).
+        Refreshes at most every _memory_cache_interval seconds.
+        """
+        now = time.time()
+        if (now - self._memory_cache_time) >= self._memory_cache_interval:
+            self._memory_cache = get_dir_size(str(self.params.dir))
+            self._memory_cache_time = now
+        return self._memory_cache
+
     def state(self) -> ProjectStateModel:
         """
         State of the project
@@ -1091,7 +1123,7 @@ class Project:
             generations=self.generations.state(),
             bertopic=self.bertopic.state(),
             errors=self.errors.state(),
-            memory=get_dir_size(str(self.params.dir)),
+            memory=self._get_cached_memory(),
             last_activity=self.db_manager.logs_service.get_last_activity_project(
                 self.params.project_slug
             ),

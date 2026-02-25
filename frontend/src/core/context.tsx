@@ -57,6 +57,7 @@ export const DEFAULT_CONTEXT: AppContextValue = {
     highlightText: '',
     numberOfTokens: 512,
     forceOneColumnLayout: false,
+    displayFormat: 'cards',
   },
   selectionConfig: {
     mode: 'fixed',

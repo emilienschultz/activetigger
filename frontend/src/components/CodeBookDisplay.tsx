@@ -36,7 +36,8 @@ export const CodebookDisplay: FC<CodebookDisplayProps> = ({
   }, [currentScheme]);
 
   const saveCodebook = async () => {
-    postCodebook(modifiedCodebook || '', time || '');
+    await postCodebook(modifiedCodebook || '', time || '');
+    setModifiedCodebook(undefined);
     reFetchCodebook();
   };
 

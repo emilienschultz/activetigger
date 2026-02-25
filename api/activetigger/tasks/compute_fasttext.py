@@ -14,11 +14,11 @@ from activetigger.tasks.base_task import BaseTask
 
 class ComputeFasttext(BaseTask):
     """
-    Compute sbert feature
+    Compute Fastext feature
     TODO : check of possible to avoid loop ?
     """
 
-    kind = "compute_feature_sbert"
+    kind = "compute_feature_fastext"
 
     def __init__(
         self,

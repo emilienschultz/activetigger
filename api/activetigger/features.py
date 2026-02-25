@@ -74,31 +74,31 @@ class Features:
 
         # load possible embeddings models
         fasttext_models = [f for f in os.listdir(self.path_models) if f.endswith(".bin")]
-        # possibility to create a sbert.yaml file to add models
-        sbert_models = [
+        # possibility to create a embeddings.yaml file to add models
+        embeddings_models = [
             "jinaai/jina-embeddings-v3",
             "Alibaba-NLP/gte-multilingual-base",
             "all-mpnet-base-v2",
         ]
-        if Path(config.data_path).joinpath("projects/sbert.yaml").exists():
+        if Path(config.data_path).joinpath("projects/embeddings.yaml").exists():
             content = yaml.safe_load(
                 open(
-                    str(Path(config.data_path).joinpath("projects/sbert.yaml")),
+                    str(Path(config.data_path).joinpath("projects/embeddings.yaml")),
                     "r",
                 )
             )
-            sbert_models = content.get("models", sbert_models)
+            embeddings_models = content.get("models", embeddings_models)
         else:
             # create the file
             with open(
-                str(Path(config.data_path).joinpath("projects/sbert.yaml")),
+                str(Path(config.data_path).joinpath("projects/embeddings.yaml")),
                 "w",
             ) as f:
-                yaml.dump({"models": sbert_models}, f)
+                yaml.dump({"models": embeddings_models}, f)
 
         # options
         self.options: dict = {
-            "sbert": {"models": sbert_models},
+            "embeddings": {"models": embeddings_models},
             "fasttext": {"models": fasttext_models},
             "dfm": {
                 "tfidf": False,
@@ -378,7 +378,7 @@ class Features:
         if len(self.current_user_processes(username)) > 0:
             raise ValueError("A process is already running")
 
-        if kind not in {"sbert", "fasttext", "dfm", "regex", "dataset"}:
+        if kind not in {"embeddings", "fasttext", "dfm", "regex", "dataset"}:
             raise ValueError("Kind not recognized")
 
         name = f"{kind}_{name}"
@@ -434,13 +434,13 @@ class Features:
         # features with queue
         unique_id = None
 
-        if kind == "sbert":
+        if kind == "embeddings":
             if (
                 "model" not in parameters
                 or parameters["model"] is None
                 or parameters["model"] == "generic"
             ):
-                model = self.options["sbert"]["models"][0]
+                model = self.options["embeddings"]["models"][0]
             else:
                 model = parameters["model"]
             if "max_length_tokens" not in parameters:

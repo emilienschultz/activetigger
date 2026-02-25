@@ -159,6 +159,7 @@ export interface DisplayConfig {
   highlightText: string;
   labelsOrder?: string[];
   forceOneColumnLayout?: boolean;
+  displayFormat?: 'table' | 'cards';
 }
 
 export interface newBertModel {

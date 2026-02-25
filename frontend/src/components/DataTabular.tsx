@@ -264,7 +264,7 @@ export const DataTabular: FC<DataTabularModel> = ({
         <div>
           <label htmlFor="filter-input">
             Filter
-            <HiOutlineQuestionMarkCircle className="searchtooltip" />
+            <HiOutlineQuestionMarkCircle className="search" />
             {!isValidRegex(search || '') && <span className="badge danger">Regex not valid</span>}
           </label>
           <input
@@ -275,9 +275,6 @@ export const DataTabular: FC<DataTabularModel> = ({
               setSearch(e.target.value);
             }}
           />
-          <Tooltip anchorSelect=".searchtooltip" place="bottom">
-            Special search: ALL: text/label, COMMENT: in comments, HAS_COMMENT
-          </Tooltip>
         </div>
       </div>
       <div className="horizontal wrap" id="tabular-view-page-control">
@@ -364,6 +361,9 @@ export const DataTabular: FC<DataTabularModel> = ({
           <button onClick={blocker.proceed}>Yes</button>
         </Modal.Footer>
       </Modal>
+      <Tooltip anchorSelect=".search">
+        Special search: ALL: text/label, COMMENT: in comments, HAS_COMMENT
+      </Tooltip>
     </>
   );
 };

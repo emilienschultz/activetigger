@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { FC, useRef } from 'react';
 // import { useStopProcesses } from '../core/api';
 import { StopProcessButton } from './StopProcessButton';
 import { LossChart } from './vizualisation/lossChart';
@@ -37,20 +37,31 @@ export const DisplayTrainingProcesses: FC<DisplayTrainingProcessesProps> = ({
   processStatus,
   displayStopButton = false,
 }) => {
-  const formatProgress = (val: number | string | null) => {
+  // track the highest progress seen per process to avoid regression to 0%
+  const maxProgressRef = useRef<Record<string, number>>({});
+
+  const formatProgress = (val: number | string | null, key: string) => {
     if (val === null || val === undefined) {
-      return { label: 'Waiting in queue', value: 0 };
+      const prev = maxProgressRef.current[key] ?? 0;
+      if (prev === 0) {
+        return { label: 'Waiting in queue', value: 0 };
+      }
+      return { label: `${prev}%`, value: prev };
     }
     const v = Math.round(Number(val));
-    if (v >= 100) {
+    const prev = maxProgressRef.current[key] ?? 0;
+    const effective = Math.max(v, prev);
+    maxProgressRef.current[key] = effective;
+    if (effective >= 100) {
       return { label: 'Finalizing…', value: 100 };
     }
-    return { label: `${v}%`, value: v };
+    return { label: `${effective}%`, value: effective };
   };
+
+  if (!processes) return null;
 
   if (
     processStatus &&
-    processes &&
     Object.values(processes).filter((p) => p && p.status === processStatus).length === 0
   ) {
     return <div className="overflow-x-auto" />;
@@ -74,7 +85,8 @@ export const DisplayTrainingProcesses: FC<DisplayTrainingProcessesProps> = ({
 
       <div className="list-group">
         {entries.map(([user, v]) => {
-          const progress = formatProgress(v.progress);
+          const processKey = `${user}:${v.name}`;
+          const progress = formatProgress(v.progress, processKey);
 
           return (
             <div key={v.name as string} className="list-group-item">

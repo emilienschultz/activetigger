@@ -332,11 +332,11 @@ class QuickModels:
         # normalize X data
         if standardize:
             scaler = StandardScaler()
-            df = data[~f_na][col_predictors]
+            df = data[col_predictors]
             df_stand = scaler.fit_transform(df)
             df_pred = pd.DataFrame(df_stand, columns=df.columns, index=df.index)
         else:
-            df_pred = data[~f_na][col_predictors]
+            df_pred = data[col_predictors]
 
         # create global dataframe with no missing predictor
         df = pd.concat([data[~f_na][col_label], df_pred], axis=1)

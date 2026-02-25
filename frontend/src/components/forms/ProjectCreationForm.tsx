@@ -166,7 +166,7 @@ export const ProjectCreationForm: FC = () => {
           message:
             'The sum of train and test set is too large, the train set is set to N - testset',
         });
-        setValue('n_train', Math.max(0, lengthData - Number(formData.n_test) - 1));
+        setValue('n_train', Math.max(0, lengthData - Number(formData.n_test)));
         return;
       }
       // test if the project name is available
@@ -227,7 +227,8 @@ export const ProjectCreationForm: FC = () => {
             // if the project has been created
             if (status === 'existing') {
               clearInterval(intervalId);
-              if (computeFeatures) addFeature(slug, 'sbert', 'sbert', { model: 'generic' });
+              if (computeFeatures)
+                addFeature(slug, 'embeddings', 'embeddings', { model: 'generic' });
               resetContext();
               navigate(`/projects/${slug}?fromCreatePage=true`);
               return;
@@ -422,10 +423,16 @@ export const ProjectCreationForm: FC = () => {
                     options={availableFields}
                     isMulti
                     isDisabled={creatingProject}
-                    value={value ? availableFields?.filter((opt) => value.includes(opt.value)) : []}
+                    value={
+                      value
+                        ? value
+                            .map((v: string) => availableFields?.find((opt) => opt.value === v))
+                            .filter(Boolean)
+                        : []
+                    }
                     onChange={(selectedOptions) => {
                       onChange(
-                        selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                        selectedOptions ? selectedOptions.map((option) => option?.value) : [],
                       );
                     }}
                   />
@@ -453,11 +460,17 @@ export const ProjectCreationForm: FC = () => {
                     id="cols_label"
                     options={availableFields}
                     isMulti
-                    value={value ? availableFields?.filter((opt) => value.includes(opt.value)) : []}
+                    value={
+                      value
+                        ? value
+                            .map((v: string) => availableFields?.find((opt) => opt.value === v))
+                            .filter(Boolean)
+                        : []
+                    }
                     isDisabled={creatingProject}
                     onChange={(selectedOptions) => {
                       onChange(
-                        selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                        selectedOptions ? selectedOptions.map((option) => option?.value) : [],
                       );
                     }}
                   />
@@ -475,10 +488,16 @@ export const ProjectCreationForm: FC = () => {
                     isMulti
                     defaultValue={[]}
                     isDisabled={creatingProject}
-                    value={value ? availableFields?.filter((opt) => value.includes(opt.value)) : []}
+                    value={
+                      value
+                        ? value
+                            .map((v: string) => availableFields?.find((opt) => opt.value === v))
+                            .filter(Boolean)
+                        : []
+                    }
                     onChange={(selectedOptions) => {
                       onChange(
-                        selectedOptions ? selectedOptions.map((option) => option.value) : [],
+                        selectedOptions ? selectedOptions.map((option) => option?.value) : [],
                       );
                     }}
                   />

@@ -16,6 +16,7 @@ import {
   useRenameQuickModel,
   useRetrainQuickModel,
 } from '../core/api';
+import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
 import { sortDatesAsStrings } from '../core/utils';
@@ -42,6 +43,7 @@ interface LossData {
 export const ModelManagement: FC = () => {
   const { notify } = useNotifications();
   const { projectName: projectSlug } = useParams();
+  const { authenticatedUser } = useAuth();
   const {
     appContext: { currentScheme, currentProject, isComputing, activeModel },
     setAppContext,
@@ -203,6 +205,8 @@ export const ModelManagement: FC = () => {
     currentProject,
   ]);
 
+  console.log(isComputing);
+
   return (
     <>
       <span className="fw-semibold text-muted small">Quick Models</span>
@@ -251,10 +255,14 @@ export const ModelManagement: FC = () => {
         </button>
       </ModelsPillDisplay>
 
-      {isComputing && (
+      {isComputing && authenticatedUser?.username && (
         <DisplayTrainingProcesses
           projectSlug={projectSlug || null}
-          processes={currentProject?.languagemodels.training}
+          processes={
+            currentProject?.languagemodels.training?.[authenticatedUser.username]
+              ? { [authenticatedUser.username]: currentProject.languagemodels.training[authenticatedUser.username] }
+              : undefined
+          }
           displayStopButton={isComputing}
         />
       )}
@@ -284,7 +292,6 @@ export const ModelManagement: FC = () => {
                 className="btn-secondary-action"
                 onClick={() => {
                   retrainQuickModel(currentQuickModelName || '');
-                  console.log('retrain', currentQuickModelName);
                 }}
               >
                 <IoIosRefresh size={18} className="me-1" />

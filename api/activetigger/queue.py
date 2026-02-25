@@ -7,7 +7,6 @@
 import asyncio
 import datetime
 import multiprocessing
-import threading
 import uuid
 from multiprocessing import Manager
 from multiprocessing.managers import SyncManager
@@ -38,7 +37,6 @@ class Queue:
     manager: SyncManager
     current: list[QueueTaskModel]
     last_restart: datetime.datetime
-    lock: threading.Lock
 
     def __init__(self, nb_workers_cpu: int = 3, nb_workers_gpu: int = 1) -> None:
         """
@@ -54,10 +52,11 @@ class Queue:
         self.nb_workers = nb_workers_cpu + nb_workers_gpu
         self.manager = Manager()
         self.current = []
-        self.lock = threading.Lock()
 
         # create the executor
-        self.executor = get_reusable_executor(max_workers=self.nb_workers, timeout=10)
+        self.executor = get_reusable_executor(
+            max_workers=self.nb_workers, timeout=None
+        )  # timeout = 10
 
         # launch a regular update on the queue
         self.task = asyncio.create_task(self._update_queue(timeout=0.5))
@@ -71,90 +70,98 @@ class Queue:
         if hasattr(self, "task"):
             self.task.cancel()
 
+    def _dispatch_pending_tasks(self) -> None:
+        """
+        Check for pending tasks and submit them to the executor.
+        Runs in a thread to avoid blocking the event loop
+        (executor.submit may spawn worker processes).
+        """
+        # active tasks in the queue
+        nb_active_processes_gpu = len(
+            [i for i in self.current if i.queue == "gpu" and i.state == "running"]
+        )
+        nb_active_processes_cpu = len(
+            [i for i in self.current if i.queue == "cpu" and i.state == "running"]
+        )
+
+        # pending tasks in the queue
+        task_gpu = [i for i in self.current if i.queue == "gpu" and i.state == "pending"]
+        task_cpu = [i for i in self.current if i.queue == "cpu" and i.state == "pending"]
+
+        # a worker available and possible to have gpu
+        if (
+            nb_active_processes_gpu < self.nb_workers_gpu
+            and (nb_active_processes_gpu + nb_active_processes_cpu) < self.nb_workers
+            and len(task_gpu) > 0
+        ):
+            executor = get_reusable_executor(
+                max_workers=(self.nb_workers), timeout=None
+            )  # timeout = 10
+            task_gpu[0].future = executor.submit(task_gpu[0].task)
+            task_gpu[0].state = "running"
+
+        # a worker available and possible to have cpu
+        if (
+            nb_active_processes_cpu < self.nb_workers_cpu
+            and (nb_active_processes_gpu + nb_active_processes_cpu) < self.nb_workers
+            and len(task_cpu) > 0
+        ):
+            executor = get_reusable_executor(
+                max_workers=(self.nb_workers), timeout=None
+            )  # timeout = 10
+            task_cpu[0].future = executor.submit(task_cpu[0].task)
+            task_cpu[0].state = "running"
+
+        # if there is nothing in the queue, shutdown the executor
+        # if nb_active_processes_cpu + nb_active_processes_gpu == 0:
+        #     executor = get_reusable_executor(max_workers=(self.nb_workers), timeout=None)
+        #     executor.shutdown(wait=False)
+        # print(
+        #     "nb_active_processes_cpu",
+        #     nb_active_processes_cpu,
+        #     "nb_active_processes_gpu",
+        #     nb_active_processes_gpu,
+        # )
+
     async def _update_queue(self, timeout: float = 1) -> None:
         """
         Update the queue every X seconds.
         Add new tasks to the executor if there are available workers.
         """
         while True:
-            with self.lock:  # Ensure thread-safe access to shared state
-                # active tasks in the queue
-                nb_active_processes_gpu = len(
-                    [i for i in self.current if i.queue == "gpu" and i.state == "running"]
-                )
-                nb_active_processes_cpu = len(
-                    [i for i in self.current if i.queue == "cpu" and i.state == "running"]
-                )
-
-                # pending tasks in the queue
-                task_gpu = [i for i in self.current if i.queue == "gpu" and i.state == "pending"]
-                task_cpu = [i for i in self.current if i.queue == "cpu" and i.state == "pending"]
-
-            # a worker available and possible to have gpu
-            if (
-                nb_active_processes_gpu < self.nb_workers_gpu
-                and (nb_active_processes_gpu + nb_active_processes_cpu) < self.nb_workers
-                and len(task_gpu) > 0
-            ):
-                executor = get_reusable_executor(max_workers=(self.nb_workers))
-                task_gpu[0].future = executor.submit(task_gpu[0].task)
-                task_gpu[0].state = "running"
-
-            # a worker available and possible to have cpu
-            if (
-                nb_active_processes_cpu < self.nb_workers_cpu
-                and (nb_active_processes_gpu + nb_active_processes_cpu) < self.nb_workers
-                and len(task_cpu) > 0
-            ):
-                executor = get_reusable_executor(max_workers=(self.nb_workers))
-                task_cpu[0].future = executor.submit(task_cpu[0].task)
-                task_cpu[0].state = "running"
-
-            # if there is nothing in the queue, shutdown the executor
-            if nb_active_processes_cpu + nb_active_processes_gpu == 0:
-                executor = get_reusable_executor(max_workers=(self.nb_workers))
-                executor.shutdown(wait=False)
-
-            print(
-                "nb_active_processes_cpu",
-                nb_active_processes_cpu,
-                "nb_active_processes_gpu",
-                nb_active_processes_gpu,
-            )
-
-            await asyncio.sleep(timeout)  # Non-blocking sleep
+            await asyncio.to_thread(self._dispatch_pending_tasks)
+            await asyncio.sleep(timeout)
 
     def add_task(self, kind: str, project_slug: str, task: BaseTask, queue: str = "cpu") -> str:
         """
         Add a task in the queue, first as pending in the current list
         """
-        with self.lock:
-            # test if the queue is not full
-            if len(self.current) > self.max_processes:
-                raise Exception("Queue is full. Wait for process to finish.")
+        # test if the queue is not full
+        if len(self.current) > self.max_processes:
+            raise Exception("Queue is full. Wait for process to finish.")
 
-            # generate a unique id
-            unique_id = str(uuid.uuid4())
-            task.unique_id = unique_id
+        # generate a unique id
+        unique_id = str(uuid.uuid4())
+        task.unique_id = unique_id
 
-            # set an event to inform the end of the process
-            event = self.manager.Event()
-            task.event = event
+        # set an event to inform the end of the process
+        event = self.manager.Event()
+        task.event = event
 
-            # add it in the current processes
-            self.current.append(
-                QueueTaskModel(
-                    unique_id=unique_id,
-                    kind=kind,
-                    project_slug=project_slug,
-                    state="pending",
-                    future=None,
-                    event=event,
-                    starting_time=datetime.datetime.now(),
-                    queue=queue,
-                    task=task,
-                )
+        # add it in the current processes
+        self.current.append(
+            QueueTaskModel(
+                unique_id=unique_id,
+                kind=kind,
+                project_slug=project_slug,
+                state="pending",
+                future=None,
+                event=event,
+                starting_time=datetime.datetime.now(),
+                queue=queue,
+                task=task,
             )
+        )
 
         return unique_id
 
@@ -239,7 +246,9 @@ class Queue:
         """
         Restart the queue by getting the executor and closing it
         """
-        executor = get_reusable_executor(max_workers=(self.nb_workers), timeout=10)
+        executor = get_reusable_executor(
+            max_workers=(self.nb_workers), timeout=None
+        )  # timeout = 10
         executor.shutdown(wait=False)
         self.manager.shutdown()
         self.manager = Manager()

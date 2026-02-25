@@ -13,7 +13,7 @@ interface Options {
 
 interface FeaturesOptions {
   fasttext?: Options;
-  sbert?: Options;
+  embeddings?: Options;
 }
 
 interface CreateNewFeatureProps {
@@ -43,7 +43,7 @@ export const CreateNewFeature: FC<CreateNewFeatureProps> = ({
         model: 'generic',
         max_length_tokens: 1024,
       },
-      type: 'sbert',
+      type: 'embeddings',
       name: getRandomName('feature'),
     },
   });
@@ -86,7 +86,7 @@ export const CreateNewFeature: FC<CreateNewFeatureProps> = ({
         ))}{' '}
       </select>
 
-      {selectedFeatureToCreate === 'sbert' && (
+      {selectedFeatureToCreate === 'embeddings' && (
         <details>
           <summary>Advanced settings</summary>
           <label htmlFor="model">Model to use</label>
@@ -95,7 +95,9 @@ export const CreateNewFeature: FC<CreateNewFeatureProps> = ({
               Default model
             </option>
             {(
-              (featuresOption.sbert ? (featuresOption['sbert']['models'] as string[]) : []) || []
+              (featuresOption.embeddings
+                ? (featuresOption['embeddings']['models'] as string[])
+                : []) || []
             ).map((element) => (
               <option key={element as string} value={element as string}>
                 {element as string}
