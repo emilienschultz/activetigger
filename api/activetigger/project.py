@@ -724,6 +724,8 @@ class Project:
         # filter based on the labels
         if next.sample == "untagged":
             f = df["labels"].isna()
+        elif next.sample == "not_by_me":
+            f = df["labels"].isna() | (df["user"] != username)
         elif next.sample == "tagged":
             # on specific labels
             if next.on_labels is not None and len(next.on_labels) > 0:
@@ -1124,7 +1126,7 @@ class Project:
             next=NextProjectStateModel(
                 methods_min=["fixed", "random"],
                 methods=["fixed", "random", "maxprob", "active"],
-                sample=["untagged", "all", "tagged"],
+                sample=["untagged", "all", "tagged", "not_by_me"],
             ),
             schemes=self.schemes.state(),
             features=self.features.state(),
