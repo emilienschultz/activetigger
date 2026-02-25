@@ -121,11 +121,16 @@ export const ModelManagement: FC = () => {
   };
 
   // get information on the quickmodel
-  const { currentModel: currentQuickModelInformations } = useGetQuickModel(
+  const { currentModel: currentQuickModelInformations, reFetchQuickModel } = useGetQuickModel(
     projectSlug || null,
     currentQuickModelName,
     currentQuickModelName,
   );
+  useEffect(() => {
+    if (currentQuickModelInformations) {
+      reFetchQuickModel();
+    }
+  }, [isComputing]);
 
   // delete quickmodel
   const { deleteQuickModel } = useDeleteQuickModel(projectSlug || null);
@@ -205,8 +210,6 @@ export const ModelManagement: FC = () => {
     currentProject,
   ]);
 
-  console.log(isComputing);
-
   return (
     <>
       <span className="fw-semibold text-muted small">Quick Models</span>
@@ -260,7 +263,10 @@ export const ModelManagement: FC = () => {
           projectSlug={projectSlug || null}
           processes={
             currentProject?.languagemodels.training?.[authenticatedUser.username]
-              ? { [authenticatedUser.username]: currentProject.languagemodels.training[authenticatedUser.username] }
+              ? {
+                  [authenticatedUser.username]:
+                    currentProject.languagemodels.training[authenticatedUser.username],
+                }
               : undefined
           }
           displayStopButton={isComputing}
