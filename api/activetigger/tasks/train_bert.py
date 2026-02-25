@@ -1,9 +1,13 @@
 import gc
+import gzip
 import json
 import logging
 import multiprocessing
 import os
 import shutil
+import tarfile
+import tempfile
+import time
 from collections import Counter
 from logging import Logger
 from pathlib import Path
@@ -37,16 +41,36 @@ pd.set_option("future.no_silent_downcasting", True)
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
+def _atomic_write(path: Path, content: str) -> None:
+    """
+    Write content to a file atomically using a temp file + rename.
+    Prevents partial reads by the API when it polls progress/loss files.
+    """
+    dir_path = path.parent
+    fd, tmp_path = tempfile.mkstemp(dir=str(dir_path))
+    try:
+        with os.fdopen(fd, "w") as f:
+            f.write(content)
+        os.replace(tmp_path, str(path))
+    except Exception:
+        os.unlink(tmp_path)
+        raise
+
+
 class CustomLoggingCallback(TrainerCallback):
     event: Optional[multiprocessing.synchronize.Event]
     current_path: Path
     logger: Logger
+    _last_write_time: float
+    _write_interval: float
 
-    def __init__(self, event, logger, current_path):
+    def __init__(self, event, logger, current_path, write_interval: float = 3.0):
         super().__init__()
         self.event = event
         self.current_path = current_path
         self.logger = logger
+        self._last_write_time = 0.0
+        self._write_interval = write_interval
 
     def on_step_end(
         self,
@@ -55,18 +79,28 @@ class CustomLoggingCallback(TrainerCallback):
         control: TrainerControl,
         **kwargs,
     ):
+        # check for stop event first (cheap operation)
+        if self.event is not None and self.event.is_set():
+            self.logger.info("Event set, stopping training.")
+            control.should_training_stop = True
+            raise Exception("Process interrupted by user")
+
+        # throttle file writes to avoid I/O contention
+        now = time.monotonic()
+        if (now - self._last_write_time) < self._write_interval:
+            return
+        self._last_write_time = now
+
         self.logger.info(f"Step {state.global_step}")
         progress_percentage = (state.global_step / state.max_steps) * 100
-        with open(self.current_path.joinpath("progress_train"), "w") as f:
-            f.write(str(progress_percentage))
-        with open(self.current_path.joinpath("log_history.txt"), "w") as f:
-            json.dump(state.log_history, f)
-        # end if event set
-        if self.event is not None:
-            if self.event.is_set():
-                self.logger.info("Event set, stopping training.")
-                control.should_training_stop = True
-                raise Exception("Process interrupted by user")
+        _atomic_write(
+            self.current_path.joinpath("progress_train"),
+            str(progress_percentage),
+        )
+        _atomic_write(
+            self.current_path.joinpath("log_history.txt"),
+            json.dumps(state.log_history),
+        )
 
 
 # Function for the weighted loss computation
@@ -395,13 +429,16 @@ class TrainBert(BaseTask):
         os.rename(log_path, current_path.joinpath("finished"))
 
         # make archive (create dir if needed)
+        # use compresslevel=1 (fastest gzip) to reduce CPU/IO pressure
+        # during archiving, which can block other disk operations
+
         path_static = f"{config.data_path}/projects/static/{self.project_slug}"
         os.makedirs(path_static, exist_ok=True)
-        shutil.make_archive(
-            f"{path_static}/{self.name}",
-            "gztar",
-            str(self.path.joinpath(self.name)),
-        )
+        archive_path = f"{path_static}/{self.name}.tar.gz"
+        source_dir = str(self.path.joinpath(self.name))
+        with gzip.open(archive_path, "wb", compresslevel=1) as gz:
+            with tarfile.open(fileobj=gz, mode="w") as tar:
+                tar.add(source_dir, arcname=os.path.basename(source_dir))
 
         with open(str(current_path.joinpath("metrics_training.json")), "w") as f:
             json.dump(
