@@ -112,6 +112,24 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
       return [...modes, ...probLabels].map((o) => ({ ...o, value: optionValue(o) }));
     }, [phase, activeModel, project?.next.methods, project?.next.methods_min, availableLabels]);
 
+  // reset selection mode to "fixed" when the active model is deactivated
+  // and the current mode requires a model (e.g. maxprob, active)
+  useEffect(() => {
+    if (!activeModel && !['fixed', 'random'].includes(selectionConfig.mode)) {
+      const availableModes = project?.next.methods_min || [];
+      if (!availableModes.includes(selectionConfig.mode)) {
+        setAppContext((prev) => ({
+          ...prev,
+          selectionConfig: {
+            ...prev.selectionConfig,
+            mode: 'fixed',
+            label_maxprob: undefined,
+          },
+        }));
+      }
+    }
+  }, [activeModel, selectionConfig.mode, project?.next.methods_min, setAppContext]);
+
   return (
     <form className="annotation-mode">
       {/* left container: main selectors */}
