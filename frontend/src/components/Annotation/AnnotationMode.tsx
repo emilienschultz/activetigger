@@ -102,10 +102,12 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
       ).map((mode) => ({ mode, label_maxprob: undefined }));
       const probLabels =
         phase === 'train' && activeModel
-          ? availableLabels.map((l) => ({
-              mode: 'maxprob',
-              label_maxprob: l,
-            }))
+          ? availableLabels
+              .filter((l) => !activeModel.labels_excluded.includes(l))
+              .map((l) => ({
+                mode: 'maxprob',
+                label_maxprob: l,
+              }))
           : [];
       return [...modes, ...probLabels].map((o) => ({ ...o, value: optionValue(o) }));
     }, [phase, activeModel, project?.next.methods, project?.next.methods_min, availableLabels]);

@@ -1872,6 +1872,16 @@ export interface components {
             value: string;
             /** Label */
             label: string;
+            /**
+             * Time
+             * @default
+             */
+            time: string;
+            /**
+             * Labels Excluded
+             * @default []
+             */
+            labels_excluded: string[];
         };
         /**
          * AnnotationModel
@@ -3192,9 +3202,7 @@ export interface components {
             statistics_cv10?: components["schemas"]["MLStatisticsModel"] | null;
             /**
              * Balance Classes
-             * @default [
-             *       false
-             *     ]
+             * @default false
              */
             balance_classes: boolean;
             /**
