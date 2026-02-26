@@ -251,7 +251,7 @@ export const ModelManagement: FC = () => {
           className={cx('model-pill ', isComputing ? 'disabled' : '')}
           id="create-new"
         >
-          <FaPlusCircle size={20} /> Create new bert model
+          <FaPlusCircle size={20} /> Create new BERT model
         </button>
       </ModelsPillDisplay>
 
@@ -260,7 +260,10 @@ export const ModelManagement: FC = () => {
           projectSlug={projectSlug || null}
           processes={
             currentProject?.languagemodels.training?.[authenticatedUser.username]
-              ? { [authenticatedUser.username]: currentProject.languagemodels.training[authenticatedUser.username] }
+              ? {
+                  [authenticatedUser.username]:
+                    currentProject.languagemodels.training[authenticatedUser.username],
+                }
               : undefined
           }
           displayStopButton={isComputing}
