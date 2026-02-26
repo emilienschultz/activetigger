@@ -15,7 +15,7 @@ router = APIRouter(tags=["BERTopic"])
 
 
 @router.post("/bertopic/compute", dependencies=[Depends(verified_user)])
-async def compute_bertopic(
+def compute_bertopic(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     bertopic: ComputeBertopicModel,
@@ -56,7 +56,7 @@ async def compute_bertopic(
 
 
 @router.get("/bertopic/topics", dependencies=[Depends(verified_user)])
-async def get_bertopic_topics(
+def get_bertopic_topics(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     name: str = Query(...),
@@ -74,7 +74,7 @@ async def get_bertopic_topics(
 
 
 @router.get("/bertopic/projection", dependencies=[Depends(verified_user)])
-async def get_bertopic_projection(
+def get_bertopic_projection(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     name: str = Query(...),
@@ -89,7 +89,7 @@ async def get_bertopic_projection(
 
 
 @router.post("/bertopic/delete", dependencies=[Depends(verified_user)])
-async def delete_bertopic_model(
+def delete_bertopic_model(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     name: str = Query(...),
@@ -107,7 +107,7 @@ async def delete_bertopic_model(
 
 
 @router.post("/bertopic/export-to-scheme", dependencies=[Depends(verified_user)])
-async def export_bertopic_to_scheme(
+def export_bertopic_to_scheme(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     topic_model_name: str = Query(...),

@@ -49,7 +49,7 @@ async def get_next(
 
 
 @router.get("/elements/projection", dependencies=[Depends(verified_user)])
-async def get_projection(
+def get_projection(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     scheme: str = Query(),
@@ -72,7 +72,7 @@ async def get_projection(
 
 
 @router.post("/elements/projection/compute", dependencies=[Depends(verified_user)])
-async def compute_projection(
+def compute_projection(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     projection: ProjectionParametersModel,
@@ -106,7 +106,7 @@ async def compute_projection(
 
 
 @router.post("/elements/table", dependencies=[Depends(verified_user)])
-async def get_list_elements(
+def get_list_elements(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     batch: TableBatchInModel,
@@ -122,7 +122,7 @@ async def get_list_elements(
 
 
 @router.post("/annotation/table", dependencies=[Depends(verified_user)])
-async def post_list_elements(
+def post_list_elements(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     table: TableAnnotationsModel,
@@ -146,7 +146,7 @@ async def post_list_elements(
 
 
 @router.post("/annotation/file", dependencies=[Depends(verified_user)])
-async def post_annotation_file(
+def post_annotation_file(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     annotationsdata: AnnotationsDataModel,
@@ -170,7 +170,7 @@ async def post_annotation_file(
 
 
 @router.post("/elements/id", dependencies=[Depends(verified_user)])
-async def get_element(
+def get_element(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     element: ElementInModel,
@@ -189,7 +189,7 @@ async def get_element(
 
 
 @router.get("/annotation/reconciliate", dependencies=[Depends(verified_user)])
-async def get_reconciliation_table(
+def get_reconciliation_table(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     scheme: str = Query(),
@@ -213,7 +213,7 @@ async def get_reconciliation_table(
 
 
 @router.post("/annotation/reconciliate", dependencies=[Depends(verified_user)])
-async def post_reconciliation(
+def post_reconciliation(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project: Annotated[Project, Depends(get_project)],
     element: ReconciliateElementInModel,
@@ -235,7 +235,7 @@ async def post_reconciliation(
 
 
 @router.post("/annotation/{action}", dependencies=[Depends(verified_user)])
-async def post_annotation(
+def post_annotation(
     action: ActionModel,
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project: Annotated[Project, Depends(get_project)],

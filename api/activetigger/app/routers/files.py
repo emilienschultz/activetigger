@@ -113,7 +113,7 @@ async def upload_file_dataset(
 
 
 @router.post("/files/copy/project")
-async def copy_existing_data(
+def copy_existing_data(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project_name: str,
     source_project: str,

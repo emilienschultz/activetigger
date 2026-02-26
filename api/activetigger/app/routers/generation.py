@@ -31,7 +31,7 @@ router = APIRouter(tags=["generation"])
 
 
 @router.get("/generate/models/available")
-async def list_generation_models() -> list[GenerationModelApi]:
+def list_generation_models() -> list[GenerationModelApi]:
     """
     Returns the list of the available GenAI models for generation
     API (not the models themselves)
@@ -43,7 +43,7 @@ async def list_generation_models() -> list[GenerationModelApi]:
 
 
 @router.get("/generate/models", dependencies=[Depends(verified_user)])
-async def list_project_generation_models(
+def list_project_generation_models(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project: Annotated[Project, Depends(get_project)],
 ) -> list[GenerationModel]:
@@ -58,7 +58,7 @@ async def list_project_generation_models(
 
 
 @router.post("/generate/models", dependencies=[Depends(verified_user)])
-async def add_project_generation_models(
+def add_project_generation_models(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     model: GenerationCreationModel,
@@ -77,7 +77,7 @@ async def add_project_generation_models(
     "/generate/models/{model_id}",
     dependencies=[Depends(verified_user)],
 )
-async def delete_project_generation_models(
+def delete_project_generation_models(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     model_id: int,
@@ -93,7 +93,7 @@ async def delete_project_generation_models(
 
 
 @router.post("/generate/start", dependencies=[Depends(verified_user)])
-async def postgenerate(
+def postgenerate(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     request: GenerationRequest,
@@ -117,7 +117,7 @@ async def postgenerate(
 
 
 @router.post("/generate/elements", dependencies=[Depends(verified_user)])
-async def getgenerate(
+def getgenerate(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     params: ExportGenerationsParams,
@@ -134,7 +134,7 @@ async def getgenerate(
 
 
 @router.post("/generate/elements/drop", dependencies=[Depends(verified_user)])
-async def dropgenerate(
+def dropgenerate(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
 ) -> None:
@@ -149,7 +149,7 @@ async def dropgenerate(
 
 
 @router.get("/generate/prompts", dependencies=[Depends(verified_user)])
-async def get_prompts(
+def get_prompts(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
 ) -> list[PromptModel]:
@@ -164,7 +164,7 @@ async def get_prompts(
 
 
 @router.post("/generate/prompts/add", dependencies=[Depends(verified_user)])
-async def add_prompt(
+def add_prompt(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     prompt: PromptInputModel,
@@ -180,7 +180,7 @@ async def add_prompt(
 
 
 @router.post("/generate/prompts/delete", dependencies=[Depends(verified_user)])
-async def delete_prompt(
+def delete_prompt(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     prompt_id: str,

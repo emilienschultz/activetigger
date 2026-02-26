@@ -149,7 +149,7 @@ app.add_middleware(
 
 
 @app.get("/", response_class=HTMLResponse)
-async def welcome() -> str:
+def welcome() -> str:
     """
     Welcome page for the API
     """
@@ -160,7 +160,7 @@ async def welcome() -> str:
 
 
 @app.get("/version")
-async def get_version() -> str:
+def get_version() -> str:
     """
     Get the version of the server
     """
@@ -168,7 +168,7 @@ async def get_version() -> str:
 
 
 @app.post("/server/restart", dependencies=[Depends(verified_user)])
-async def restart_queue(
+def restart_queue(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
 ) -> None:
     """
@@ -182,7 +182,7 @@ async def restart_queue(
 
 
 @app.get("/server")
-async def get_queue() -> ServerStateModel:
+def get_queue() -> ServerStateModel:
     """
     Get the state of the server
     """
@@ -190,7 +190,7 @@ async def get_queue() -> ServerStateModel:
 
 
 @app.post("/token")
-async def login_for_access_token(
+def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> TokenModel:
     """
@@ -207,7 +207,7 @@ async def login_for_access_token(
 
 
 @app.get("/logs", dependencies=[Depends(verified_user)])
-async def get_logs(
+def get_logs(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project_slug: str = "all",
     limit: int = 100,
@@ -227,7 +227,7 @@ async def get_logs(
 
 
 @app.post("/stop", dependencies=[Depends(verified_user)])
-async def stop_process(
+def stop_process(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     unique_id: str | None = None,
     project_slug: str | None = None,

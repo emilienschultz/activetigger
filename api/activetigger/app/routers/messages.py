@@ -18,7 +18,7 @@ router = APIRouter(tags=["messages"])
 
 
 @router.get("/messages")
-async def get_messages(
+def get_messages(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     kind: str,
     from_user: str | None = None,
@@ -42,7 +42,7 @@ async def get_messages(
 
 
 @router.post("/messages")
-async def post_message(
+def post_message(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     message: MessagesInModel,
 ) -> None:
@@ -59,7 +59,7 @@ async def post_message(
 
 
 @router.post("/messages/delete")
-async def delete_message(
+def delete_message(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     message_id: int,
 ) -> None:

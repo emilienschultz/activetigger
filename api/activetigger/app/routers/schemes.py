@@ -21,7 +21,7 @@ router = APIRouter()
 
 
 @router.post("/schemes/label/rename", dependencies=[Depends(verified_user)])
-async def rename_label(
+def rename_label(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     scheme: str,
@@ -46,7 +46,7 @@ async def rename_label(
 
 
 @router.post("/schemes/label/{action}", dependencies=[Depends(verified_user)])
-async def add_label(
+def add_label(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     action: ActionModel,
@@ -87,7 +87,7 @@ async def add_label(
 
 
 @router.post("/schemes/codebook", dependencies=[Depends(verified_user)])
-async def post_codebook(
+def post_codebook(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project: Annotated[Project, Depends(get_project)],
     codebook: CodebookModel,
@@ -110,7 +110,7 @@ async def post_codebook(
 
 
 @router.get("/schemes/codebook", dependencies=[Depends(verified_user)])
-async def get_codebook(
+def get_codebook(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project: Annotated[Project, Depends(get_project)],
     scheme: str,
@@ -126,7 +126,7 @@ async def get_codebook(
 
 
 @router.post("/schemes/rename", dependencies=[Depends(verified_user)])
-async def rename_scheme(
+def rename_scheme(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project: Annotated[Project, Depends(get_project)],
     old_name: str,
@@ -149,7 +149,7 @@ async def rename_scheme(
 
 
 @router.post("/schemes/duplicate", dependencies=[Depends(verified_user)])
-async def duplicate_scheme(
+def duplicate_scheme(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project: Annotated[Project, Depends(get_project)],
     scheme_name: str,
@@ -171,7 +171,7 @@ async def duplicate_scheme(
 
 
 @router.get("/schemes/compare", dependencies=[Depends(verified_user)])
-async def compare_schemes(
+def compare_schemes(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project: Annotated[Project, Depends(get_project)],
     schemeA: str,
@@ -189,7 +189,7 @@ async def compare_schemes(
 
 
 @router.post("/schemes/{action}", dependencies=[Depends(verified_user)])
-async def post_schemes(
+def post_schemes(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project: Annotated[Project, Depends(get_project)],
     action: ActionModel,
