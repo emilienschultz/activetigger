@@ -87,7 +87,7 @@ export const DisplayProjection: FC<DisplayProjectionProps> = ({
   }, [currentElement]);
 
   return (
-    <div>
+    <div style={{ width: '80%' }}>
       {currentProjection ? (
         <>
           <div className="my-2">
@@ -119,7 +119,7 @@ export const DisplayProjection: FC<DisplayProjectionProps> = ({
             </label>
           </div>
 
-          <div className="d-flex">
+          <div className="d-flex flex-column">
             <div>
               <ProjectionVizSigma
                 data={currentProjection}
