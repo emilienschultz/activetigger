@@ -7,9 +7,9 @@
 import asyncio
 import datetime
 import multiprocessing
+import os
+import tempfile
 import uuid
-from multiprocessing import Manager
-from multiprocessing.managers import SyncManager
 
 # manage the executor
 from loky import get_reusable_executor  # type: ignore[import]
@@ -18,6 +18,36 @@ from activetigger.datamodels import QueueStateTaskModel, QueueTaskModel
 from activetigger.tasks.base_task import BaseTask
 
 multiprocessing.set_start_method("spawn", force=True)
+
+
+class CancelEvent:
+    """File-based event for cross-process cancellation signaling.
+
+    Replaces multiprocessing.Manager().Event() which proxies every is_set()
+    call through IPC sockets (expensive on every training step).
+    This uses a temp file: set() creates the file, is_set() calls os.path.exists()
+    (a single syscall, ~1µs). Trivially picklable (just a path string).
+    """
+
+    def __init__(self) -> None:
+        self._path = os.path.join(
+            tempfile.gettempdir(), f"activetigger_cancel_{uuid.uuid4().hex}"
+        )
+
+    def set(self) -> None:
+        """Signal cancellation by creating the sentinel file."""
+        open(self._path, "w").close()
+
+    def is_set(self) -> bool:
+        """Check if cancellation was signaled."""
+        return os.path.exists(self._path)
+
+    def cleanup(self) -> None:
+        """Remove the sentinel file if it exists."""
+        try:
+            os.unlink(self._path)
+        except FileNotFoundError:
+            pass
 
 
 class Queue:
@@ -34,7 +64,6 @@ class Queue:
     nb_workers: int
     nb_workers_cpu: int
     nb_workers_gpu: int
-    manager: SyncManager
     current: list[QueueTaskModel]
     last_restart: datetime.datetime
 
@@ -44,13 +73,10 @@ class Queue:
         :param nb_workers_cpu: Number of CPU workers
         :param nb_workers_gpu: Number of GPU workers
         :return: None
-
-        Create a Manager to handle shared state across processes
         """
         self.nb_workers_cpu = nb_workers_cpu
         self.nb_workers_gpu = nb_workers_gpu
         self.nb_workers = nb_workers_cpu + nb_workers_gpu
-        self.manager = Manager()
         self.current = []
 
         # create the executor
@@ -65,8 +91,6 @@ class Queue:
         """
         Destructor to close the queue
         """
-        if hasattr(self, "manager"):
-            self.manager.shutdown()
         if hasattr(self, "task"):
             self.task.cancel()
 
@@ -145,7 +169,7 @@ class Queue:
         task.unique_id = unique_id
 
         # set an event to inform the end of the process
-        event = self.manager.Event()
+        event = CancelEvent()
         task.event = event
 
         # add it in the current processes
@@ -250,6 +274,4 @@ class Queue:
             max_workers=(self.nb_workers), timeout=None
         )  # timeout = 10
         executor.shutdown(wait=False)
-        self.manager.shutdown()
-        self.manager = Manager()
         self.current = []
