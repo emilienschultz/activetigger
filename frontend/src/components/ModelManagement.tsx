@@ -254,7 +254,7 @@ export const ModelManagement: FC = () => {
           className={cx('model-pill ', isComputing ? 'disabled' : '')}
           id="create-new"
         >
-          <FaPlusCircle size={20} /> Create new bert model
+          <FaPlusCircle size={20} /> Create new BERT model
         </button>
       </ModelsPillDisplay>
 
@@ -280,12 +280,6 @@ export const ModelManagement: FC = () => {
         currentQuickModelInformations &&
         currentQuickModelInformations.params && (
           <>
-            {/* <ValidateButtons
-            modelName={currentBertModel}
-            kind="bert"
-            id="compute-prediction"
-            buttonLabel="Compute predictions"
-          /> */}
             <DisplayScores
               title={'Validation scores from the training data (internal validation)'}
               scores={currentQuickModelInformations.statistics_test as MLStatisticsModel}
@@ -338,14 +332,7 @@ export const ModelManagement: FC = () => {
 
       {currentModel && currentModel.kind === 'bert' && currentBertModelInformations && (
         <div>
-          <div className="my-3">
-            <ValidateButtons
-              modelName={currentBertModel}
-              kind="bert"
-              id="compute-prediction"
-              buttonLabel="Compute predictions"
-            />
-          </div>
+          <div className="my-3"></div>
           <DisplayScores
             title={'Validation scores from the training data (internal validation)'}
             scores={currentBertModelInformations.scores.internalvalid_scores as MLStatisticsModel}

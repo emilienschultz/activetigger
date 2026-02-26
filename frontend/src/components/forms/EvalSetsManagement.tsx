@@ -35,6 +35,7 @@ export const EvalSetsManagement: FC<EvalSetsManagementModel> = ({
   exist,
 }) => {
   // form management
+  const datasetCleanForPrinting = dataset == 'test' ? 'Test' : 'Validation';
   const { register, control, handleSubmit, setValue } = useForm<EvalSetModel & { files: FileList }>(
     {
       defaultValues: { scheme: currentScheme },
@@ -105,7 +106,7 @@ export const EvalSetsManagement: FC<EvalSetsManagementModel> = ({
             setAlertDrop(true);
           }}
         >
-          Drop {dataset} set
+          Drop {datasetCleanForPrinting} set
         </button>
       )}
 
@@ -113,9 +114,9 @@ export const EvalSetsManagement: FC<EvalSetsManagementModel> = ({
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="col-lg-6">
             <div className="explanations">
-              No {dataset} data set has been created. You can upload a {dataset} set. Careful : all
-              features will be dropped and need to be computed again, and id will be modified with
-              "imported-".
+              No {datasetCleanForPrinting} data set has been created. You can upload a{' '}
+              {datasetCleanForPrinting} set. Careful : all features will be dropped and need to be
+              computed again, and id will be modified with "imported-".
             </div>
             <label htmlFor="csvFile">File to upload</label>
             <input id="csvFile" className="form-control" type="file" {...register('files')} />
@@ -149,7 +150,7 @@ export const EvalSetsManagement: FC<EvalSetsManagementModel> = ({
               // only display if data
               data != null && (
                 <div>
-                  <label htmlFor="col_id">Column for id (they need to be unique)</label>
+                  <label htmlFor="col_id">ID column (IDs must be unique)</label>
                   <select id="col_id" disabled={data === null} {...register('col_id')}>
                     {columns}
                   </select>
@@ -173,7 +174,8 @@ export const EvalSetsManagement: FC<EvalSetsManagementModel> = ({
                     )}
                   />
                   <label htmlFor="col_label">
-                    Column for label (optional but they need to exist in the scheme)
+                    Column(s) for existing annotations (optional, labels must already exist in the
+                    current scheme, otherwise they are ignored)
                   </label>
                   <select id="col_label" disabled={data === null} {...register('col_label')}>
                     <option key="none" value="">
@@ -182,7 +184,7 @@ export const EvalSetsManagement: FC<EvalSetsManagementModel> = ({
 
                     {columns}
                   </select>
-                  <label htmlFor="n_test">Number of elements</label>
+                  <label htmlFor="n_test">Number of rows to import</label>
                   <input id="n_test" type="number" {...register('n_eval')} />
 
                   <button type="submit" className="btn-submit">
@@ -196,11 +198,11 @@ export const EvalSetsManagement: FC<EvalSetsManagementModel> = ({
       )}
       <Modal show={alertDrop} onHide={() => setAlertDrop(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>Drop the eval set</Modal.Title>
+          <Modal.Title>Drop the validation set</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          Do you really want to drop the {dataset} set? All features and quick models will be
-          dropped and need to be recomputed.
+          Do you really want to drop the {dataset == 'test' ? 'Test' : 'Validation'} set? All
+          features and quick models will be dropped and need to be recomputed.
           <div className="horizontal">
             <button onClick={() => setAlertDrop(false)} style={{ flex: '1 1 auto' }}>
               Cancel

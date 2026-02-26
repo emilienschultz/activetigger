@@ -9,7 +9,7 @@
 
 ### Next Steps
 
-- Multilabel workflow + bert-fine tuning
+- Multilabel workflow + BERT-fine tuning
 - Create Python wrapper
 - Write documentation + tutorial
 - Optimize vizualisation for large dataset ⚙
@@ -24,7 +24,7 @@
 - Build Docker image ⚙
 - Integrate genAI tools ⚙
 - Add carbon count 
-- Add new models (Modernbert, Phi3, pleias, ...) 
+- Add new models (ModernBERT, Phi3, pleias, ...) 
 - Refactor design (better ergonomy / colors / etc.) ⚙
 - Better data set management (expand)
 - Animate community on Discord
@@ -48,7 +48,7 @@ Overall architecture :
     - Features
     - Schemes
     - Quickmodels
-    - Bertmodels
+    - BERT models
     - Users
 - CPU/GPU bound computation is managed in separated processes with a queue
 - State of the service is checked at each request (with a threshold)
@@ -59,7 +59,7 @@ Overall architecture :
 - SQLite database to manage annotations/parameters/users/logs
 - Projects are loaded into memory to facilitate computation (filter, etc.)
     - Unloaded after one day
-- Bert models are saved in dedicated filesystems
+- BERT models are saved in dedicated filesystems
 
 #### Processes
 

@@ -260,7 +260,7 @@ Active Tigger allows you to adapt a existing BERT classifier model on your annot
 
 Click on **Create** to train a new model.
 
-Name it and pick which BERT model base you would like to use (note that some are language-specific, by default ModernBert in English and CamemBert in French).
+Name it and pick which BERT model base you would like to use (note that some are language-specific, by default ModernBERT in English and CamemBERT in French).
 
 You can adjust the parameters for the model, or leave it at default values.
 
