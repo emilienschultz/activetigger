@@ -34,6 +34,12 @@ export const DisplayScores: FC<DisplayScoresProps> = ({
   dataset = 'data',
   exclude_labels,
 }) => {
+  console.log(dataset);
+  const datasetClean = dataset.includes('test')
+    ? 'test'
+    : dataset.includes('valid')
+      ? 'valid'
+      : 'train';
   const downloadModel = () => {
     if (!scores) return; // Ensure model is not null or undefined
 
@@ -59,7 +65,9 @@ export const DisplayScores: FC<DisplayScoresProps> = ({
       renderCell: (props) => (
         <div>
           {projectSlug ? (
-            <Link to={`/projects/${projectSlug}/tag/${props.row.id}`}>{props.row.id}</Link>
+            <Link to={`/projects/${projectSlug}/tag/${props.row.id}?dataset=${datasetClean}`}>
+              {props.row.id}
+            </Link>
           ) : (
             props.row.id
           )}

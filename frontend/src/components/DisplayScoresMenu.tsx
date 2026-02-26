@@ -40,8 +40,8 @@ export const DisplayScoresMenu: FC<DisplayScoresMenuPropos> = ({
   }
 
   const displayScores: { [key: string]: string } = {
-    train_scores: 'Train-All',
-    outofsample_scores: 'Train-Eval',
+    train_scores: 'Train (all)',
+    outofsample_scores: 'Train (eval)',
     valid_scores: 'Validation set',
     test_scores: 'Test set',
   };

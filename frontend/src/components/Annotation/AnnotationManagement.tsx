@@ -1,7 +1,7 @@
 import { CSSProperties, FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { HiOutlineEyeOff } from 'react-icons/hi';
 import { LuRefreshCw } from 'react-icons/lu';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   useAddAnnotation,
   useGetElementById,
@@ -43,6 +43,18 @@ export const AnnotationManagement: FC = () => {
   } = appContext;
 
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Use dataset query param directly to avoid race condition with context update
+  const datasetParam = new URLSearchParams(location.search).get('dataset');
+  const effectivePhase =
+    datasetParam && ['train', 'test', 'valid'].includes(datasetParam) ? datasetParam : phase;
+  useEffect(() => {
+    if (datasetParam && ['train', 'test', 'valid'].includes(datasetParam)) {
+      setAppContext((prev) => ({ ...prev, phase: datasetParam }));
+    }
+  }, [datasetParam, setAppContext]);
+
   const [element, setElement] = useState<ElementOutModel | null>(null); //state for the current element
   const [nSample, setNSample] = useState<number | null>(null); // specific info
 
@@ -68,13 +80,17 @@ export const AnnotationManagement: FC = () => {
     currentScheme || null,
     selectionConfig,
     historyIds,
-    phase,
+    effectivePhase,
     activeModel || null,
   );
   const { getElementById } = useGetElementById();
 
   // hooks to manage annotation
-  const { addAnnotation } = useAddAnnotation(projectName || null, currentScheme || null, phase);
+  const { addAnnotation } = useAddAnnotation(
+    projectName || null,
+    currentScheme || null,
+    effectivePhase,
+  );
 
   //hook to manage history
   const { addElementInAnnotationSessionHistory } = useAnnotationSessionHistory();
@@ -123,7 +139,7 @@ export const AnnotationManagement: FC = () => {
     } else {
       // only if id changed compared to the previous one (otherwise, a change in phase would trigger a reload)
       if (element?.element_id !== elementId) {
-        getElementById(elementId, phase)
+        getElementById(elementId, effectivePhase)
           .then((element) => {
             if (element) setElement(element);
             else {
@@ -142,7 +158,7 @@ export const AnnotationManagement: FC = () => {
     getNextElementId,
     getElementById,
     navigate,
-    phase,
+    effectivePhase,
     projectName,
     reFetchStatistics,
     selectionConfig,
@@ -156,7 +172,7 @@ export const AnnotationManagement: FC = () => {
       if (elementId === 'noelement') return; // forbid annotation on noelement
       if (elementId) {
         await addAnnotation(elementId, label, comment || null, selectionHistory[elementId]);
-        const newElement = await getElementById(elementId, phase);
+        const newElement = await getElementById(elementId, effectivePhase);
         if (newElement) {
           addElementInAnnotationSessionHistory(elementId, newElement.text, label, comment);
           setElement(newElement);
@@ -178,7 +194,7 @@ export const AnnotationManagement: FC = () => {
       navigate,
       getElementById,
       setElement,
-      phase,
+      effectivePhase,
       addElementInAnnotationSessionHistory,
     ],
   );
@@ -224,10 +240,10 @@ export const AnnotationManagement: FC = () => {
    */
   const refetchElement = useCallback(async () => {
     if (elementId) {
-      const newElement = await getElementById(elementId, phase);
+      const newElement = await getElementById(elementId, effectivePhase);
       if (newElement) setElement(newElement);
     }
-  }, [setElement, getElementById, elementId, phase]);
+  }, [setElement, getElementById, elementId, effectivePhase]);
 
   useEffect(() => {
     refetchElement();
@@ -243,7 +259,7 @@ export const AnnotationManagement: FC = () => {
     }
     // disabling echaustive deps as we only want to track phase to avoid unnecessary fetchNext
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase]);
+  }, [effectivePhase]);
 
   useEffect(() => {
     if (elementId === 'noelement') {
@@ -307,7 +323,7 @@ export const AnnotationManagement: FC = () => {
               validHighlightText={validHighlightText}
               elementId={elementId as string}
               lastTag={lastTag as string}
-              phase={phase}
+              phase={effectivePhase}
               frameRef={frameRef as unknown as HTMLDivElement}
             />
           </>
@@ -331,7 +347,7 @@ export const AnnotationManagement: FC = () => {
                 elementId={elementId || 'noelement'}
                 postAnnotation={postAnnotation}
                 labels={availableLabels}
-                phase={phase}
+                phase={effectivePhase}
                 element={element as ElementOutModel}
               />
             )}
