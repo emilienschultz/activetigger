@@ -26,4 +26,5 @@ if __name__ == "__main__":
         port=args.portapi,
         reload=config.mode == "dev",
         reload_excludes=["*/projects/*", "*/checkpoint-*"],
+        log_level="info",
     )
