@@ -277,12 +277,6 @@ export const ModelManagement: FC = () => {
         currentQuickModelInformations &&
         currentQuickModelInformations.params && (
           <>
-            {/* <ValidateButtons
-            modelName={currentBertModel}
-            kind="bert"
-            id="compute-prediction"
-            buttonLabel="Compute predictions"
-          /> */}
             <DisplayScores
               title={'Validation scores from the training data (internal validation)'}
               scores={currentQuickModelInformations.statistics_test as MLStatisticsModel}
@@ -335,14 +329,7 @@ export const ModelManagement: FC = () => {
 
       {currentModel && currentModel.kind === 'bert' && currentBertModelInformations && (
         <div>
-          <div className="my-3">
-            <ValidateButtons
-              modelName={currentBertModel}
-              kind="bert"
-              id="compute-prediction"
-              buttonLabel="Compute predictions"
-            />
-          </div>
+          <div className="my-3"></div>
           <DisplayScores
             title={'Validation scores from the training data (internal validation)'}
             scores={currentBertModelInformations.scores.internalvalid_scores as MLStatisticsModel}
