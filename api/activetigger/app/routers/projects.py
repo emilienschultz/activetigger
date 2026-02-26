@@ -41,11 +41,15 @@ async def close_project(
     """
     Close a project from memory
     """
-    test_rights(ServerAction.CREATE_PROJECT, current_user.username)
-    try:
-        orchestrator.stop_project(project_slug)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        test_rights(ServerAction.CREATE_PROJECT, current_user.username)
+        try:
+            orchestrator.stop_project(project_slug)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.get("/projects/{project_slug}/statistics", dependencies=[Depends(verified_user)])
@@ -57,11 +61,15 @@ async def get_project_statistics(
     """
     Statistics for a scheme and a user
     """
-    test_rights(ProjectAction.GET, current_user.username, project.project_slug)
-    try:
-        return project.get_statistics(scheme=scheme)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        test_rights(ProjectAction.GET, current_user.username, project.project_slug)
+        try:
+            return project.get_statistics(scheme=scheme)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.get("/projects/auth", dependencies=[Depends(verified_user)])
@@ -71,13 +79,17 @@ async def get_project_auth(
     """
     Users auth on a project
     """
-    if not orchestrator.exists(project_slug):
-        raise HTTPException(status_code=404, detail="Project doesn't exist")
-    test_rights(ProjectAction.MONITOR, current_user.username, project_slug)
-    try:
-        return ProjectAuthsModel(auth=orchestrator.users.get_project_auth(project_slug))
-    except Exception as e:
-        raise HTTPException(status_code=500) from e
+
+    def _impl():
+        if not orchestrator.exists(project_slug):
+            raise HTTPException(status_code=404, detail="Project doesn't exist")
+        test_rights(ProjectAction.MONITOR, current_user.username, project_slug)
+        try:
+            return ProjectAuthsModel(auth=orchestrator.users.get_project_auth(project_slug))
+        except Exception as e:
+            raise HTTPException(status_code=500) from e
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.post("/projects/new", dependencies=[Depends(verified_user)])
@@ -88,19 +100,23 @@ async def new_project(
     """
     Start the creation of a new project
     """
-    test_rights(ServerAction.CREATE_PROJECT, current_user.username)
-    try:
-        project_slug = orchestrator.starting_project_creation(
-            project=project,
-            username=current_user.username,
-        )
-        orchestrator.log_action(
-            current_user.username, f"START CREATING PROJECT: {project_slug}", project_slug
-        )
-        return project_slug
-    except Exception as e:
-        orchestrator.clean_unfinished_project(project_name=project.project_name)
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        test_rights(ServerAction.CREATE_PROJECT, current_user.username)
+        try:
+            project_slug = orchestrator.starting_project_creation(
+                project=project,
+                username=current_user.username,
+            )
+            orchestrator.log_action(
+                current_user.username, f"START CREATING PROJECT: {project_slug}", project_slug
+            )
+            return project_slug
+        except Exception as e:
+            orchestrator.clean_unfinished_project(project_name=project.project_name)
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.post(
@@ -120,16 +136,20 @@ async def update_project(
     - change text cols
     - expand the number of elements in the trainset
     """
-    test_rights(ProjectAction.UPDATE, current_user.username, project.project_slug)
-    try:
-        project.start_update_project(update, current_user.username)
-        orchestrator.log_action(
-            current_user.username,
-            f"INFO UPDATE PROJECT: {project.project_slug}",
-            project.project_slug,
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        test_rights(ProjectAction.UPDATE, current_user.username, project.project_slug)
+        try:
+            project.start_update_project(update, current_user.username)
+            orchestrator.log_action(
+                current_user.username,
+                f"INFO UPDATE PROJECT: {project.project_slug}",
+                project.project_slug,
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.post(
@@ -143,14 +163,18 @@ async def delete_project(
     """
     Delete a project
     """
-    test_rights(ServerAction.DELETE_PROJECT, current_user.username, project_slug)
-    try:
-        orchestrator.delete_project(project_slug)
-        orchestrator.log_action(
-            current_user.username, f"DELETE PROJECT: {project_slug}", project_slug
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        test_rights(ServerAction.DELETE_PROJECT, current_user.username, project_slug)
+        try:
+            orchestrator.delete_project(project_slug)
+            orchestrator.log_action(
+                current_user.username, f"DELETE PROJECT: {project_slug}", project_slug
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.get("/projects/status", dependencies=[Depends(verified_user)])
@@ -163,16 +187,20 @@ async def get_project_status(
     - creating
     - existing
     """
-    try:
-        # if project is in creation
-        if slugify(project_name) in orchestrator.project_creation_ongoing:
-            return "creating"
-        elif orchestrator.exists(project_name):
-            return "existing"
-        else:
-            return "not existing"
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        try:
+            # if project is in creation
+            if slugify(project_name) in orchestrator.project_creation_ongoing:
+                return "creating"
+            elif orchestrator.exists(project_name):
+                return "existing"
+            else:
+                return "not existing"
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.post("/projects/evalset/delete", dependencies=[Depends(verified_user)])
@@ -184,14 +212,18 @@ async def delete_evalset(
     """
     Delete an existing eval dataset
     """
-    test_rights(ProjectAction.UPDATE, current_user.username, project.project_slug)
-    try:
-        project.drop_evalset(dataset=dataset)
-        orchestrator.log_action(
-            current_user.username, f"DELETE EVALSET {dataset}", project.project_slug
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+
+    def _impl():
+        test_rights(ProjectAction.UPDATE, current_user.username, project.project_slug)
+        try:
+            project.drop_evalset(dataset=dataset)
+            orchestrator.log_action(
+                current_user.username, f"DELETE EVALSET {dataset}", project.project_slug
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e)) from e
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.post("/projects/evalset/add", dependencies=[Depends(verified_user)])
@@ -205,17 +237,21 @@ async def add_testdata(
     Delete existing eval/test dataset or
     Add a dataset for eval/test when there is none available
     """
-    test_rights(ProjectAction.UPDATE, current_user.username, project.project_slug)
-    try:
-        if evalset is None:
-            raise Exception("No evalset sent")
-        project.add_evalset(dataset, evalset, current_user.username, project.project_slug)
-        orchestrator.log_action(
-            current_user.username, f"ADD EVALSET {dataset}", project.project_slug
-        )
-        return None
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+
+    def _impl():
+        test_rights(ProjectAction.UPDATE, current_user.username, project.project_slug)
+        try:
+            if evalset is None:
+                raise Exception("No evalset sent")
+            project.add_evalset(dataset, evalset, current_user.username, project.project_slug)
+            orchestrator.log_action(
+                current_user.username, f"ADD EVALSET {dataset}", project.project_slug
+            )
+            return None
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e)) from e
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.get("/projects")
@@ -226,12 +262,16 @@ async def get_projects(
     Get general informations on the server
     depending of the status of connected user
     """
-    try:
-        return AvailableProjectsModel(
-            projects=orchestrator.users.get_user_projects(current_user.username)
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        try:
+            return AvailableProjectsModel(
+                projects=orchestrator.users.get_user_projects(current_user.username)
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.get("/datasets", dependencies=[Depends(verified_user)])
@@ -242,12 +282,16 @@ async def get_project_datasets(
     """
     Get all datasets already available for a specific user
     """
-    try:
-        toy_datasets = orchestrator.get_toy_datasets() if include_toy_datasets else []
-        auth_datasets = orchestrator.users.get_auth_datasets(current_user.username)
-        return auth_datasets, toy_datasets
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+
+    def _impl():
+        try:
+            toy_datasets = orchestrator.get_toy_datasets() if include_toy_datasets else []
+            auth_datasets = orchestrator.users.get_auth_datasets(current_user.username)
+            return auth_datasets, toy_datasets
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e)) from e
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.get(

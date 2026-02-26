@@ -1,6 +1,8 @@
+import asyncio
 import importlib
 import logging
 import time
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from importlib.abc import Traversable
 from logging.handlers import TimedRotatingFileHandler
@@ -48,6 +50,11 @@ async def lifespan(app: FastAPI):
     """
     Frame the execution of the api
     """
+    # Configure a larger thread pool for sync work offloaded via asyncio.to_thread.
+    # Python default is min(32, os.cpu_count()+4) which can be too small when many
+    # users are polling project state, annotating, and training concurrently.
+    loop = asyncio.get_running_loop()
+    loop.set_default_executor(ThreadPoolExecutor(max_workers=40))
     print("Active Tigger starting")
     yield
     print("Active Tigger closing")
@@ -174,11 +181,14 @@ async def restart_queue(
     """
     Restart the queue & the memory
     """
-    test_rights(ServerAction.MANAGE_SERVER, current_user.username)
-    try:
-        orchestrator.reset()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    def _impl():
+        test_rights(ServerAction.MANAGE_SERVER, current_user.username)
+        try:
+            orchestrator.reset()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @app.get("/server")
@@ -196,14 +206,22 @@ async def login_for_access_token(
     """
     Authentificate user from username/password and return token
     """
-    try:
-        user = orchestrator.users.authenticate_user(form_data.username, form_data.password)
-        access_token = orchestrator.create_access_token(
-            data={"sub": user.username}, expires_min=120
-        )
-        return TokenModel(access_token=access_token, token_type="bearer", status=user.status)
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=str(e)) from e
+
+    def _impl():
+        try:
+            user = orchestrator.users.authenticate_user(
+                form_data.username, form_data.password
+            )
+            access_token = orchestrator.create_access_token(
+                data={"sub": user.username}, expires_min=120
+            )
+            return TokenModel(
+                access_token=access_token, token_type="bearer", status=user.status
+            )
+        except Exception as e:
+            raise HTTPException(status_code=401, detail=str(e)) from e
+
+    return await asyncio.to_thread(_impl)
 
 
 @app.get("/logs", dependencies=[Depends(verified_user)])
@@ -215,15 +233,19 @@ async def get_logs(
     """
     Get all logs for a username/project
     """
-    if project_slug == "all":
-        test_rights(ServerAction.MANAGE_SERVER, current_user.username)
-    else:
-        test_rights(ProjectAction.GET, current_user.username, project_slug)
-    df = orchestrator.get_logs(project_slug, limit)
-    return TableOutModel(
-        items=df.to_dict(orient="records"),
-        total=limit,
-    )
+
+    def _impl():
+        if project_slug == "all":
+            test_rights(ServerAction.MANAGE_SERVER, current_user.username)
+        else:
+            test_rights(ProjectAction.GET, current_user.username, project_slug)
+        df = orchestrator.get_logs(project_slug, limit)
+        return TableOutModel(
+            items=df.to_dict(orient="records"),
+            total=limit,
+        )
+
+    return await asyncio.to_thread(_impl)
 
 
 @app.post("/stop", dependencies=[Depends(verified_user)])
@@ -238,19 +260,24 @@ async def stop_process(
     - unique_id: stop a specific process (only for administrator)
     - kind: stop all processes of a given kind for the user
     """
-    if unique_id is None and kind is None:
-        raise HTTPException(status_code=400, detail="You must provide a unique_id or a kind")
-    try:
-        if unique_id is not None:
-            test_rights(ServerAction.MANAGE_SERVER, current_user.username)
-            orchestrator.stop_process(unique_id, current_user.username)
-        if project_slug is not None:
-            # rights already checked
-            orchestrator.stop_user_processes(current_user.username, project_slug, kind)
-        orchestrator.log_action(
-            current_user.username,
-            f"STOP PROCESS: {kind if kind is not None else unique_id}",
-            "general",
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        if unique_id is None and kind is None:
+            raise HTTPException(
+                status_code=400, detail="You must provide a unique_id or a kind"
+            )
+        try:
+            if unique_id is not None:
+                test_rights(ServerAction.MANAGE_SERVER, current_user.username)
+                orchestrator.stop_process(unique_id, current_user.username)
+            if project_slug is not None:
+                orchestrator.stop_user_processes(current_user.username, project_slug, kind)
+            orchestrator.log_action(
+                current_user.username,
+                f"STOP PROCESS: {kind if kind is not None else unique_id}",
+                "general",
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)

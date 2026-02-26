@@ -1,3 +1,4 @@
+import asyncio
 from typing import Annotated
 
 from fastapi import (
@@ -30,15 +31,18 @@ async def get_messages(
     - all if root
     - only for oneself
     """
-    try:
-        if current_user.username == "root":
-            return orchestrator.messages.get_messages(kind, from_user, for_user, for_project)
-        else:
-            return orchestrator.messages.get_messages(
-                kind, from_user, current_user.username, for_project
-            )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    def _impl():
+        try:
+            if current_user.username == "root":
+                return orchestrator.messages.get_messages(kind, from_user, for_user, for_project)
+            else:
+                return orchestrator.messages.get_messages(
+                    kind, from_user, current_user.username, for_project
+                )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e)) from e
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.post("/messages")
@@ -49,13 +53,16 @@ async def post_message(
     """
     Post a new message
     """
-    test_rights(ServerAction.MANAGE_SERVER, current_user.username)
-    try:
-        orchestrator.messages.add_message(
-            user_name=current_user.username, kind=message.kind, content=message.content
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    def _impl():
+        test_rights(ServerAction.MANAGE_SERVER, current_user.username)
+        try:
+            orchestrator.messages.add_message(
+                user_name=current_user.username, kind=message.kind, content=message.content
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.post("/messages/delete")
@@ -66,8 +73,11 @@ async def delete_message(
     """
     Delete a message
     """
-    test_rights(ServerAction.MANAGE_SERVER, current_user.username)
-    try:
-        orchestrator.messages.delete_message(message_id)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    def _impl():
+        test_rights(ServerAction.MANAGE_SERVER, current_user.username)
+        try:
+            orchestrator.messages.delete_message(message_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)

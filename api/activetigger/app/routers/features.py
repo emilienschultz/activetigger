@@ -1,3 +1,4 @@
+import asyncio
 from typing import Annotated
 
 import pandas as pd
@@ -36,29 +37,33 @@ async def post_embeddings(
     - same prcess
     - specific process : function + temporary file + update
     """
-    test_rights(ProjectAction.ADD, current_user.username, project.name)
-    try:
-        # gather all text data to compute features on
-        if project.data.train is None:
-            raise HTTPException(
-                status_code=400, detail="No training data available to compute features."
-            )
-        series_list = [project.data.train["text"]]
-        if project.data.valid is not None:
-            series_list.append(project.data.valid["text"])
-        if project.data.test is not None:
-            series_list.append(project.data.test["text"])
-        df = pd.concat(series_list)
 
-        # compute features
-        project.features.compute(
-            df, feature.name, feature.type, feature.parameters, current_user.username
-        )
-        orchestrator.log_action(
-            current_user.username, f"COMPUTE FEATURE: {feature.type}", project.name
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    def _impl():
+        test_rights(ProjectAction.ADD, current_user.username, project.name)
+        try:
+            # gather all text data to compute features on
+            if project.data.train is None:
+                raise HTTPException(
+                    status_code=400, detail="No training data available to compute features."
+                )
+            series_list = [project.data.train["text"]]
+            if project.data.valid is not None:
+                series_list.append(project.data.valid["text"])
+            if project.data.test is not None:
+                series_list.append(project.data.test["text"])
+            df = pd.concat(series_list)
+
+            # compute features
+            project.features.compute(
+                df, feature.name, feature.type, feature.parameters, current_user.username
+            )
+            orchestrator.log_action(
+                current_user.username, f"COMPUTE FEATURE: {feature.type}", project.name
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.post("/features/delete", dependencies=[Depends(verified_user)])
@@ -70,12 +75,18 @@ async def delete_feature(
     """
     Delete a specific feature
     """
-    test_rights(ProjectAction.DELETE, current_user.username, project.name)
-    try:
-        project.features.delete(name)
-        orchestrator.log_action(current_user.username, f"DELETE FEATURE: {name}", project.name)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        test_rights(ProjectAction.DELETE, current_user.username, project.name)
+        try:
+            project.features.delete(name)
+            orchestrator.log_action(
+                current_user.username, f"DELETE FEATURE: {name}", project.name
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.get("/features/available", dependencies=[Depends(verified_user)])
@@ -85,7 +96,11 @@ async def get_feature_info(
     """
     Get feature info
     """
-    try:
-        return project.features.get_available()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        try:
+            return project.features.get_available()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)

@@ -1,3 +1,4 @@
+import asyncio
 from io import StringIO
 from typing import Annotated
 
@@ -34,11 +35,15 @@ async def export_data(
     """
     Export labelled data
     """
-    test_rights(ProjectAction.EXPORT_DATA, current_user.username, project.name)
-    try:
-        return project.export_data(format=format, scheme=scheme, dataset=dataset)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        test_rights(ProjectAction.EXPORT_DATA, current_user.username, project.name)
+        try:
+            return project.export_data(format=format, scheme=scheme, dataset=dataset)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.get("/export/features", dependencies=[Depends(verified_user)])
@@ -51,11 +56,15 @@ async def export_features(
     """
     Export features
     """
-    test_rights(ProjectAction.EXPORT_DATA, current_user.username, project.name)
-    try:
-        return project.export_features(features=features, format=format)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        test_rights(ProjectAction.EXPORT_DATA, current_user.username, project.name)
+        try:
+            return project.export_features(features=features, format=format)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.get("/export/projection", dependencies=[Depends(verified_user)])
@@ -67,11 +76,15 @@ async def export_projection(
     """
     Export features
     """
-    test_rights(ProjectAction.EXPORT_DATA, current_user.username, project.name)
-    try:
-        return project.projections.export(user_name=current_user.username, format=format)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        test_rights(ProjectAction.EXPORT_DATA, current_user.username, project.name)
+        try:
+            return project.projections.export(user_name=current_user.username, format=format)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.get("/export/prediction", dependencies=[Depends(verified_user)])
@@ -85,13 +98,17 @@ async def export_prediction(
     """
     Export annotations
     """
-    test_rights(ProjectAction.EXPORT_DATA, current_user.username, project.name)
-    try:
-        return project.languagemodels.export_prediction(
-            name=name, file_name=f"predict_{dataset}.parquet", format=format
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        test_rights(ProjectAction.EXPORT_DATA, current_user.username, project.name)
+        try:
+            return project.languagemodels.export_prediction(
+                name=name, file_name=f"predict_{dataset}.parquet", format=format
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.get("/export/bert", dependencies=[Depends(verified_user)])
@@ -103,19 +120,23 @@ async def export_bert(
     """
     Export fine-tuned BERT model - file with redirect with nginx
     """
-    test_rights(ProjectAction.EXPORT_DATA, current_user.username, project.name)
-    try:
-        file_path = project.languagemodels.export_bert(name=name)
-        return FastAPIResponse(
-            status_code=200,
-            headers={
-                "X-Accel-Redirect": f"/privatefiles/{file_path.path}",
-                "Content-Disposition": f'attachment; filename="{name}.tar.gz"',
-                "Content-Type": "application/octet-stream",
-            },
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        test_rights(ProjectAction.EXPORT_DATA, current_user.username, project.name)
+        try:
+            file_path = project.languagemodels.export_bert(name=name)
+            return FastAPIResponse(
+                status_code=200,
+                headers={
+                    "X-Accel-Redirect": f"/privatefiles/{file_path.path}",
+                    "Content-Disposition": f'attachment; filename="{name}.tar.gz"',
+                    "Content-Type": "application/octet-stream",
+                },
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.get("/export/raw", dependencies=[Depends(verified_user)])
@@ -126,19 +147,23 @@ async def export_raw(
     """
     Export raw data of the project
     """
-    test_rights(ProjectAction.EXPORT_DATA, current_user.username, project.name)
-    try:
-        file_path = project.export_raw(project.name)
-        return FastAPIResponse(
-            status_code=200,
-            headers={
-                "X-Accel-Redirect": f"/privatefiles/{file_path.path}",
-                "Content-Disposition": f'attachment; filename="{project.name}.parquet"',
-                "Content-Type": "application/octet-stream",
-            },
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        test_rights(ProjectAction.EXPORT_DATA, current_user.username, project.name)
+        try:
+            file_path = project.export_raw(project.name)
+            return FastAPIResponse(
+                status_code=200,
+                headers={
+                    "X-Accel-Redirect": f"/privatefiles/{file_path.path}",
+                    "Content-Disposition": f'attachment; filename="{project.name}.parquet"',
+                    "Content-Type": "application/octet-stream",
+                },
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 # This is a temporary fix for the sqlite issue that will send static links only when sql database (without nginx redirection)
@@ -151,17 +176,21 @@ async def export_static(
     """
     Get static links of the project
     """
-    test_rights(ProjectAction.EXPORT_DATA, current_user.username, project.name)
-    try:
-        # don't return nothing if not direct with sqlite
-        if "sqlite" not in config.database_url:
-            return None
-        r = ProjectStaticFiles(dataset=project.export_raw(project.name))
-        if model is not None:
-            r.model = project.languagemodels.export_bert(name=model)
-        return r
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        test_rights(ProjectAction.EXPORT_DATA, current_user.username, project.name)
+        try:
+            # don't return nothing if not direct with sqlite
+            if "sqlite" not in config.database_url:
+                return None
+            r = ProjectStaticFiles(dataset=project.export_raw(project.name))
+            if model is not None:
+                r.model = project.languagemodels.export_bert(name=model)
+            return r
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.post("/export/generations", dependencies=[Depends(verified_user)])
@@ -173,26 +202,30 @@ async def export_generations(
     """
     Export annotations
     """
-    try:
-        table = project.export_generations(
-            project_slug=project.name,
-            username=current_user.username,
-            params=params,
-        )
 
-        # convert to payload
-        output = StringIO()
-        table.to_csv(output, index=False)
-        csv_data = output.getvalue()
-        output.close()
-        headers = {
-            "Content-Disposition": 'attachment; filename="data.csv"',
-            "Content-Type": "text/csv",
-        }
+    def _impl():
+        try:
+            table = project.export_generations(
+                project_slug=project.name,
+                username=current_user.username,
+                params=params,
+            )
 
-        return Response(content=csv_data, media_type="text/csv", headers=headers)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+            # convert to payload
+            output = StringIO()
+            table.to_csv(output, index=False)
+            csv_data = output.getvalue()
+            output.close()
+            headers = {
+                "Content-Disposition": 'attachment; filename="data.csv"',
+                "Content-Type": "text/csv",
+            }
+
+            return Response(content=csv_data, media_type="text/csv", headers=headers)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.get("/export/bertopic/topics", dependencies=[Depends(verified_user)])
@@ -204,11 +237,15 @@ async def export_bertopics_topics(
     """
     Export annotations
     """
-    test_rights(ProjectAction.EXPORT_DATA, current_user.username, project.name)
-    try:
-        return project.bertopic.export_topics(name=name)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        test_rights(ProjectAction.EXPORT_DATA, current_user.username, project.name)
+        try:
+            return project.bertopic.export_topics(name=name)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.get("/export/bertopic/clusters", dependencies=[Depends(verified_user)])
@@ -220,11 +257,15 @@ async def export_bertopics_clusters(
     """
     Export annotations
     """
-    test_rights(ProjectAction.EXPORT_DATA, current_user.username, project.name)
-    try:
-        return project.bertopic.export_clusters(name=name)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        test_rights(ProjectAction.EXPORT_DATA, current_user.username, project.name)
+        try:
+            return project.bertopic.export_clusters(name=name)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.get("/export/bertopic/report", dependencies=[Depends(verified_user)])
@@ -236,11 +277,15 @@ async def export_bertopics_report(
     """
     Export annotations
     """
-    test_rights(ProjectAction.EXPORT_DATA, current_user.username, project.name)
-    try:
-        return project.bertopic.export_report(name=name)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        test_rights(ProjectAction.EXPORT_DATA, current_user.username, project.name)
+        try:
+            return project.bertopic.export_report(name=name)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 # @router.get("/export/prediction/quickmodel", dependencies=[Depends(verified_user)])

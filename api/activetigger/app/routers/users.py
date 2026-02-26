@@ -1,3 +1,4 @@
+import asyncio
 from typing import Annotated
 
 from fastapi import (
@@ -32,10 +33,13 @@ async def disconnect_user(token: Annotated[str, Depends(oauth2_scheme)]) -> None
     """
     Revoke user connexion
     """
-    try:
-        orchestrator.revoke_access_token(token)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    def _impl():
+        try:
+            orchestrator.revoke_access_token(token)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e)) from e
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.get("/users/me", tags=["users"])
@@ -45,10 +49,13 @@ async def read_users_me(
     """
     Information on current user
     """
-    try:
-        return UserModel(username=current_user.username, status=current_user.status)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    def _impl():
+        try:
+            return UserModel(username=current_user.username, status=current_user.status)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e)) from e
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.get("/users", tags=["users"])
@@ -58,10 +65,13 @@ async def existing_users(
     """
     Get existing users
     """
-    try:
-        return orchestrator.users.existing_users(current_user.username)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    def _impl():
+        try:
+            return orchestrator.users.existing_users(current_user.username)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e)) from e
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.get("/users/recent", tags=["users"])
@@ -69,7 +79,10 @@ async def recent_users() -> int:
     """
     Get the number of recently connected users
     """
-    return len(orchestrator.db_manager.users_service.get_current_users(300))
+    def _impl():
+        return len(orchestrator.db_manager.users_service.get_current_users(300))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.post("/users/create", dependencies=[Depends(verified_user)], tags=["users"])
@@ -80,11 +93,14 @@ async def create_user(
     """
     Create user
     """
-    test_rights(ServerAction.MANAGE_USERS, current_user.username)
-    try:
-        orchestrator.users.add_user(new_user, current_user.username)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    def _impl():
+        test_rights(ServerAction.MANAGE_USERS, current_user.username)
+        try:
+            orchestrator.users.add_user(new_user, current_user.username)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e)) from e
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.post("/users/delete", dependencies=[Depends(verified_user)], tags=["users"])
@@ -96,11 +112,14 @@ async def delete_user(
     - root can delete all
     - users can only delete account they created
     """
-    test_rights(ServerAction.MANAGE_USERS, current_user.username)
-    try:
-        orchestrator.users.delete_user(user_to_delete, current_user.username)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    def _impl():
+        test_rights(ServerAction.MANAGE_USERS, current_user.username)
+        try:
+            orchestrator.users.delete_user(user_to_delete, current_user.username)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e)) from e
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.post("/users/changepwd", dependencies=[Depends(verified_user)], tags=["users"])
@@ -111,12 +130,15 @@ async def change_password(
     """
     Change our own password for an account
     """
-    try:
-        orchestrator.users.change_password(
-            current_user.username, changepwd.pwdold, changepwd.pwd1, changepwd.pwd2
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    def _impl():
+        try:
+            orchestrator.users.change_password(
+                current_user.username, changepwd.pwdold, changepwd.pwd1, changepwd.pwd2
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e)) from e
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.post("/users/auth/{action}", dependencies=[Depends(verified_user)], tags=["users"])
@@ -128,30 +150,35 @@ async def set_auth(
     """
     Modify user auth on a specific project
     """
-    test_rights(ProjectAction.UPDATE, current_user.username, auth.project_slug)
-    if action == "add":
-        if not auth.status:
-            raise HTTPException(status_code=400, detail="Missing status")
-        try:
-            orchestrator.users.set_auth(auth)
-            orchestrator.log_action(current_user.username, f"ADD AUTH USER: {auth.username}", "all")
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e)) from e
+    def _impl():
+        test_rights(ProjectAction.UPDATE, current_user.username, auth.project_slug)
+        if action == "add":
+            if not auth.status:
+                raise HTTPException(status_code=400, detail="Missing status")
+            try:
+                orchestrator.users.set_auth(auth)
+                orchestrator.log_action(
+                    current_user.username, f"ADD AUTH USER: {auth.username}", "all"
+                )
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=str(e)) from e
 
-        return None
+            return None
 
-    if action == "delete":
-        try:
-            orchestrator.users.delete_auth(auth.username, auth.project_slug)
-            orchestrator.log_action(
-                current_user.username, f"DELETE AUTH USER: {auth.username}", "all"
-            )
-        except Exception as e:
-            raise HTTPException(status_code=500) from e
+        if action == "delete":
+            try:
+                orchestrator.users.delete_auth(auth.username, auth.project_slug)
+                orchestrator.log_action(
+                    current_user.username, f"DELETE AUTH USER: {auth.username}", "all"
+                )
+            except Exception as e:
+                raise HTTPException(status_code=500) from e
 
-        return None
+            return None
 
-    raise HTTPException(status_code=400, detail="Action not found")
+        raise HTTPException(status_code=400, detail="Action not found")
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.get("/users/statistics", dependencies=[Depends(verified_user)], tags=["users"])
@@ -161,16 +188,22 @@ async def get_statistics(
     """
     Get statistics for specific user
     """
-    test_rights(ServerAction.MANAGE_USERS, current_user.username)
-    try:
-        return orchestrator.users.get_statistics(username)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    def _impl():
+        test_rights(ServerAction.MANAGE_USERS, current_user.username)
+        try:
+            return orchestrator.users.get_statistics(username)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e)) from e
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.post("/users/resetpwd", tags=["users"])
 async def reset_password(mail: str) -> None:
-    try:
-        orchestrator.users.reset_password(mail)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    def _impl():
+        try:
+            orchestrator.users.reset_password(mail)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e)) from e
+
+    return await asyncio.to_thread(_impl)

@@ -124,32 +124,39 @@ async def copy_existing_data(
     if copy dataset from toy datasets: orchestrator.path_toy_datasets/NAME.parquet
     if copy from project: orchestrator.path/NAME/data_all.parquet
     """
-    test_rights(ServerAction.CREATE_PROJECT, current_user.username)
+    def _impl():
+        test_rights(ServerAction.CREATE_PROJECT, current_user.username)
 
-    # check if the project does not already exist
-    if orchestrator.exists(project_name):
-        raise HTTPException(
-            status_code=500, detail="Project already exists, please choose another name"
-        )
-    # try to copy the project
-    try:
-        # create a folder for the project to be created
-        project_slug = orchestrator.check_project_name(project_name)
-        if from_toy_dataset:
-            source_path = Path(f"{orchestrator.path_toy_datasets}/{source_project}.parquet")
-        else:
-            source_path = Path(f"{orchestrator.path}/{source_project}/{config.data_all}")
-        project_path = Path(f"{orchestrator.path}/{project_slug}")
-        os.makedirs(project_path)
+        # check if the project does not already exist
+        if orchestrator.exists(project_name):
+            raise HTTPException(
+                status_code=500, detail="Project already exists, please choose another name"
+            )
+        # try to copy the project
+        try:
+            # create a folder for the project to be created
+            project_slug = orchestrator.check_project_name(project_name)
+            if from_toy_dataset:
+                source_path = Path(
+                    f"{orchestrator.path_toy_datasets}/{source_project}.parquet"
+                )
+            else:
+                source_path = Path(
+                    f"{orchestrator.path}/{source_project}/{config.data_all}"
+                )
+            project_path = Path(f"{orchestrator.path}/{project_slug}")
+            os.makedirs(project_path)
 
-        # copy the full dataset
-        shutil.copyfile(
-            source_path,
-            project_path.joinpath(config.data_all),
-        )
+            # copy the full dataset
+            shutil.copyfile(
+                source_path,
+                project_path.joinpath(config.data_all),
+            )
 
-    except Exception as e:
-        # if failed, remove the project folder
-        if project_path.exists():
-            shutil.rmtree(project_path)
-        raise HTTPException(status_code=500, detail=str(e))
+        except Exception as e:
+            # if failed, remove the project folder
+            if project_path.exists():
+                shutil.rmtree(project_path)
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)

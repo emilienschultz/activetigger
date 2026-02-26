@@ -1,3 +1,4 @@
+import asyncio
 from typing import Annotated
 
 from fastapi import (
@@ -36,10 +37,14 @@ async def list_generation_models() -> list[GenerationModelApi]:
     Returns the list of the available GenAI models for generation
     API (not the models themselves)
     """
-    try:
-        return Generations.get_available_models()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        try:
+            return Generations.get_available_models()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.get("/generate/models", dependencies=[Depends(verified_user)])
@@ -50,11 +55,15 @@ async def list_project_generation_models(
     """
     Returns the list of the available GenAI models configure for a project
     """
-    test_rights(ProjectAction.GENERATE, current_user.username, project.name)
-    try:
-        return project.generations.available_models(project.name)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        test_rights(ProjectAction.GENERATE, current_user.username, project.name)
+        try:
+            return project.generations.available_models(project.name)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.post("/generate/models", dependencies=[Depends(verified_user)])
@@ -66,11 +75,15 @@ async def add_project_generation_models(
     """
     Add a new GenAI model for the project
     """
-    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
-    try:
-        return project.generations.add_model(project.name, model, current_user.username)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        test_rights(ProjectAction.UPDATE, current_user.username, project.name)
+        try:
+            return project.generations.add_model(project.name, model, current_user.username)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.delete(
@@ -85,11 +98,15 @@ async def delete_project_generation_models(
     """
     Delete a GenAI model from the project
     """
-    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
-    try:
-        project.generations.delete_model(project.name, model_id)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        test_rights(ProjectAction.UPDATE, current_user.username, project.name)
+        try:
+            project.generations.delete_model(project.name, model_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.post("/generate/start", dependencies=[Depends(verified_user)])
@@ -102,18 +119,21 @@ async def postgenerate(
     Launch a call to generate from a prompt
     """
 
-    try:
-        project.generations.check_prompts(request.prompt, project.params.cols_context)
-        project.start_generation(request, current_user.username)
-        orchestrator.log_action(
-            current_user.username,
-            "START GENERATE",
-            project.params.project_slug,
-        )
-        return None
+    def _impl():
+        try:
+            project.generations.check_prompts(request.prompt, project.params.cols_context)
+            project.start_generation(request, current_user.username)
+            orchestrator.log_action(
+                current_user.username,
+                "START GENERATE",
+                project.params.project_slug,
+            )
+            return None
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.post("/generate/elements", dependencies=[Depends(verified_user)])
@@ -125,12 +145,20 @@ async def getgenerate(
     """
     Get elements generated
     """
-    test_rights(ProjectAction.GENERATE, current_user.username, project.name)
-    try:
-        table = project.generations.get_generated(project.name, current_user.username, params)
-        return TableOutModel(items=table.to_dict(orient="records"), total=len(table))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="Error in loading generated data" + str(e))
+
+    def _impl():
+        test_rights(ProjectAction.GENERATE, current_user.username, project.name)
+        try:
+            table = project.generations.get_generated(
+                project.name, current_user.username, params
+            )
+            return TableOutModel(items=table.to_dict(orient="records"), total=len(table))
+        except Exception as e:
+            raise HTTPException(
+                status_code=500, detail="Error in loading generated data" + str(e)
+            )
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.post("/generate/elements/drop", dependencies=[Depends(verified_user)])
@@ -141,11 +169,15 @@ async def dropgenerate(
     """
     Drop all elements from prediction for a user
     """
-    test_rights(ProjectAction.GENERATE, current_user.username, project.name)
-    try:
-        project.generations.drop_generated(project.name, current_user.username)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        test_rights(ProjectAction.GENERATE, current_user.username, project.name)
+        try:
+            project.generations.drop_generated(project.name, current_user.username)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.get("/generate/prompts", dependencies=[Depends(verified_user)])
@@ -156,11 +188,15 @@ async def get_prompts(
     """
     Get the list of prompts for the project
     """
-    test_rights(ProjectAction.GENERATE, current_user.username, project.name)
-    try:
-        return project.generations.get_prompts(project.name)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        test_rights(ProjectAction.GENERATE, current_user.username, project.name)
+        try:
+            return project.generations.get_prompts(project.name)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.post("/generate/prompts/add", dependencies=[Depends(verified_user)])
@@ -172,11 +208,15 @@ async def add_prompt(
     """
     Add a prompt to the project
     """
-    test_rights(ProjectAction.GENERATE, current_user.username, project.name)
-    try:
-        project.generations.save_prompt(prompt, current_user.username, project.name)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        test_rights(ProjectAction.GENERATE, current_user.username, project.name)
+        try:
+            project.generations.save_prompt(prompt, current_user.username, project.name)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.post("/generate/prompts/delete", dependencies=[Depends(verified_user)])
@@ -188,8 +228,12 @@ async def delete_prompt(
     """
     Delete a prompt from the project
     """
-    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
-    try:
-        project.generations.delete_prompt(int(prompt_id))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        test_rights(ProjectAction.UPDATE, current_user.username, project.name)
+        try:
+            project.generations.delete_prompt(int(prompt_id))
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)

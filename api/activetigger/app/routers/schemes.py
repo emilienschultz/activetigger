@@ -1,3 +1,4 @@
+import asyncio
 from typing import Annotated
 
 from fastapi import (
@@ -31,18 +32,21 @@ async def rename_label(
     """
     Rename a a label
     """
-    test_rights(ProjectAction.UPDATE, current_user.username, project.project_slug)
 
-    try:
-        project.schemes.rename_label(former_label, new_label, scheme, current_user.username)
-        orchestrator.log_action(
-            current_user.username,
-            f"RENAME LABEL: scheme:{scheme} before:{former_label} after:{new_label}",
-            project.name,
-        )
-        return None
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    def _impl():
+        test_rights(ProjectAction.UPDATE, current_user.username, project.project_slug)
+        try:
+            project.schemes.rename_label(former_label, new_label, scheme, current_user.username)
+            orchestrator.log_action(
+                current_user.username,
+                f"RENAME LABEL: scheme:{scheme} before:{former_label} after:{new_label}",
+                project.name,
+            )
+            return None
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.post("/schemes/label/{action}", dependencies=[Depends(verified_user)])
@@ -56,34 +60,37 @@ async def add_label(
     """
     Add a label to a scheme
     """
-    if action == "add":
-        test_rights(ProjectAction.ADD, current_user.username, project.name)
-        try:
-            project.schemes.add_label(label, scheme, current_user.username)
 
-            orchestrator.log_action(
-                current_user.username,
-                f"ADD LABEL: scheme:{scheme} label:{label}",
-                project.name,
-            )
-            return None
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+    def _impl():
+        if action == "add":
+            test_rights(ProjectAction.ADD, current_user.username, project.name)
+            try:
+                project.schemes.add_label(label, scheme, current_user.username)
+                orchestrator.log_action(
+                    current_user.username,
+                    f"ADD LABEL: scheme:{scheme} label:{label}",
+                    project.name,
+                )
+                return None
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=str(e))
 
-    if action == "delete":
-        test_rights(ProjectAction.DELETE, current_user.username, project.name)
-        try:
-            project.schemes.delete_label(label, scheme, current_user.username)
-            orchestrator.log_action(
-                current_user.username,
-                f"DELETE LABEL: scheme:{scheme} label:{label}",
-                project.name,
-            )
-            return None
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+        if action == "delete":
+            test_rights(ProjectAction.DELETE, current_user.username, project.name)
+            try:
+                project.schemes.delete_label(label, scheme, current_user.username)
+                orchestrator.log_action(
+                    current_user.username,
+                    f"DELETE LABEL: scheme:{scheme} label:{label}",
+                    project.name,
+                )
+                return None
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=str(e))
 
-    raise HTTPException(status_code=500, detail="Wrong action")
+        raise HTTPException(status_code=500, detail="Wrong action")
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.post("/schemes/codebook", dependencies=[Depends(verified_user)])
@@ -95,18 +102,21 @@ async def post_codebook(
     """
     Add codebook
     """
-    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
 
-    try:
-        project.schemes.add_codebook(codebook.scheme, codebook.content, codebook.time)
-        orchestrator.log_action(
-            current_user.username,
-            f"MODIFY CODEBOOK: scheme {codebook.scheme}",
-            project.name,
-        )
-        return None
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    def _impl():
+        test_rights(ProjectAction.UPDATE, current_user.username, project.name)
+        try:
+            project.schemes.add_codebook(codebook.scheme, codebook.content, codebook.time)
+            orchestrator.log_action(
+                current_user.username,
+                f"MODIFY CODEBOOK: scheme {codebook.scheme}",
+                project.name,
+            )
+            return None
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.get("/schemes/codebook", dependencies=[Depends(verified_user)])
@@ -118,11 +128,15 @@ async def get_codebook(
     """
     Get the codebook of a scheme for a project
     """
-    test_rights(ProjectAction.GET, current_user.username, project.name)
-    try:
-        return project.schemes.get_codebook(scheme)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        test_rights(ProjectAction.GET, current_user.username, project.name)
+        try:
+            return project.schemes.get_codebook(scheme)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.post("/schemes/rename", dependencies=[Depends(verified_user)])
@@ -135,17 +149,21 @@ async def rename_scheme(
     """
     Rename a scheme
     """
-    test_rights(ProjectAction.UPDATE, current_user.username, project.name)
-    try:
-        project.schemes.rename_scheme(old_name, new_name)
-        orchestrator.log_action(
-            current_user.username,
-            f"RENAME SCHEME: {old_name} to {new_name}",
-            project.name,
-        )
-        return None
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        test_rights(ProjectAction.UPDATE, current_user.username, project.name)
+        try:
+            project.schemes.rename_scheme(old_name, new_name)
+            orchestrator.log_action(
+                current_user.username,
+                f"RENAME SCHEME: {old_name} to {new_name}",
+                project.name,
+            )
+            return None
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.post("/schemes/duplicate", dependencies=[Depends(verified_user)])
@@ -157,17 +175,23 @@ async def duplicate_scheme(
     """
     Duplicate a scheme
     """
-    test_rights(ProjectAction.ADD, current_user.username, project.name)
-    try:
-        project.schemes.duplicate_scheme(scheme_name, scheme_name + "_copy", current_user.username)
-        orchestrator.log_action(
-            current_user.username,
-            f"DUPLICATE SCHEME: {scheme_name}",
-            project.name,
-        )
-        return None
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        test_rights(ProjectAction.ADD, current_user.username, project.name)
+        try:
+            project.schemes.duplicate_scheme(
+                scheme_name, scheme_name + "_copy", current_user.username
+            )
+            orchestrator.log_action(
+                current_user.username,
+                f"DUPLICATE SCHEME: {scheme_name}",
+                project.name,
+            )
+            return None
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.get("/schemes/compare", dependencies=[Depends(verified_user)])
@@ -181,11 +205,15 @@ async def compare_schemes(
     """
     Compare two schemes
     """
-    test_rights(ProjectAction.GET, current_user.username, project.name)
-    try:
-        return project.schemes.compare(schemeA, schemeB, dataset)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+    def _impl():
+        test_rights(ProjectAction.GET, current_user.username, project.name)
+        try:
+            return project.schemes.compare(schemeA, schemeB, dataset)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return await asyncio.to_thread(_impl)
 
 
 @router.post("/schemes/{action}", dependencies=[Depends(verified_user)])
@@ -198,43 +226,47 @@ async def post_schemes(
     """
     Add, Update or Delete scheme
     """
-    if action == "add":
-        test_rights(ProjectAction.ADD, current_user.username, project.name)
-        try:
-            project.schemes.add_scheme(
-                scheme.name, scheme.labels, scheme.kind, current_user.username
-            )
-            orchestrator.log_action(
-                current_user.username,
-                f"ADD SCHEME: {scheme.name}",
-                project.name,
-            )
-            return None
-        except Exception:
-            raise HTTPException(status_code=500, detail=str)
-    if action == "delete":
-        test_rights(ProjectAction.DELETE, current_user.username, project.name)
-        try:
-            project.schemes.delete_scheme(scheme.name)
-            orchestrator.log_action(
-                current_user.username,
-                f"DELETE SCHEME: {scheme.name}",
-                project.name,
-            )
-            return None
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
 
-    if action == "update":
-        test_rights(ProjectAction.UPDATE, current_user.username, project.name)
-        try:
-            project.schemes.update_scheme(scheme.name, scheme.labels)
-            orchestrator.log_action(
-                current_user.username,
-                f"UPDATE SCHEME: {scheme.name}",
-                project.name,
-            )
-            return None
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
-    raise HTTPException(status_code=400, detail="Wrong route")
+    def _impl():
+        if action == "add":
+            test_rights(ProjectAction.ADD, current_user.username, project.name)
+            try:
+                project.schemes.add_scheme(
+                    scheme.name, scheme.labels, scheme.kind, current_user.username
+                )
+                orchestrator.log_action(
+                    current_user.username,
+                    f"ADD SCHEME: {scheme.name}",
+                    project.name,
+                )
+                return None
+            except Exception:
+                raise HTTPException(status_code=500, detail=str)
+        if action == "delete":
+            test_rights(ProjectAction.DELETE, current_user.username, project.name)
+            try:
+                project.schemes.delete_scheme(scheme.name)
+                orchestrator.log_action(
+                    current_user.username,
+                    f"DELETE SCHEME: {scheme.name}",
+                    project.name,
+                )
+                return None
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=str(e))
+
+        if action == "update":
+            test_rights(ProjectAction.UPDATE, current_user.username, project.name)
+            try:
+                project.schemes.update_scheme(scheme.name, scheme.labels)
+                orchestrator.log_action(
+                    current_user.username,
+                    f"UPDATE SCHEME: {scheme.name}",
+                    project.name,
+                )
+                return None
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=400, detail="Wrong route")
+
+    return await asyncio.to_thread(_impl)
