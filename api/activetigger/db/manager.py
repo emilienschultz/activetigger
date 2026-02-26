@@ -20,6 +20,8 @@ from activetigger.functions import get_hash, get_root_pwd
 def set_sqlite_pragma(dbapi_connection, _):
     cursor = dbapi_connection.cursor()
     cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.execute("PRAGMA journal_mode=WAL")
+    cursor.execute("PRAGMA busy_timeout=5000")
     cursor.close()
 
 
@@ -40,11 +42,14 @@ class DatabaseManager:
 
         # connect the session
         print(f"connecting to DB ${db_url}")
-        self.engine = create_engine(db_url)
-
-        # enable foreign key verification in sqlite
         if db_url.startswith("sqlite"):
+            self.engine = create_engine(
+                db_url,
+                connect_args={"check_same_thread": False},
+            )
             event.listen(self.engine, "connect", set_sqlite_pragma)
+        else:
+            self.engine = create_engine(db_url)
 
         self.SessionMaker = sessionmaker(bind=self.engine)
         self.default_user = "server"
