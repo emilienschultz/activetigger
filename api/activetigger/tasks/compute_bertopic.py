@@ -459,7 +459,11 @@ class ComputeBertopic(BaseTask):
             topics_df = topics_df.reset_index()
 
         topics_df.to_csv(self.path_run.joinpath("bertopic_topics.csv"), index=False)
-        df["cluster"].to_csv(self.path_run.joinpath("bertopic_clusters.csv"))
+        (
+            df.reset_index() # id_internal is the index, to make it clearer, i reset the index and select id_internal in the cols to save
+            [["id_internal", "id_external", "cluster"]] # cols to save
+            .to_csv(self.path_run.joinpath("bertopic_clusters.csv"), index = False)
+        )
 
         with open(self.path_run.joinpath("params.json"), "w") as f:
             json.dump(
