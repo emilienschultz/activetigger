@@ -144,7 +144,7 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
     }
     if (
       activeModel &&
-      !Object.keys(availableBertModels).includes(activeModel.value) &&
+      !Object.keys(availableBertModels)?.includes(activeModel.value) &&
       activeModel.type === 'languagemodel'
     ) {
       setAppContext((prev) => ({ ...prev, activeModel: null }));
