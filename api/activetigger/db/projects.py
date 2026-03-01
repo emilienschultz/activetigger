@@ -562,7 +562,7 @@ class ProjectsService:
         with self.Session() as session:
             subquery = (
                 select(
-                    Annotations.id,
+                    Annotations.element_id,
                     Annotations.user_name,
                     func.max(Annotations.time).label("last_timestamp"),
                 )
@@ -576,7 +576,14 @@ class ProjectsService:
                 Annotations.user_name,
                 Annotations.time,
                 Annotations.dataset,
-            ).join(subquery, Annotations.id == subquery.c.id)
+            ).join(
+                subquery,
+                and_(
+                    Annotations.element_id == subquery.c.element_id,
+                    Annotations.user_name == subquery.c.user_name,
+                    Annotations.time == subquery.c.last_timestamp,
+                ),
+            )
 
             results = session.execute(query).fetchall()
             return [
