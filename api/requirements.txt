@@ -1,10 +1,10 @@
 fastapi
 uvicorn
-torch
+torch==2.6.0
 #git+https://github.com/huggingface/transformers.git #transformers[torch]
 transformers>=4.51.0
 accelerate
-spacy
+spacy>=3.8
 matplotlib
 plotly==6.0.1
 pandas
@@ -31,8 +31,8 @@ python-slugify
 psutil
 openpyxl
 fasttext @ git+https://github.com/facebookresearch/fastText.git@main
-https://github.com/explosion/spacy-models/releases/download/fr_core_news_sm-3.7.0/fr_core_news_sm-3.7.0.tar.gz#egg=fr_core_news_sm
-https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1.tar.gz#egg=en_core_web_sm
+https://github.com/explosion/spacy-models/releases/download/fr_core_news_sm-3.8.0/fr_core_news_sm-3.8.0.tar.gz#egg=fr_core_news_sm
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0.tar.gz#egg=en_core_web_sm
 ruff
 black
 mypy
