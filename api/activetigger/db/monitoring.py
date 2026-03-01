@@ -82,6 +82,7 @@ class MonitoringService:
             if duration is not None:
                 process.duration = duration
             session.commit()
+        session.close()
 
     def get_completed_processes(
         self, kind: str, username: str | None, limit: int = 100
