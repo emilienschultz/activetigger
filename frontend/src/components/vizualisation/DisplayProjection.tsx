@@ -1,15 +1,10 @@
-import { FC, useCallback, useEffect, useMemo, useState } from 'react';
+import { FC, useEffect, useMemo } from 'react';
 
-import { FaLock } from 'react-icons/fa';
-import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
-import { useNavigate } from 'react-router-dom';
-import { Tooltip } from 'react-tooltip';
-import { useGetElementById, useGetProjectionData } from '../../core/api';
+import { useGetProjectionData } from '../../core/api';
 import { useAuth } from '../../core/auth';
 import { useAppContext } from '../../core/context';
 import { ElementOutModel } from '../../types';
-import { ProjectionVizSigma } from '../ProjectionVizSigma';
-import { MarqueBoundingBox } from '../ProjectionVizSigma/MarqueeController';
+import { ProjectionExplorer } from '../ProjectionExplorer';
 
 interface DisplayProjectionProps {
   projectName: string | null;
@@ -25,17 +20,10 @@ export const DisplayProjection: FC<DisplayProjectionProps> = ({
 }) => {
   // hook for all the parameters
   const {
-    appContext: {
-      currentProject: project,
-      currentProjection,
-      selectionConfig,
-      labelColorMapping,
-      activeModel,
-    },
+    appContext: { currentProject: project, currentProjection, labelColorMapping, activeModel },
     setAppContext,
   } = useAppContext();
   const { authenticatedUser } = useAuth();
-  const navigate = useNavigate();
 
   // fetch projection data with the API (null if no model)
   const { projectionData, reFetchProjectionData } = useGetProjectionData(
@@ -67,118 +55,15 @@ export const DisplayProjection: FC<DisplayProjectionProps> = ({
     setAppContext,
   ]);
 
-  // element to display
-  const { getElementById } = useGetElementById();
-  const [selectedElement, setSelectedElement] = useState<ElementOutModel | null>(null);
-  const setSelectedId = useCallback(
-    (id?: string) => {
-      if (id)
-        getElementById(id, 'train').then((element) => {
-          setSelectedElement(element || null);
-        });
-      else setSelectedElement(null);
-    },
-    [getElementById, setSelectedElement],
-  );
-
-  // if the element changes from outside, update the selectedElement
-  useEffect(() => {
-    setSelectedElement(currentElement || null);
-  }, [currentElement]);
-
   return (
     <div style={{ width: '80%' }}>
       {currentProjection ? (
-        <>
-          <div className="my-2">
-            <label style={{ display: 'block' }}>
-              <input
-                type="checkbox"
-                checked={selectionConfig.frameSelection}
-                onChange={(_) => {
-                  setAppContext((prev) => ({
-                    ...prev,
-                    selectionConfig: {
-                      ...selectionConfig,
-                      frameSelection: !selectionConfig.frameSelection,
-                    },
-                  }));
-                }}
-              />
-              <span className="lock">
-                <FaLock /> Lock on selection
-              </span>
-              <a className="lockhelp">
-                <HiOutlineQuestionMarkCircle />
-              </a>
-              <Tooltip anchorSelect=".lockhelp" place="top">
-                Once a vizualisation computed, you can use the square tool to select an area (or
-                remove the square).<br></br> Then you can lock the selection, and only elements in
-                the selected area will be available for annoation.
-              </Tooltip>
-            </label>
-          </div>
-
-          <div className="d-flex flex-column">
-            <div>
-              <ProjectionVizSigma
-                data={currentProjection}
-                selectedId={selectedElement?.element_id || undefined}
-                setSelectedId={setSelectedId}
-                frame={selectionConfig.frame}
-                setFrameBbox={(bbox?: MarqueBoundingBox) => {
-                  setAppContext((prev) => ({
-                    ...prev,
-                    selectionConfig: {
-                      ...selectionConfig,
-                      frame: bbox ? [bbox.x.min, bbox.x.max, bbox.y.min, bbox.y.max] : undefined,
-                    },
-                  }));
-                }}
-                labelColorMapping={labelColorMapping || {}}
-              />
-            </div>
-            <>
-              {selectedElement ? (
-                <div
-                  style={{
-                    overflowY: 'auto',
-                    maxHeight: '80vh',
-                  }}
-                  className="mx-4"
-                >
-                  <a
-                    className="badge m-0 p-1"
-                    onClick={() =>
-                      navigate(`/projects/${projectName}/tag/${selectedElement.element_id}?tab=tag`)
-                    }
-                    style={{ cursor: 'pointer' }}
-                  >
-                    Text {selectedElement.element_id}
-                  </a>
-                  <div>{selectedElement.text}</div>
-                  <details>
-                    <summary>Previous annotations:</summary>
-                    <ul>
-                      {selectedElement.history?.map((e) => {
-                        return (
-                          <li key={`${e.time}-${e.user}`}>
-                            label: {e.label ? e.label : 'label removed'} ({e.time} by {e.user})
-                            <br />
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </details>
-                </div>
-              ) : (
-                <div className="explanations horizontal center" style={{ flex: '1 1 auto' }}>
-                  Click on an element to display its content
-                </div>
-              )}
-            </>
-          </div>
-        </>
+        <ProjectionExplorer
+          projectName={projectName}
+          data={currentProjection}
+          selectedId={currentElement?.element_id}
+          labelColorMapping={labelColorMapping || {}}
+        />
       ) : (
         <>No projection computed</>
       )}

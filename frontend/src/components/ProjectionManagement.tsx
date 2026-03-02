@@ -1,32 +1,22 @@
 import { pick } from 'lodash';
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
 
 import chroma from 'chroma-js';
-import classNames from 'classnames';
 import { Modal } from 'react-bootstrap';
-import { FaLock, FaPlusCircle } from 'react-icons/fa';
+import { FaPlusCircle } from 'react-icons/fa';
 import { FaGear } from 'react-icons/fa6';
-import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
-import { Tooltip } from 'react-tooltip';
 import { ModelParametersTab } from '../components/ModelParametersTab';
-import {
-  useAddAnnotation,
-  useGetElementById,
-  useGetProjectionData,
-  useUpdateProjection,
-} from '../core/api';
+import { useAddAnnotation, useGetProjectionData, useUpdateProjection } from '../core/api';
 import { useAuth } from '../core/auth';
 import { useAppContext } from '../core/context';
 import { useNotifications } from '../core/notifications';
-import { ElementOutModel, ProjectionParametersModel } from '../types';
+import { ProjectionParametersModel } from '../types';
 import { MulticlassInput } from './Annotation/MulticlassInput';
 import { MultilabelInput } from './Annotation/MultilabelInput';
 import { ButtonNewFeature } from './ButtonNewFeature';
-import { ProjectionVizSigma } from './ProjectionVizSigma';
-import { MarqueBoundingBox } from './ProjectionVizSigma/MarqueeController';
+import { ProjectionExplorer } from './ProjectionExplorer';
 import { StopProcessButton } from './StopProcessButton';
 
 interface ProjectionManagementProps {
@@ -49,18 +39,15 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
     appContext: {
       currentProject: project,
       currentProjection,
-      selectionConfig,
       isComputing,
       labelColorMapping,
       activeModel,
     },
     setAppContext,
   } = useAppContext();
-  const navigate = useNavigate();
   const { notify } = useNotifications();
 
   const { authenticatedUser } = useAuth();
-  const { getElementById } = useGetElementById();
 
   // fetch projection data with the API (null if no model)
   const { projectionData, reFetchProjectionData } = useGetProjectionData(
@@ -180,19 +167,6 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
     setForceRefresh,
   ]);
 
-  // element to display
-  const [selectedElement, setSelectedElement] = useState<ElementOutModel | null>(null);
-  const setSelectedId = useCallback(
-    (id?: string) => {
-      if (id)
-        getElementById(id, 'train').then((element) => {
-          setSelectedElement(element || null);
-        });
-      else setSelectedElement(null);
-    },
-    [getElementById, setSelectedElement],
-  );
-
   type Feature = {
     label: string;
     value: string;
@@ -221,12 +195,11 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
     (label: string | null, elementId?: string) => {
       if (elementId) {
         addAnnotation(elementId, label, '', '');
-        setSelectedId(undefined);
         notify({ type: 'success', message: `Annotation added for ${elementId}` });
         setForceRefresh(true);
       }
     },
-    [addAnnotation, setSelectedId, notify],
+    [addAnnotation, notify],
   );
 
   return (
@@ -245,112 +218,52 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
           <StopProcessButton projectSlug={projectName} />
         )}
         {projectionData && labelColorMapping && (
-          <>
-            <button className="btn-secondary-action" onClick={() => setShowParameters(true)}>
-              <FaGear size={18} />
-              Parameters
-            </button>
-            {(selectionConfig.frame || []).length > 0 && (
-              <label style={{ display: 'block' }}>
-                <input
-                  type="checkbox"
-                  checked={selectionConfig.frameSelection}
-                  onChange={(_) => {
-                    setAppContext((prev) => ({
-                      ...prev,
-                      selectionConfig: {
-                        ...selectionConfig,
-                        frameSelection: !selectionConfig.frameSelection,
-                      },
-                    }));
-                  }}
-                />
-                <FaLock /> Lock on selection
-                <a className="lockhelp">
-                  <HiOutlineQuestionMarkCircle />
-                </a>
-                <Tooltip anchorSelect=".lockhelp" place="top">
-                  Once a vizualisation computed, you can use the square tool to select an area (or
-                  remove the square).<br></br> Then you can lock the selection, and only elements in
-                  the selected area will be available for annoation.
-                </Tooltip>
-              </label>
-            )}
-          </>
+          <button className="btn-secondary-action" onClick={() => setShowParameters(true)}>
+            <FaGear size={18} />
+            Parameters
+          </button>
         )}
       </div>
       {projectionData && labelColorMapping && (
-        <div className="explore-viz-container">
-          <div className="explore-viz-column">
-            <ProjectionVizSigma
-              data={projectionData}
-              selectedId={currentElementId}
-              setSelectedId={setSelectedId}
-              frame={selectionConfig.frame}
-              setFrameBbox={(bbox?: MarqueBoundingBox) => {
-                setAppContext((prev) => ({
-                  ...prev,
-                  selectionConfig: {
-                    ...selectionConfig,
-                    frame: bbox ? [bbox.x.min, bbox.x.max, bbox.y.min, bbox.y.max] : undefined,
-                  },
-                }));
-              }}
-              labelColorMapping={labelColorMapping}
-            />
-          </div>
-
-          <div className={classNames('explore-annotation-column', selectedElement && 'active')}>
-            {selectedElement ? (
-              <>
-                <a
-                  className="badge m-0 p-1"
-                  onClick={() =>
-                    navigate(`/projects/${projectName}/tag/${selectedElement.element_id}?tab=tag`)
-                  }
-                  style={{ cursor: 'pointer' }}
-                >
-                  Text {selectedElement.element_id}
-                </a>
-                <div>{selectedElement.text}</div>
-                <details>
-                  <summary>Previous annotations:</summary>
-                  <ul>
-                    {selectedElement.history?.map((e) => {
-                      return (
-                        <li key={`${e.time}-${e.user}`}>
-                          label: {e.label ? e.label : 'label removed'} ({e.time} by {e.user})
-                          <br />
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </details>
-                <h5 className="subsection">Annotate this element</h5>
-                <div className="annotation-block force-one-column-layout">
-                  {kindScheme == 'multiclass' && (
-                    <MulticlassInput
-                      elementId={selectedElement.element_id}
-                      element={selectedElement}
-                      postAnnotation={postAnnotation}
-                      labels={availableLabels}
-                      phase="train"
-                    />
-                  )}
-                  {kindScheme == 'multilabel' && (
-                    <MultilabelInput
-                      elementId={selectedElement.element_id}
-                      postAnnotation={postAnnotation}
-                      labels={availableLabels}
-                    />
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="explanations ">Click on an element to display its content</div>
-            )}
-          </div>
-        </div>
+        <ProjectionExplorer
+          projectName={projectName}
+          data={projectionData}
+          selectedId={currentElementId}
+          labelColorMapping={labelColorMapping}
+          containerClassName="explore-viz-container"
+          vizClassName="explore-viz-column"
+          panelClassName="explore-annotation-column"
+        >
+          {(element, clearSelection) => (
+            <>
+              <h5 className="subsection">Annotate this element</h5>
+              <div className="annotation-block force-one-column-layout">
+                {kindScheme == 'multiclass' && (
+                  <MulticlassInput
+                    elementId={element.element_id}
+                    element={element}
+                    postAnnotation={(label, elementId) => {
+                      postAnnotation(label, elementId);
+                      clearSelection();
+                    }}
+                    labels={availableLabels}
+                    phase="train"
+                  />
+                )}
+                {kindScheme == 'multilabel' && (
+                  <MultilabelInput
+                    elementId={element.element_id}
+                    postAnnotation={(label, elementId) => {
+                      postAnnotation(label, elementId);
+                      clearSelection();
+                    }}
+                    labels={availableLabels}
+                  />
+                )}
+              </div>
+            </>
+          )}
+        </ProjectionExplorer>
       )}
 
       <Modal
