@@ -581,7 +581,28 @@ export function useDeleteFeature(projectSlug: string | null) {
 }
 
 /**
- * Get feature infro
+ * Reset all features (recreate the parquet file)
+ */
+export function useResetFeatures(projectSlug: string | null) {
+  const { notify } = useNotifications();
+
+  const resetFeatures = useCallback(async () => {
+    if (projectSlug) {
+      const res = await api.POST('/features/reset', {
+        params: {
+          query: { project_slug: projectSlug },
+        },
+      });
+      if (!res.error) notify({ type: 'success', message: 'All features have been reset' });
+      else notify({ type: 'error', message: 'Failed to reset features' });
+    }
+  }, [projectSlug, notify]);
+
+  return resetFeatures;
+}
+
+/**
+ * Get feature info
  */
 export function useGetFeatureInfo(project_slug: string | null, project: unknown) {
   const getFeatureInfo = useAsyncMemo(async () => {

@@ -164,9 +164,14 @@ async def get_project_status(
     - existing
     """
     try:
+        slug = slugify(project_name)
         # if project is in creation
-        if slugify(project_name) in orchestrator.project_creation_ongoing:
+        if slug in orchestrator.project_creation_ongoing:
             return "creating"
+        # if creation failed, return the error (consumed once)
+        if slug in orchestrator.creation_errors:
+            error_msg = orchestrator.creation_errors.pop(slug)
+            return f"error: {error_msg}"
         elif orchestrator.exists(project_name):
             return "existing"
         else:

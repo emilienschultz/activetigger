@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pandas as pd
 
@@ -114,9 +114,14 @@ class Monitoring:
         
         # Save the duration of the global process
         events = start_entry.events
-        end = datetime.now()
+        end = datetime.now(timezone.utc)
         events["global"]["end"] = end.isoformat()
-        duration = (end - start_entry.time).total_seconds()
+        # Ensure start_entry.time is timezone-aware for subtraction
+        # (PostgreSQL returns tz-aware datetimes, SQLite returns naive ones)
+        start_time = start_entry.time
+        if start_time.tzinfo is None:
+            start_time = start_time.replace(tzinfo=timezone.utc)
+        duration = (end - start_time).total_seconds()
         events["global"]["duration"] = duration
         events["global"]["order"] = -1
 

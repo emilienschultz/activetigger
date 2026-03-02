@@ -213,12 +213,16 @@ export const ProjectCreationForm: FC = () => {
             console.log('Project status:', status);
 
             // if an error happened or the process failed
-            if (status === 'error' || status === 'not existing') {
+            if (status?.startsWith('error') || status === 'not existing') {
               clearInterval(intervalId);
+              const errorDetail = status?.startsWith('error:')
+                ? status.slice('error:'.length).trim()
+                : null;
               notify({
                 type: 'error',
-                message:
-                  'Project creation failed. Try to change the data format. If it happens several times, please contact support',
+                message: errorDetail
+                  ? `Project creation failed: ${errorDetail}`
+                  : 'Project creation failed. Try to change the data format. If it happens several times, please contact support',
               });
               navigate(`/projects`);
               return;

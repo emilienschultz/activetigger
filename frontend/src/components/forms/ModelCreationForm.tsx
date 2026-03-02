@@ -274,7 +274,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
         <input type="number" {...registerNewModel('parameters.eval')} />
 
         <label>
-          Validation dataset size{' '}
+          Train-eval split size{' '}
           <a className="test_size">
             <HiOutlineQuestionMarkCircle />
           </a>

@@ -137,7 +137,12 @@ export async function loadFile(file: File): Promise<DataType | null> {
 
   if (file.name.includes('parquet')) {
     console.log('parquet');
-    data = await loadParquetFile(file);
+    try {
+      data = await loadParquetFile(file);
+    } catch (e) {
+      console.error('Error reading parquet file:', e);
+      return null;
+    }
   } else if (file.name.includes('csv')) {
     console.log('csv');
     data = await loadCSVFile(file);

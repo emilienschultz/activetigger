@@ -159,9 +159,11 @@ class ModelsService:
             .first()
         )
         if model is None:
+            session.close()
             raise DBException("Model not found")
 
         parameters = model.parameters.copy()
         parameters[flag] = value
         model.parameters = parameters
         session.commit()
+        session.close()

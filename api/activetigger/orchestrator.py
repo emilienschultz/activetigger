@@ -94,6 +94,9 @@ class Orchestrator:
         # projects in creation
         self.project_creation_ongoing = {}
 
+        # store creation errors so they survive project cleanup
+        self.creation_errors: dict[str, str] = {}
+
         # cached heavy system stats (refreshed every _heavy_stats_interval seconds)
         self._heavy_stats_interval = 30
         self._heavy_stats_last_update = 0.0
@@ -182,10 +185,16 @@ class Orchestrator:
                 if project.status == "created":
                     to_del.append(p)
                 if project.status == "error":
+                    errors = project.errors.state()
+                    if errors:
+                        self.creation_errors[p] = errors[-1][0]
+                    else:
+                        self.creation_errors[p] = "Unknown error during project creation"
                     self.clean_unfinished_project(project_slug=p)
                     to_del.append(p)
             except Exception as e:
                 print(f"Error while updating project {p}: {e}")
+                self.creation_errors[p] = str(e)
                 to_del.append(p)
         for p in to_del:
             del self.project_creation_ongoing[p]

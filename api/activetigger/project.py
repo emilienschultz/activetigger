@@ -1585,7 +1585,6 @@ class Project:
                         self.db_manager.language_models_service.delete_model(
                             self.name, model.model_name
                         )
-                raise ex
             # clean the process from the list and the queue
             finally:
                 self.clean_process(e)

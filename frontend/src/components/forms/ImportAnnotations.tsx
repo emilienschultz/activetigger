@@ -134,7 +134,9 @@ export const ImportAnnotations: FC<ImportPropos> = ({ projectName, currentScheme
                   {columns}
                 </select>
 
-                <label htmlFor="col_label">Column for label to import (empty will be droped)</label>
+                <label htmlFor="col_label">
+                  Column annotations (rows without annotation will be ignored)
+                </label>
                 <select id="col_label" disabled={data === null} {...register('col_label')}>
                   {columns}
                 </select>
