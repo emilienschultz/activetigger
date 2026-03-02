@@ -116,7 +116,8 @@ export const EvalSetsManagement: FC<EvalSetsManagementModel> = ({
             <div className="explanations">
               No {datasetCleanForPrinting} data set has been created. You can upload a{' '}
               {datasetCleanForPrinting} set. Careful : all features will be dropped and need to be
-              computed again, and id will be modified with "imported-".
+              computed again, and id will be modified with "imported-". You are responsible to check
+              that the elements are not already in the train set.
             </div>
             <label htmlFor="csvFile">File to upload</label>
             <input id="csvFile" className="form-control" type="file" {...register('files')} />

@@ -128,7 +128,7 @@ export const ProjectUpdateForm: FC<{ closeModal: () => void }> = ({ closeModal }
       />
 
       <label htmlFor="add_n_train">
-        Add N elements in the train set (max : {maxElementsToAdd})
+        Add N elements in the train set (without stratification ; total : {maxElementsToAdd})
       </label>
       <input
         id="add_n_train"
