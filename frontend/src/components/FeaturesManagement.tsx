@@ -1,7 +1,8 @@
 import cx from 'classnames';
 import { FC, useState } from 'react';
+import { Modal } from 'react-bootstrap';
 import { useParams } from 'react-router-dom';
-import { useDeleteFeature, useGetFeatureInfo } from '../core/api';
+import { useDeleteFeature, useGetFeatureInfo, useResetFeatures } from '../core/api';
 import { useAppContext } from '../core/context';
 import { sortDatesAsStrings } from '../core/utils';
 import { FeatureDescriptionModelOut } from '../types';
@@ -32,9 +33,11 @@ export const FeaturesManagement: FC = () => {
   // API calls
   const { featuresInfo } = useGetFeatureInfo(projectName || null, project);
   const deleteFeature = useDeleteFeature(projectName || null);
+  const resetFeatures = useResetFeatures(projectName || null);
 
   // show the menu
   const [selectedFeature, setSelectedFeature] = useState<string | null>(null);
+  const [showResetModal, setShowResetModal] = useState(false);
 
   const deleteSelectedFeature = async (element: string) => {
     await deleteFeature(element);
@@ -71,6 +74,35 @@ export const FeaturesManagement: FC = () => {
       {featuresInfo &&
         selectedFeature &&
         SimpleTable(featuresInfo[selectedFeature] as FeatureDescriptionModelOut)}
+      <div className="mt-3">
+        <button className="btn-danger" onClick={() => setShowResetModal(true)}>
+          Reset all features
+        </button>
+      </div>
+      <Modal show={showResetModal} onHide={() => setShowResetModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Reset all features</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          This will delete all computed features and recreate the features file. Continue?
+          <div className="horizontal">
+            <button onClick={() => setShowResetModal(false)} style={{ flex: '1 1 auto' }}>
+              Cancel
+            </button>
+            <button
+              className="btn-danger"
+              style={{ flex: '1 1 auto' }}
+              onClick={() => {
+                resetFeatures();
+                setSelectedFeature(null);
+                setShowResetModal(false);
+              }}
+            >
+              Confirm
+            </button>
+          </div>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };
