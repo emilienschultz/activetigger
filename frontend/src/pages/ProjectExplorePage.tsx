@@ -41,6 +41,7 @@ export const ProjectExplorePage: FC = () => {
                   projectSlug={projectName || ''}
                   currentScheme={currentScheme || ''}
                   availableLabels={availableLabels}
+                  availableUsers={project?.users?.users ?? []}
                   kindScheme={kindScheme}
                   isValid={project?.params.valid || false}
                   isTest={project?.params.test || false}

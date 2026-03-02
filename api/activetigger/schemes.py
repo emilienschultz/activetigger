@@ -340,16 +340,14 @@ class Schemes:
         """
         Get data table
         scheme : the annotations
+        dataset: the dataset
         min, max: the range
-        mode: sample
-        contains: search
-
-        set: train or test
+        contains: matching regex
+        on_users: list of users
+        on_labels: list of labels
 
         Choice to order by index.
         """
-        if batch.mode not in ["tagged", "untagged", "all", "recent"]:
-            batch.mode = "all"
         if batch.scheme not in self.available():
             raise Exception(f"Scheme {batch.scheme} is not available")
 
@@ -365,7 +363,7 @@ class Schemes:
         df["timestamp"] = df["timestamp"].apply(lambda x: str(x) if pd.notna(x) else "")
 
         # case of recent annotations (no filter possible)
-        if batch.mode == "recent":
+        if batch.recent:
             list_ids = self.projects_service.get_recent_annotations(
                 self.project_slug, user, batch.scheme, batch.max - batch.min, batch.dataset
             )
@@ -373,31 +371,28 @@ class Schemes:
             table = df_r
             total = len(df_r)
         else:
-            # filters for labels
+            # filters for labels & users
             f_labels = pd.Series([True] * len(df), index=df.index)
-            if batch.mode == "tagged":
-                f_labels = df["labels"].notnull()
-            if batch.mode == "untagged":
-                f_labels = df["labels"].isnull()
+            if batch.on_users:
+                f_labels = f_labels & df["user"].isin(batch.on_users)
+            if batch.on_labels:
+                f_labels = f_labels & df["labels"].isin(batch.on_labels)
 
             # filter for patterns
             f_contains = pd.Series([True] * len(df), index=df.index)
             if batch.contains:
                 if batch.contains.startswith("ALL:") and len(batch.contains) > 4:
-                    contains_f = batch.contains.replace("ALL:", "")
+                    contains_f = batch.contains.replace("ALL=", "")
                     f_l = df["labels"].str.contains(clean_regex(contains_f)).fillna(False)
                     f_text = df["text"].str.contains(clean_regex(contains_f)).fillna(False)
                     f_contains = f_l | f_text
                 elif batch.contains == "HAS_COMMENT":
                     f_contains = df["comment"].fillna("").str.len() > 0
-                elif batch.contains.startswith("COMMENT:") and len(batch.contains) > 8:
-                    contains_f = batch.contains.replace("COMMENT:", "")
-                    f_contains = df["comment"].str.contains(
-                        clean_regex(contains_f)
-                    ).fillna(False)
+                elif batch.contains.startswith("COMMENT=") and len(batch.contains) > 8:
+                    contains_f = batch.contains.replace("COMMENT=", "")
+                    f_contains = df["comment"].str.contains(clean_regex(contains_f)).fillna(False)
                 else:
                     f_contains = df["text"].str.contains(clean_regex(batch.contains))
-
             df = df[f_contains & f_labels]
 
             # normalize size

@@ -1631,9 +1631,11 @@ export function useTableElements(
   scheme?: string,
   initialPage?: number | null,
   initialPageSize?: number | null,
-  search?: string | null,
-  sample?: string,
   dataset?: string,
+  contains?: string | null,
+  recent?: boolean,
+  on_labels?: string[],
+  on_users?: string[],
 ) {
   const [pageInfo, setPageInfo] = useState<PageInfo>({
     pageIndex: initialPage || 1,
@@ -1654,9 +1656,11 @@ export function useTableElements(
           scheme: scheme,
           min: (pageInfo.pageIndex - 1) * pageInfo.pageSize,
           max: Math.min(pageInfo.pageIndex * pageInfo.pageSize, total),
-          contains: search,
-          mode: sample ? sample : 'all',
+          contains: contains,
           dataset: dataset ? dataset : 'train',
+          recent: recent ? recent : false,
+          on_labels: on_labels ? on_labels : null,
+          on_users: on_users ? on_users : null,
         },
       });
       if (!res.error) {
@@ -1665,7 +1669,7 @@ export function useTableElements(
       }
     }
     return null;
-  }, [scheme, pageInfo, search, sample]);
+  }, [scheme, pageInfo, project_slug, contains, dataset, recent, on_labels, on_users]);
 
   return { table: getAsyncMemoData(getTableElements), total, getPage: setPageInfo };
 }

@@ -3344,11 +3344,6 @@ export interface components {
              * @default 0
              */
             max: number;
-            /**
-             * Mode
-             * @default all
-             */
-            mode: string;
             /** Contains */
             contains?: string | null;
             /**
@@ -3356,6 +3351,15 @@ export interface components {
              * @default train
              */
             dataset: string;
+            /** On Users */
+            on_users?: string[] | null;
+            /** On Labels */
+            on_labels?: string[] | null;
+            /**
+             * Recent
+             * @default false
+             */
+            recent: boolean;
         };
         /**
          * TableOutModel
