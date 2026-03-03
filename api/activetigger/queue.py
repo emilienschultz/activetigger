@@ -55,8 +55,8 @@ class Queue:
 
         # create the executor
         self.executor = get_reusable_executor(
-            max_workers=self.nb_workers, timeout=None
-        )  # timeout = 10
+            max_workers=self.nb_workers, timeout=14400
+        )  # 4 hours timeout for hung workers
 
         # launch a regular update on the queue
         self.task = asyncio.create_task(self._update_queue(timeout=0.5))

@@ -173,7 +173,7 @@ class Orchestrator:
                 project.update_processes()
             except Exception as e:
                 print(f"Error while updating project {p}: {e}")
-                to_del.append(p)
+                project.errors.add(f"Error while updating processes: {e}")
         for p in to_del:
             del self.projects[p]
 
