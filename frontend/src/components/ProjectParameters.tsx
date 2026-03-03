@@ -49,6 +49,12 @@ export const ProjectParameters: FC<ProjectParametersModel> = ({ project, project
             'Rows in train set': project.params.n_train,
             'Rows in test set': project.params.test ? project.params.n_test : 'Empty',
             'Rows in valid set': project.params.valid ? project.params.n_valid : 'Empty',
+            'Stratify train set': project.params.stratify_train ? 'Yes' : 'No',
+            'Stratify test set': project.params.stratify_test ? 'Yes' : 'No',
+            'Stratification columns':
+              project.params.cols_stratify.length > 0
+                ? project.params.cols_stratify.join(', ')
+                : 'None',
           } as Record<string, unknown>
         }
       />
