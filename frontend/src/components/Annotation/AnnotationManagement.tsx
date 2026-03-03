@@ -336,6 +336,7 @@ export const AnnotationManagement: FC = () => {
               labels={availableLabels}
               text={element?.text as string}
               lastTag={lastTag as string}
+              element={element as ElementOutModel}
             />
           </>
         )}
@@ -356,6 +357,7 @@ export const AnnotationManagement: FC = () => {
                 elementId={elementId || 'noelement'}
                 postAnnotation={postAnnotation}
                 labels={availableLabels}
+                element={element as ElementOutModel}
               />
             )}
           </>
