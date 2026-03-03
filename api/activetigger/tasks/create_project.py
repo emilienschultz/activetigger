@@ -184,9 +184,10 @@ class CreateProject(BaseTask):
                 df_grouped = content.groupby(self.params.cols_stratify, group_keys=False)
                 nb_cat = len(df_grouped)
                 nb_elements_cat = round(n_to_draw / nb_cat)
-                draw = df_grouped.apply(
+                sampled_idx = df_grouped.apply(
                     lambda x: x.sample(min(len(x), nb_elements_cat), random_state=self.random_seed)
-                )
+                ).index.get_level_values(-1)
+                draw = content.loc[sampled_idx]
 
             # divide between test and valid
             if self.params.n_test > 0 and self.params.n_valid == 0:
@@ -244,9 +245,10 @@ class CreateProject(BaseTask):
             df_grouped = content.groupby(self.params.cols_stratify, group_keys=False)
             nb_cat = len(df_grouped)
             nb_elements_cat = round(self.params.n_train / nb_cat)
-            trainset = df_grouped.apply(
+            sampled_idx = df_grouped.apply(
                 lambda x: x.sample(min(len(x), nb_elements_cat), random_state=self.random_seed)
-            )
+            ).index.get_level_values(-1)
+            trainset = content.loc[sampled_idx]
         # default with random selection in the remaining elements
         else:
             trainset = content.sample(self.params.n_train, random_state=self.random_seed)
