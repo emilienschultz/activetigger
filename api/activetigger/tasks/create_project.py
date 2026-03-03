@@ -76,7 +76,12 @@ class CreateProject(BaseTask):
             raise Exception("File not found, problem when uploading")
 
         if str(file_path).endswith(".csv"):
-            content = pd.read_csv(file_path, low_memory=False, on_bad_lines="skip")
+            try:
+                content = pd.read_csv(file_path, low_memory=False, on_bad_lines="skip")
+            except Exception:
+                content = pd.read_csv(
+                    file_path, low_memory=False, on_bad_lines="skip", engine="python"
+                )
         elif str(file_path).endswith(".parquet"):
             content = pd.read_parquet(file_path)
         elif str(file_path).endswith(".xlsx"):
@@ -272,7 +277,10 @@ class CreateProject(BaseTask):
 
         # delete the initial file
         if self.params.filename is not None:
-            self.params.dir.joinpath(self.params.filename).unlink()
+            try:
+                self.params.dir.joinpath(self.params.filename).unlink()
+            except OSError as e:
+                print(f"Warning: could not delete uploaded file: {e}")
 
         print("Project created")
 

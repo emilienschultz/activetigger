@@ -1,4 +1,5 @@
 import datetime
+import gc
 import json
 import shutil
 from pathlib import Path
@@ -9,6 +10,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go  # type: ignore[import]
 import stopwordsiso  # type: ignore[import]
+import torch
 import umap  # type: ignore[import]
 from bertopic import BERTopic  # type: ignore[import]
 from great_tables import GT, loc, style
@@ -380,6 +382,7 @@ class ComputeBertopic(BaseTask):
             )
             print("Using standard UMAP for computation")
         reduced_embeddings: np.ndarray = reducer.fit_transform(df_embeddings.values)
+        del reducer
         df_reduced = pd.DataFrame(reduced_embeddings, index=df_embeddings.index, columns=["x", "y"])
         df_reduced.to_parquet(path_projection)
 
@@ -460,9 +463,9 @@ class ComputeBertopic(BaseTask):
 
         topics_df.to_csv(self.path_run.joinpath("bertopic_topics.csv"), index=False)
         (
-            df.reset_index() # id_internal is the index, to make it clearer, i reset the index and select id_internal in the cols to save
-            [["id_internal", "id_external", "cluster"]] # cols to save
-            .to_csv(self.path_run.joinpath("bertopic_clusters.csv"), index = False)
+            df.reset_index()[  # id_internal is the index, to make it clearer, i reset the index and select id_internal in the cols to save
+                ["id_internal", "id_external", "cluster"]
+            ].to_csv(self.path_run.joinpath("bertopic_clusters.csv"), index=False)  # cols to save
         )
 
         with open(self.path_run.joinpath("params.json"), "w") as f:
@@ -701,6 +704,26 @@ class ComputeBertopic(BaseTask):
                 )
 
             raise e
+        finally:
+            print("Cleaning GPU memory (bertopic)")
+            try:
+                del (
+                    df,
+                    df_embeddings,
+                    embeddings,
+                    topic_model,
+                    umap_model,
+                    hdbscan_model,
+                    vectorizer_model,
+                    self.event,
+                )
+            except NameError:
+                pass
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.synchronize()
+                torch.cuda.empty_cache()
+                torch.cuda.ipc_collect()
 
     def update_progress(self, message: str) -> None:
         """

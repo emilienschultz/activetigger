@@ -78,7 +78,7 @@ async def upload_file_project(
     except Exception as e:
         # if failed, remove the project folder
         if project_path.exists():
-            project_path.rmdir()
+            shutil.rmtree(project_path)
         raise HTTPException(status_code=500, detail=str(e))
 
 

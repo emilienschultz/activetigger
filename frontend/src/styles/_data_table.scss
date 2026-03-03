@@ -126,11 +126,11 @@
 }
 
 #tabular-view-control-panel{
-  div{
+  > div{
     flex: 1 1 auto;
     min-width: 200px;
     margin: 2px 5px;
-    
+
     label{
       font-style: italic;
       color: $dark-grey-color;

@@ -3,15 +3,16 @@ import { motion } from 'framer-motion';
 import { FC, useEffect, useState } from 'react';
 import { FaCheck } from 'react-icons/fa';
 import { AnnotateBlendTag, TextAnnotateBlend } from 'react-text-annotate-blend';
-import { DisplayConfig } from '../../types';
+import { DisplayConfig, ElementOutModel } from '../../types';
 
 interface SpanInputProps {
   elementId: string;
   displayConfig: DisplayConfig;
   text: string;
   labels: string[];
-  postAnnotation: (label: string, elementId: string) => void;
+  postAnnotation: (label: string, elementId: string, comment?: string) => void;
   lastTag?: string;
+  element?: ElementOutModel;
 }
 
 export const TextSpanPanel: FC<SpanInputProps> = ({
@@ -21,11 +22,20 @@ export const TextSpanPanel: FC<SpanInputProps> = ({
   postAnnotation,
   labels,
   lastTag,
+  element,
 }) => {
   // get the context and set the labels
 
   const [value, setValue] = useState<AnnotateBlendTag[]>([]);
   const [tag, setTag] = useState<string | null>(labels[0] || null);
+  const [comment, setComment] = useState<string>(
+    element?.history ? element.history[0]?.comment || '' : '',
+  );
+
+  useEffect(
+    () => setComment(element?.history ? element.history[0]?.comment || '' : ''),
+    [element],
+  );
 
   useEffect(() => {
     if (lastTag) {
@@ -110,7 +120,7 @@ export const TextSpanPanel: FC<SpanInputProps> = ({
             <button
               className="btn btn-outline-success align-items-center justify-content-center validate-btn"
               onClick={() => {
-                postAnnotation(JSON.stringify(value) || JSON.stringify([]), elementId);
+                postAnnotation(JSON.stringify(value) || JSON.stringify([]), elementId, comment);
                 setValue([]);
               }}
               style={{
@@ -127,6 +137,12 @@ export const TextSpanPanel: FC<SpanInputProps> = ({
             >
               <FaCheck size={18} /> Validate the annotation
             </button>
+            <textarea
+              className="form-control annotation-comment"
+              placeholder="Comment"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+            />
           </div>
           {/* <Select
             value={options.find((opt) => opt.value === tag) || null}

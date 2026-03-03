@@ -1582,8 +1582,9 @@ class Project:
                     case "create_project":
                         self.status = "error"
                     case "train_bert":
+                        bert_task = cast(LMComputing, e)
                         self.db_manager.language_models_service.delete_model(
-                            self.name, model.model_name
+                            self.name, bert_task.model_name
                         )
             # clean the process from the list and the queue
             finally:

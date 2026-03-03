@@ -545,6 +545,5 @@ class TrainBert(BaseTask):
 
             except Exception as e:
                 print("Error in cleaning memory", e)
-                raise e
 
         return EventsModel(events=task_timer.get_events())

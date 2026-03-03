@@ -748,9 +748,11 @@ class TableBatchInModel(BaseModel):
     scheme: str
     min: int = 0
     max: int = 0
-    mode: str = "all"
     contains: str | None = None
     dataset: str = "train"
+    on_users: list[str] | None = None
+    on_labels: list[str] | None = None
+    recent: bool = False
 
 
 class ProjectsServerModel(BaseModel):
