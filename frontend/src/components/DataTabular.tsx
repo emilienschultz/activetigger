@@ -13,6 +13,7 @@ import { Tooltip } from 'react-tooltip';
 import { useAddTableAnnotations, useTableElements } from '../core/api';
 import { AppContextValue } from '../core/context';
 import { AnnotationModel } from '../types';
+import { TableFilterState, TableTagFilterSelect } from './TableTagFilterSelect';
 
 interface Row {
   id_internal: string;
@@ -27,6 +28,7 @@ interface DataTabularModel {
   projectSlug: string;
   currentScheme: string;
   availableLabels: string[];
+  availableUsers: string[];
   kindScheme: string;
   isValid: boolean;
   isTest: boolean;
@@ -38,6 +40,7 @@ export const DataTabular: FC<DataTabularModel> = ({
   projectSlug,
   currentScheme,
   availableLabels,
+  availableUsers,
   kindScheme,
   isValid,
   isTest,
@@ -66,9 +69,13 @@ export const DataTabular: FC<DataTabularModel> = ({
 
   // selection elements
   const [page, setPage] = useState<number | null>(1);
-  const [search, setSearch] = useState<string | null>(null);
-  const [sample, setSample] = useState<string>('all');
+  const [contains, setContains] = useState<string | null>(null);
   const [pageSize, setPageSize] = useState(20);
+  const [filter, setFilter] = useState<TableFilterState>({
+    recent: false,
+    labels: [],
+    users: [],
+  });
   const [changeTrigger, setChangeTrigger] = useState<boolean>(false);
 
   // get API elements when table shape change
@@ -76,7 +83,17 @@ export const DataTabular: FC<DataTabularModel> = ({
     table,
     getPage,
     total: totalElement,
-  } = useTableElements(projectSlug, currentScheme, page, pageSize, search, sample, currentDataset);
+  } = useTableElements(
+    projectSlug,
+    currentScheme,
+    page,
+    pageSize,
+    currentDataset,
+    contains,
+    filter.recent,
+    filter.labels,
+    filter.users,
+  );
 
   const [rows, setRows] = useState<Row[]>([]);
 
@@ -153,7 +170,7 @@ export const DataTabular: FC<DataTabularModel> = ({
         >
           <Highlighter
             highlightClassName="Search"
-            searchWords={search && isValidRegex(search) ? [search.replace('ALL:', '')] : []}
+            searchWords={contains && isValidRegex(contains) ? [contains.replace('ALL:', '')] : []}
             autoEscape={false}
             textToHighlight={props.row.text}
             highlightStyle={{
@@ -247,32 +264,29 @@ export const DataTabular: FC<DataTabularModel> = ({
             {isTest && <option value="test">test</option>}
           </select>
         </div>
-        <div>
-          <label>Tagged</label>
-          <select
-            onChange={(e) => {
+        <div style={{ minWidth: 220 }}>
+          <label>Filter by Tag/Users</label>
+          <TableTagFilterSelect
+            availableLabels={availableLabels}
+            availableUsers={availableUsers}
+            onChange={(f) => {
               setPage(1);
-              setSample(e.target.value);
+              setFilter(f);
             }}
-            value={sample}
-          >
-            {['tagged', 'untagged', 'all', 'recent'].map((e) => (
-              <option key={e}>{e}</option>
-            ))}
-          </select>
+          />
         </div>
         <div>
           <label htmlFor="filter-input">
-            Filter
+            Filter by content
             <HiOutlineQuestionMarkCircle className="search" />
-            {!isValidRegex(search || '') && <span className="badge danger">Regex not valid</span>}
+            {!isValidRegex(contains || '') && <span className="badge danger">Regex not valid</span>}
           </label>
           <input
             placeholder="Regex filter on text"
             id="filter-input"
             onChange={(e) => {
               setPage(1);
-              setSearch(e.target.value);
+              setContains(e.target.value);
             }}
           />
         </div>
@@ -362,7 +376,7 @@ export const DataTabular: FC<DataTabularModel> = ({
         </Modal.Footer>
       </Modal>
       <Tooltip anchorSelect=".search">
-        Special search: ALL: text/label, COMMENT: in comments, HAS_COMMENT
+        Special search: ALL= in all text/label, COMMENT= in comments, HAS_COMMENT
       </Tooltip>
     </>
   );
