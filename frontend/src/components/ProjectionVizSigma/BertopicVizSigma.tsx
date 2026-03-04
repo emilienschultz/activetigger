@@ -30,7 +30,8 @@ interface Props {
   className?: string;
   clusterIdColorMapping: { [key: string]: string };
   // selection
-  setSelectedId: (id?: string) => void;
+  selectedId: string | undefined;
+  setSelectedIdAfterClick: (id?: string) => void;
   clusterHighlight: string | undefined;
   setClusterHighlightAfterDoubleClick: (id?: string) => void;
 }
@@ -60,7 +61,8 @@ export const BertopicVizSigma: FC<Props> = ({
   nodes,
   className,
   clusterIdColorMapping,
-  setSelectedId,
+  selectedId,
+  setSelectedIdAfterClick,
   clusterHighlight,
   setClusterHighlightAfterDoubleClick,
 }) => {
@@ -93,6 +95,7 @@ export const BertopicVizSigma: FC<Props> = ({
   const nodeReducer = useCallback(
     (_node: string, node: NodeGraphAttributesType): Partial<NodeDisplayData> => {
       const res: Partial<NodeDisplayData> = { ...node };
+
       // apply color for nodes
       if (clusterHighlight) {
         if (clusterHighlight === node.cluster_id.toString()) {
@@ -102,6 +105,15 @@ export const BertopicVizSigma: FC<Props> = ({
         }
       } else {
         res.color = clusterIdColorMapping[node.label];
+      }
+
+      // Highlight selected node
+      if (selectedId) {
+        if (selectedId === node.node_id) {
+          // built-in appearance in Sigma which forces showing the label
+          res.highlighted = true;
+          res.color = 'black'; // highlight color
+        }
       }
 
       return res;
@@ -125,7 +137,7 @@ export const BertopicVizSigma: FC<Props> = ({
         settings={settings}
       >
         <GraphEvents
-          setSelectedId={setSelectedId}
+          setSelectedIdAfterClick={setSelectedIdAfterClick}
           setSigmaCursor={setSigmaCursor}
           setClusterHighlightAfterDoubleClick={setClusterHighlightAfterDoubleClick}
         />
