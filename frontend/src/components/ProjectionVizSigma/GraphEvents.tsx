@@ -5,7 +5,8 @@ import { SigmaCursorTypes } from '.';
 const GraphEvents: React.FC<{
   setSelectedId: (id?: string) => void;
   setSigmaCursor: Dispatch<SetStateAction<SigmaCursorTypes>>;
-}> = ({ setSelectedId, setSigmaCursor }) => {
+  setClusterHighlightAfterDoubleClick: (id?: string) => void;
+}> = ({ setSelectedId, setSigmaCursor, setClusterHighlightAfterDoubleClick }) => {
   const registerEvents = useRegisterEvents();
 
   useEffect(() => {
@@ -29,6 +30,17 @@ const GraphEvents: React.FC<{
       },
       mouseup: () => {
         setSigmaCursor(undefined);
+      },
+      doubleClickNode: (event) => {
+        setClusterHighlightAfterDoubleClick(event.node);
+        console.log(event.node);
+      },
+      doubleClick: (event) => {
+        // Prevent zooming in behaviour https://github.com/jacomyal/sigma.js/issues/910
+        event.preventSigmaDefault();
+      },
+      doubleClickStage: () => {
+        setClusterHighlightAfterDoubleClick(undefined);
       },
     });
   }, [registerEvents, setSelectedId, setSigmaCursor]);

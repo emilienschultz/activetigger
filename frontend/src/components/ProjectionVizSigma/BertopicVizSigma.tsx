@@ -31,8 +31,8 @@ interface Props {
   clusterIdColorMapping: { [key: string]: string };
   // selection
   setSelectedId: (id?: string) => void;
-  labelColorMapping: { [key: string]: string };
-  labelDescription?: { [key: string]: string };
+  clusterHighlight: string | undefined;
+  setClusterHighlightAfterDoubleClick: (id?: string) => void;
 }
 
 const sigmaStyle = { height: '100%', width: '100%' };
@@ -94,12 +94,15 @@ export const BertopicVizSigma: FC<Props> = ({
     (_node: string, node: NodeGraphAttributesType): Partial<NodeDisplayData> => {
       const res: Partial<NodeDisplayData> = { ...node };
       // apply color for nodes
-      res.color = labelColorMapping[data.label];
-
-      // replace label by node id. Label is the default field in sigma to display the.. label
-      if (labelDescription) {
-        res.label = labelDescription[data.label];
-      } else res.label = data.label;
+      if (clusterHighlight) {
+        if (clusterHighlight === node.cluster_id.toString()) {
+          res.color = clusterIdColorMapping[node.label];
+        } else {
+          res.color = clusterIdColorMapping['NA'];
+        }
+      } else {
+        res.color = clusterIdColorMapping[node.label];
+      }
 
       return res;
     },
@@ -121,7 +124,11 @@ export const BertopicVizSigma: FC<Props> = ({
         graph={graph}
         settings={settings}
       >
-        <GraphEvents setSelectedId={setSelectedId} setSigmaCursor={setSigmaCursor} />
+        <GraphEvents
+          setSelectedId={setSelectedId}
+          setSigmaCursor={setSigmaCursor}
+          setClusterHighlightAfterDoubleClick={setClusterHighlightAfterDoubleClick}
+        />
         {/* <ControlsContainer position="bottom-left">
           <Caption labelColorMapping={labelColorMapping} />
         </ControlsContainer> */}

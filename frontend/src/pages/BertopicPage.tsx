@@ -51,6 +51,10 @@ export const BertopicPage: FC = () => {
   useEffect(() => {
     reFetchTopics();
     reFetchProjection();
+
+    //Reset states
+    setClusterHighlight(undefined);
+    setCurrentText(null);
   }, [currentBertopic, reFetchTopics, reFetchProjection]);
 
   // Action if clicked
@@ -65,6 +69,21 @@ export const BertopicPage: FC = () => {
       } else setCurrentText(null);
     },
     [getElementById],
+  );
+  // Action if double click
+  const [clusterHighlight, setClusterHighlight] = useState<string | undefined>(undefined);
+  const setClusterHighlightAfterDoubleClick = useCallback(
+    (id?: string) => {
+      if (id && projection) {
+        const selected_node = projection.nodes.find((o) => o.node_id === id);
+        if (selected_node) {
+          setClusterHighlight(selected_node.cluster_id.toString());
+          return;
+        }
+      }
+      setClusterHighlight(undefined);
+    },
+    [projection],
   );
 
   const uniqueLabels = projection
@@ -247,6 +266,8 @@ export const BertopicPage: FC = () => {
                 nodes={projection.nodes}
                 setSelectedId={setSelectedId}
                 clusterIdColorMapping={clusterIdColorMapping}
+                clusterHighlight={clusterHighlight}
+                setClusterHighlightAfterDoubleClick={setClusterHighlightAfterDoubleClick}
               />
             </div>
             {currentText && (
