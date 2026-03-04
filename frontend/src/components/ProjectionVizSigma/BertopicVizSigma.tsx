@@ -9,30 +9,36 @@ import { NodeDisplayData } from 'sigma/types';
 import { COLORS } from '../../core/colors';
 import GraphEvents from './GraphEvents';
 
+interface NodeInputAttributesType {
+  node_id: string;
+  x: number;
+  y: number;
+  cluster_id: number;
+  label: string;
+}
+interface NodeGraphAttributesType {
+  node_id: string;
+  x: number;
+  y: number;
+  cluster_id: number;
+  label: string;
+  size: number;
+}
+
 interface Props {
-  data: {
-    id: unknown[];
-    x: unknown[];
-    y: unknown[];
-    cluster?: string[] | null;
-  };
+  nodes: NodeInputAttributesType[];
   className?: string;
+  clusterIdColorMapping: { [key: string]: string };
   // selection
   setSelectedId: (id?: string) => void;
-  labelColorMapping: { [key: string]: string };
-  labelDescription?: { [key: string]: string };
+  clusterHighlight: string | undefined;
+  setClusterHighlightAfterDoubleClick: (id?: string) => void;
 }
 
 const sigmaStyle = { height: '100%', width: '100%' };
 
 export type SigmaCursorTypes = 'crosshair' | 'pointer' | 'grabbing' | undefined;
 export type SigmaToolsType = 'panZoom';
-interface NodeAttributesType {
-  x: number;
-  y: number;
-  label: string;
-  size?: number;
-}
 
 // function to quantify point size
 const getPointSize = (n: number) => {
@@ -51,63 +57,58 @@ const getPointSize = (n: number) => {
 
 // Create the Component that listen to all events
 export const BertopicVizSigma: FC<Props> = ({
-  data,
+  nodes,
   className,
-  labelColorMapping,
+  clusterIdColorMapping,
   setSelectedId,
-  labelDescription,
+  clusterHighlight,
+  setClusterHighlightAfterDoubleClick,
 }) => {
-  labelColorMapping['NA'] = COLORS.NA;
+  clusterIdColorMapping['NA'] = COLORS.NA;
   // Special cursor to help interactivity affordances
   const [sigmaCursor, setSigmaCursor] = useState<SigmaCursorTypes>(undefined);
 
   // prepare graph for sigma from data props
   const graph = useMemo(() => {
     console.log('compute graph');
-    const graph = new Graph<NodeAttributesType>();
-    if (data) {
+    const graph = new Graph<NodeGraphAttributesType>();
+    if (nodes) {
       //TODO: refine those quick heuristics
-      const size = getPointSize(data.x.length);
+      const size = getPointSize(nodes.length);
 
-      data.x.forEach((_, index) => {
-        const x = Number(data.x[index]);
-        const y = Number(data.y[index]);
-
-        if (!Number.isFinite(x) || !Number.isFinite(y)) {
-          console.log(`Skipping invalid coordinates for node ${data.id[index]}`);
+      nodes.forEach((node) => {
+        if (!Number.isFinite(node.x) || !Number.isFinite(node.y)) {
+          console.log(`Skipping invalid coordinates for node ${node.node_id}`);
           return;
         }
 
-        graph.addNode(data.id[index], {
-          x: x,
-          y: y,
-          label: data.cluster?.[index] as string,
-          size,
-        });
+        graph.addNode(node.node_id, { ...node, size });
       });
       return graph;
     }
     return undefined;
-  }, [data]);
+  }, [nodes]);
 
   // nodeReducer change node appearance from colorMapping and selection state
   const nodeReducer = useCallback(
-    (_node: string, data: NodeAttributesType): Partial<NodeDisplayData> => {
-      const res: Partial<NodeDisplayData> = { ...data };
-
+    (_node: string, node: NodeGraphAttributesType): Partial<NodeDisplayData> => {
+      const res: Partial<NodeDisplayData> = { ...node };
       // apply color for nodes
-      res.color = labelColorMapping[data.label];
-
-      // replace label by node id. Label is the default field in sigma to display the.. label
-      if (labelDescription) {
-        res.label = labelDescription[data.label];
-      } else res.label = data.label;
+      if (clusterHighlight) {
+        if (clusterHighlight === node.cluster_id.toString()) {
+          res.color = clusterIdColorMapping[node.label];
+        } else {
+          res.color = clusterIdColorMapping['NA'];
+        }
+      } else {
+        res.color = clusterIdColorMapping[node.label];
+      }
 
       return res;
     },
-    [labelColorMapping],
+    [clusterIdColorMapping],
   );
-  const settings: Partial<Settings<NodeAttributesType>> = useMemo(
+  const settings: Partial<Settings<NodeGraphAttributesType>> = useMemo(
     () => ({
       allowInvalidContainer: true,
       nodeReducer,
@@ -123,7 +124,11 @@ export const BertopicVizSigma: FC<Props> = ({
         graph={graph}
         settings={settings}
       >
-        <GraphEvents setSelectedId={setSelectedId} setSigmaCursor={setSigmaCursor} />
+        <GraphEvents
+          setSelectedId={setSelectedId}
+          setSigmaCursor={setSigmaCursor}
+          setClusterHighlightAfterDoubleClick={setClusterHighlightAfterDoubleClick}
+        />
         {/* <ControlsContainer position="bottom-left">
           <Caption labelColorMapping={labelColorMapping} />
         </ControlsContainer> */}

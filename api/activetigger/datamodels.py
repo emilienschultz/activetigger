@@ -1178,3 +1178,21 @@ class MonitoringMetricsModel(BaseModel):
 
     quickmodels: MonitoringQuickModelsModel
     languagemodels: MonitoringLanguageModelsModel
+
+class BertopicProjectionNode(BaseModel):
+    """
+    Node metadata
+    """
+    x: float
+    y: float 
+    cluster_id: int
+    label: str
+    node_id: str
+
+
+class BertopicProjectionData(BaseModel):
+    """
+    The returned data when fetching the projection for a topic analysis
+    """
+    nodes: list[BertopicProjectionNode]
+    cluster_id_label_mapper: dict

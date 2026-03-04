@@ -46,12 +46,15 @@ export const BertopicPage: FC = () => {
     projectName || null,
     currentBertopic,
   );
-  const labels = projection?.labels;
   const currentTraining = currentProject ? Object.entries(currentProject.bertopic.training) : null;
   const availableModels = currentProject ? currentProject.bertopic.models : [];
   useEffect(() => {
     reFetchTopics();
     reFetchProjection();
+
+    //Reset states
+    setClusterHighlight(undefined);
+    setCurrentText(null);
   }, [currentBertopic, reFetchTopics, reFetchProjection]);
 
   // Action if clicked
@@ -67,10 +70,27 @@ export const BertopicPage: FC = () => {
     },
     [getElementById],
   );
+  // Action if double click
+  const [clusterHighlight, setClusterHighlight] = useState<string | undefined>(undefined);
+  const setClusterHighlightAfterDoubleClick = useCallback(
+    (id?: string) => {
+      if (id && projection) {
+        const selected_node = projection.nodes.find((o) => o.node_id === id);
+        if (selected_node) {
+          setClusterHighlight(selected_node.cluster_id.toString());
+          return;
+        }
+      }
+      setClusterHighlight(undefined);
+    },
+    [projection],
+  );
 
-  const uniqueLabels = projection ? [...new Set(projection.cluster as string[])] : [];
+  const uniqueLabels = projection
+    ? (Object.values(projection.cluster_id_label_mapper) as string[])
+    : [];
   const colormap = chroma.scale('Paired').colors(uniqueLabels.length);
-  const labelColorMapping = uniqueLabels.reduce<Record<string, string>>(
+  const clusterIdColorMapping = uniqueLabels.reduce<Record<string, string>>(
     (acc, label, index: number) => {
       acc[label as string] = colormap[index];
       return acc;
@@ -243,17 +263,11 @@ export const BertopicPage: FC = () => {
             <div style={{ height: `${figSize}vh`, width: '80vw' }}>
               <BertopicVizSigma
                 className={`col-12 border h-100`}
-                data={
-                  projection as {
-                    id: unknown[];
-                    x: unknown[];
-                    y: unknown[];
-                    cluster: string[];
-                  }
-                }
+                nodes={projection.nodes}
                 setSelectedId={setSelectedId}
-                labelColorMapping={labelColorMapping}
-                labelDescription={labels as unknown as { [key: string]: string }}
+                clusterIdColorMapping={clusterIdColorMapping}
+                clusterHighlight={clusterHighlight}
+                setClusterHighlightAfterDoubleClick={setClusterHighlightAfterDoubleClick}
               />
             </div>
             {currentText && (

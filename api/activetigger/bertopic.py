@@ -16,6 +16,8 @@ from activetigger.datamodels import (
     BertopicParamsModel,
     BertopicProjectStateModel,
     TopicsOutModel,
+    BertopicProjectionNode,
+    BertopicProjectionData
 )
 from activetigger.db.languagemodels import ModelsService
 from activetigger.db.manager import DatabaseManager
@@ -274,17 +276,30 @@ class Bertopic:
         projection = pd.read_parquet(path_projection)
         projection["cluster"] = clusters["cluster"]
         path_model = self.path.joinpath("runs").joinpath(name)
-        labels = {}
+        cluster_id_label_mapper = {}
         if path_model.exists():
             df = pd.read_csv(path_model.joinpath("bertopic_topics.csv"), index_col=0)
-            labels = dict(df["Name"])
-        return {
-            "x": projection["x"].tolist(),
-            "y": projection["y"].tolist(),
-            "cluster": projection["cluster"].tolist(),
-            "id": projection.index.astype(str).tolist(),
-            "labels": labels,
-        }
+            cluster_id_label_mapper = dict(df["Name"])
+
+        nodes_info = [
+            BertopicProjectionNode(
+                node_id = str(node_id),
+                x = x, 
+                y = y, 
+                cluster_id=cluster_id,
+                label = cluster_id_label_mapper[cluster_id]
+            )
+            for x, y ,cluster_id, node_id in zip(
+                projection["x"], 
+                projection["y"], 
+                projection["cluster"],
+                projection.index.to_list()
+            )
+        ]
+        return BertopicProjectionData(
+            nodes = nodes_info,
+            cluster_id_label_mapper = cluster_id_label_mapper
+        )
 
     def export_topics(self, name: str) -> FileResponse:
         """
