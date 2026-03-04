@@ -89,7 +89,7 @@ Make sure to use the production branch.
 ```bash
 sudo su activetigger
 cd /opt/activetigger
-git clone https://github.com/emilienschultz/activetigger.git .
+git clone https://github.com/activetigger/activetigger.git .
 git checkout production
 ```
 

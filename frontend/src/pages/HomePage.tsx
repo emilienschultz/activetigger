@@ -47,7 +47,7 @@ export const HomePage: FC = () => {
             <div className="alert alert-warning mt-3">
               ⚠️ This interface is in development for a stable version. Please save your data.{' '}
               <a
-                href="https://github.com/emilienschultz/activetigger/issues"
+                href="https://github.com/activetigger/activetigger/issues"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -169,7 +169,7 @@ export const HomePage: FC = () => {
                 CREST / CSS @ IPP © 2025
               </a>
               <a
-                href="https://github.com/emilienschultz/activetigger"
+                href="https://github.com/activetigger/activetigger"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="d-flex align-items-center"
