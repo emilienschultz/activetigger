@@ -31,9 +31,13 @@ const sigmaStyle = { height: '100%', width: '100%' };
 export type SigmaCursorTypes = 'crosshair' | 'pointer' | 'grabbing' | undefined;
 export type SigmaToolsType = 'panZoom' | 'marquee';
 interface NodeAttributesType {
+  node_id: string;
   x: number;
   y: number;
+  // Explanation: we want the label displayed to be the node id and not
+  // the label as in the annotation
   label: string;
+  true_label: string;
   size?: number;
 }
 
@@ -79,6 +83,21 @@ export const ProjectionVizSigma: FC<Props> = ({
   );
 
   const [bbox, setBbox] = useState<MarqueBoundingBox | undefined>(frameBbox);
+  //// Action if double click
+  const [clusterHighlight, setClusterHighlight] = useState<string | undefined>(undefined);
+  const setClusterHighlightAfterDoubleClick = useCallback(
+    (id?: string) => {
+      if (id && data) {
+        const selected_node = data.nodes.find((o) => o.node_id === id);
+        if (selected_node) {
+          setClusterHighlight(selected_node.label.toString());
+          return;
+        }
+      }
+      setClusterHighlight(undefined);
+    },
+    [data],
+  );
 
   labelColorMapping['NA'] = COLORS.NA;
 
@@ -98,35 +117,46 @@ export const ProjectionVizSigma: FC<Props> = ({
       const size = getPointSize(data.nodes.length);
       data.nodes.forEach((node) => {
         graph.addNode(node.node_id, {
+          node_id: node.node_id,
           x: node.x,
           y: node.y,
-          label: node.label,
+          label: node.node_id,
+          true_label: node.label,
           size,
         });
       });
       return graph;
     }
     return undefined;
-  }, [data, selectedColumn, selectedId]);
+  }, [data, selectedColumn]);
 
   // nodeReducer change node appearance from colorMapping and selection state
   const nodeReducer = useCallback(
-    (node: string, data: NodeAttributesType): Partial<NodeDisplayData> => {
-      const res: Partial<NodeDisplayData> = { ...data };
+    (_node: string, node: NodeAttributesType): Partial<NodeDisplayData> => {
+      const res: Partial<NodeDisplayData> = { ...node };
 
       // apply color for nodes
-      res.color = labelColorMapping[data.label];
+      if (clusterHighlight) {
+        if (clusterHighlight === node.true_label.toString()) {
+          res.color = labelColorMapping[node.true_label];
+        } else {
+          res.color = labelColorMapping['NA'];
+        }
+      } else {
+        res.color = labelColorMapping[node.true_label];
+      }
 
-      // replace label by node id. Label is the default field in sigma to display the.. label
-      res.label = node;
-      if (selectedId === node) {
+      // only the label is displayed, so we set up the label as the node id
+      res.label = node.node_id;
+
+      if (selectedId === node.node_id) {
         // built-in appearance in Sigma which forces showing the label
         res.highlighted = true;
         res.color = 'black'; // highlight color
       }
       return res;
     },
-    [selectedId, labelColorMapping],
+    [selectedId, labelColorMapping, clusterHighlight],
   );
   const settings: Partial<Settings<NodeAttributesType>> = useMemo(
     () => ({
@@ -168,7 +198,11 @@ export const ProjectionVizSigma: FC<Props> = ({
           graph={graph}
           settings={settings}
         >
-          <GraphEvents setSelectedId={setSelectedId} setSigmaCursor={setSigmaCursor} />
+          <GraphEvents
+            setSelectedIdAfterClick={setSelectedId}
+            setSigmaCursor={setSigmaCursor}
+            setClusterHighlightAfterDoubleClick={setClusterHighlightAfterDoubleClick}
+          />
           {Object.keys(labelColorMapping).length < 15 && (
             <ControlsContainer position="top-left">
               <Caption labelColorMapping={labelColorMapping} />
