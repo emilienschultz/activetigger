@@ -296,13 +296,13 @@ export const BertopicPage: FC = () => {
                 Parameters
               </button>
               <button
-                className="btn-primary-action"
+                className="btn-secondary-action"
                 onClick={() => exportBertopicAsAnnotation(currentBertopic)}
               >
                 Convert to scheme <RiFileTransferLine size={20} />
               </button>
               <button
-                className="btn-primary-action"
+                className="btn-secondary-action"
                 id="download-topics"
                 onClick={() => (currentBertopic ? downloadBertopicTopics(currentBertopic) : null)}
               >
@@ -314,14 +314,14 @@ export const BertopicPage: FC = () => {
                 Representation and Representative Docs
               </Tooltip> */}
               <button
-                className="btn-primary-action"
+                className="btn-secondary-action"
                 id="download-clusters"
                 onClick={() => (currentBertopic ? downloadBertopicClusters(currentBertopic) : null)}
               >
                 Export topic per text <FaCloudDownloadAlt size={20} />
               </button>
               <button
-                className="btn-primary-action"
+                className="btn-secondary-action"
                 id="download-clusters"
                 onClick={() => (currentBertopic ? downloadBertopicReport(currentBertopic) : null)}
               >
