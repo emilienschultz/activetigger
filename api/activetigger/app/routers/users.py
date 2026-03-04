@@ -28,7 +28,7 @@ router = APIRouter(tags=["users"])
 
 
 @router.post("/users/disconnect", dependencies=[Depends(verified_user)], tags=["users"])
-async def disconnect_user(token: Annotated[str, Depends(oauth2_scheme)]) -> None:
+def disconnect_user(token: Annotated[str, Depends(oauth2_scheme)]) -> None:
     """
     Revoke user connexion
     """
@@ -39,7 +39,7 @@ async def disconnect_user(token: Annotated[str, Depends(oauth2_scheme)]) -> None
 
 
 @router.get("/users/me", tags=["users"])
-async def read_users_me(
+def read_users_me(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
 ) -> UserModel:
     """
@@ -52,7 +52,7 @@ async def read_users_me(
 
 
 @router.get("/users", tags=["users"])
-async def existing_users(
+def existing_users(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
 ) -> dict[str, UserModel]:
     """
@@ -65,7 +65,7 @@ async def existing_users(
 
 
 @router.get("/users/recent", tags=["users"])
-async def recent_users() -> int:
+def recent_users() -> int:
     """
     Get the number of recently connected users
     """
@@ -73,7 +73,7 @@ async def recent_users() -> int:
 
 
 @router.post("/users/create", dependencies=[Depends(verified_user)], tags=["users"])
-async def create_user(
+def create_user(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     new_user: NewUserModel,
 ) -> None:
@@ -88,7 +88,7 @@ async def create_user(
 
 
 @router.post("/users/delete", dependencies=[Depends(verified_user)], tags=["users"])
-async def delete_user(
+def delete_user(
     current_user: Annotated[UserInDBModel, Depends(verified_user)], user_to_delete: str
 ) -> None:
     """
@@ -104,7 +104,7 @@ async def delete_user(
 
 
 @router.post("/users/changepwd", dependencies=[Depends(verified_user)], tags=["users"])
-async def change_password(
+def change_password(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     changepwd: ChangePasswordModel,
 ) -> None:
@@ -120,7 +120,7 @@ async def change_password(
 
 
 @router.post("/users/auth/{action}", dependencies=[Depends(verified_user)], tags=["users"])
-async def set_auth(
+def set_auth(
     action: AuthActions,
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     auth: AuthUserModel,
@@ -155,7 +155,7 @@ async def set_auth(
 
 
 @router.get("/users/statistics", dependencies=[Depends(verified_user)], tags=["users"])
-async def get_statistics(
+def get_statistics(
     current_user: Annotated[UserInDBModel, Depends(verified_user)], username: str
 ) -> UserStatistics:
     """
@@ -169,7 +169,7 @@ async def get_statistics(
 
 
 @router.post("/users/resetpwd", tags=["users"])
-async def reset_password(mail: str) -> None:
+def reset_password(mail: str) -> None:
     try:
         orchestrator.users.reset_password(mail)
     except Exception as e:

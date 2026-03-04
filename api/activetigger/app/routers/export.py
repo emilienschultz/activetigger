@@ -24,7 +24,7 @@ router = APIRouter(tags=["export"])
 
 
 @router.get("/export/data", dependencies=[Depends(verified_user)])
-async def export_data(
+def export_data(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     scheme: str,
@@ -42,7 +42,7 @@ async def export_data(
 
 
 @router.get("/export/features", dependencies=[Depends(verified_user)])
-async def export_features(
+def export_features(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     features: list = Query(),
@@ -59,7 +59,7 @@ async def export_features(
 
 
 @router.get("/export/projection", dependencies=[Depends(verified_user)])
-async def export_projection(
+def export_projection(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     format: str = Query(),
@@ -75,7 +75,7 @@ async def export_projection(
 
 
 @router.get("/export/prediction", dependencies=[Depends(verified_user)])
-async def export_prediction(
+def export_prediction(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     format: str = Query(),
@@ -95,7 +95,7 @@ async def export_prediction(
 
 
 @router.get("/export/bert", dependencies=[Depends(verified_user)])
-async def export_bert(
+def export_bert(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     name: str = Query(),
@@ -119,7 +119,7 @@ async def export_bert(
 
 
 @router.get("/export/raw", dependencies=[Depends(verified_user)])
-async def export_raw(
+def export_raw(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
 ) -> FastAPIResponse:
@@ -143,7 +143,7 @@ async def export_raw(
 
 # This is a temporary fix for the sqlite issue that will send static links only when sql database (without nginx redirection)
 @router.get("/export/static", dependencies=[Depends(verified_user)])
-async def export_static(
+def export_static(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     model: str | None = Query(default=None),
@@ -165,7 +165,7 @@ async def export_static(
 
 
 @router.post("/export/generations", dependencies=[Depends(verified_user)])
-async def export_generations(
+def export_generations(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     params: ExportGenerationsParams,
@@ -196,7 +196,7 @@ async def export_generations(
 
 
 @router.get("/export/bertopic/topics", dependencies=[Depends(verified_user)])
-async def export_bertopics_topics(
+def export_bertopics_topics(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     name: str = Query(...),
@@ -212,7 +212,7 @@ async def export_bertopics_topics(
 
 
 @router.get("/export/bertopic/clusters", dependencies=[Depends(verified_user)])
-async def export_bertopics_clusters(
+def export_bertopics_clusters(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     name: str = Query(...),
@@ -228,7 +228,7 @@ async def export_bertopics_clusters(
 
 
 @router.get("/export/bertopic/report", dependencies=[Depends(verified_user)])
-async def export_bertopics_report(
+def export_bertopics_report(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     name: str = Query(...),
@@ -244,7 +244,7 @@ async def export_bertopics_report(
 
 
 # @router.get("/export/prediction/quickmodel", dependencies=[Depends(verified_user)])
-# async def export_quickmodel_predictions(
+# def export_quickmodel_predictions(
 #     project: Annotated[Project, Depends(get_project)],
 #     current_user: Annotated[UserInDBModel, Depends(verified_user)],
 #     name: str,

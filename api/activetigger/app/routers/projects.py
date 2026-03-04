@@ -1,4 +1,3 @@
-import asyncio
 from typing import Annotated
 
 from fastapi import (
@@ -34,7 +33,7 @@ router = APIRouter(tags=["projects"])
 
 
 @router.post("/projects/close/{project_slug}", dependencies=[Depends(verified_user)])
-async def close_project(
+def close_project(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project_slug: str,
 ) -> None:
@@ -49,7 +48,7 @@ async def close_project(
 
 
 @router.get("/projects/{project_slug}/statistics", dependencies=[Depends(verified_user)])
-async def get_project_statistics(
+def get_project_statistics(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     scheme: str | None = None,
@@ -65,7 +64,7 @@ async def get_project_statistics(
 
 
 @router.get("/projects/auth", dependencies=[Depends(verified_user)])
-async def get_project_auth(
+def get_project_auth(
     current_user: Annotated[UserInDBModel, Depends(verified_user)], project_slug: str
 ) -> ProjectAuthsModel:
     """
@@ -81,7 +80,7 @@ async def get_project_auth(
 
 
 @router.post("/projects/new", dependencies=[Depends(verified_user)])
-async def new_project(
+def new_project(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project: ProjectBaseModel,
 ) -> str:
@@ -107,7 +106,7 @@ async def new_project(
     "/projects/update",
     dependencies=[Depends(verified_user), Depends(check_auth_exists)],
 )
-async def update_project(
+def update_project(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     update: ProjectUpdateModel,
@@ -136,7 +135,7 @@ async def update_project(
     "/projects/delete",
     dependencies=[Depends(verified_user), Depends(check_auth_exists)],
 )
-async def delete_project(
+def delete_project(
     project_slug: str,
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
 ) -> None:
@@ -154,7 +153,7 @@ async def delete_project(
 
 
 @router.get("/projects/status", dependencies=[Depends(verified_user)])
-async def get_project_status(
+def get_project_status(
     project_name: str,
 ) -> str:
     """
@@ -181,7 +180,7 @@ async def get_project_status(
 
 
 @router.post("/projects/evalset/delete", dependencies=[Depends(verified_user)])
-async def delete_evalset(
+def delete_evalset(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     dataset: str,
@@ -200,7 +199,7 @@ async def delete_evalset(
 
 
 @router.post("/projects/evalset/add", dependencies=[Depends(verified_user)])
-async def add_testdata(
+def add_testdata(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     dataset: str,
@@ -224,7 +223,7 @@ async def add_testdata(
 
 
 @router.get("/projects")
-async def get_projects(
+def get_projects(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
 ) -> AvailableProjectsModel:
     """
@@ -240,7 +239,7 @@ async def get_projects(
 
 
 @router.get("/datasets", dependencies=[Depends(verified_user)])
-async def get_project_datasets(
+def get_project_datasets(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     include_toy_datasets: bool = False,
 ) -> tuple[list[DatasetModel], list[DatasetModel] | None]:
@@ -259,7 +258,7 @@ async def get_project_datasets(
     "/projects/{project_slug}",
     dependencies=[Depends(verified_user), Depends(check_auth_exists)],
 )
-async def get_project_state(
+def get_project_state(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project: Annotated[Project, Depends(get_project)],
 ) -> ProjectStateModel:
@@ -268,6 +267,6 @@ async def get_project_state(
     """
     test_rights(ProjectAction.GET, current_user.username, project.project_slug)
     try:
-        return await asyncio.to_thread(project.state)
+        return project.state()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
