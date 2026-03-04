@@ -62,7 +62,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
   const [showParameters, setShowParameters] = useState<boolean>(false);
 
   // unique labels
-  const uniqueLabels = projectionData ? [...new Set(projectionData.labels)] : [];
+  const uniqueLabels = projectionData ? [...new Set(projectionData.nodes.map((o) => o.label))] : [];
   const colormap = chroma.scale('Paired').colors(uniqueLabels.length);
 
   // form management

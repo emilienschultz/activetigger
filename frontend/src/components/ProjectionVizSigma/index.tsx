@@ -7,22 +7,14 @@ import { PiSelectionSlashBold } from 'react-icons/pi';
 import { Settings } from 'sigma/settings';
 import { NodeDisplayData } from 'sigma/types';
 import { COLORS } from '../../core/colors';
-import { ActiveModel } from '../../types';
+import { ProjectionOutModel } from '../../types';
 import { Caption } from './Caption';
 import GraphEvents from './GraphEvents';
 import { MarqueBoundingBox, MarqueeController } from './MarqueeController';
 import { MarqueeDisplay } from './MarqueeDisplay';
 
 interface Props {
-  data: {
-    status: string;
-    index: unknown[];
-    x: unknown[];
-    y: unknown[];
-    labels?: string[] | null;
-    predictions?: unknown[] | null;
-    active_model?: ActiveModel | null;
-  };
+  data: ProjectionOutModel;
   // bbox
   // frameBbox?: MarqueBoundingBox;
   frame?: number[];
@@ -103,12 +95,12 @@ export const ProjectionVizSigma: FC<Props> = ({
     const graph = new Graph<NodeAttributesType>();
     if (data) {
       //TODO: refine those quick heuristics
-      const size = getPointSize(data.x.length);
-      data.x.forEach((value, index) => {
-        graph.addNode(data.index[index], {
-          x: value as number,
-          y: data.y[index] as number,
-          label: data[selectedColumn]?.[index] as string,
+      const size = getPointSize(data.nodes.length);
+      data.nodes.forEach((node) => {
+        graph.addNode(node.node_id, {
+          x: node.x,
+          y: node.y,
+          label: node.label,
           size,
         });
       });
@@ -147,7 +139,8 @@ export const ProjectionVizSigma: FC<Props> = ({
 
   return (
     <div>
-      {data.predictions && (
+      {/* // Weird euristic but if there are predictions, they will be as strings */}
+      {data.nodes[0].predictions && (
         <>
           <label>Color by: </label>
           <select
@@ -161,7 +154,6 @@ export const ProjectionVizSigma: FC<Props> = ({
           </select>
         </>
       )}
-
       <div
         style={{
           width: '100%',

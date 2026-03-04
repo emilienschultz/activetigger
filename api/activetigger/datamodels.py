@@ -391,19 +391,22 @@ class ProjectionDataModel(BaseModel):
     parameters: ProjectionParametersModel
 
 
+class ProjectionOutModelNode(BaseModel):
+    node_id: str
+    label: str
+    x: float 
+    y: float
+    predictions: list | None = None
+
 class ProjectionOutModel(BaseModel):
     """
     Posting projection
     """
 
     status: str
-    index: list
-    x: list
-    y: list
     parameters: ProjectionParametersModel
-    labels: list[str] | None = None
-    predictions: list[str] | None = None
     active_model: ActiveModel | None = None
+    nodes: list[ProjectionOutModelNode]
 
 
 class FeatureModel(BaseModel):
