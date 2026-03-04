@@ -7,7 +7,7 @@ import logo from '../../assets/at.png';
 import { useAuth } from '../../core/auth';
 import { useAppContext } from '../../core/context';
 
-const DOCUMENTATION_LINK = 'https://emilienschultz.github.io/activetigger/docs';
+const DOCUMENTATION_LINK = 'https://activetigger.github.io/documentation';
 
 interface NavBarPropsType {
   currentPage?: string;

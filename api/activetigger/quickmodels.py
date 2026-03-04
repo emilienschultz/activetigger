@@ -200,7 +200,7 @@ class QuickModels:
             "random_seed": config.random_seed,
             "exclude_labels": exclude_labels
         }
-        unique_id = self.queue.add_task("quickmodel", project_slug, TrainML(**args))
+        unique_id = self.queue.add_task("train_quickmodel", project_slug, TrainML(**args))
         del args
 
         req = QuickModelComputing(

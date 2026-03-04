@@ -63,7 +63,7 @@ async def get_project(project_slug: str) -> Project:
     return orchestrator.projects[project_slug]
 
 
-async def verified_user(
+def verified_user(
     request: Request, token: Annotated[str, Depends(oauth2_scheme)]
 ) -> UserInDBModel:
     """
@@ -87,7 +87,7 @@ async def verified_user(
         raise HTTPException(status_code=404) from e
 
 
-async def check_auth_exists(
+def check_auth_exists(
     request: Request,
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project_slug: str,

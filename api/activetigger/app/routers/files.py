@@ -1,11 +1,10 @@
-import asyncio
 import os
 import random
 import shutil
+import time
 from pathlib import Path
 from typing import Annotated
 
-import aiofiles  # type: ignore[import]
 from fastapi import (
     APIRouter,
     Depends,
@@ -32,7 +31,7 @@ router = APIRouter(tags=["files"])
 
 
 @router.post("/files/add/project")
-async def upload_file_project(
+def upload_file_project(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project_name: str,
     file: UploadFile = File(...),
@@ -45,7 +44,7 @@ async def upload_file_project(
 
     # add a delay if projects are already being created
     if len(orchestrator.project_creation_ongoing) >= 3:
-        await asyncio.sleep(random.randint(1, 4))
+        time.sleep(random.randint(1, 4))
 
     # check if the project does not already exist
     if orchestrator.exists(project_name):
@@ -69,10 +68,10 @@ async def upload_file_project(
         project_path = Path(f"{config.data_path}/projects/{project_slug}")
         os.makedirs(project_path)
 
-        # Read and write the file asynchronously
-        async with aiofiles.open(project_path.joinpath(file.filename), "wb") as out_file:
-            while chunk := await file.read(1024 * 1024):
-                await out_file.write(chunk)
+        # Read and write the file synchronously
+        with open(project_path.joinpath(file.filename), "wb") as out_file:
+            while chunk := file.file.read(1024 * 1024):
+                out_file.write(chunk)
         print("File uploaded successfully")
 
     except Exception as e:
@@ -83,7 +82,7 @@ async def upload_file_project(
 
 
 @router.post("/files/add/dataset")
-async def upload_file_dataset(
+def upload_file_dataset(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     file: UploadFile = File(...),
@@ -103,17 +102,15 @@ async def upload_file_dataset(
         raise HTTPException(status_code=500, detail="Only csv and parquet files are allowed")
 
     try:
-        async with aiofiles.open(
-            project.data.path_datasets.joinpath(file.filename), "wb"
-        ) as out_file:
-            while chunk := await file.read(1024 * 1024):
-                await out_file.write(chunk)
+        with open(project.data.path_datasets.joinpath(file.filename), "wb") as out_file:
+            while chunk := file.file.read(1024 * 1024):
+                out_file.write(chunk)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/files/copy/project")
-async def copy_existing_data(
+def copy_existing_data(
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     project_name: str,
     source_project: str,

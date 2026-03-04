@@ -11,7 +11,7 @@ This guide explains the basics of all functionalities, but you do not have to us
 
 !!! warning "ActiveTigger is in beta"
 
-    ActiveTigger is still in its beta version, and we are working on improving it. If you encounter any issues (or you have suggestions), please let us know on [Github issues](https://github.com/emilienschultz/activetigger/issues)
+    ActiveTigger is still in its beta version, and we are working on improving it. If you encounter any issues (or you have suggestions), please let us know on [Github issues](https://github.com/activetigger/activetigger/issues)
 
 _Note: ActiveTigger currently only works for multiclass/multilabel annotation, not span annotation._
 

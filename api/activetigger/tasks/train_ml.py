@@ -215,6 +215,11 @@ class TrainML(BaseTask):
             )
         os.replace(path_to_metrics_json_tmp, path_to_metrics_json)
 
+    def _check_cancelled(self) -> None:
+        """Raise if the user requested cancellation."""
+        if self.event is not None and self.event.is_set():
+            raise Exception("Process interrupted by user")
+
     def __call__(self) -> EventsModel:
         """
         Fit quickmodel and calculate statistics
@@ -231,6 +236,8 @@ class TrainML(BaseTask):
         X_train, X_test, Y_train, Y_test = self.__split_set(X_for_training, Y_for_training)
         task_timer.stop("setup")
 
+        self._check_cancelled()
+
         # Fit model --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
         try:
             task_timer.start("train")
@@ -238,6 +245,8 @@ class TrainML(BaseTask):
             task_timer.stop("train")
         except Exception as e:
             raise Exception((f"Problem fitting the model (TrainML.__call__)\nError: {e}"))
+
+        self._check_cancelled()
 
         # predict on test data --- --- --- --- --- --- --- --- --- --- --- --- -
         try:
@@ -258,6 +267,8 @@ class TrainML(BaseTask):
         except Exception as e:
             raise Exception((f"Problem calculating the entropy (TrainML.__call__)\nError: {e}"))
 
+        self._check_cancelled()
+
         # Compute metrics --- --- --- --- --- --- --- --- --- --- --- --- --- --
         try:
             metrics_train = self.__compute_metrics(y_true=Y_train, y_pred=Y_pred_train)
@@ -265,6 +276,8 @@ class TrainML(BaseTask):
             task_timer.stop("evaluate")
         except Exception as e:
             raise Exception((f"Problem computing the metrics (TrainML.__call__)\nError: {e}"))
+
+        self._check_cancelled()
 
         if self.cv10:
             try:

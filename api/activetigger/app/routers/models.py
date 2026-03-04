@@ -28,7 +28,7 @@ router = APIRouter(tags=["models"])
 
 
 @router.post("/models/quick/train", dependencies=[Depends(verified_user)])
-async def train_quickmodel(
+def train_quickmodel(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     quickmodel: QuickModelInModel,
@@ -47,7 +47,7 @@ async def train_quickmodel(
 
 
 @router.post("/models/quick/retrain", dependencies=[Depends(verified_user)])
-async def retrain_quickmodel(
+def retrain_quickmodel(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     scheme: str,
@@ -65,7 +65,7 @@ async def retrain_quickmodel(
 
 
 @router.post("/models/quick/delete", dependencies=[Depends(verified_user)])
-async def delete_quickmodel(
+def delete_quickmodel(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     name: str,
@@ -84,7 +84,7 @@ async def delete_quickmodel(
 
 
 @router.post("/models/quick/rename", dependencies=[Depends(verified_user)])
-async def save_bert(
+def save_bert(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     former_name: str,
@@ -106,7 +106,7 @@ async def save_bert(
 
 
 @router.get("/models/quick", dependencies=[Depends(verified_user)])
-async def get_quickmodel(
+def get_quickmodel(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     name: str,
@@ -135,7 +135,7 @@ async def get_quickmodel(
 
 
 @router.get("/models/information", dependencies=[Depends(verified_user)])
-async def get_model_information(
+def get_model_information(
     project: Annotated[Project, Depends(get_project)], name: str, kind: str
 ) -> ModelInformationsModel:
     """
@@ -153,7 +153,7 @@ async def get_model_information(
 
 
 @router.post("/models/predict", dependencies=[Depends(verified_user)])
-async def predict(
+def predict(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     model_name: str,
@@ -279,7 +279,7 @@ async def predict(
 
 
 @router.post("/models/bert/train", dependencies=[Depends(verified_user)])
-async def post_bert(
+def post_bert(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     bert: BertModelModel,
@@ -306,7 +306,7 @@ async def post_bert(
 
 
 @router.post("/models/bert/delete", dependencies=[Depends(verified_user)])
-async def delete_bert(
+def delete_bert(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     bert_name: str,
@@ -330,7 +330,7 @@ async def delete_bert(
 
 
 @router.post("/models/bert/rename", dependencies=[Depends(verified_user)])
-async def rename_bert(
+def rename_bert(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     former_name: str,

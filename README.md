@@ -1,6 +1,6 @@
 # Active Tigger
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/emilienschultz/pyactivetigger/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/activetigger/activetigger/blob/main/LICENSE)
 [![Python Version](https://img.shields.io/badge/python-3.11-blue)](https://www.python.org/downloads/)
 [![PyPI Version](https://img.shields.io/pypi/v/activetigger)](https://pypi.org/project/activetigger/)
 ![React](https://img.shields.io/badge/React-18.0.0-blue)
@@ -23,7 +23,7 @@ Designed primarily by researchers in social sciences, its use can extend to all 
 Clone the current repository.
 
 ```bash
-git clone https://github.com/emilienschultz/activetigger.git
+git clone https://github.com/activetigger/activetigger.git
 ```
 
 Favor the production branch.
@@ -65,7 +65,7 @@ The app is built on a client/API/Database architecture :
 First, clone the repository
 
 ```bash
-git clone https://github.com/emilienschultz/activetigger.git
+git clone https://github.com/activetigger/activetigger.git
 ```
 
 ### Install the Python API
@@ -165,7 +165,7 @@ You can deploy the app with Github Pages for tests
 
 ## Python client
 
-A python client is under development to interact with the API https://github.com/emilienschultz/activetigger-client
+A python client is under development to interact with the API https://github.com/activetigger/activetigger-client
 
 ## Documentation
 
@@ -187,7 +187,7 @@ The development of Active Tigger is supported by : [DRARI Île-de-France](https:
 
 ## How to cite
 
-Boelaert J., Ollion É., Schultz É. (2025). ActiveTigger (Version 0.9.0) [Computer software]. https://github.com/emilienschultz/activetigger
+Boelaert J., Ollion É., Schultz É. (2025). ActiveTigger (Version 0.9.0) [Computer software]. https://github.com/activetigger/activetigger
 
 
 [^1]: The current version is a refactor of [R Shiny ActiveTigger app (Julien Boelaert & Etienne Ollion)](https://gitlab.univ-lille.fr/julien.boelaert/activetigger). Active Tigger name is a pun that draws on the similarity between the words 'Tagger' and 'Tigger.'
