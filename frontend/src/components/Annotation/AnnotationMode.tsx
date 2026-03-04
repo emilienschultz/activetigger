@@ -253,13 +253,9 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
                       color: selectionConfig.frameSelection ? 'green' : 'grey',
                       cursor: 'pointer',
                     }}
-                    title="Map"
+                    title="Map frame selection"
                     id="map-icon"
                   />
-
-                  <Tooltip anchorSelect="#map-icon" place="top">
-                    Map frame selection
-                  </Tooltip>
                 </button>
                 <span className="badge info">
                   {selectionConfig.frameSelection ? 'active' : 'inactive'}
