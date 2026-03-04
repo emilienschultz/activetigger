@@ -1088,6 +1088,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/export/bertopic/embeddings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Bertopics Report
+         * @description Export annotations
+         */
+        get: operations["export_bertopics_report_export_bertopic_embeddings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/models/quick/train": {
         parameters: {
             query?: never;
@@ -5304,6 +5324,38 @@ export interface operations {
         };
     };
     export_bertopics_report_export_bertopic_report_get: {
+        parameters: {
+            query: {
+                name: string;
+                project_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_bertopics_report_export_bertopic_embeddings_get: {
         parameters: {
             query: {
                 name: string;
