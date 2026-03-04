@@ -15,6 +15,7 @@ import {
   useDeleteBertopic,
   useDownloadBertopicClusters,
   useDownloadBertopicReport,
+  useDownloadBertopicEmbeddings,
   useDownloadBertopicTopics,
   useExportTopicsToScheme,
   useGetBertopicProjection,
@@ -34,6 +35,7 @@ export const BertopicPage: FC = () => {
   const { downloadBertopicTopics } = useDownloadBertopicTopics(projectName || null);
   const { downloadBertopicClusters } = useDownloadBertopicClusters(projectName || null);
   const { downloadBertopicReport } = useDownloadBertopicReport(projectName || null);
+  const { downloadBertopicEmbeddings } = useDownloadBertopicEmbeddings(projectName || null);
   const availableBertopic = currentProject ? currentProject.bertopic.available : [];
   const [currentBertopic, setCurrentBertopic] = useState<string | null>(null);
   const { getElementById } = useGetElementById();
@@ -327,11 +329,15 @@ export const BertopicPage: FC = () => {
               >
                 Topic model report <FaCloudDownloadAlt size={20} />
               </button>
-              {/* <Tooltip anchorSelect="#download-clusters" place="top">
-                Download a table linking each element to a cluster. The table contains 2
-                <br />
-                columns: id and cluster
-              </Tooltip> */}
+              <button
+                className="btn-secondary-action"
+                id="download-embeddings"
+                onClick={() =>
+                  currentBertopic ? downloadBertopicEmbeddings(currentBertopic) : null
+                }
+              >
+                Embeddings <FaCloudDownloadAlt size={20} />
+              </button>
             </div>
             <div style={{ height: `${80 * (1 + topics.length)}px`, margin: '15px 0px' }}>
               <DisplayTableTopics data={(topics as unknown as Row[]) || []} />
