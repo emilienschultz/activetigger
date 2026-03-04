@@ -7,6 +7,7 @@ from activetigger.datamodels import (
     BertopicTopicsOutModel,
     ComputeBertopicModel,
     UserInDBModel,
+    BertopicProjectionData
 )
 from activetigger.orchestrator import orchestrator
 from activetigger.project import Project
@@ -78,7 +79,7 @@ async def get_bertopic_projection(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     name: str = Query(...),
-) -> dict[str, list | dict]:
+) -> BertopicProjectionData:
     """
     Get projection from the BERTopic model for the project.
     """

@@ -46,7 +46,6 @@ export const BertopicPage: FC = () => {
     projectName || null,
     currentBertopic,
   );
-  const labels = projection?.labels;
   const currentTraining = currentProject ? Object.entries(currentProject.bertopic.training) : null;
   const availableModels = currentProject ? currentProject.bertopic.models : [];
   useEffect(() => {
@@ -68,9 +67,11 @@ export const BertopicPage: FC = () => {
     [getElementById],
   );
 
-  const uniqueLabels = projection ? [...new Set(projection.cluster as string[])] : [];
+  const uniqueLabels = projection
+    ? (Object.values(projection.cluster_id_label_mapper) as string[])
+    : [];
   const colormap = chroma.scale('Paired').colors(uniqueLabels.length);
-  const labelColorMapping = uniqueLabels.reduce<Record<string, string>>(
+  const clusterIdColorMapping = uniqueLabels.reduce<Record<string, string>>(
     (acc, label, index: number) => {
       acc[label as string] = colormap[index];
       return acc;
@@ -243,17 +244,9 @@ export const BertopicPage: FC = () => {
             <div style={{ height: `${figSize}vh`, width: '80vw' }}>
               <BertopicVizSigma
                 className={`col-12 border h-100`}
-                data={
-                  projection as {
-                    id: unknown[];
-                    x: unknown[];
-                    y: unknown[];
-                    cluster: string[];
-                  }
-                }
+                nodes={projection.nodes}
                 setSelectedId={setSelectedId}
-                labelColorMapping={labelColorMapping}
-                labelDescription={labels as unknown as { [key: string]: string }}
+                clusterIdColorMapping={clusterIdColorMapping}
               />
             </div>
             {currentText && (
