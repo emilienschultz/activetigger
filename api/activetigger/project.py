@@ -573,9 +573,10 @@ class Project:
 
         # only dfm feature for multi_naivebayes (FORCE IT if available else error)
         if quickmodel.model == "multi_naivebayes":
-            if "dfm" not in self.features.map:
+            dfm_features = [f for f in self.features.map if f.startswith("dfm")]
+            if not dfm_features:
                 raise Exception("No dfm feature available")
-            quickmodel.features = ["dfm"]
+            quickmodel.features = dfm_features
             quickmodel.standardize = False
 
         if quickmodel.params is None:

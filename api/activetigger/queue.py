@@ -30,9 +30,7 @@ class CancelEvent:
     """
 
     def __init__(self) -> None:
-        self._path = os.path.join(
-            tempfile.gettempdir(), f"activetigger_cancel_{uuid.uuid4().hex}"
-        )
+        self._path = os.path.join(tempfile.gettempdir(), f"activetigger_cancel_{uuid.uuid4().hex}")
 
     def set(self) -> None:
         """Signal cancellation by creating the sentinel file."""
@@ -153,7 +151,13 @@ class Queue:
         Add new tasks to the executor if there are available workers.
         """
         while True:
-            await asyncio.to_thread(self._dispatch_pending_tasks)
+            try:
+                await asyncio.to_thread(self._dispatch_pending_tasks)
+            except asyncio.CancelledError:
+                print("Queue update task cancelled.")
+                return
+            except Exception as e:
+                print(f"Error in queue dispatch: {e}")
             await asyncio.sleep(timeout)
 
     def add_task(self, kind: str, project_slug: str, task: BaseTask, queue: str = "cpu") -> str:

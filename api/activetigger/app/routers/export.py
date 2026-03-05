@@ -242,6 +242,21 @@ def export_bertopics_report(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/export/bertopic/embeddings", dependencies=[Depends(verified_user)])
+def export_bertopics_report(
+    project: Annotated[Project, Depends(get_project)],
+    current_user: Annotated[UserInDBModel, Depends(verified_user)],
+    name: str = Query(...),
+) -> FileResponse:
+    """
+    Export annotations
+    """
+    test_rights(ProjectAction.EXPORT_DATA, current_user.username, project.name)
+    try:
+        return project.bertopic.export_embeddings(name=name)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 # @router.get("/export/prediction/quickmodel", dependencies=[Depends(verified_user)])
 # def export_quickmodel_predictions(

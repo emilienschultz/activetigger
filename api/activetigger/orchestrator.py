@@ -236,17 +236,22 @@ class Orchestrator:
         """
         try:
             while self._running:
-                # run synchronous update_processes in a thread
-                await asyncio.to_thread(self._sync_update_processes, project_lifetime)
+                try:
+                    # run synchronous update_processes in a thread
+                    await asyncio.to_thread(self._sync_update_processes, project_lifetime)
 
-                # refresh heavy system stats periodically in a thread
-                now = time.time()
-                if (now - self._heavy_stats_last_update) >= self._heavy_stats_interval:
-                    self._heavy_stats_cache = await asyncio.to_thread(self._collect_heavy_stats)
-                    self._heavy_stats_last_update = now
+                    # refresh heavy system stats periodically in a thread
+                    now = time.time()
+                    if (now - self._heavy_stats_last_update) >= self._heavy_stats_interval:
+                        self._heavy_stats_cache = await asyncio.to_thread(self._collect_heavy_stats)
+                        self._heavy_stats_last_update = now
 
-                # build server state (cheap parts only, heavy stats come from cache)
-                self.server_state = self.get_server_state()
+                    # build server state (cheap parts only, heavy stats come from cache)
+                    self.server_state = self.get_server_state()
+                except Exception as e:
+                    print(f"Error in update loop iteration: {e}")
+                    traceback.print_exc()
+
                 await asyncio.sleep(timeout)
         except asyncio.CancelledError:
             print("Update task cancelled.")

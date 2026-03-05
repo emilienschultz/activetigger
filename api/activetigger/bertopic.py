@@ -343,6 +343,23 @@ class Bertopic:
         else:
             raise FileNotFoundError(f"Model {name} does not exist.")
 
+    def export_embeddings(self, name: str) -> FileResponse:
+        """
+        Export embeddings used for BERTopic model.
+        """
+        
+        path_params = self.path.joinpath("runs").joinpath(name).joinpath("params.json")
+        if path_params.exists():
+            with open(path_params, "r") as file:
+                path_embeddings = json.load(file)["path_embeddings"]
+            path_embeddings = Path(path_embeddings)
+            if path_embeddings.exists():
+                return FileResponse(path=path_embeddings, filename=f"bertopic_embeddings_{name}.parquet")
+            else:
+                raise FileNotFoundError(f"Embeddings for model {name} do not exist.")
+        else:
+            raise FileNotFoundError(f"Model {name} does not exist.")
+
     def export_to_scheme(self, name: str) -> tuple[list[str], dict[str, int], dict[int, str]]:
         """
         Export topics and clusters from a BERTopic model as a scheme.

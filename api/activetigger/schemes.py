@@ -288,7 +288,8 @@ class Schemes:
         # update the scheme (no need to add empty annotation in the database)
         labels = available[scheme].labels
         labels.remove(former_label)
-        labels.append(new_label)
+        if new_label not in labels:
+            labels.append(new_label)
         self.update_scheme(scheme, labels)
 
     def get_total(self, dataset: str = "train") -> int:
