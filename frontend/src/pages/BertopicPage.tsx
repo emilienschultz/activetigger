@@ -61,14 +61,19 @@ export const BertopicPage: FC = () => {
 
   // Action if clicked
   const [currentText, setCurrentText] = useState<string | null>(null);
-  const setSelectedId = useCallback(
+  const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
+  const setSelectedIdAfterClick = useCallback(
     // For the moment, only get something if it is the trainset
     (id?: string) => {
       if (id) {
+        setSelectedId(id);
         getElementById(id, 'train').then((res) => {
           setCurrentText(String(id) + ': ' + res?.text || null);
         });
-      } else setCurrentText(null);
+      } else {
+        setSelectedId(undefined);
+        setCurrentText(null);
+      }
     },
     [getElementById],
   );
@@ -266,7 +271,8 @@ export const BertopicPage: FC = () => {
               <BertopicVizSigma
                 className={`col-12 border h-100`}
                 nodes={projection.nodes}
-                setSelectedId={setSelectedId}
+                selectedId={selectedId}
+                setSelectedIdAfterClick={setSelectedIdAfterClick}
                 clusterIdColorMapping={clusterIdColorMapping}
                 clusterHighlight={clusterHighlight}
                 setClusterHighlightAfterDoubleClick={setClusterHighlightAfterDoubleClick}

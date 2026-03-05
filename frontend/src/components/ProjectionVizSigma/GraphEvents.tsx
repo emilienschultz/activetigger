@@ -3,10 +3,10 @@ import { Dispatch, SetStateAction, useEffect } from 'react';
 import { SigmaCursorTypes } from '.';
 
 const GraphEvents: React.FC<{
-  setSelectedId: (id?: string) => void;
+  setSelectedIdAfterClick: (id?: string) => void;
   setSigmaCursor: Dispatch<SetStateAction<SigmaCursorTypes>>;
   setClusterHighlightAfterDoubleClick: (id?: string) => void;
-}> = ({ setSelectedId, setSigmaCursor, setClusterHighlightAfterDoubleClick }) => {
+}> = ({ setSelectedIdAfterClick, setSigmaCursor, setClusterHighlightAfterDoubleClick }) => {
   const registerEvents = useRegisterEvents();
 
   useEffect(() => {
@@ -14,9 +14,9 @@ const GraphEvents: React.FC<{
     registerEvents({
       // (un)Select node
       clickNode: (event) => {
-        setSelectedId(event.node);
+        setSelectedIdAfterClick(event.node);
       },
-      clickStage: () => setSelectedId(undefined),
+      clickStage: () => setSelectedIdAfterClick(undefined),
       // pointer cursor
       enterNode: () => {
         setSigmaCursor('pointer');
@@ -43,7 +43,7 @@ const GraphEvents: React.FC<{
         setClusterHighlightAfterDoubleClick(undefined);
       },
     });
-  }, [registerEvents, setSelectedId, setSigmaCursor]);
+  }, [registerEvents, setSelectedIdAfterClick, setSigmaCursor]);
 
   return null;
 };

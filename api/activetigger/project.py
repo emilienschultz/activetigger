@@ -42,6 +42,7 @@ from activetigger.datamodels import (
     ProjectDescriptionModel,
     ProjectionComputing,
     ProjectionOutModel,
+    ProjectionOutModelNode,
     ProjectModel,
     ProjectStateModel,
     ProjectUpdateModel,
@@ -1082,6 +1083,7 @@ class Project:
         data = projection.data
         data["labels"] = df["labels"].fillna("NA")
 
+
         # get & add predictions if available
         if active_model is not None and active_model.type == "quickmodel":
             if not self.quickmodels.exists(active_model.value):
@@ -1094,14 +1096,30 @@ class Project:
                 "prediction"
             ]
 
+        if "prediction" in data: 
+            predictions = data["prediction"].to_list()
+        else:
+            predictions = [None] * len(data)
+
         return ProjectionOutModel(
-            index=list(data.index),
-            x=list(data[0]),
-            y=list(data[1]),
+            nodes = [
+                ProjectionOutModelNode(
+                    node_id = node_id,
+                    x = x,
+                    y = y,
+                    label = label,
+                    prediction = prediction,
+                )
+                for node_id, x, y, label, prediction in zip(
+                    data.index.to_list(),
+                    data[0].to_list(),
+                    data[1].to_list(),
+                    data["labels"].to_list(),
+                    predictions
+                )
+            ],
             status=projection.id,
             parameters=projection.parameters,
-            labels=list(data["labels"]),
-            predictions=list(data["prediction"]) if "prediction" in data else None,
             active_model=active_model,
         )
 
