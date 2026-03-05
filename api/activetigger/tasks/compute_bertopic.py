@@ -441,6 +441,7 @@ class ComputeBertopic(BaseTask):
         topic_model: BERTopic,
         topics: list[int],
         embeddings: np.ndarray,
+        path_embeddings: Path,
         path_projection: Path,
     ) -> None:
         """Create the following files:
@@ -477,7 +478,7 @@ class ComputeBertopic(BaseTask):
                     "name": self.name,
                     "timestamp": self.timestamp,
                     "path_data": str(self.path_data),
-                    "path_embeddings": str(self.existing_embeddings),
+                    "path_embeddings": str(path_embeddings),
                     "path_projection": str(path_projection),
                 },
                 f,
@@ -682,6 +683,7 @@ class ComputeBertopic(BaseTask):
                 topics=topics,
                 embeddings=embeddings,
                 path_projection=path_projection,
+                path_embeddings=path_embeddings,
             )
 
             self.path_run.joinpath("progress").unlink(missing_ok=True)

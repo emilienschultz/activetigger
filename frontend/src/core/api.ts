@@ -2697,6 +2697,38 @@ export function useDownloadBertopicReport(projectSlug: string | null) {
 }
 
 /**
+ * Get bertopic embeddings
+ */
+export function useDownloadBertopicEmbeddings(projectSlug: string | null) {
+  const { notify } = useNotifications();
+  const downloadBertopicEmbeddings = useCallback(
+    async (name: string) => {
+      if (projectSlug) {
+        const res = await api.GET('/export/bertopic/embeddings', {
+          params: {
+            query: {
+              project_slug: projectSlug,
+              name: name,
+            },
+          },
+          parseAs: 'blob',
+        });
+
+        if (!res.error) {
+          notify({ type: 'success', message: 'Exporting bertopic embeddings' });
+          saveAs(res.data, `bertopic_embeddings_${projectSlug}_${name}.parquet`);
+        }
+        return true;
+      }
+      return null;
+    },
+    [projectSlug, notify],
+  );
+
+  return { downloadBertopicEmbeddings };
+}
+
+/**
  * Send reset mail
  */
 
