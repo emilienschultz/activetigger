@@ -52,6 +52,12 @@ def compute_bertopic(
         orchestrator.log_action(
             current_user.username, f"COMPUTE BERTopic MODEL: {bertopic.name}", project.name
         )
+        project.monitoring.register_process(
+            process_name=unique_id,
+            kind="fit_bertopic",
+            parameters={},
+            user_name=current_user.username,
+        )
         return unique_id
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

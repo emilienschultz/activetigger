@@ -20,9 +20,10 @@ from sklearn.feature_extraction.text import CountVectorizer  # type: ignore[impo
 from slugify import slugify
 
 from activetigger.config import config
-from activetigger.datamodels import BertopicParamsModel
+from activetigger.datamodels import BertopicParamsModel, EventsModel
 from activetigger.tasks.base_task import BaseTask
 from activetigger.tasks.compute_sbert import ComputeSbert
+from activetigger.monitoring import TaskTimer
 
 # accelerate UMAP
 try:
@@ -602,7 +603,7 @@ class ComputeBertopic(BaseTask):
                 j2_template = Template(template_file.read())
                 output_file.write(j2_template.render(jinja_data))
 
-    def __call__(self):
+    def __call__(self) -> EventsModel:
         """
         Compute BERTopic model
         Main steps:
@@ -612,7 +613,11 @@ class ComputeBertopic(BaseTask):
             - Create BERTopic instance + fit_transform
             - Save parameters, results and a n html report
         """
+        task_timer = TaskTimer(compulsory_steps=["setup", "fit", "save_files"], 
+            optional_steps=["reduce-outliers", "generate-embeddings"]
+        )
         try:
+            task_timer.start("setup")
             path_embeddings, path_projection = self.__init_paths()
             self.update_progress("Initializing")
 
@@ -620,14 +625,18 @@ class ComputeBertopic(BaseTask):
             df = self.__check_text_data(df)
 
             if self.__check_if_embeddings_computation_necessary(path_embeddings):
+                task_timer.start("generate-embeddings")
                 self.__compute_embeddings(df, path_embeddings)
+                task_timer.stop("generate-embeddings")
 
             df_embeddings = self.__load_embeddings(path_embeddings)
             df_embeddings = self.__check_embeddings(df_embeddings, df)
 
             if df_embeddings is None:
                 # If issue when checking the embeddings, force compute the embeddings
+                task_timer.start("generate-embeddings")
                 self.__compute_embeddings(df, path_embeddings)
+                task_timer.stop("generate-embeddings")
                 df_embeddings = self.__load_embeddings(path_embeddings)
                 df_embeddings = self.__check_embeddings(df_embeddings, df)
 
@@ -649,7 +658,9 @@ class ComputeBertopic(BaseTask):
                 umap_model=umap_model,
                 hdbscan_model=hdbscan_model,
             )
-
+            task_timer.stop("setup")
+            
+            task_timer.start("fit")
             self.update_progress(f"Fitting the model on {embeddings.shape[0]} elements")
             print(f"Fitting the model on {embeddings.shape} / {len(df)} elements")
             # Fit the BERTopic model
@@ -657,9 +668,11 @@ class ComputeBertopic(BaseTask):
                 documents=df[self.col_text],
                 embeddings=embeddings,
             )
+            task_timer.stop("fit")
 
             # Add outlier reduction
             if self.parameters.outlier_reduction:
+                task_timer.start("reduce-outliers")
                 try:
                     print("Reducing outliers")
                     topics = topic_model.reduce_outliers(
@@ -674,9 +687,11 @@ class ComputeBertopic(BaseTask):
                         f"Error during outlier reduction: {e} — Most likely "
                         "because there are not enough elements in your dataset"
                     )
+                task_timer.stop("reduce-outliers")
 
             self.__stop_process_opportunity()
 
+            task_timer.start("save_files")
             self.__create_saving_files(
                 df=df,
                 topic_model=topic_model,
@@ -685,9 +700,10 @@ class ComputeBertopic(BaseTask):
                 path_projection=path_projection,
                 path_embeddings=path_embeddings,
             )
-
+            task_timer.stop("save_files")
+            
             self.path_run.joinpath("progress").unlink(missing_ok=True)
-            return
+            return EventsModel(events=task_timer.get_events())
 
         except Exception as e:
             # Case an error happens
