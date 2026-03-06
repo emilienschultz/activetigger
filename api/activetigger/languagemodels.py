@@ -413,7 +413,7 @@ class LanguageModels:
                 project=self.project_slug,
                 scheme=element.scheme or "default",
                 params=element.params or {},
-                path=str(self.path.joinpath(element.model_name)),
+                path=str(self.path.joinpath(element.model_name)), # TODO refactor
                 status="trained",
             )
 
@@ -451,6 +451,19 @@ class LanguageModels:
                     value=True,
                 )
             print("Prediction finished")
+        if  element.kind == "bertopic":
+            print("BERTopic finished")
+            self.language_models_service.add_model(
+                kind = element.kind, 
+                project = self.project_slug,
+                name = element.model_name,
+                user = element.user,
+                status=element.status,
+                scheme=element.scheme,
+                params = element.params,
+                path = str(self.path.parent.joinpath("bertopic").joinpath("runs").joinpath(element.model_name)), #TODO refactor
+
+            )
 
     def get_labels(self, model_name: str) -> list:
         """

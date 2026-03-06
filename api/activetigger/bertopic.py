@@ -79,6 +79,7 @@ class Bertopic:
         parameters: BertopicParamsModel,
         name: str,
         user: str,
+        scheme: str, # This is a dummy necessary to save the model in the database, it will not be used afterwards — Axel
         force_compute_embeddings: bool = False,
     ) -> str:
         """
@@ -114,25 +115,26 @@ class Bertopic:
                 kind="bertopic",
                 force_compute_embeddings=force_compute_embeddings,
                 get_progress=self.get_progress(name),
+                scheme = scheme
             )
         )
         return unique_id
 
-    # def add(self, element: BertopicComputing) -> None:
-    #     """
-    #     Add a trained BERTopic in the database
-    #     """
-    #     model_path = self.path.joinpath("runs").joinpath(element.name)
-    #     self.models_service.add_model(
-    #         kind="bertopic",
-    #         name=element.name,
-    #         user=element.user,
-    #         project=self.project_slug,
-    #         scheme="all",
-    #         params=element.parameters.model_dump(),
-    #         path=str(model_path),
-    #         status="computed",
-    #     )
+    def add(self, element: BertopicComputing) -> None:
+        """
+        Add a trained BERTopic in the database
+        """
+        model_path = self.path.joinpath("runs").joinpath(element.name)
+        self.models_service.add_model(
+            kind="bertopic",
+            project=self.project_slug,
+            name=element.name,
+            user=element.user,
+            status="trained",
+            scheme = element.scheme,
+            params=element.parameters.model_dump(),
+            path=str(model_path),
+        )
 
     def training(self) -> dict[str, dict[str, str | int | None]]:
         """

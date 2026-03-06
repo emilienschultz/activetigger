@@ -119,8 +119,8 @@ class Monitoring:
         # Ensure start_entry.time is timezone-aware for subtraction
         # (PostgreSQL returns tz-aware datetimes, SQLite returns naive ones)
         start_time = start_entry.time
-        if start_time.tzinfo is None:
-            start_time = start_time.replace(tzinfo=timezone.utc)
+        if start_time.tzinfo != end.tzinfo:
+            start_time = start_time.astimezone(end.tzinfo)
         duration = (end - start_time).total_seconds()
         events["global"]["duration"] = duration
         events["global"]["order"] = -1

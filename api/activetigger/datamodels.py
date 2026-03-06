@@ -502,6 +502,7 @@ class ComputeBertopicModel(BertopicParamsModel):
     top_n_words: int = 15
     n_gram_range: tuple[int, int] = (1, 2)
     embedding_kind: str = "sentence_transformers"
+    scheme: str
 
 
 class GenerationAvailableModel(BaseModel):
@@ -625,6 +626,7 @@ class BertopicComputing(ProcessComputing):
     parameters: BertopicParamsModel
     force_compute_embeddings: bool
     get_progress: Callable[[], str | float | None] | None = None
+    scheme:str # This is a dummy necessary to save the model in the database, it will not be used afterwards — Axel
 
 
 class QuickModelInModel(BaseModel):
