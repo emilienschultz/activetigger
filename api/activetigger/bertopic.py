@@ -209,6 +209,8 @@ class Bertopic:
 
         # on disk
         path_model = self.path.joinpath("runs").joinpath(name)
+        # In database 
+        self.models_service.delete_model(self.project_slug, name)
         if path_model.exists():
             shutil.rmtree(path_model)
         else:
