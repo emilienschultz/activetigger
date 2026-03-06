@@ -57,6 +57,8 @@ class CreateProject(BaseTask):
             print("The directory does not exist and should", self.params.dir)
             raise Exception("The directory does not exist and should")
 
+        raise Exception("Force failing")
+
         # Step 1 : load all data, rename columns and define index
         processed_corpus = False
         if self.params.filename is None or self.params.from_toy_dataset:
