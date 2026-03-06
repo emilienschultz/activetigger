@@ -1595,7 +1595,9 @@ class Project:
                             )
                     case "bertopic":
                         bertopic_model = cast(BertopicComputing, e)
+                        events = cast(EventsModel, results)
                         self.bertopic.add(bertopic_model)
+                        self.monitoring.close_process(bertopic_model.unique_id, events)
             except Exception as ex:
                 print(f"Error in {e.kind} : {ex}")
                 self.errors.add(f"Error in {e.kind} : {str(ex)}")
