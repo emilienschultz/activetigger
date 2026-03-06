@@ -51,13 +51,10 @@ class CreateProject(BaseTask):
         return the project model and the train/valid/test datasets to import in the database
         """
         print(f"Start queue project {self.project_slug} for {self.username}")
-
         # check if the directory already exists + file (should with the data)
         if self.params.dir is None or not self.params.dir.exists():
             print("The directory does not exist and should", self.params.dir)
             raise Exception("The directory does not exist and should")
-
-        raise Exception("Force failing")
 
         # Step 1 : load all data, rename columns and define index
         processed_corpus = False

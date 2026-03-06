@@ -195,9 +195,10 @@ class Orchestrator:
             except Exception as e:
                 print(f"Error while updating project {p}: {e}")
                 self.creation_errors[p] = str(e)
+                self.clean_unfinished_project(project_slug=p)
                 to_del.append(p)
         for p in to_del:
-            del self.project_creation_ongoing[p]
+            self.project_creation_ongoing.pop(p, None)
 
     def _collect_heavy_stats(self) -> dict:
         """
