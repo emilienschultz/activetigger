@@ -96,7 +96,7 @@ export const ProjectCreationForm: FC = () => {
         data?.headers.filter((h) => h !== '').map((e) => ({ value: e, label: e })),
       );
       setColumns(data.headers);
-      setLengthData(data.data.length);
+      setLengthData(data.data.length - 1);
       // case of existing project
     } else if (dataset !== 'load' && datasets) {
       const element =
@@ -139,7 +139,7 @@ export const ProjectCreationForm: FC = () => {
           return;
         }
         setData(data);
-        setValue('n_train', Math.min(data?.data.length || 0, 100));
+        setValue('n_train', Math.min((data?.data.length || 1) - 1, 100));
       });
     }
   }, [files, maxSize, notify, setValue]);
@@ -160,13 +160,19 @@ export const ProjectCreationForm: FC = () => {
         notify({ type: 'error', message: 'Please select a text column' });
         return;
       }
-      if (Number(formData.n_train) + Number(formData.n_test) > lengthData) {
+      if (
+        Number(formData.n_train) + Number(formData.n_test) + Number(formData.n_valid) >
+        lengthData
+      ) {
         notify({
           type: 'warning',
           message:
-            'The sum of train and test set is too large, the train set is set to N - testset',
+            'The sum of train, test and valid sets is too large, the train set is adjusted',
         });
-        setValue('n_train', Math.max(0, lengthData - Number(formData.n_test)));
+        setValue(
+          'n_train',
+          Math.max(0, lengthData - Number(formData.n_test) - Number(formData.n_valid)),
+        );
         return;
       }
       // test if the project name is available
@@ -370,7 +376,7 @@ export const ProjectCreationForm: FC = () => {
           dataset === 'load' && data !== null && (
             <>
               <div>
-                Size of the dataset : <b>{lengthData - 1}</b>
+                Size of the dataset : <b>{lengthData}</b>
               </div>
               <DataTable<Record<DataType['headers'][number], string | number>>
                 columns={data.headers.map((h) => ({
