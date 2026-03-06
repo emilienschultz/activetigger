@@ -469,17 +469,25 @@ class Schemes:
             raise Exception("Label doesn't exist")
         labels = available[scheme].labels
         labels.remove(label)
-        # push empty entry for tagged elements
-        # both for train
-        df = self.get_scheme(scheme, datasets=["train"])
-        elements = list(df[df["labels"] == label].index)
-        for i in elements:
-            self.push_annotation(i, None, scheme, user, "train", "delete")
-        # and test
-        df = self.get_scheme(scheme, datasets=["test"])
-        elements = list(df[df["labels"] == label].index)
-        for i in elements:
-            self.push_annotation(i, None, scheme, user, "test", "delete")
+        # push empty entry for tagged elements using batch insert
+        for dataset in ["train", "test", "valid"]:
+            df = self.get_scheme(scheme, datasets=[dataset])
+            elements = list(df[df["labels"] == label].index)
+            if elements:
+                self.projects_service.add_annotations(
+                    dataset=dataset,
+                    user_name=user,
+                    project_slug=self.project_slug,
+                    scheme=scheme,
+                    elements=[
+                        {"element_id": e, "annotation": None, "comment": "delete"}
+                        for e in elements
+                    ],
+                    selection="delete",
+                )
+                # update cache
+                for e in elements:
+                    self.cache.update(scheme, e, "", user)
         # update scheme
         self.update_scheme(scheme, labels)
 
