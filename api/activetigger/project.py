@@ -29,6 +29,7 @@ from activetigger.datamodels import (
     ExportGenerationsParams,
     FeatureComputing,
     GenerationComputing,
+    BertopicComputing,
     GenerationModel,
     GenerationRequest,
     GenerationResult,
@@ -1593,7 +1594,8 @@ class Project:
                                 batch=batch,
                             )
                     case "bertopic":
-                        print("bertopic")
+                        bertopic_model = cast(BertopicComputing, e)
+                        self.bertopic.add(bertopic_model)
             except Exception as ex:
                 print(f"Error in {e.kind} : {ex}")
                 self.errors.add(f"Error in {e.kind} : {str(ex)}")

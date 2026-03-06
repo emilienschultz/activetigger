@@ -47,6 +47,7 @@ def compute_bertopic(
             name=bertopic.name,
             user=current_user.username,
             force_compute_embeddings=bertopic.force_compute_embeddings,
+            scheme = bertopic.scheme
         )
         orchestrator.log_action(
             current_user.username, f"COMPUTE BERTopic MODEL: {bertopic.name}", project.name
