@@ -1079,11 +1079,10 @@ class Project:
         projection = self.projections.get(username)
         if projection is None:
             return None
-        # get annotations
+        # get annotations - use copy to avoid mutating stored projection data
         df = self.schemes.get_scheme(scheme, complete=True, datasets=["train"])
-        data = projection.data
-        data["labels"] = df["labels"].fillna("NA")
-
+        data = projection.data.copy()
+        data["labels"] = df["labels"].reindex(data.index).fillna("NA")
 
         # get & add predictions if available
         if active_model is not None and active_model.type == "quickmodel":
@@ -1097,7 +1096,7 @@ class Project:
                 "prediction"
             ]
 
-        if "prediction" in data: 
+        if "prediction" in data:
             predictions = data["prediction"].to_list()
         else:
             predictions = [None] * len(data)
@@ -1109,7 +1108,7 @@ class Project:
                     x = x,
                     y = y,
                     label = label,
-                    prediction = prediction,
+                    predictions = [prediction] if prediction else None,
                 )
                 for node_id, x, y, label, prediction in zip(
                     data.index.to_list(),

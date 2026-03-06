@@ -170,7 +170,7 @@ export const ProjectionVizSigma: FC<Props> = ({
   return (
     <div>
       {/* // Weird euristic but if there are predictions, they will be as strings */}
-      {data.nodes[0].predictions && (
+      {data.nodes.length > 0 && data.nodes[0].predictions && (
         <>
           <label>Color by: </label>
           <select
