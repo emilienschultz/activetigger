@@ -11,8 +11,10 @@ export default defineConfig({
     allowedHosts: [
       'localhost',
       '127.0.0.1',
-      'activetigger.eschultz.fr',
-      'activetigger2.eschultz.fr',
+      'css.activetigger.com',
+      'demo1.activetigger.com',
+      'demo2.activetigger.com',
+      'demo3.activetigger.com',
     ],
   },
 });

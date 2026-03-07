@@ -211,7 +211,7 @@ def post_schemes(
             )
             return None
         except Exception:
-            raise HTTPException(status_code=500, detail=str)
+            raise HTTPException(status_code=500, detail=str(e))
     if action == "delete":
         test_rights(ProjectAction.DELETE, current_user.username, project.name)
         try:

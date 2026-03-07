@@ -382,7 +382,7 @@ class Schemes:
             # filter for patterns
             f_contains = pd.Series([True] * len(df), index=df.index)
             if batch.contains:
-                if batch.contains.startswith("ALL:") and len(batch.contains) > 4:
+                if batch.contains.startswith("ALL=") and len(batch.contains) > 4:
                     contains_f = batch.contains.replace("ALL=", "")
                     f_l = df["labels"].str.contains(clean_regex(contains_f)).fillna(False)
                     f_text = df["text"].str.contains(clean_regex(contains_f)).fillna(False)
@@ -480,14 +480,13 @@ class Schemes:
                     project_slug=self.project_slug,
                     scheme=scheme,
                     elements=[
-                        {"element_id": e, "annotation": None, "comment": "delete"}
-                        for e in elements
+                        {"element_id": e, "annotation": None, "comment": "delete"} for e in elements
                     ],
                     selection="delete",
                 )
                 # update cache
                 for e in elements:
-                    self.cache.update(scheme, e, "", user)
+                    self.cache.update(scheme, e, None, user)
         # update scheme
         self.update_scheme(scheme, labels)
 

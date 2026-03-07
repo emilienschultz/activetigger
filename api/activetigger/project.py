@@ -22,6 +22,7 @@ from activetigger.datamodels import (
     ActiveModel,
     AuthUserModel,
     BertModelModel,
+    BertopicComputing,
     ElementInModel,
     ElementOutModel,
     EvalSetDataModel,
@@ -29,7 +30,6 @@ from activetigger.datamodels import (
     ExportGenerationsParams,
     FeatureComputing,
     GenerationComputing,
-    BertopicComputing,
     GenerationModel,
     GenerationRequest,
     GenerationResult,
@@ -1102,20 +1102,20 @@ class Project:
             predictions = [None] * len(data)
 
         return ProjectionOutModel(
-            nodes = [
+            nodes=[
                 ProjectionOutModelNode(
-                    node_id = node_id,
-                    x = x,
-                    y = y,
-                    label = label,
-                    predictions = [prediction] if prediction else None,
+                    node_id=node_id,
+                    x=x,
+                    y=y,
+                    label=label,
+                    predictions=[prediction] if prediction else None,
                 )
                 for node_id, x, y, label, prediction in zip(
                     data.index.to_list(),
                     data[0].to_list(),
                     data[1].to_list(),
                     data["labels"].to_list(),
-                    predictions
+                    predictions,
                 )
             ],
             status=projection.id,
@@ -1217,7 +1217,7 @@ class Project:
                 raise Exception("No valid data available")
         if dataset == "test":
             if self.data.test is None:
-                raise Exception("No train data available")
+                raise Exception("No test data available")
 
         # for a specific scheme and dataset
         if scheme != "all" and dataset in ["train", "test", "valid"]:

@@ -90,7 +90,7 @@ def upload_file_dataset(
     """
     Upload a file on the server for a project in the data folder
     """
-    test_rights(ProjectAction.MANAGE_FILES, current_user.username)
+    test_rights(ProjectAction.MANAGE_FILES, current_user.username, project.params.project_slug)
     # test the incoming file
     if file.filename is None:
         raise HTTPException(status_code=500, detail="Problem with the file")

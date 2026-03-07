@@ -242,8 +242,9 @@ def export_bertopics_report(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.get("/export/bertopic/embeddings", dependencies=[Depends(verified_user)])
-def export_bertopics_report(
+def export_bertopics_embeddings(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     name: str = Query(...),

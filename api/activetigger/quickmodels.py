@@ -198,7 +198,7 @@ class QuickModels:
             "model_params": model_params,
             "texts": texts,
             "random_seed": config.random_seed,
-            "exclude_labels": exclude_labels
+            "exclude_labels": exclude_labels,
         }
         unique_id = self.queue.add_task("train_quickmodel", project_slug, TrainML(**args))
         del args
@@ -236,10 +236,7 @@ class QuickModels:
             user=element.user,
             project=self.project_slug,
             scheme=element.scheme,
-            params={
-                **element.model_params,
-                "exclude_labels": element.exclude_labels
-            },
+            params={**element.model_params, "exclude_labels": element.exclude_labels},
             path=str(model_path),
             status="trained",
             retrain=element.retrain,
@@ -443,7 +440,7 @@ class QuickModels:
                 file_name=file_name,
                 statistics=statistics,
                 col_text=col_text,
-                exclude_labels=sm.exclude_labels
+                exclude_labels=sm.exclude_labels,
             ),
             queue="cpu",
         )
@@ -479,7 +476,7 @@ class QuickModels:
             metrics = {}
 
         return ModelInformationsModel(
-            params= {"exclude_labels": sm.exclude_labels if "exclude_labels" in sm else []},
+            params={"exclude_labels": sm.exclude_labels},
             scores=ModelScoresModel(
                 internalvalid_scores=metrics.get("trainvalid", None),
                 valid_scores=metrics.get("valid", None),
