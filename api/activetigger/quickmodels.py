@@ -307,7 +307,7 @@ class QuickModels:
         """
         Currently under training
         """
-        return {e.user: list(e.scheme) for e in self.computing if e.kind == "train_quickmodel"}
+        return {e.user: [e.scheme] for e in self.computing if e.kind == "train_quickmodel"}
 
     def exists(self, name: str) -> bool:
         """
@@ -497,7 +497,9 @@ class QuickModels:
         if (Path(model.path) / "status.log").exists():
             raise Exception("Model is currently computing")
         self.language_models_service.rename_model(self.project_slug, former_name, new_name)
-        os.rename(model.path, model.path.replace(former_name, new_name))
+        model_path = Path(model.path)
+        new_path = model_path.parent / model_path.name.replace(former_name, new_name)
+        os.rename(model_path, new_path)
 
     def drop_models(self, which: str = "all") -> None:
         """

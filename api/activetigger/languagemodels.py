@@ -348,7 +348,9 @@ class LanguageModels:
         if (Path(model.path) / "status.log").exists():
             raise Exception("Model is currently computing")
         self.language_models_service.rename_model(self.project_slug, former_name, new_name)
-        os.rename(model.path, model.path.replace(former_name, new_name))
+        model_path = Path(model.path)
+        new_path = model_path.parent / model_path.name.replace(former_name, new_name)
+        os.rename(model_path, new_path)
 
     def export_prediction(
         self, name: str, file_name: str = "predict.parquet", format: str = "parquet"

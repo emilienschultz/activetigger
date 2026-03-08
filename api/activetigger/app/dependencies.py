@@ -63,9 +63,7 @@ async def get_project(project_slug: str) -> Project:
     return orchestrator.projects[project_slug]
 
 
-def verified_user(
-    request: Request, token: Annotated[str, Depends(oauth2_scheme)]
-) -> UserInDBModel:
+def verified_user(request: Request, token: Annotated[str, Depends(oauth2_scheme)]) -> UserInDBModel:
     """
     Dependency to test if the user is authentified with its token
     """
@@ -172,7 +170,7 @@ def test_rights(
             return True
         else:
             raise HTTPException(
-                status_code=408,
+                status_code=403,
                 detail=f"Forbidden: User {username} has no rights to perform action {action} on project {project_slug}",
             )
 
@@ -182,7 +180,7 @@ def test_rights(
     auth = orchestrator.users.auth(username, project_slug)
     if auth is None:
         raise HTTPException(
-            status_code=408,
+            status_code=403,
             detail=f"Forbidden: User {username} has no rights to perform action {action} on project {project_slug}",
         )
 
@@ -207,6 +205,6 @@ def test_rights(
 
     # by default, no rights
     raise HTTPException(
-        status_code=408,
+        status_code=403,
         detail=f"Forbidden: User {username} has no rights to perform action {action} on project {project_slug}",
     )

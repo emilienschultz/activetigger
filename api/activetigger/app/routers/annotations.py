@@ -95,7 +95,7 @@ def compute_projection(
         orchestrator.log_action(
             current_user.username,
             f"COMPUTE PROJECTION: {projection.method}",
-            project.params.project_slug,
+            project.project_slug,
         )
         return WaitingModel(detail=f"Projection {projection.method} is computing")
     except Exception as e:

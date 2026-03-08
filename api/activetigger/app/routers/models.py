@@ -128,7 +128,7 @@ def get_quickmodel(
             balance_classes=sm.balance_classes,
             scheme=sm.scheme,
             username=sm.user,
-            exclude_labels=sm.exclude_labels if "exclude_labels" in sm else []
+            exclude_labels=sm.exclude_labels if hasattr(sm, "exclude_labels") else [],
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
