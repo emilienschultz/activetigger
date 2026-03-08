@@ -140,7 +140,7 @@ class CustomLemmatizer:
     """An object to apply the lemmatize function."""
 
     def __init__(self, language, stop_words) -> None:
-        self.__language = (language,)
+        self.__language = language
         self.__stop_words = stop_words
 
     def __call__(self, doc: str) -> list[str]:

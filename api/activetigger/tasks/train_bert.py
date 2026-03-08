@@ -11,7 +11,7 @@ from typing import Any, Optional, Tuple
 
 import datasets  # type: ignore[import]  # type: ignore[import]
 import numpy as np
-import pandas as pd
+import pandas as pd  # type: ignore[import]
 import torch
 from pandas import DataFrame
 from torch import nn
@@ -145,6 +145,7 @@ class TrainBert(BaseTask):
         class_balance: bool = False,
         **kwargs,
     ):
+        super().__init__()
         self.path = path
         self.project_slug = project_slug
         self.name = model_name
