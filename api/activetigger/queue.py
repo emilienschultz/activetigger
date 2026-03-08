@@ -215,6 +215,7 @@ class Queue:
         for i in [t for t in self.current if t.unique_id in ids]:
             if i.future is None or not i.future.done():
                 print("Deleting a unfinished process")
+            i.event.cleanup()
             self.current.remove(i)
 
     def state(self) -> list[QueueStateTaskModel]:

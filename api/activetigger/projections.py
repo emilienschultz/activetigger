@@ -55,7 +55,8 @@ class Projections:
         """
         if self.path.joinpath("projections.pickle").exists():
             try:
-                self.available = pickle.load(open(self.path.joinpath("projections.pickle"), "rb"))
+                with open(self.path.joinpath("projections.pickle"), "rb") as file:
+                    self.available = pickle.load(file)
             except Exception as e:
                 print(e)
 

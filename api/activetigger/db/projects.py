@@ -51,7 +51,6 @@ class ProjectsService:
 
             project.time_modified = datetime.datetime.now()
             project.parameters = parameters
-            session.commit()
 
     def existing_projects(self) -> list[str]:
         session = self.Session()
@@ -626,10 +625,6 @@ class ProjectsService:
         """
         Delete all features for a project
         """
-        with self.Session.begin() as session:
-            session.query(Features).filter(Features.project_slug == project_slug).delete()
-
-    def delete_all_features(self, project_slug: str):
         with self.Session.begin() as session:
             session.query(Features).filter(Features.project_slug == project_slug).delete()
 

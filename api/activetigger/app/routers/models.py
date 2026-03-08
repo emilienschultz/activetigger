@@ -84,7 +84,7 @@ def delete_quickmodel(
 
 
 @router.post("/models/quick/rename", dependencies=[Depends(verified_user)])
-def save_bert(
+def rename_quickmodel(
     project: Annotated[Project, Depends(get_project)],
     current_user: Annotated[UserInDBModel, Depends(verified_user)],
     former_name: str,
@@ -292,7 +292,7 @@ def post_bert(
         if not orchestrator.available_storage(current_user.username):
             raise HTTPException(
                 status_code=403,
-                detail="Storage limit exceeded. Please delete models orcontact the administrator.",
+                detail="Storage limit exceeded. Please delete models or contact the administrator.",
             )
         project.start_languagemodel_training(
             bert=bert,

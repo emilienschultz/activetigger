@@ -39,12 +39,12 @@ class Generations:
             GenerationModelApi(
                 name="ilaas",
                 models=[
-                    GenerationAvailableModel(slug="gpt-oss-120b", api="illas", name="gpt-oss-120b"),
+                    GenerationAvailableModel(slug="gpt-oss-120b", api="ilaas", name="gpt-oss-120b"),
                     GenerationAvailableModel(
-                        slug="mistral-small-3.2-24b", api="illas", name="mistral-small-3.2-24b"
+                        slug="mistral-small-3.2-24b", api="ilaas", name="mistral-small-3.2-24b"
                     ),
                     GenerationAvailableModel(
-                        slug="llama-3.3-70b", api="illas", name="llama-3.3-70b"
+                        slug="llama-3.3-70b", api="ilaas", name="llama-3.3-70b"
                     ),
                 ],
             ),
@@ -159,7 +159,7 @@ class Generations:
         if prompt.name is not None:
             name = prompt.name
         else:
-            name = prompt.text[0 : max(30, len(prompt.text))]
+            name = prompt.text[0 : min(30, len(prompt.text))]
 
         # check if the name is already used
         if self.prompt_exists(project_slug, name):

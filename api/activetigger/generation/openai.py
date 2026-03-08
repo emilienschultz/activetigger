@@ -27,7 +27,7 @@ class OpenAI(GenerationModelClient):
             raise Exception(msg) from rle
         except Exception as e:
             msg = getattr(e, "message", repr(e))
-            raise Exception("Could not call OpenAI") from e
+            raise Exception("Could not call OpenAI" + msg) from e
 
         if response.choices[0].message.content is None:
             raise Exception("ChatGPT could not generate annotations")

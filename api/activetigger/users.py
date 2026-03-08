@@ -46,7 +46,8 @@ class Users:
         # add specific users parameters if they exist
         self.users = {}
         if Path(file_users).exists():
-            self.users = yaml.safe_load(open(file_users))
+            with open(file_users) as f:
+                self.users = yaml.safe_load(f)
         self.failed_attemps: dict = {}
 
     def log_failed_login_attempt(self, username: str) -> None:

@@ -1,4 +1,5 @@
 import datetime
+from pathlib import Path
 from typing import Any
 
 from sqlalchemy import select
@@ -147,7 +148,8 @@ class ModelsService:
             raise DBException("Model not found")
 
         model.name = new_name
-        model.path = model.path.replace(old_name, new_name)
+        model_path = Path(model.path)
+        model.path = str(model_path.parent / model_path.name.replace(old_name, new_name))
         session.commit()
         session.close()
 

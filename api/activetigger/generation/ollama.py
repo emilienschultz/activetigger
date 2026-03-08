@@ -15,7 +15,7 @@ class Ollama(GenerationModelClient):
         """
         m = model if model is not None else "llama3.1:70b"
         data = {"model": m, "prompt": prompt, "stream": False}
-        response = requests.post(self.endpoint, json=data, verify=False)
+        response = requests.post(self.endpoint, json=data, verify=False, timeout=60)
         if response.status_code == 200:
             return response.json()["response"]
         else:

@@ -16,7 +16,6 @@ class OpenAPI(GenerationModelClient):
         """
         Make a request to OpenAPI
         """
-        print("START", self.credentials)
         headers = {
             "Authorization": f"Bearer {self.credentials}",
             "Content-Type": "application/json",
@@ -31,6 +30,7 @@ class OpenAPI(GenerationModelClient):
                 }
             ),
             headers=headers,
+            timeout=60,
         )
         if response.status_code == 200:
             return response.json()["choices"][0]["message"]["content"]

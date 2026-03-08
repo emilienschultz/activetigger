@@ -124,7 +124,9 @@ class Messages:
         else:
             raise Exception(f"Unknown message kind: {kind}")
 
-    def add_message(self, user_name: str, kind: str, content: str, property: dict = {}) -> None:
+    def add_message(
+        self, user_name: str, kind: str, content: str, property: dict | None = None
+    ) -> None:
         """
         Add a message
         """

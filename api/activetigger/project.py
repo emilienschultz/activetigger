@@ -1247,7 +1247,7 @@ class Project:
             columns_id_external = [col for col in data.columns if col.endswith("id_external")]
             id_external_serie = data[columns_id_external[0]].copy()
             for column_external in columns_id_external:
-                id_external_serie.combine(
+                id_external_serie = id_external_serie.combine(
                     data[column_external], lambda a, b: a
                 )  # if 2 elements exist take the first one
             data = data.drop(columns=columns_id_external)

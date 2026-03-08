@@ -17,7 +17,7 @@ class MessagesService:
         user_name: str,
         content: str,
         kind: str,
-        property: dict = {},
+        property: dict | None = None,
         for_project: str | None = None,
         for_user: str | None = None,
     ):
@@ -27,6 +27,8 @@ class MessagesService:
         for_project : project slug if kind is project
         """
         session = self.Session()
+        if not property:
+            property = {}
         message = Messages(
             created_by=user_name,
             time=datetime.now(),

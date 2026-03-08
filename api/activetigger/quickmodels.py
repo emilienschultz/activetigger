@@ -296,7 +296,6 @@ class QuickModels:
         predicted_label = sm.proba.loc[element_id, "prediction"]
         predicted_proba = round(sm.proba.loc[element_id, predicted_label], 2)
         predicted_entropy = round(sm.proba.loc[element_id, "entropy"], 2)
-        print(predicted_entropy, type(predicted_entropy))
         return PredictedLabel(
             label=predicted_label,
             proba=None if np.isnan(predicted_proba) else predicted_proba,
