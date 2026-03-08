@@ -110,7 +110,7 @@ export const TagDisplayParameters: FC = () => {
         Element history
       </label>
 
-      <label>Tokens approximation (4 c / token)</label>
+      <label>Tokens (approx. 4 c / token)</label>
       <input
         type="number"
         min="100"
@@ -182,7 +182,7 @@ export const TagDisplayParameters: FC = () => {
             }));
           }}
         />
-        Force one column layout
+        Force bottom labels
       </label>
 
       <label>Highlight words in the text</label>

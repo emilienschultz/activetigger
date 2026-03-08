@@ -267,7 +267,7 @@ export const BertopicPage: FC = () => {
         )}
         {projection && (
           <>
-            <div style={{ height: `${figSize}vh`, width: '80vw' }}>
+            <div style={{ height: `${figSize}vh`, width: '100%' }}>
               <BertopicVizSigma
                 className={`col-12 border h-100`}
                 nodes={projection.nodes}
@@ -295,34 +295,39 @@ export const BertopicPage: FC = () => {
         )}
         {topics && (
           <>
-            <div style={{ margin: '10px 0px' }} className="d-flex gap-2 align-items-center">
+            <div
+              style={{ margin: '10px 0px' }}
+              className="d-flex gap-2 align-items-center flex-wrap"
+            >
               <button className="btn" onClick={() => toogleFigSize()}>
                 <SlSizeFullscreen />
               </button>
-              <button className="btn-secondary-action" onClick={() => setShowParameters(true)}>
+              <button
+                className="btn-secondary-action"
+                style={{ whiteSpace: 'nowrap' }}
+                onClick={() => setShowParameters(true)}
+              >
                 <FaGear size={18} />
                 Parameters
               </button>
               <button
                 className="btn-secondary-action"
+                style={{ whiteSpace: 'nowrap' }}
                 onClick={() => exportBertopicAsAnnotation(currentBertopic)}
               >
                 Convert to scheme <RiFileTransferLine size={20} />
               </button>
               <button
                 className="btn-secondary-action"
+                style={{ whiteSpace: 'nowrap' }}
                 id="download-topics"
                 onClick={() => (currentBertopic ? downloadBertopicTopics(currentBertopic) : null)}
               >
                 Export topics <FaCloudDownloadAlt size={20} />
               </button>
-              {/* <Tooltip anchorSelect="#download-topics" place="top">
-                Download the table above with the following columns : Topic, Count, Name,
-                <br />
-                Representation and Representative Docs
-              </Tooltip> */}
               <button
                 className="btn-secondary-action"
+                style={{ whiteSpace: 'nowrap' }}
                 id="download-clusters"
                 onClick={() => (currentBertopic ? downloadBertopicClusters(currentBertopic) : null)}
               >
@@ -330,6 +335,7 @@ export const BertopicPage: FC = () => {
               </button>
               <button
                 className="btn-secondary-action"
+                style={{ whiteSpace: 'nowrap' }}
                 id="download-clusters"
                 onClick={() => (currentBertopic ? downloadBertopicReport(currentBertopic) : null)}
               >
@@ -337,6 +343,7 @@ export const BertopicPage: FC = () => {
               </button>
               <button
                 className="btn-secondary-action"
+                style={{ whiteSpace: 'nowrap' }}
                 id="download-embeddings"
                 onClick={() =>
                   currentBertopic ? downloadBertopicEmbeddings(currentBertopic) : null
@@ -345,7 +352,13 @@ export const BertopicPage: FC = () => {
                 Embeddings <FaCloudDownloadAlt size={20} />
               </button>
             </div>
-            <div style={{ height: `${80 * (1 + topics.length)}px`, margin: '15px 0px' }}>
+            <div
+              style={{
+                height: `${80 * (1 + topics.length)}px`,
+                margin: '15px 0px',
+                overflowX: 'auto',
+              }}
+            >
               <DisplayTableTopics data={(topics as unknown as Row[]) || []} />
             </div>
           </>

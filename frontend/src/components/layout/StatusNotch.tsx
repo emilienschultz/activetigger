@@ -54,13 +54,13 @@ export const StatusNotch: FC<{
     if (currentUser in projectState.languagemodels.training) {
       return 'BERT';
     } else if (currentUser in projectState.quickmodel.training) {
-      return 'Quick model computing';
+      return 'Quick model';
     } else if (currentUser in projectState.projections.training) {
-      return 'Projection computing';
+      return 'Projection';
     } else if (Object.values(projectState.features.training).length > 0) {
-      return 'Feature computing';
+      return 'Feature';
     } else if (projectState.bertopic.training) {
-      return 'BERTopic computing';
+      return 'BERTopic';
     }
     return '';
   };
@@ -85,11 +85,10 @@ export const StatusNotch: FC<{
         <div style={{ display: 'flex' }}>
           {/* Display size of project 2 version (computer and smartphones) */}
           <span className="d-none d-md-inline">
-            Size of the project:{' '}
-            {projectState?.memory ? `${projectState.memory.toFixed(1)} Mo` : ''}
+            Storage: {projectState?.memory ? `${projectState.memory.toFixed(1)} Mo` : ''}
           </span>
           <span className="d-md-none">
-            Size: {projectState?.memory ? `${projectState.memory.toFixed(1)} Mo` : ''}
+            Storage: {projectState?.memory ? `${projectState.memory.toFixed(1)} Mo` : ''}
           </span>
           {/* Display number of process running 1 version (computer) */}
           <span className="d-none d-md-inline">
