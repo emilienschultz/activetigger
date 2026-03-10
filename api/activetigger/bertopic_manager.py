@@ -4,9 +4,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable, Optional
 
-import pandas as pd
+import pandas as pd  # type: ignore[import]
 from fastapi.responses import FileResponse
-from slugify import slugify
+from slugify import slugify  # type: ignore
 
 from activetigger.config import config
 from activetigger.datamodels import (
@@ -14,15 +14,15 @@ from activetigger.datamodels import (
     BERTopicDescriptionModel,
     BertopicOutModelParameters,
     BertopicParamsModel,
+    BertopicProjectionData,
+    BertopicProjectionNode,
     BertopicProjectStateModel,
     TopicsOutModel,
-    BertopicProjectionNode,
-    BertopicProjectionData
 )
 from activetigger.db.languagemodels import ModelsService
 from activetigger.db.manager import DatabaseManager
 from activetigger.features import Features
-from activetigger.queue import Queue
+from activetigger.queue_manager import Queue
 from activetigger.tasks.compute_bertopic import ComputeBertopic
 
 # TODO : put params in database
@@ -79,7 +79,7 @@ class Bertopic:
         parameters: BertopicParamsModel,
         name: str,
         user: str,
-        scheme: str, # This is a dummy necessary to save the model in the database, it will not be used afterwards — Axel
+        scheme: str,  # This is a dummy necessary to save the model in the database, it will not be used afterwards — Axel
         force_compute_embeddings: bool = False,
     ) -> str:
         """
@@ -115,7 +115,7 @@ class Bertopic:
                 kind="bertopic",
                 force_compute_embeddings=force_compute_embeddings,
                 get_progress=self.get_progress(name),
-                scheme = scheme
+                scheme=scheme,
             )
         )
         return unique_id
@@ -131,7 +131,7 @@ class Bertopic:
             name=element.name,
             user=element.user,
             status="trained",
-            scheme = element.scheme,
+            scheme=element.scheme,
             params=element.parameters.model_dump(),
             path=str(model_path),
         )
@@ -209,7 +209,7 @@ class Bertopic:
 
         # on disk
         path_model = self.path.joinpath("runs").joinpath(name)
-        # In database 
+        # In database
         self.models_service.delete_model(self.project_slug, name)
         if path_model.exists():
             shutil.rmtree(path_model)
@@ -287,22 +287,18 @@ class Bertopic:
 
         nodes_info = [
             BertopicProjectionNode(
-                node_id = str(node_id),
-                x = x, 
-                y = y, 
+                node_id=str(node_id),
+                x=x,
+                y=y,
                 cluster_id=cluster_id,
-                label = cluster_id_label_mapper[cluster_id]
+                label=cluster_id_label_mapper[cluster_id],
             )
-            for x, y ,cluster_id, node_id in zip(
-                projection["x"], 
-                projection["y"], 
-                projection["cluster"],
-                projection.index.to_list()
+            for x, y, cluster_id, node_id in zip(
+                projection["x"], projection["y"], projection["cluster"], projection.index.to_list()
             )
         ]
         return BertopicProjectionData(
-            nodes = nodes_info,
-            cluster_id_label_mapper = cluster_id_label_mapper
+            nodes=nodes_info, cluster_id_label_mapper=cluster_id_label_mapper
         )
 
     def export_topics(self, name: str) -> FileResponse:
@@ -351,14 +347,16 @@ class Bertopic:
         """
         Export embeddings used for BERTopic model.
         """
-        
+
         path_params = self.path.joinpath("runs").joinpath(name).joinpath("params.json")
         if path_params.exists():
             with open(path_params, "r") as file:
                 path_embeddings = json.load(file)["path_embeddings"]
             path_embeddings = Path(path_embeddings)
             if path_embeddings.exists():
-                return FileResponse(path=path_embeddings, filename=f"bertopic_embeddings_{name}.parquet")
+                return FileResponse(
+                    path=path_embeddings, filename=f"bertopic_embeddings_{name}.parquet"
+                )
             else:
                 raise FileNotFoundError(f"Embeddings for model {name} do not exist.")
         else:

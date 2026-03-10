@@ -6,24 +6,27 @@ from pathlib import Path
 from string import punctuation
 
 import hdbscan  # type: ignore[import]
+import nltk  # type: ignore
 import numpy as np
-import pandas as pd
+import pandas as pd  # type: ignore[import]
 import plotly.graph_objects as go  # type: ignore[import]
-import stopwordsiso  # type: ignore[import]
 import torch
 import umap  # type: ignore[import]
 from bertopic import BERTopic  # type: ignore[import]
 from great_tables import GT, loc, style
 from jinja2 import Template
-from simplemma import lemmatize
+from nltk.corpus import stopwords as nltk_stopwords  # type: ignore
+from simplemma import lemmatize  # type: ignore[import]
 from sklearn.feature_extraction.text import CountVectorizer  # type: ignore[import]
-from slugify import slugify
+from slugify import slugify  # type: ignore
 
 from activetigger.config import config
 from activetigger.datamodels import BertopicParamsModel, EventsModel
+from activetigger.monitoring import TaskTimer
 from activetigger.tasks.base_task import BaseTask
 from activetigger.tasks.compute_sbert import ComputeSbert
-from activetigger.monitoring import TaskTimer
+
+nltk.download("stopwords", quiet=True)
 
 # accelerate UMAP
 try:
@@ -45,6 +48,33 @@ Rational :
 
 # TODO : multicolumns for text
 # TODO : manage special case of embeddings of trainset
+
+
+ISO_TO_NLTK = {
+    "ar": "arabic",
+    "az": "azerbaijani",
+    "da": "danish",
+    "nl": "dutch",
+    "en": "english",
+    "fi": "finnish",
+    "fr": "french",
+    "de": "german",
+    "el": "greek",
+    "hu": "hungarian",
+    "id": "indonesian",
+    "it": "italian",
+    "kk": "kazakh",
+    "ne": "nepali",
+    "no": "norwegian",
+    "pt": "portuguese",
+    "ro": "romanian",
+    "ru": "russian",
+    "sl": "slovene",
+    "es": "spanish",
+    "sv": "swedish",
+    "tg": "tajik",
+    "tr": "turkish",
+}
 
 
 def visualize_documents(
@@ -426,12 +456,12 @@ class ComputeBertopic(BaseTask):
             CountVectorizer
         """
         try:
-            if self.parameters.language not in stopwordsiso.langs():
+            lang = self.parameters.language
+            if lang not in ISO_TO_NLTK:
                 raise ValueError(f"Unsupported language {self.parameters.language}")
-            stopwords = list(stopwordsiso.stopwords(self.parameters.language))
-            vectorizer_model = CountVectorizer(
-                tokenizer=CustomLemmatizer(self.parameters.language, stopwords)
-            )
+
+            stopwords = list(nltk_stopwords.words(ISO_TO_NLTK[lang]))
+            vectorizer_model = CountVectorizer(tokenizer=CustomLemmatizer(lang, stopwords))
         except ValueError:
             vectorizer_model = CountVectorizer()
         return vectorizer_model
@@ -613,8 +643,9 @@ class ComputeBertopic(BaseTask):
             - Create BERTopic instance + fit_transform
             - Save parameters, results and a n html report
         """
-        task_timer = TaskTimer(compulsory_steps=["setup", "fit", "save_files"], 
-            optional_steps=["reduce-outliers", "generate-embeddings"]
+        task_timer = TaskTimer(
+            compulsory_steps=["setup", "fit", "save_files"],
+            optional_steps=["reduce-outliers", "generate-embeddings"],
         )
         try:
             task_timer.start("setup")
@@ -659,7 +690,7 @@ class ComputeBertopic(BaseTask):
                 hdbscan_model=hdbscan_model,
             )
             task_timer.stop("setup")
-            
+
             task_timer.start("fit")
             self.update_progress(f"Fitting the model on {embeddings.shape[0]} elements")
             print(f"Fitting the model on {embeddings.shape} / {len(df)} elements")
@@ -701,7 +732,7 @@ class ComputeBertopic(BaseTask):
                 path_embeddings=path_embeddings,
             )
             task_timer.stop("save_files")
-            
+
             self.path_run.joinpath("progress").unlink(missing_ok=True)
             return EventsModel(events=task_timer.get_events())
 

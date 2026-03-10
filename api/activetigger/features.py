@@ -18,7 +18,7 @@ from activetigger.datamodels import (
     FeaturesProjectStateModel,
 )
 from activetigger.db.projects import ProjectsService
-from activetigger.queue import Queue
+from activetigger.queue_manager import Queue
 from activetigger.tasks.compute_dfm import ComputeDfm
 from activetigger.tasks.compute_fasttext import ComputeFasttext
 from activetigger.tasks.compute_sbert import ComputeSbert
