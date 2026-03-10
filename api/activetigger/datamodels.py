@@ -931,7 +931,7 @@ class ReconciliationModel(BaseModel):
     list of elements to reconciliate
     """
 
-    table: list[dict[str, str | dict[str, str | None]]]
+    table: list[dict[str, str | dict[str, str | None] | None]]
     users: list[str]
 
 

@@ -57,7 +57,6 @@ export const ProjectHistory: FC<ProjectHistoryProps> = ({ projectSlug, history }
         </a>
         Session counter: {history.length}
         <Tooltip anchorSelect=".history" place="right" style={{ zIndex: 99 }}>
-          HERE <br />
           Number of elements that have been annotated during the current session. Sessions are used
           <br />
           to prevent users from annotating elements twice. Clear history if you want to be able to
