@@ -4,19 +4,20 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "activetigger"
-authors = [{name = "Émilien Schultz - Julien Boelaert - Étienne Ollion", email = "emilien.schultz@gmail.com"}]
+authors = [{name = "Émilien Schultz - Julien Boelaert - Étienne Ollion", email = "emilien.schultz@ensae.fr"}]
 readme = "README.md"
 license = {file = "LICENSE"}
 classifiers = ["License :: OSI Approved :: MIT License"]
 dynamic = ["version", "description"]
-requires-python = ">= 3.11"
-dependencies = ["fastapi[all]",
+requires-python = ">= 3.11,<3.14"
+dependencies = [
+		"fastapi[all]",
 		"sentencepiece",
 		"requests",
 		"uvicorn",
 		"argparse",
 		"datasets",
-		"fasttext",
+		"fasttext @ git+https://github.com/facebookresearch/fastText.git@main",
 		"ipywidgets",
 		"pyyaml",
 		"types-PyYAML",
@@ -24,12 +25,12 @@ dependencies = ["fastapi[all]",
 		"numpy",
 		"pandas",
 		"pyarrow",
-		"torch",
-		"transformers[torch]",
-		"sentence_transformers",
+		"torch>=2.6.0",
+		"transformers[torch]>=4.51.0",
+		"sentence-transformers<=5.1.0", # Temporary, there is a bug
 		"typing-inspect",
-		"typing_extensions",
-		"spacy",
+		"typing-extensions",
+		"spacy>=3.8",
 		"pyyaml",
 		"protobuf",
 		"umap-learn",
@@ -39,8 +40,36 @@ dependencies = ["fastapi[all]",
 		"plotly",
 		"matplotlib",
 		"scikit-learn",
+		"loky",
 		"einops",
-		"quickmma"]
+		"accelerate>=1.13.0",
+		"sacremoses>=0.1.1",
+		"python-multipart>=0.0.22",
+		"openai>=2.26.0",
+		"sqlalchemy>=2.0.48",
+		"python-slugify>=8.0.4",
+		"psutil>=7.2.2",
+		"openpyxl>=3.1.5",
+		"ruff>=0.15.5",
+		"black>=26.3.0",
+		"mypy>=1.19.1",
+		"types-python-jose>=3.5.0.20250531",
+		"types-psutil>=7.2.2.20260130",
+		"pandas-stubs>=3.0.0.260204",
+		"psycopg2>=2.9.11",
+		"python-dotenv>=1.2.2",
+		"aiofiles>=25.1.0",
+		"bertopic>=0.17.4",
+		"hdbscan>=0.8.41",
+		"simplemma>=1.1.2",
+		"nbformat>=5.10.4",
+		"great-tables>=0.21.0",
+		"pytz>=2026.1.post1",
+		"fr-core-news-sm",
+		"en-core-web-sm",
+		"setuptools",
+		"nltk",
+]
 
 [tool.ruff]
 line-length = 100
@@ -91,3 +120,13 @@ files = [
 	"activetigger/projections.py"
 ]
 incremental = true
+
+[tool.uv]
+environments = [
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux'",
+]
+
+[tool.uv.sources]
+fr-core-news-sm = { url = "https://github.com/explosion/spacy-models/releases/download/fr_core_news_sm-3.8.0/fr_core_news_sm-3.8.0.tar.gz" }
+en-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0.tar.gz" }

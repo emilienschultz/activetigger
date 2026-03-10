@@ -9,13 +9,12 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, cast
 
-import numpy as np
-import pandas as pd
+import pandas as pd  # type: ignore[import]
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse
 from pandas import DataFrame
 
-from activetigger.bertopic import Bertopic
+from activetigger.bertopic_manager import Bertopic
 from activetigger.config import config
 from activetigger.data import Data
 from activetigger.datamodels import (
@@ -60,7 +59,7 @@ from activetigger.languagemodels import LanguageModels
 from activetigger.messages import Messages
 from activetigger.monitoring import Monitoring
 from activetigger.projections import Projections
-from activetigger.queue import Queue
+from activetigger.queue_manager import Queue
 from activetigger.quickmodels import QuickModels
 from activetigger.schemes import Schemes
 from activetigger.tasks.create_project import CreateProject

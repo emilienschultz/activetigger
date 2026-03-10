@@ -70,30 +70,65 @@ git clone https://github.com/activetigger/activetigger.git
 
 ### Install the Python API
 
-Create a virtual environnement with Python 3.11, for instance with Anaconda/Miniconda ([documentation here for Ubuntu](https://doc.ubuntu-fr.org/miniconda))
+Add a specific `config.yaml` file in the api directory if you want to specify the path of the static files and database (you can modify and rename the `config.yaml.sample` or use the default config):
+
+- `path` : path to store files (for instance `./data`)
+- `path_models` : path to store the models (for instance `./data/models`)
+
+#### Option 1: Using uv (recommended)
+
+We recommend using [uv](https://docs.astral.sh/uv/), a fast Python package and project manager written in Rust. It replaces `pip`, `venv`, and `conda` in a single tool and automatically handles Python version management, virtual environments, and dependency resolution — making setup faster and more reliable.
+
+Install uv on macOS / Linux:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+On Windows:
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+See the [uv installation documentation](https://docs.astral.sh/uv/getting-started/installation/) for more options (Homebrew, pip, etc.).
+
+Then, from the `api/` directory, `uv` will automatically create a virtual environment and install all dependencies (including the correct Python version):
+
+```bash
+cd activetigger/api
+uv sync
+```
+
+Launch the server (on 0.0.0.0 port 5000 by default, you can configure exposed port if needed with -p PORTNUM):
+
+```bash
+uv run python -m activetigger
+```
+
+#### Option 2: Using Anaconda/pip
+
+Alternatively, create a virtual environment with Python 3.11 using Anaconda/Miniconda ([documentation here for Ubuntu](https://doc.ubuntu-fr.org/miniconda)):
 
 ```bash
 conda create -n activetigger python=3.11
 conda activate activetigger
 ```
 
-Install requirements
+Install requirements:
 
 ```bash
 pip install -r activetigger/api/requirements.txt
 ```
 
-Add a specific `config.yaml` file in the api directory if you want to specify the path of the static files and database (you can modify and rename the `config.yaml.sample` or use the default config):
-
-- `path` : path to store files (for instance `./data`)
-- `path_models` : path to store the models (for instance `./data/models`)
-
-Launch the server (on 0.0.0.0 port 5000 by default, you can configure exposed port if needed with -p PORTNUM).
+Launch the server:
 
 ```bash
 cd activetigger/api
 python -m activetigger
 ```
+
+#### Check the API
 
 Check that the API is running by going to `http://localhost:5000` in your browser.
 

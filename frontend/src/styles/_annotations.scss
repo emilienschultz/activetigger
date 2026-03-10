@@ -292,6 +292,16 @@
       @extend .btn;
       @extend .btn-secondary;
       background-color: rgb(250, 153, 74);
+      border-color: rgb(250, 153, 74);
+      &:hover,
+      &:focus,
+      &:active,
+      &.active,
+      &:focus-visible {
+        background-color: rgb(230, 133, 54);
+        border-color: rgb(230, 133, 54);
+        color: white;
+      }
     }
     .btn-annotate-predicted-action {
       @extend .btn;
@@ -299,6 +309,15 @@
 
       background-color: $gray-500;
       border-color: $gray-500;
+      &:hover,
+      &:focus,
+      &:active,
+      &.active,
+      &:focus-visible {
+        background-color: $gray-600;
+        border-color: $gray-600;
+        color: white;
+      }
     }
 
     // prediction layout with or without stats
