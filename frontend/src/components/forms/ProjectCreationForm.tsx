@@ -166,8 +166,7 @@ export const ProjectCreationForm: FC = () => {
       ) {
         notify({
           type: 'warning',
-          message:
-            'The sum of train, test and valid sets is too large, the train set is adjusted',
+          message: 'The sum of train, test and valid sets is too large, the train set is adjusted',
         });
         setValue(
           'n_train',

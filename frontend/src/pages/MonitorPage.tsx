@@ -114,13 +114,13 @@ export function ProcessTable({ rows }: Props) {
               const start = new Date(entry[1].start);
               const end = new Date(entry[1].end);
               return (
-                <li>
+                <li key={entry[0]}>
                   {start.getHours()}:{start.getMinutes()} — {end.getHours()}:{end.getMinutes()}
                 </li>
               );
             } else {
               return (
-                <li>
+                <li key={entry[0]}>
                   {entry[0]} : {Math.round(entry[1].duration * 100) / 100} s
                 </li>
               );

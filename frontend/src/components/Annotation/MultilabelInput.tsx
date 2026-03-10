@@ -22,10 +22,7 @@ export const MultilabelInput: FC<MultilabelInputProps> = ({
     element?.history ? element.history[0]?.comment || '' : '',
   );
 
-  useEffect(
-    () => setComment(element?.history ? element.history[0]?.comment || '' : ''),
-    [element],
-  );
+  useEffect(() => setComment(element?.history ? element.history[0]?.comment || '' : ''), [element]);
 
   // add shortcut
   const handleKeyboardEvents = useCallback(
