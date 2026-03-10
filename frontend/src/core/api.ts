@@ -655,7 +655,7 @@ export function useGetNextElementId(
           history: history,
           frame: selectionConfig.frameSelection ? selectionConfig.frame : null, // only if frame option selected
           dataset: phase,
-          label_maxprob: selectionConfig.label_maxprob,
+          label_prob: selectionConfig.label_prob,
           on_users: selectionConfig.users,
           model_active: activeModel,
         },

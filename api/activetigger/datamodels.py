@@ -155,7 +155,7 @@ class NextInModel(BaseModel):
     sample: str = "untagged"
     on_labels: list[str] | None = None
     on_users: list[str] | None = None
-    label_maxprob: str | None = None
+    label_prob: str | None = None
     frame: list[Any] | None = None
     history: list[str] = []
     filter: str | None = None
@@ -394,9 +394,10 @@ class ProjectionDataModel(BaseModel):
 class ProjectionOutModelNode(BaseModel):
     node_id: str
     label: str
-    x: float 
+    x: float
     y: float
     predictions: list | None = None
+
 
 class ProjectionOutModel(BaseModel):
     """
@@ -626,7 +627,7 @@ class BertopicComputing(ProcessComputing):
     parameters: BertopicParamsModel
     force_compute_embeddings: bool
     get_progress: Callable[[], str | float | None] | None = None
-    scheme:str # This is a dummy necessary to save the model in the database, it will not be used afterwards — Axel
+    scheme: str  # This is a dummy necessary to save the model in the database, it will not be used afterwards — Axel
 
 
 class QuickModelInModel(BaseModel):
@@ -1184,12 +1185,14 @@ class MonitoringMetricsModel(BaseModel):
     quickmodels: MonitoringQuickModelsModel
     languagemodels: MonitoringLanguageModelsModel
 
+
 class BertopicProjectionNode(BaseModel):
     """
     Node metadata
     """
+
     x: float
-    y: float 
+    y: float
     cluster_id: int
     label: str
     node_id: str
@@ -1199,5 +1202,6 @@ class BertopicProjectionData(BaseModel):
     """
     The returned data when fetching the projection for a topic analysis
     """
+
     nodes: list[BertopicProjectionNode]
     cluster_id_label_mapper: dict

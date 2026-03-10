@@ -832,19 +832,19 @@ class Project:
         if next.selection in ["maxprob", "active", "minprob"] and next.model_active is None:
             raise Exception("An active model is required for this selection method")
 
-        # higher prob for the label_maxprob, only possible if the model has been trained
+        # higher prob for the label_prob, only possible if the model has been trained
         if next.selection == "maxprob" and proba is not None:
-            if next.label_maxprob is None:  # default label to first
+            if next.label_prob is None:  # default label to first
                 raise Exception("Label maxprob is required")
             # use the history to not send already tagged data
             ss_maxprob = (
-                proba[f][next.label_maxprob]
+                proba[f][next.label_prob]
                 .drop(next.history, errors="ignore")
                 .sort_values(ascending=False)
             )  # get max proba id
             element_id = ss_maxprob.index[0]
             n_sample = f.sum()
-            indicator = f"probability: {round(proba.loc[element_id, next.label_maxprob], 2)}"
+            indicator = f"probability: {round(proba.loc[element_id, next.label_prob], 2)}"
 
         # higher entropy, only possible if the model has been trained
         if next.selection == "active" and proba is not None:
@@ -856,11 +856,11 @@ class Project:
             indicator = round(proba.loc[element_id, "entropy"], 2)
             indicator = f"entropy: {indicator}"
 
-        if next.selection == "minprob" and next.label_maxprob and proba is not None:
+        if next.selection == "minprob" and next.label_prob and proba is not None:
             # min of the elemnt predicted for the label
-            f_only_predicted = proba["prediction"] == next.label_maxprob
+            f_only_predicted = proba["prediction"] == next.label_prob
             ss_minprob = (
-                proba[f_only_predicted][next.label_maxprob]
+                proba[f & f_only_predicted][next.label_prob]
                 .drop(next.history, errors="ignore")
                 .sort_values(ascending=True)
             )  # get min proba id
@@ -868,7 +868,7 @@ class Project:
                 raise ValueError("No element available with this selection mode.")
             element_id = ss_minprob.index[0]
             n_sample = f.sum()
-            indicator = f"probability: {round(proba.loc[element_id, next.label_maxprob], 2)}"
+            indicator = f"probability: {round(proba.loc[element_id, next.label_prob], 2)}"
 
         if (
             next.model_active is not None
