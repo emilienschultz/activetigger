@@ -47,13 +47,13 @@ export const ImportAnnotations: FC<ImportPropos> = ({ projectName, currentScheme
       if (file.size > maxSize) {
         notify({
           type: 'error',
-          message: `File is too big (only file less than ${maxSizeMB} Mo are allowed)`,
+          message: `File is too large (maximum size: ${maxSizeMB} MB)`,
         });
         return;
       }
       loadFile(file).then((data) => {
         if (data === null) {
-          notify({ type: 'error', message: 'Error reading the file' });
+          notify({ type: 'error', message: 'Error reading the file.' });
           return;
         }
         setData(data);
@@ -75,7 +75,7 @@ export const ImportAnnotations: FC<ImportPropos> = ({ projectName, currentScheme
       reset();
       notify({
         type: 'success',
-        message: 'Annotations imported successfully',
+        message: 'Annotations imported successfully!',
       });
       navigate(0);
     }

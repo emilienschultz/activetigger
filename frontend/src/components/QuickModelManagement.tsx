@@ -87,7 +87,7 @@ export const QuickModelManagement: FC<QuickModelManagementProps> = ({
       await renameQuickModel(currentQuickModelName, data.new_name);
       resetRename();
       setShowRename(false);
-    } else notify({ type: 'error', message: 'New name is void' });
+    } else notify({ type: 'error', message: 'Enter a name (currently empty)' });
   };
 
   // get information on the quickmodel

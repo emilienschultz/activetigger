@@ -108,7 +108,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
     const data = { ...formData, params };
     const watchedFeatures = watch('features');
     if (watchedFeatures.length == 0) {
-      notify({ type: 'error', message: 'Please select at least one feature' });
+      notify({ type: 'error', message: 'Select at least one feature' });
       return;
     }
     await updateProjection(data);
@@ -195,7 +195,7 @@ export const ProjectionManagement: FC<ProjectionManagementProps> = ({
     (label: string | null, elementId?: string) => {
       if (elementId) {
         addAnnotation(elementId, label, '', '');
-        notify({ type: 'success', message: `Annotation added for ${elementId}` });
+        notify({ type: 'success', message: `Row ${elementId} was annotated` });
         setForceRefresh(true);
       }
     },

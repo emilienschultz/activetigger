@@ -47,7 +47,7 @@ export const LoginForm: FC<{ redirectTo?: string }> = ({ redirectTo }) => {
     setReset(false);
     notify({
       type: 'success',
-      message: 'An email has been sent to you with instructions if you have an account',
+      message: 'If you have an account, an email was sent to you.',
     });
   };
 

@@ -106,7 +106,7 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
       setActiveMenu(false);
       notify({
         type: 'warning',
-        message: 'No features available for quickmodel',
+        message: 'No set of features available.',
       });
     }
     const formData = {

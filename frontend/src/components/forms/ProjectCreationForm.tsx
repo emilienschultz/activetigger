@@ -129,13 +129,13 @@ export const ProjectCreationForm: FC = () => {
       if (file.size > maxSize) {
         notify({
           type: 'error',
-          message: `File is too big (only file less than ${maxSizeMB} Mo are allowed)`,
+          message: `File is too large (maximum size: ${maxSizeMB} MB)`,
         });
         return;
       }
       loadFile(file).then((data) => {
         if (data === null) {
-          notify({ type: 'error', message: 'Error reading the file' });
+          notify({ type: 'error', message: 'Error reading the file.' });
           return;
         }
         setData(data);
@@ -149,15 +149,15 @@ export const ProjectCreationForm: FC = () => {
     if (data || dataset !== 'load') {
       // check the form
       if (formData.project_name === '') {
-        notify({ type: 'error', message: 'Please select a project name' });
+        notify({ type: 'error', message: 'Enter a project name.' });
         return;
       }
       if (formData.col_id == '') {
-        notify({ type: 'error', message: 'Please select a id column' });
+        notify({ type: 'error', message: 'Select a column for ID.' });
         return;
       }
       if (!formData.cols_text) {
-        notify({ type: 'error', message: 'Please select a text column' });
+        notify({ type: 'error', message: 'Select a column for text.' });
         return;
       }
       if (
@@ -166,8 +166,7 @@ export const ProjectCreationForm: FC = () => {
       ) {
         notify({
           type: 'warning',
-          message:
-            'The sum of train, test and valid sets is too large, the train set is adjusted',
+          message: 'You requested larger samples than your dataset, sizes were adjusted.',
         });
         setValue(
           'n_train',
@@ -178,7 +177,7 @@ export const ProjectCreationForm: FC = () => {
       // test if the project name is available
       const available = await availableProjectName(formData.project_name);
       if (!available) {
-        notify({ type: 'error', message: 'Project name already taken' });
+        notify({ type: 'error', message: 'Project name already taken. Enter a new one.' });
         return;
       }
 
@@ -196,7 +195,7 @@ export const ProjectCreationForm: FC = () => {
           const source_project = from_toy_dataset ? dataset.slice(13) : dataset; // if from toy dataset remove prefix
           await copyExistingData(formData.project_name, source_project, from_toy_dataset);
         } else {
-          notify({ type: 'error', message: 'Unknown dataset' });
+          notify({ type: 'error', message: 'Unknown dataset.' });
           throw new Error('Unknown dataset');
         }
 
@@ -228,7 +227,7 @@ export const ProjectCreationForm: FC = () => {
                 type: 'error',
                 message: errorDetail
                   ? `Project creation failed: ${errorDetail}`
-                  : 'Project creation failed. Try to change the data format. If it happens several times, please contact support',
+                  : 'Project creation failed. Try to change the data format. Contact support if the error persits.',
               });
               navigate(`/projects`);
               return;
@@ -250,8 +249,7 @@ export const ProjectCreationForm: FC = () => {
               clearInterval(intervalId);
               notify({
                 type: 'error',
-                message:
-                  'Timeout: Project did not become available within 5 minutes, a error must have happened',
+                message: 'Timeout during the creation of the project. Try again later.',
               });
               navigate(`/projects`);
               return;
@@ -264,7 +262,7 @@ export const ProjectCreationForm: FC = () => {
       } catch (error) {
         setCreatingProject(false);
         if (!(error instanceof CanceledError)) notify({ type: 'error', message: error + '' });
-        else notify({ type: 'success', message: 'Project creation aborted' });
+        else notify({ type: 'success', message: 'Project creation aborted.' });
       }
     }
   };
@@ -361,7 +359,7 @@ export const ProjectCreationForm: FC = () => {
                 <div className="explanations" style={{ fontSize: 'smaller', fontWeight: 'normal' }}>
                   File format : csv, xlsx or parquet &lt; {maxSizeMB} MB
                   <br />
-                  Example of valid dataset from{' '}
+                  Example dataset:{' '}
                   <a href="./dataset_test.csv" download>
                     "Detecting Stance in Media On Global Warming" (download)
                   </a>
@@ -407,7 +405,7 @@ export const ProjectCreationForm: FC = () => {
           availableFields && (
             <>
               <label htmlFor="col_id">
-                Id column (they need to be unique, otherwise the row number will be used)
+                Id column (must contain unique values; otherwise the row number will be used)
               </label>
               <select id="col_id" disabled={creatingProject} {...register('col_id')}>
                 <option key="row_number" value="row_number">
@@ -420,9 +418,7 @@ export const ProjectCreationForm: FC = () => {
                 ))}
               </select>
 
-              <label htmlFor="cols_text">
-                Text columns (all the selected fields will be concatenated)
-              </label>
+              <label htmlFor="cols_text">Text columns (selected fields will be concatenated)</label>
 
               <Controller
                 name="cols_text"
@@ -460,7 +456,7 @@ export const ProjectCreationForm: FC = () => {
                 ))}
               </select>
 
-              <label htmlFor="col_label">Columns for existing annotations (optional)</label>
+              <label htmlFor="col_label">Column(s) for existing annotations (optional)</label>
               <Controller
                 name="cols_label"
                 control={control}
@@ -487,7 +483,7 @@ export const ProjectCreationForm: FC = () => {
                 )}
               />
 
-              <label htmlFor="cols_context">Contextual information columns (optional)</label>
+              <label htmlFor="cols_context">Column(s) for contextual information (optional)</label>
               <Controller
                 name="cols_context"
                 control={control}
@@ -514,7 +510,7 @@ export const ProjectCreationForm: FC = () => {
                 )}
               />
 
-              <label htmlFor="n_train">Number of elements in the train set (limit : 100.000)</label>
+              <label htmlFor="n_train">Number of rows in the train set (limit : 100,000)</label>
               <input
                 id="n_train"
                 type="number"
@@ -525,23 +521,19 @@ export const ProjectCreationForm: FC = () => {
               />
 
               <div className="explanations">
-                For best practices for machine learning process, see the{' '}
-                <a
-                  target="_blank"
-                  href="https://emilienschultz.github.io/activetigger/docs/"
-                  rel="noreferrer"
-                >
+                For machine learning best practices, see the{' '}
+                <a target="_blank" href="https://activetigger.com/documentation/" rel="noreferrer">
                   documentation
                 </a>
               </div>
 
               <label htmlFor="n_valid">
-                Number of elements in the validation set (optional)
+                Number of rows in the validation set (optional)
                 <a className="n_valid">
                   <HiOutlineQuestionMarkCircle />
                 </a>
                 <Tooltip anchorSelect=".n_valid" place="top">
-                  The valid set will be used for hyperparameter tuning
+                  The validation is generally used for hyperparameter tuning
                 </Tooltip>
               </label>
               <input
@@ -553,12 +545,12 @@ export const ProjectCreationForm: FC = () => {
               />
 
               <label htmlFor="n_test">
-                Number of elements in the test set (optional)
+                Number of rows in the test set (optional)
                 <a className="n_test">
                   <HiOutlineQuestionMarkCircle />
                 </a>
                 <Tooltip anchorSelect=".n_test" place="top">
-                  The test set will be used at the end for the final evaluation
+                  The test set will be used for final evaluation
                 </Tooltip>
               </label>
               <input
@@ -571,7 +563,17 @@ export const ProjectCreationForm: FC = () => {
 
               <details>
                 <summary>Advanced options</summary>
-                <div className="explanations">Check the documentation for explanations</div>
+                <div className="explanations">
+                  Check the{' '}
+                  <a
+                    target="_blank"
+                    href="https://activetigger.com/documentation/"
+                    rel="noreferrer"
+                  >
+                    documentation
+                  </a>{' '}
+                  for further explanations
+                </div>
                 <div>
                   <input
                     id="force_label"
@@ -579,16 +581,7 @@ export const ProjectCreationForm: FC = () => {
                     disabled={creatingProject}
                     {...register('force_label')}
                   />
-                  <label htmlFor="force_label">
-                    Prioritize existing labels{' '}
-                    <a className="force_label">
-                      <HiOutlineQuestionMarkCircle />
-                    </a>
-                    <Tooltip anchorSelect=".force_label" place="top">
-                      Select in priority the elements with existing labels (if any) of the first
-                      column of labels
-                    </Tooltip>
-                  </label>
+                  <label htmlFor="force_label">Prioritize rows with a label </label>
                 </div>
                 <div>
                   <input
@@ -598,13 +591,14 @@ export const ProjectCreationForm: FC = () => {
                     {...register('random_selection')}
                   />
                   <label htmlFor="random_selection">
-                    Select elements at random{' '}
+                    Select rows at random{' '}
                     <a className="rselect">
                       <HiOutlineQuestionMarkCircle />
                     </a>
                     <Tooltip anchorSelect=".rselect" place="top">
-                      If not, will keep the order (minus empty elements) only if no evaluation
-                      datasets (eval/test)
+                      If unticked, will preserve order of the original dataset (note: rows without
+                      <br />
+                      text are dropped) NEED A FIX only if no evaluation datasets (eval/test)
                     </Tooltip>
                   </label>
                 </div>
@@ -616,13 +610,13 @@ export const ProjectCreationForm: FC = () => {
                     {...register('stratify_train')}
                   />
                   <label htmlFor="stratify_train">
-                    Stratify trainset{' '}
+                    Stratify train set{' '}
                     <a className="stratify_train">
                       <HiOutlineQuestionMarkCircle />
                     </a>
                     <Tooltip anchorSelect=".stratify_train" place="top">
-                      If selected, use the stratify columns to stratify train set. Small variation
-                      in the number of elements can happen.
+                      If ticked, ensures balanced representation of each group in the train set. See
+                      documentation.
                     </Tooltip>
                   </label>
                 </div>
@@ -634,27 +628,18 @@ export const ProjectCreationForm: FC = () => {
                     {...register('stratify_test')}
                   />
                   <label htmlFor="stratify_test">
-                    Stratify testset{' '}
+                    Stratify test set{' '}
                     <a className="stratify_train">
                       <HiOutlineQuestionMarkCircle />
                     </a>
                     <Tooltip anchorSelect=".stratify_train" place="top">
-                      If selected, use the stratify columns to stratify test set. Small variation in
-                      the number of elements can happen.
+                      If ticked, ensures balanced representation of each group in the train set. See
+                      documentation.
                     </Tooltip>
                   </label>
                 </div>
 
-                <label htmlFor="cols_stratify">
-                  Column(s) used for stratification
-                  <a className="stratify">
-                    <HiOutlineQuestionMarkCircle />
-                  </a>
-                  <Tooltip anchorSelect=".stratify" place="top">
-                    If not empty, will stratify by the selected column (try to equilibrate the
-                    number of elements regarding each category)
-                  </Tooltip>
-                </label>
+                <label htmlFor="cols_stratify">Column(s) used for stratification</label>
                 <Controller
                   name="cols_stratify"
                   control={control}
@@ -699,7 +684,7 @@ export const ProjectCreationForm: FC = () => {
                     <HiOutlineQuestionMarkCircle />
                   </a>
                   <Tooltip anchorSelect=".ref_seed" place="top">
-                    If you want to have always the same selection, set a seed (any integer)
+                    Set it to ensure replicability.
                   </Tooltip>
                   <input
                     id="seed"

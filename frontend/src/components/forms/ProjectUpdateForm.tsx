@@ -47,11 +47,11 @@ export const ProjectUpdateForm: FC<{ closeModal: () => void }> = ({ closeModal }
   // action when form validated
   const onSubmit: SubmitHandler<ProjectUpdateModel> = async (formData) => {
     if (!formData.cols_text) {
-      notify({ type: 'error', message: 'Please select a text column' });
+      notify({ type: 'error', message: 'Please select a text column.' });
       return;
     }
     if (!isDirty) {
-      notify({ type: 'info', message: 'No changes detected' });
+      notify({ type: 'info', message: 'No changes detected.' });
       return;
     }
     updateProject(formData);

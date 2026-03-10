@@ -66,7 +66,7 @@ export const LabelCard: FC<LabelCardProps> = ({
               title="Rename"
               onClick={() => setShowRename(!showRename)}
             >
-              <MdDriveFileRenameOutline size={21}/>
+              <MdDriveFileRenameOutline size={21} />
             </button>
           </td>
         </>
@@ -156,7 +156,7 @@ export const LabelsManagement: FC<LabelsManagementProps> = ({
   const [createLabelValue, setCreateLabelValue] = useState('');
   const handleCreateLabelChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.value.includes('|')) {
-      notify({ type: 'error', message: 'Label name cannot contain |' });
+      notify({ type: 'error', message: 'Labels name cannot contain "|"' });
       return;
     }
     setCreateLabelValue(event.target.value);
