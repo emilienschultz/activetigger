@@ -97,17 +97,23 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
     useMemo(() => {
       const modes = (
         (phase === 'train' && activeModel
-          ? project?.next.methods.filter((m) => m !== 'maxprob')
+          ? project?.next.methods.filter((m) => m !== 'maxprob' && m !== 'minprob')
           : project?.next.methods_min) || []
       ).map((mode) => ({ mode, label_maxprob: undefined }));
       const probLabels =
         phase === 'train' && activeModel
           ? availableLabels
               .filter((l) => !activeModel.labels_excluded.includes(l))
-              .map((l) => ({
-                mode: 'maxprob',
-                label_maxprob: l,
-              }))
+              .flatMap((l) => [
+                {
+                  mode: 'maxprob',
+                  label_maxprob: l,
+                },
+                {
+                  mode: 'minprob',
+                  label_maxprob: l,
+                },
+              ])
           : [];
       return [...modes, ...probLabels].map((o) => ({ ...o, value: optionValue(o) }));
     }, [phase, activeModel, project?.next.methods, project?.next.methods_min, availableLabels]);
@@ -183,7 +189,13 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
                   label_maxProb: selectionConfig.label_maxprob,
                 }),
             )}
-            getOptionLabel={(o) => (o.mode === 'maxprob' ? `Max ${o.label_maxprob}` : o.mode)}
+            getOptionLabel={(o) =>
+              o.mode === 'maxprob' && o.label_maxprob
+                ? `Max ${o.label_maxprob}`
+                : o.mode === 'minprob' && o.label_maxprob
+                  ? `Min ${o.label_maxprob}`
+                  : o.mode
+            }
             onChange={(option) => {
               if (option !== null) {
                 setAppContext((prev) => ({

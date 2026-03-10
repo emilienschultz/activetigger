@@ -701,6 +701,7 @@ class Project:
         - random
         - active
         - maxprob
+        - minprob
         - test
 
         history : previous selected elements
@@ -829,7 +830,7 @@ class Project:
             proba = prediction.reindex(f.index)
 
         # be sure that the model has been trained
-        if next.selection in ["maxprob", "active"] and next.model_active is None:
+        if next.selection in ["maxprob", "active", "minprob"] and next.model_active is None:
             raise Exception("An active model is required for this selection method")
 
         # higher prob for the label_maxprob, only possible if the model has been trained
@@ -848,7 +849,6 @@ class Project:
 
         # higher entropy, only possible if the model has been trained
         if next.selection == "active" and proba is not None:
-            # use the history to not send already tagged data
             ss_active = (
                 proba[f]["entropy"].drop(next.history, errors="ignore").sort_values(ascending=False)
             )  # get max entropy id
@@ -856,6 +856,18 @@ class Project:
             n_sample = f.sum()
             indicator = round(proba.loc[element_id, "entropy"], 2)
             indicator = f"entropy: {indicator}"
+
+        if next.selection == "minprob" and next.label_maxprob and proba is not None:
+            # min of the elemnt predicted for the label
+            f_only_predicted = proba["prediction"] == next.label_maxprob
+            ss_minprob = (
+                proba[f_only_predicted]
+                .drop(next.history, errors="ignore")
+                .sort_values(ascending=True)
+            )  # get min proba id
+            element_id = ss_minprob.index[0]
+            n_sample = f.sum()
+            indicator = f"probability: {round(proba.loc[element_id, next.label_maxprob], 2)}"
 
         if (
             next.model_active is not None
@@ -1152,7 +1164,7 @@ class Project:
             params=self.params,
             next=NextProjectStateModel(
                 methods_min=["fixed", "random"],
-                methods=["fixed", "random", "maxprob", "active"],
+                methods=["fixed", "random", "maxprob", "active", "minprob"],
                 sample=["untagged", "all", "tagged"],
             ),
             schemes=self.schemes.state(),
