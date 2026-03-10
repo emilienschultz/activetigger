@@ -148,11 +148,17 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
   const [showRename, setShowRename] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [newSchemeName, setNewSchemeName] = useState('New name');
+  const [initialLabelsText, setInitialLabelsText] = useState('');
 
   // action to create the new scheme
   const createNewScheme: SubmitHandler<SchemeModel> = async (formData) => {
     try {
-      await addScheme(formData.name, formData.kind || 'multiclass');
+      const labels = initialLabelsText
+        .split('\n')
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0);
+      await addScheme(formData.name, formData.kind || 'multiclass', labels);
+      setInitialLabelsText('');
       if (reFetchCurrentProject) reFetchCurrentProject();
       notify({ type: 'success', message: `Scheme ${formData.name} created` });
       // set the new scheme as current
@@ -249,6 +255,16 @@ export const SchemesManagement: FC<SchemeManagementProps> = ({
               </option>
               <option value="span">Span (experimental - only annotation)</option>
             </select>
+            <details style={{ marginTop: '10px' }}>
+              <summary style={{ cursor: 'pointer' }}>Initial labels (optional)</summary>
+              <textarea
+                rows={5}
+                style={{ width: '100%', marginTop: '5px' }}
+                placeholder="Enter one label per line"
+                value={initialLabelsText}
+                onChange={(e) => setInitialLabelsText(e.target.value)}
+              />
+            </details>
             <button className="btn-submit">Create</button>
           </form>
         </Modal.Body>
