@@ -860,10 +860,12 @@ class Project:
             # min of the elemnt predicted for the label
             f_only_predicted = proba["prediction"] == next.label_maxprob
             ss_minprob = (
-                proba[f_only_predicted]
+                proba[f_only_predicted][next.label_maxprob]
                 .drop(next.history, errors="ignore")
                 .sort_values(ascending=True)
             )  # get min proba id
+            if len(ss_minprob) == 0:
+                raise ValueError("No element available with this selection mode.")
             element_id = ss_minprob.index[0]
             n_sample = f.sum()
             indicator = f"probability: {round(proba.loc[element_id, next.label_maxprob], 2)}"
