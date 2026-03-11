@@ -116,6 +116,8 @@ class GenerationsService:
         with self.Session() as session:
             if model.credentials is None:
                 model.credentials = ""
+            if model.name is None or model.name == "":
+                raise Exception("You should provide a name")
             new_model = GenModels(
                 project_slug=project_slug,
                 slug=model.slug,

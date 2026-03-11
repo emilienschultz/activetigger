@@ -79,7 +79,7 @@ class CreateProject(BaseTask):
                 content = pd.read_csv(file_path, low_memory=False, on_bad_lines="skip")
             except Exception:
                 content = pd.read_csv(
-                    file_path, low_memory=False, on_bad_lines="skip", engine="python"
+                    file_path, on_bad_lines="skip", engine="python"
                 )
         elif str(file_path).endswith(".parquet"):
             content = pd.read_parquet(file_path)

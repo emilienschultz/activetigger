@@ -16,8 +16,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import cast
 
-import pandas as pd
-import psutil
+import pandas as pd  # type: ignore[import]
+import psutil  # type: ignore[import]
 import pyarrow.parquet as pq  # type: ignore[import]
 from jose import jwt
 
@@ -30,7 +30,7 @@ from activetigger.functions import get_dir_size, get_gpu_memory_info, slugify
 from activetigger.messages import Messages
 from activetigger.monitoring import Monitoring
 from activetigger.project import Project
-from activetigger.queue import Queue
+from activetigger.queue_manager import Queue
 from activetigger.users import Users
 
 

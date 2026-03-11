@@ -1,6 +1,7 @@
 import { ChangeEvent, FC, useEffect, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { useGetGenModels } from '../../core/api';
+import { useNotifications } from '../../core/notifications';
 import { GenerationModelApi, GenModel, SupportedAPI } from '../../types';
 
 type FormValues = { model: string; name?: string; endpoint?: string; credentials?: string };
@@ -9,6 +10,7 @@ export const GenModelSetupForm: FC<{
   add: (model: Omit<GenModel & { api: SupportedAPI }, 'id'>) => void;
   cancel: () => void;
 }> = ({ add }) => {
+  const { notify } = useNotifications();
   const [availableAPIs, setAvailableAPIs] = useState<GenerationModelApi[]>([]);
   const [selectedAPI, setSelectedAPI] = useState<GenerationModelApi>(availableAPIs[0]);
   const [modelName, setModelName] = useState<string>('');
@@ -37,7 +39,14 @@ export const GenModelSetupForm: FC<{
     const name = modelName;
     const endpoint = data.endpoint;
     const credentials = data.credentials;
-    if (slug === null) throw new Error('You should provide a model');
+    if (slug === null || slug === '') {
+      notify({ type: 'error', message: 'You must select a model' });
+      return;
+    }
+    if (name === null || name === '') {
+      notify({ type: 'error', message: 'You must select a name' });
+      return;
+    }
     add({
       slug,
       name,

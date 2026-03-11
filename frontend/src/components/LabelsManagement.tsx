@@ -66,7 +66,7 @@ export const LabelCard: FC<LabelCardProps> = ({
               title="Rename"
               onClick={() => setShowRename(!showRename)}
             >
-              <MdDriveFileRenameOutline size={21}/>
+              <MdDriveFileRenameOutline size={21} />
             </button>
           </td>
         </>

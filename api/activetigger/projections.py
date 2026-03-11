@@ -12,7 +12,7 @@ from activetigger.datamodels import (
     ProjectionParametersModel,
     ProjectionsProjectStateModel,
 )
-from activetigger.queue import Queue
+from activetigger.queue_manager import Queue
 from activetigger.tasks.compute_projection import ComputeProjection
 
 
