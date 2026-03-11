@@ -32,10 +32,7 @@ export const TextSpanPanel: FC<SpanInputProps> = ({
     element?.history ? element.history[0]?.comment || '' : '',
   );
 
-  useEffect(
-    () => setComment(element?.history ? element.history[0]?.comment || '' : ''),
-    [element],
-  );
+  useEffect(() => setComment(element?.history ? element.history[0]?.comment || '' : ''), [element]);
 
   useEffect(() => {
     if (lastTag) {

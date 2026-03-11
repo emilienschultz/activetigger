@@ -34,7 +34,7 @@ from activetigger.datamodels import (
 from activetigger.db.languagemodels import ModelsService
 from activetigger.db.manager import DatabaseManager
 from activetigger.functions import get_model_metrics
-from activetigger.queue import Queue
+from activetigger.queue_manager import Queue
 from activetigger.tasks.predict_ml import PredictML
 from activetigger.tasks.train_ml import TrainML
 

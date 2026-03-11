@@ -27,7 +27,7 @@ from activetigger.datamodels import (
 from activetigger.db.languagemodels import ModelsService
 from activetigger.db.manager import DatabaseManager
 from activetigger.functions import get_model_metrics
-from activetigger.queue import Queue
+from activetigger.queue_manager import Queue
 from activetigger.tasks.predict_bert import PredictBert
 from activetigger.tasks.train_bert import TrainBert
 
@@ -415,7 +415,7 @@ class LanguageModels:
                 project=self.project_slug,
                 scheme=element.scheme or "default",
                 params=element.params or {},
-                path=str(self.path.joinpath(element.model_name)), # TODO refactor
+                path=str(self.path.joinpath(element.model_name)),  # TODO refactor
                 status="trained",
             )
 
@@ -453,18 +453,21 @@ class LanguageModels:
                     value=True,
                 )
             print("Prediction finished")
-        if  element.kind == "bertopic":
+        if element.kind == "bertopic":
             print("BERTopic finished")
             self.language_models_service.add_model(
-                kind = element.kind, 
-                project = self.project_slug,
-                name = element.model_name,
-                user = element.user,
+                kind=element.kind,
+                project=self.project_slug,
+                name=element.model_name,
+                user=element.user,
                 status=element.status,
                 scheme=element.scheme,
-                params = element.params,
-                path = str(self.path.parent.joinpath("bertopic").joinpath("runs").joinpath(element.model_name)), #TODO refactor
-
+                params=element.params,
+                path=str(
+                    self.path.parent.joinpath("bertopic")
+                    .joinpath("runs")
+                    .joinpath(element.model_name)
+                ),  # TODO refactor
             )
 
     def get_labels(self, model_name: str) -> list:

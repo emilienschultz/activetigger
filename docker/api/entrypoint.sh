@@ -7,6 +7,7 @@ else
   echo "/!\\ Mode is set to PROD /!\\"
 fi
 echo "(i) Python version is $(python3 --version)"
+echo "(i) uv version is $(uv --version)"
 
 echo
 echo " ~"
@@ -14,15 +15,12 @@ echo " ~ Install dependencies"
 echo " ~"
 echo
 # install python deps
-mkdir -p /home/python/venv
-python -m venv /home/python/venv
-PATH="/home/python/venv/bin:$PATH"
 cd /api
 if [ "$GPU" = "true" ]; then
   echo "Mode GPU activated: installing cuml-cu12"
-  pip install --extra-index-url https://pypi.nvidia.com cuml-cu12
+  uv pip install --extra-index-url https://pypi.nvidia.com cuml-cu12
 fi
-pip3 install -r requirements.txt
+uv sync
 
 
 # Check for a config.yaml file in the api directory
@@ -45,7 +43,7 @@ if [ "$MODE" = "dev" ]; then
   echo " ~ Start api dev"
   echo " ~"
   echo
-  python3 -m activetigger -p "$API_PORT"
+  uv run python3 -m activetigger -p "$API_PORT"
 else
   echo
   echo " ~"
@@ -53,5 +51,5 @@ else
   echo " ~"
   echo
   echo "TODO"
-  python3 -m activetigger -p "$API_PORT"
+  uv run python3 -m activetigger -p "$API_PORT"
 fi
