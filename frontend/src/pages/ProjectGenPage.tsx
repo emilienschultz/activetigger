@@ -466,7 +466,7 @@ export const GenPage: FC = () => {
             />
             <div className="explanations">Last 100 generated content for the current user</div>
             <DataGrid
-              className="fill-grid"
+              className="fill-grid rdg-light"
               style={{ backgroundColor: 'white' }}
               columns={columns}
               rows={(generated as unknown as Row[]) || []}

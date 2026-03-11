@@ -338,7 +338,7 @@ export const DataTabular: FC<DataTabularModel> = ({
       <span className="explanations">Total: {totalElement}</span>
 
       <DataGrid
-        className="fill-grid"
+        className="fill-grid rdg-light"
         style={{ backgroundColor: 'white' }}
         columns={columns}
         rows={rows}
