@@ -9,6 +9,7 @@ import Select from 'react-select';
 import { Tooltip } from 'react-tooltip';
 
 import { keys, sortBy } from 'lodash';
+import { useDebounceValue } from 'usehooks-ts';
 import { useGetQuickModel, useStatistics } from '../../core/api';
 import { useAppContext } from '../../core/context';
 import { isValidRegex } from '../../core/utils';
@@ -61,6 +62,14 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
   );
 
   const [availableLabels, setAvailableLabels] = useState<string[]>([]);
+
+  const [filterDebounced, setFilter] = useDebounceValue(selectionConfig.filter, 500);
+  useEffect(() => {
+    setAppContext((prev) => ({
+      ...prev,
+      selectionConfig: { ...prev.selectionConfig, filter: filterDebounced },
+    }));
+  }, [filterDebounced, setAppContext]);
 
   const statisticsDataset = useMemo(() => {
     if (phase === 'train') return `${statistics?.train_annotated_n}/${statistics?.train_set_n}`;
@@ -217,17 +226,14 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
           <input
             className={classNames(
               'searchhelp',
-              selectionConfig.filter && !isValidRegex(selectionConfig.filter) ? 'is-invalid' : '',
+              filterDebounced && !isValidRegex(filterDebounced) ? 'is-invalid' : '',
             )}
             type="text"
             id="select_regex"
             placeholder="Enter a regex"
-            value={selectionConfig.filter}
+            defaultValue={selectionConfig.filter}
             onChange={(e) => {
-              setAppContext((prev) => ({
-                ...prev,
-                selectionConfig: { ...prev.selectionConfig, filter: e.target.value },
-              }));
+              setFilter(e.target.value);
             }}
           />
           <div className="invalid-feedback">Regex not valid</div>

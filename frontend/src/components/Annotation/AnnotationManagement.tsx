@@ -262,7 +262,7 @@ export const AnnotationManagement: FC = () => {
   }, [effectivePhase]);
 
   useEffect(() => {
-    if (elementId === 'noelement') {
+    if (element !== null) {
       fetchNextElement();
     }
     // disabling echaustive deps as we only want to track phase to avoid unnecessary fetchNext
