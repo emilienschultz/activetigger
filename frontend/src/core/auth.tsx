@@ -111,7 +111,7 @@ const _useAuth = (): AuthContext => {
           return false;
         }
       } else {
-        notify({ type: 'warning', message: 'You must be logged-in to be able to log out!' });
+        notify({ type: 'warning', message: 'You must be logged to log out!' });
         return false;
       }
     },

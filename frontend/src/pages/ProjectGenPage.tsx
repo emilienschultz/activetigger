@@ -199,7 +199,7 @@ export const GenPage: FC = () => {
   // function to add a model
   const addModel = async (model: Omit<GenModel & { api: SupportedAPI }, 'id'>) => {
     const id = await createGenModel(projectName, model);
-    notify({ type: 'success', message: 'Model added' });
+    notify({ type: 'success', message: 'Model added.' });
     setConfiguredModels([...configuredModels, { ...model, id }]);
     setShowFormAddModel(false);
   };
@@ -220,7 +220,7 @@ export const GenPage: FC = () => {
     const id = configuredModels.filter((m) => m.name === name)[0].id;
     await deleteGenModel(projectName, id).then(() => {
       setCurrentModel(null);
-      notify({ type: 'success', message: 'Model removed' });
+      notify({ type: 'success', message: 'Model removed.' });
       return true;
     });
   };
@@ -492,7 +492,7 @@ export const GenPage: FC = () => {
             <button
               className="btn btn-primary mx-2 savebutton"
               onClick={() => {
-                if (!promptName) notify({ type: 'error', message: 'Prompt name is required' });
+                if (!promptName) notify({ type: 'error', message: 'Prompt name required.' });
                 savePrompts(generateConfig.prompt || null, promptName);
                 reFetchPrompts();
                 setShowRecordPromptForm(false);

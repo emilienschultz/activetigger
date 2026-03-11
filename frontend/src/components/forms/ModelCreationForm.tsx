@@ -106,8 +106,7 @@ export const ModelCreationForm: FC<ModelCreationFormProps> = ({
     if (availableLabels.length - data.exclude_labels?.length < 2) {
       notify({
         type: 'error',
-        message:
-          'You are trying to train a model on only one label. You need at least 2 labels to start a training',
+        message: 'You need at least 2 labels to start a training.',
       });
       return;
     } else {

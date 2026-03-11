@@ -212,7 +212,7 @@ export const AnnotationManagement: FC = () => {
           notify({
             type: 'warning',
             message:
-              'Next selected element is the same as the current one. Try changing selection settings.',
+              'Refetching yielded the same text input. Change selection settings to get a different result.',
           });
         }
         navigate(`/projects/${projectName}/tag/${res.element_id}`);

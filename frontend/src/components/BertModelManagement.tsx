@@ -77,7 +77,7 @@ export const BertModelManagement: FC<BertModelManagementProps> = ({
       await renameBertModel(currentBertModel, data.new_name);
       resetRename();
       setShowRename(false);
-    } else notify({ type: 'error', message: 'New name is void' });
+    } else notify({ type: 'error', message: 'Enter a name (currently empty)' });
   };
 
   const loss = model?.loss ? (model?.loss as unknown as LossData) : null;
