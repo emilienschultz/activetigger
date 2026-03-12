@@ -2,6 +2,7 @@ import { FC, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import DataGrid, { Column } from 'react-data-grid';
 import { FaCloudDownloadAlt } from 'react-icons/fa';
+import { HiOutlineViewGrid } from 'react-icons/hi';
 import { Link } from 'react-router-dom';
 import { MLStatisticsModel } from '../types';
 import { DisplayTableStatistics } from './DisplayTableStatistics';
@@ -132,12 +133,12 @@ export const DisplayScores: FC<DisplayScoresProps> = ({
         Download as JSON
       </button>
       <button
-        className="btn-secondary-action"
+        className="btn btn-link p-0"
         onClick={() => {
           setViewTable(!viewTable);
         }}
       >
-        Change table view
+        <HiOutlineViewGrid size={20} />
       </button>
       <Modal
         show={showFalsePredictions}
