@@ -1,7 +1,7 @@
 import { FC, useEffect, useMemo, useState } from 'react';
 import { Modal } from 'react-bootstrap';
-import { IoIosRefresh } from 'react-icons/io';
-import { PiEmptyBold } from 'react-icons/pi';
+import { HiBan } from 'react-icons/hi';
+import { LuRefreshCw } from 'react-icons/lu';
 import Select from 'react-select';
 import { Tooltip } from 'react-tooltip';
 import { useRetrainQuickModel, useTrainQuickModel } from '../../core/api';
@@ -239,24 +239,23 @@ export const SelectActiveLearning: FC<SelectActiveLearningProps> = ({
               />
 
               <div>
-                <PiEmptyBold
-                  size={20}
-                  style={{ color: 'red', cursor: 'pointer', margin: '0px 2px' }}
+                <button
+                  className="btn-secondary-action"
                   onClick={() => {
                     setActiveModel(null);
                   }}
-                  data-tooltip-id="delete-tooltip"
-                  className="mx-2"
-                />
+                >
+                  <HiBan size={20} data-tooltip-id="delete-tooltip" />
+                </button>
                 {activeModel?.type === 'quickmodel' && (
-                  <IoIosRefresh
-                    size={20}
-                    style={{ color: 'green', cursor: 'pointer' }}
+                  <button
+                    className="btn-secondary-action"
                     onClick={() => {
                       retrainQuickModel(activeModel.value);
                     }}
-                    data-tooltip-id="retrain-tooltip"
-                  />
+                  >
+                    <LuRefreshCw size={20} data-tooltip-id="retrain-tooltip" />
+                  </button>
                 )}
                 <Tooltip id="retrain-tooltip" place="bottom" content="Retrain model" />
                 <Tooltip id="delete-tooltip" place="bottom" content="Deactivate model" />
