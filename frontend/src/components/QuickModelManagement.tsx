@@ -30,7 +30,7 @@ interface Options {
 
 interface FeaturesOptions {
   fasttext?: Options;
-  embeddings?: Options;
+  'sentence-embeddings'?: Options;
 }
 
 interface QuickModelManagementProps {

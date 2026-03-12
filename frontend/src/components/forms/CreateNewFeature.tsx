@@ -13,7 +13,7 @@ interface Options {
 
 interface FeaturesOptions {
   fasttext?: Options;
-  embeddings?: Options;
+  'sentence-embeddings'?: Options;
 }
 
 interface CreateNewFeatureProps {
@@ -43,7 +43,7 @@ export const CreateNewFeature: FC<CreateNewFeatureProps> = ({
         model: 'generic',
         max_length_tokens: 1024,
       },
-      type: 'embeddings',
+      type: 'sentence-embeddings',
       name: getRandomName('feature'),
     },
   });
@@ -86,7 +86,7 @@ export const CreateNewFeature: FC<CreateNewFeatureProps> = ({
         ))}{' '}
       </select>
 
-      {selectedFeatureToCreate === 'embeddings' && (
+      {selectedFeatureToCreate === 'sentence-embeddings' && (
         <details>
           <summary>Advanced settings</summary>
           <label htmlFor="model">Model to use</label>
@@ -95,8 +95,8 @@ export const CreateNewFeature: FC<CreateNewFeatureProps> = ({
               Default model
             </option>
             {(
-              (featuresOption.embeddings
-                ? (featuresOption['embeddings']['models'] as string[])
+              (featuresOption['sentence-embeddings']
+                ? (featuresOption['sentence-embeddings']['models'] as string[])
                 : []) || []
             ).map((element) => (
               <option key={element as string} value={element as string}>
