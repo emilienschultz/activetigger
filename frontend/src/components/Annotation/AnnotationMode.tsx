@@ -10,7 +10,7 @@ import { Tooltip } from 'react-tooltip';
 
 import { keys, sortBy } from 'lodash';
 import { useGetQuickModel, useStatistics } from '../../core/api';
-import { useAppContext } from '../../core/context';
+import { useAppContext } from '../../core/useAppContext';
 import { isValidRegex } from '../../core/utils';
 import { AnnotationTagFilterSelect } from './AnnotationTagFilterSelect';
 
