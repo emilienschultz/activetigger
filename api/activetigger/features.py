@@ -390,7 +390,10 @@ class Features:
                 raise ValueError("No value for regex")
 
             pattern = re.compile(parameters["value"])
-            f = df.apply(lambda x: bool(pattern.search(x)))
+            if parameters.get("regex_count", False):
+                f = df.apply(lambda x: len(pattern.findall(x)))
+            else:
+                f = df.apply(lambda x: bool(pattern.search(x)))
             parameters = {
                 "name": name,
                 "kind": kind,
@@ -480,7 +483,11 @@ class Features:
                 ),
             )
             if parameters["model"] is not None and parameters["model"] != "":
-                short_model = parameters["model"].split("/")[-1] if "/" in parameters["model"] else parameters["model"]
+                short_model = (
+                    parameters["model"].split("/")[-1]
+                    if "/" in parameters["model"]
+                    else parameters["model"]
+                )
                 name = f"{name}_{short_model}"
             parameters = {
                 "model": parameters["model"],

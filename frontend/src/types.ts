@@ -95,6 +95,7 @@ export interface FeatureDfmParameters {
 
 export interface FeatureRegexParameters {
   value: string;
+  regex_count?: boolean;
 }
 
 export interface FeatureDatasetParameters {

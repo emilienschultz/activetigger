@@ -132,7 +132,13 @@ export const CreateNewFeature: FC<CreateNewFeatureProps> = ({
       )}
 
       {selectedFeatureToCreate === 'regex' && (
-        <input type="text" placeholder="Enter the regex" {...register('parameters.value')} />
+        <>
+          <input type="text" placeholder="Enter the regex" {...register('parameters.value')} />
+          <label>
+            <input type="checkbox" {...register('parameters.regex_count')} />
+            Occurence (presence 1/0 by default)
+          </label>
+        </>
       )}
 
       {selectedFeatureToCreate === 'dfm' && (

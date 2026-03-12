@@ -290,6 +290,7 @@ class RegexModel(BaseModel):
     name: str
     value: str
     user: str
+    regex_count: bool = False
 
 
 class LMParametersModel(BaseModel):
