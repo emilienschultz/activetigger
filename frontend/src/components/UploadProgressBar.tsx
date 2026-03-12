@@ -18,7 +18,7 @@ export const UploadProgressBar: FC<UploadProgressBarProps> = ({ progression, can
           <ClipLoader /> <span>Uploading dataset</span>{' '}
         </div>
         <div id="progress-container">
-          {(progression.loaded && progression.total) || true ? (
+          {progression.loaded && progression.total ? (
             <span>{formatProgression(progression.loaded, progression.total)}%</span>
           ) : null}
 

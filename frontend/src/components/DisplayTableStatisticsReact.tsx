@@ -1,9 +1,9 @@
-import { FC, useMemo, ReactNode } from 'react';
+import { FC, useCallback, useMemo } from 'react';
 import DataTable, { TableColumn, TableStyles } from 'react-data-table-component';
+import { CSSObject } from 'styled-components';
 import { useAppContext } from '../core/context';
 import { reorderLabels } from '../core/utils';
 import { MLStatisticsModel } from '../types';
-import { CSSObject } from 'styled-components';
 
 export interface DisplayTableStatisticsProps {
   scores: MLStatisticsModel;
@@ -18,92 +18,74 @@ interface TableModel {
 
 type rowData = Record<string, string | number>;
 
-interface confusionMatrixTableType {
-  headers: string[];
-  data: rowData;
-}
-
-interface scoresTableType {
-  headers: string[];
-  data: rowData;
-}
-
-interface tableColumnsType {
-  name: string;
-  selector: (row: Record<string, string | number>) => number | string;
-  minWidth?: string;
-  center?: boolean;
-  style?: CSSObject;
-  grow?: number;
-  cell?: (
-    row: Record<string, string | number>,
-    rowIndex: number,
-    column: TableColumn<Record<string, string | number>>,
-    id: string | number,
-  ) => ReactNode;
-}
-
 export const DisplayTableStatisticsReact: FC<DisplayTableStatisticsProps> = ({ scores }) => {
   const {
     appContext: { displayConfig },
   } = useAppContext();
   // Table format and styling
   const rowHeightPX = 48;
-  const labelStyle: CSSObject = {
-    fontWeight: 'bold',
-    fontSize: '.8rem',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-  };
+  const labelStyle: CSSObject = useMemo(
+    () => ({
+      fontWeight: 'bold',
+      fontSize: '.8rem',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+    }),
+    [],
+  );
   const customTableStyle: TableStyles = {
     rows: { style: { height: `${rowHeightPX}px` } },
     headCells: { style: { ...labelStyle, height: `${rowHeightPX}px` } },
   };
-  const genericCellStyle = {
-    minWidth: 'fit-content',
-    center: true,
-    grow: 1,
-  };
-  const genericLabelCellStyle = {
-    minWidth: '8rem',
-    style: labelStyle,
-    grow: 2,
-  };
-  const cellFormat = (
-    row: Record<string, string | number>,
-    rowIndex: number,
-    column: TableColumn<Record<string, string | number>>, // equivalent to tableColumnsType
-    id: string | number,
-  ) => {
-    const columnName: string = column.name as unknown as string;
-    const content = row[columnName];
+  const genericCellStyle = useMemo(
+    () => ({
+      minWidth: 'fit-content',
+      center: true,
+      grow: 1,
+    }),
+    [],
+  );
+  const genericLabelCellStyle = useMemo(
+    () => ({
+      minWidth: '8rem',
+      style: labelStyle,
+      grow: 2,
+    }),
+    [labelStyle],
+  );
+  const cellFormat = useCallback(
+    (row: rowData, _rowIndex: number, column: TableColumn<rowData>) => {
+      const columnName: string = column.name as unknown as string;
+      const content = row[columnName];
 
-    // Display labels vertical
-    if (columnName.length === 0) return <>{row['_rowLabel']}</>;
+      // Display labels vertical
+      if (columnName.length === 0) return <>{row['_rowLabel']}</>;
 
-    // Display total values in grey
-    if (columnName === 'Total' || row['_rowLabel'] === 'Total')
-      return <p style={{ margin: 'auto', color: '#909090' }}>{content}</p>;
+      // Display total values in grey
+      if (columnName === 'Total' || row['_rowLabel'] === 'Total')
+        return <p style={{ margin: 'auto', color: '#909090' }}>{content}</p>;
 
-    // Display diagonal values in green
-    if (row['_rowLabel'] == columnName)
-      return (
-        <p
-          style={{
-            backgroundColor: '#90909040',
-            margin: 'auto',
-            padding: '.5rem 1rem',
-            borderRadius: '.8rem',
-            color: 'green',
-            fontWeight: 'bold',
-          }}
-        >
-          {content}
-        </p>
-      );
-    return <p style={{ margin: 'auto', color: 'red', fontWeight: 'bold' }}>{content}</p>;
-  };
+      // Display diagonal values in green
+      if (row['_rowLabel'] == columnName)
+        return (
+          <p
+            style={{
+              backgroundColor: '#90909040',
+              margin: 'auto',
+              padding: '.5rem 1rem',
+              borderRadius: '.8rem',
+              color: 'green',
+              fontWeight: 'bold',
+            }}
+          >
+            {content}
+          </p>
+        );
+      return <p style={{ margin: 'auto', color: 'red', fontWeight: 'bold' }}>{content}</p>;
+    },
+    [],
+  );
 
   // Data Management
   const table = scores.table ? (scores.table as unknown as TableModel) : null;
@@ -124,9 +106,9 @@ export const DisplayTableStatisticsReact: FC<DisplayTableStatisticsProps> = ({ s
   }, [table, reorderedLabels]);
 
   const [confusionMatrixColumns, confusionMatrixData] = useMemo<
-    [tableColumnsType[], rowData[]]
+    [TableColumn<rowData>[], rowData[]]
   >(() => {
-    const tableColumns: tableColumnsType[] = [
+    const tableColumns: TableColumn<rowData>[] = [
       {
         name: '',
         selector: (row: Record<string, string | number>) => row['_rowLabel'],
@@ -153,10 +135,16 @@ export const DisplayTableStatisticsReact: FC<DisplayTableStatisticsProps> = ({ s
       } as rowData;
     });
     return [tableColumns, tableData];
-  }, [reorderedLabels, reorderedConfusionMatrix]);
+  }, [
+    reorderedLabels,
+    reorderedConfusionMatrix,
+    cellFormat,
+    genericCellStyle,
+    genericLabelCellStyle,
+  ]);
 
-  const [scoresColumns, scoresData] = useMemo<[tableColumnsType[], rowData[]]>(() => {
-    const tableColumns: tableColumnsType[] = [
+  const [scoresColumns, scoresData] = useMemo<[TableColumn<rowData>[], rowData[]]>(() => {
+    const tableColumns: TableColumn<rowData>[] = [
       {
         name: '',
         selector: (row) => row['_rowLabel'],
@@ -181,7 +169,7 @@ export const DisplayTableStatisticsReact: FC<DisplayTableStatisticsProps> = ({ s
         } as rowData;
       });
     return [tableColumns, scoreData];
-  }, [reorderedLabels, scores]);
+  }, [reorderedLabels, scores, genericCellStyle, genericLabelCellStyle]);
 
   return (
     <>
@@ -202,7 +190,7 @@ export const DisplayTableStatisticsReact: FC<DisplayTableStatisticsProps> = ({ s
                     Predicted
                   </span>
                 </div>
-                <DataTable<Record<confusionMatrixTableType['headers'][number], string | number>>
+                <DataTable<rowData>
                   columns={confusionMatrixColumns}
                   data={confusionMatrixData}
                   customStyles={customTableStyle}
@@ -210,7 +198,7 @@ export const DisplayTableStatisticsReact: FC<DisplayTableStatisticsProps> = ({ s
               </div>
             </div>
             <div id="scores-table-container">
-              <DataTable<Record<scoresTableType['headers'][number], string | number>>
+              <DataTable<rowData>
                 columns={scoresColumns}
                 data={scoresData}
                 customStyles={customTableStyle}
