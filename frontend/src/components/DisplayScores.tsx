@@ -36,7 +36,7 @@ export const DisplayScores: FC<DisplayScoresProps> = ({
   dataset = 'data',
   exclude_labels,
 }) => {
-  const [viewTable, setViewTable] = useState<boolean>(true);
+  const [viewTable, setViewTable] = useState<boolean>(false);
   const datasetClean = dataset.includes('test')
     ? 'test'
     : dataset.includes('valid')
@@ -112,6 +112,15 @@ export const DisplayScores: FC<DisplayScoresProps> = ({
           </span>
         )}
       </div>
+      <button
+        className="btn btn-link p-0"
+        onClick={() => {
+          setViewTable(!viewTable);
+        }}
+        title="Toggle view"
+      >
+        <HiOutlineViewGrid size={20} />
+      </button>
       {viewTable ? (
         <DisplayTableStatistics scores={scores} title={title} />
       ) : (
@@ -132,14 +141,7 @@ export const DisplayScores: FC<DisplayScoresProps> = ({
         <FaCloudDownloadAlt size={15} className="me-2" />
         Download as JSON
       </button>
-      <button
-        className="btn btn-link p-0"
-        onClick={() => {
-          setViewTable(!viewTable);
-        }}
-      >
-        <HiOutlineViewGrid size={20} />
-      </button>
+
       <Modal
         show={showFalsePredictions}
         id="quickmodel-modal"
