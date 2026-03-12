@@ -1,5 +1,5 @@
 import { FC, useMemo, ReactNode } from 'react';
-import DataTable, { TableColumn } from 'react-data-table-component';
+import DataTable, { TableColumn, TableStyles } from 'react-data-table-component';
 import { useAppContext } from '../core/context';
 import { reorderLabels } from '../core/utils';
 import { MLStatisticsModel } from '../types';
@@ -47,30 +47,29 @@ export const DisplayTableStatisticsReact: FC<DisplayTableStatisticsProps> = ({ s
   const {
     appContext: { displayConfig },
   } = useAppContext();
-  const table = scores.table ? (scores.table as unknown as TableModel) : null;
-
-  // sort labels and build a permutation to reorder data rows/columns accordingly
-  const reorderedLabels = useMemo<string[]>(
-    () =>
-      reorderLabels(
-        (scores?.table?.index as unknown as string[]) || [],
-        displayConfig.labelsOrder || [],
-      ),
-    [displayConfig.labelsOrder, scores],
-  );
-
-  // permutation: for each position in `labels`, the original index in table.index
-  const perm = useMemo<number[]>(() => {
-    if (!table) return [];
-    return reorderedLabels.map((label) => table.index.indexOf(label));
-  }, [reorderedLabels, table]);
-
-  // reordered data: rows and columns permuted to match `labels` order
-  const reorderedConfusionMatrix = useMemo<number[][]>(() => {
-    if (!table) return [];
-    return perm.map((origRow) => perm.map((origCol) => table.data[origRow][origCol]));
-  }, [table, perm]);
-
+  // Table format and styling
+  const rowHeightPX = 48;
+  const labelStyle: CSSObject = {
+    fontWeight: 'bold',
+    fontSize: '.8rem',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  };
+  const customTableStyle: TableStyles = {
+    rows: { style: { height: `${rowHeightPX}px` } },
+    headCells: { style: { ...labelStyle, height: `${rowHeightPX}px` } },
+  };
+  const genericCellStyle = {
+    minWidth: 'fit-content',
+    center: true,
+    grow: 1,
+  };
+  const genericLabelCellStyle = {
+    minWidth: '8rem',
+    style: labelStyle,
+    grow: 2,
+  };
   const cellFormat = (
     row: Record<string, string | number>,
     rowIndex: number,
@@ -103,9 +102,27 @@ export const DisplayTableStatisticsReact: FC<DisplayTableStatisticsProps> = ({ s
           {content}
         </p>
       );
-    // Should not happend
     return <p style={{ margin: 'auto', color: 'red', fontWeight: 'bold' }}>{content}</p>;
   };
+
+  // Data Management
+  const table = scores.table ? (scores.table as unknown as TableModel) : null;
+  const reorderedLabels = useMemo<string[]>(
+    () =>
+      reorderLabels(
+        (scores?.table?.index as unknown as string[]) || [],
+        displayConfig.labelsOrder || [],
+      ),
+    [displayConfig.labelsOrder, scores],
+  );
+  const reorderedConfusionMatrix = useMemo<number[][]>(() => {
+    if (!table) return [];
+    const permutations: number[] = reorderedLabels.map((label) => table.index.indexOf(label));
+    return permutations.map((origRow) =>
+      permutations.map((origCol) => table.data[origRow][origCol]),
+    );
+  }, [table, reorderedLabels]);
+
   const [confusionMatrixColumns, confusionMatrixData] = useMemo<
     [tableColumnsType[], rowData[]]
   >(() => {
@@ -113,22 +130,14 @@ export const DisplayTableStatisticsReact: FC<DisplayTableStatisticsProps> = ({ s
       {
         name: '',
         selector: (row: Record<string, string | number>) => row['_rowLabel'],
-        minWidth: '8 rem',
-        style: {
-          fontWeight: 'bold',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-        },
-        grow: 2,
+        ...genericLabelCellStyle,
         cell: cellFormat,
       },
       ...reorderedLabels.map((label) => {
         return {
           name: label,
           selector: (row: Record<string, string | number>) => row[label],
-          minWidth: 'fit-content',
-          center: true,
+          ...genericCellStyle,
           cell: cellFormat,
         };
       }),
@@ -151,21 +160,13 @@ export const DisplayTableStatisticsReact: FC<DisplayTableStatisticsProps> = ({ s
       {
         name: '',
         selector: (row) => row['_rowLabel'],
-        minWidth: '8 rem',
-        style: {
-          fontWeight: 'bold',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-        },
-        grow: 2,
+        ...genericLabelCellStyle,
       },
       ...['Recall', 'Precision', 'F1'].map((score) => {
         return {
           name: score,
           selector: (row: Record<string, string | number>) => row[score],
-          minWidth: 'fit-content',
-          center: true,
+          ...genericCellStyle,
         };
       }),
     ];
@@ -186,24 +187,33 @@ export const DisplayTableStatisticsReact: FC<DisplayTableStatisticsProps> = ({ s
     <>
       {table && (
         <>
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              justifyContent: 'center',
-              alignItems: 'start',
-            }}
-          >
-            <div style={{ flex: '2 1 50px', margin: '1rem 2rem' }}>
-              <DataTable<Record<confusionMatrixTableType['headers'][number], string | number>>
-                columns={confusionMatrixColumns}
-                data={confusionMatrixData}
-              />
+          <div id="table-statistics-react">
+            <div id="confusion-matrix-container">
+              <div id="truth-container">
+                <span style={{ height: rowHeightPX * reorderedLabels.length + 'px' }}>Truth</span>
+              </div>
+              <div style={{ flex: '1 1 50px' }}>
+                <div id="predicted-container">
+                  <span id="gap-span"></span>
+                  <span
+                    id="predicted-span"
+                    style={{ flex: `${reorderedLabels.length + 1} 1 50px` }}
+                  >
+                    Predicted
+                  </span>
+                </div>
+                <DataTable<Record<confusionMatrixTableType['headers'][number], string | number>>
+                  columns={confusionMatrixColumns}
+                  data={confusionMatrixData}
+                  customStyles={customTableStyle}
+                />
+              </div>
             </div>
-            <div style={{ flex: '1 2 50px', margin: '1rem 2rem' }}>
+            <div id="scores-table-container">
               <DataTable<Record<scoresTableType['headers'][number], string | number>>
                 columns={scoresColumns}
                 data={scoresData}
+                customStyles={customTableStyle}
               />
             </div>
           </div>
