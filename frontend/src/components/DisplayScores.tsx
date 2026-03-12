@@ -2,9 +2,11 @@ import { FC, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import DataGrid, { Column } from 'react-data-grid';
 import { FaCloudDownloadAlt } from 'react-icons/fa';
+import { HiOutlineViewGrid } from 'react-icons/hi';
 import { Link } from 'react-router-dom';
 import { MLStatisticsModel } from '../types';
 import { DisplayTableStatistics } from './DisplayTableStatistics';
+import { DisplayTableStatisticsReact } from './DisplayTableStatisticsReact';
 
 export interface DisplayScoresProps {
   title: string | null;
@@ -34,7 +36,7 @@ export const DisplayScores: FC<DisplayScoresProps> = ({
   dataset = 'data',
   exclude_labels,
 }) => {
-  console.log(dataset);
+  const [viewTable, setViewTable] = useState<boolean>(true);
   const datasetClean = dataset.includes('test')
     ? 'test'
     : dataset.includes('valid')
@@ -110,7 +112,11 @@ export const DisplayScores: FC<DisplayScoresProps> = ({
           </span>
         )}
       </div>
-      <DisplayTableStatistics scores={scores} title={title} />
+      {viewTable ? (
+        <DisplayTableStatistics scores={scores} title={title} />
+      ) : (
+        <DisplayTableStatisticsReact scores={scores} title={title} />
+      )}
       {scores['false_predictions'] && (
         <button className="btn-secondary-action" onClick={() => setShowFalsePredictions(true)}>
           Show false predictions
@@ -125,6 +131,14 @@ export const DisplayScores: FC<DisplayScoresProps> = ({
       >
         <FaCloudDownloadAlt size={15} className="me-2" />
         Download as JSON
+      </button>
+      <button
+        className="btn btn-link p-0"
+        onClick={() => {
+          setViewTable(!viewTable);
+        }}
+      >
+        <HiOutlineViewGrid size={20} />
       </button>
       <Modal
         show={showFalsePredictions}
