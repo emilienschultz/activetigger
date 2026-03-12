@@ -43,7 +43,7 @@ export const ProjectActionsSidebar: FC<{
   const { notify } = useNotifications();
   if (disk ? Number(disk['proportion']) > 98 : false) {
     notify({
-      message: 'Disk is almost full, please delete some files or alert the admin',
+      message: 'Disk is almost full, please delete some files or notify the admin team.',
       type: 'warning',
     });
   }

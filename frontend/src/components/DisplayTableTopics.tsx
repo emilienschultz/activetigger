@@ -67,7 +67,7 @@ export const DisplayTableTopics: FC<TableTopicsProps> = ({ data }) => {
       }}
     >
       <div style={{ blockSize: '100%' }}>
-        <DataGrid columns={columns} rows={data} className="fill-grid" rowHeight={80} />
+        <DataGrid columns={columns} rows={data} className="fill-grid rdg-light" rowHeight={80} />
       </div>
     </div>
   );

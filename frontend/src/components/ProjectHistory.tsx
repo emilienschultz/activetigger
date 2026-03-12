@@ -3,7 +3,6 @@ import { Dispatch, FC, SetStateAction } from 'react';
 import { useGetLogs } from '../core/api';
 import { displayTime } from '../core/utils';
 
-// import DataGrid, { Column } from 'react-data-grid';
 import { HiOutlineQuestionMarkCircle } from 'react-icons/hi';
 import { Tooltip } from 'react-tooltip';
 import { AppContextValue } from '../core/context';

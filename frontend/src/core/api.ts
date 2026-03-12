@@ -231,7 +231,7 @@ export function useCreateProject() {
         body: project,
       });
       if (!res.error) {
-        notify({ type: 'warning', message: 'Project in creation' });
+        notify({ type: 'warning', message: 'Project in creation.' });
         return res['data'];
       } else
         throw new Error(
@@ -259,7 +259,7 @@ export function useCreateValidSet() {
         },
         body: testset,
       });
-      if (!res.error) notify({ type: 'success', message: 'Test data set uploaded' });
+      if (!res.error) notify({ type: 'success', message: 'Test data set uploaded!' });
     },
     [notify],
   );
@@ -281,7 +281,7 @@ export function useDropEvalSet(projectSlug: string | null) {
           query: { project_slug: projectSlug, dataset: dataset },
         },
       });
-      if (!res.error) notify({ type: 'success', message: `Data set ${dataset} dropped` });
+      if (!res.error) notify({ type: 'success', message: `Dropped ${dataset} set.` });
     },
     [notify, projectSlug],
   );
@@ -310,7 +310,7 @@ export function usePredictOnDataset() {
         },
         body: data,
       });
-      if (!res.error) notify({ type: 'success', message: 'Start predicting on dataset' });
+      if (!res.error) notify({ type: 'success', message: 'Start predicting on dataset.' });
       else
         throw new Error(
           res.error.detail ? res.error.detail?.map((d) => d.msg).join('; ') : res.error.toString(),
@@ -336,7 +336,7 @@ export function useDeleteProject() {
           query: { project_slug: projectSlug },
         },
       });
-      if (!res.error) notify({ type: 'success', message: 'Project deleted' });
+      if (!res.error) notify({ type: 'success', message: 'Project deleted.' });
     },
     [notify],
   );
@@ -436,7 +436,7 @@ export function useDeleteScheme(projectSlug: string, schemeName: string | null) 
         },
         body: { project_slug: projectSlug, name: schemeName, kind: '', labels: [] },
       });
-      if (!res.error) notify({ type: 'success', message: 'Scheme deleted' });
+      if (!res.error) notify({ type: 'success', message: 'Scheme deleted.' });
     }
   }, [projectSlug, schemeName, notify]);
 
@@ -451,7 +451,7 @@ export function useAddScheme(projectSlug: string) {
   const { notify } = useNotifications();
 
   const addScheme = useCallback(
-    async (schemeName: string, kind: string) => {
+    async (schemeName: string, kind: string, labels: string[] = []) => {
       if (schemeName) {
         // do the new projects POST call
         const res = await api.POST('/schemes/{action}', {
@@ -459,9 +459,9 @@ export function useAddScheme(projectSlug: string) {
             path: { action: 'add' },
             query: { project_slug: projectSlug },
           },
-          body: { project_slug: projectSlug, name: schemeName, kind: kind, labels: [] },
+          body: { project_slug: projectSlug, name: schemeName, kind: kind, labels: labels },
         });
-        if (!res.error) notify({ type: 'success', message: 'Scheme add' });
+        if (!res.error) notify({ type: 'success', message: 'Scheme created.' });
 
         return true;
       }
@@ -487,7 +487,7 @@ export function useRenameScheme(projectSlug: string, schemeName: string) {
             query: { project_slug: projectSlug, old_name: schemeName, new_name: newSchemeName },
           },
         });
-        if (!res.error) notify({ type: 'success', message: 'Scheme renamed' });
+        if (!res.error) notify({ type: 'success', message: 'Scheme renamed.' });
         return true;
       }
       return null;
@@ -511,7 +511,7 @@ export function useDuplicateScheme(projectSlug: string, schemeName: string) {
           query: { project_slug: projectSlug, scheme_name: schemeName },
         },
       });
-      if (!res.error) notify({ type: 'success', message: 'Scheme duplicated' });
+      if (!res.error) notify({ type: 'success', message: 'Scheme duplicated.' });
       return true;
     }
     return null;
@@ -542,7 +542,7 @@ export function useAddFeature() {
           },
           body: { name: featureName, type: featureType, parameters: featureParameters },
         });
-        if (!res.error) notify({ type: 'info', message: 'Features are computing' });
+        if (!res.error) notify({ type: 'info', message: 'Features are computing.' });
         return true;
       }
       return false;
@@ -569,7 +569,7 @@ export function useDeleteFeature(projectSlug: string | null) {
             query: { project_slug: projectSlug, name: featureName },
           },
         });
-        if (!res.error) notify({ type: 'success', message: 'Features deleted' });
+        if (!res.error) notify({ type: 'success', message: 'Features deleted.' });
         return true;
       }
       return false;
@@ -593,8 +593,8 @@ export function useResetFeatures(projectSlug: string | null) {
           query: { project_slug: projectSlug },
         },
       });
-      if (!res.error) notify({ type: 'success', message: 'All features have been reset' });
-      else notify({ type: 'error', message: 'Failed to reset features' });
+      if (!res.error) notify({ type: 'success', message: 'All features have been reset.' });
+      else notify({ type: 'error', message: 'Failed to reset features.' });
     }
   }, [projectSlug, notify]);
 
@@ -655,7 +655,7 @@ export function useGetNextElementId(
           history: history,
           frame: selectionConfig.frameSelection ? selectionConfig.frame : null, // only if frame option selected
           dataset: phase,
-          label_maxprob: selectionConfig.label_maxprob,
+          label_prob: selectionConfig.label_prob,
           on_users: selectionConfig.users,
           model_active: activeModel,
         },
@@ -664,7 +664,7 @@ export function useGetNextElementId(
         return { element_id: res.data?.element_id, n_sample: res.data?.n_sample };
       else return null;
     } else {
-      notify({ type: 'error', message: 'Select a project/scheme to get elements' });
+      notify({ type: 'error', message: 'Select a project and scheme.' });
       return null;
     }
   }, [projectSlug, currentScheme, notify, history, selectionConfig, phase, activeModel]);
@@ -772,7 +772,7 @@ export function useAddTableAnnotations(
             dataset: dataset ? dataset : 'train',
           },
         });
-        if (!res.error) notify({ type: 'success', message: 'Annotations added' });
+        if (!res.error) notify({ type: 'success', message: 'Annotations saved.' });
 
         return true;
       }
@@ -799,7 +799,7 @@ export function useAddLabel(projectSlug: string | null, scheme: string | null) {
             query: { project_slug: projectSlug, scheme: scheme, label: label },
           },
         });
-        if (!res.error) notify({ type: 'success', message: 'New label created' });
+        if (!res.error) notify({ type: 'success', message: 'New label created.' });
 
         return true;
       }
@@ -826,7 +826,7 @@ export function useDeleteLabel(projectSlug: string | null, scheme: string | null
             query: { project_slug: projectSlug, scheme: scheme, label: label },
           },
         });
-        if (!res.error) notify({ type: 'success', message: 'Label deleted' });
+        if (!res.error) notify({ type: 'success', message: 'Label deleted.' });
 
         return true;
       }
@@ -857,8 +857,8 @@ export function useRenameLabel(projectSlug: string | null, scheme: string | null
             },
           },
         });
-        if (!res.error) notify({ type: 'success', message: 'Label renamed' });
-        else notify({ type: 'error', message: 'Error when renamed' });
+        if (!res.error) notify({ type: 'success', message: 'Label renamed.' });
+        else notify({ type: 'error', message: 'Error occured while renaming. Try again.' });
       }
 
       return true;
@@ -891,7 +891,7 @@ export function useRetrainQuickModel(projectSlug: string | null, scheme: string 
             },
           },
         });
-        if (!res.error) notify({ type: 'warning', message: 'Retraining model' });
+        if (!res.error) notify({ type: 'warning', message: 'Retraining model.' });
       }
       return true;
     },
@@ -926,7 +926,7 @@ export function useTrainQuickModel(projectSlug: string | null, scheme: string | 
           },
         });
 
-        if (!res.error) notify({ type: 'warning', message: 'Training model' });
+        if (!res.error) notify({ type: 'warning', message: 'Training model.' });
       }
       return true;
     },
@@ -952,7 +952,7 @@ export function useDeleteQuickModel(projectSlug: string | null) {
             },
           },
         });
-        if (!res.error) notify({ type: 'success', message: 'Model deleted' });
+        if (!res.error) notify({ type: 'success', message: 'Model deleted.' });
         return true;
       }
       return null;
@@ -1031,7 +1031,7 @@ export function useDeleteUserAuthProject(projectSlug: string | null, reFetchUser
           },
           body: { project_slug: projectSlug, username: username },
         });
-        if (!res.error) notify({ type: 'success', message: 'Auth deleted for user' });
+        if (!res.error) notify({ type: 'success', message: 'User authentication deleted.' });
         reFetchUsersAuth();
         return true;
       }
@@ -1072,7 +1072,7 @@ export function useCreateUser(reFetchUsers: () => void) {
       const res = await api.POST('/users/create', {
         body: { username: username, password: password, status: status, contact: mail },
       });
-      if (!res.error) notify({ type: 'success', message: 'User created' });
+      if (!res.error) notify({ type: 'success', message: 'User created.' });
       reFetchUsers();
       return true;
     },
@@ -1096,7 +1096,7 @@ export function useDeleteUser(reFetchUsers: () => void) {
             query: { user_to_delete: username },
           },
         });
-        if (!res.error) notify({ type: 'success', message: 'User deleted' });
+        if (!res.error) notify({ type: 'success', message: 'User deleted.' });
         reFetchUsers();
         return true;
       }
@@ -1122,7 +1122,7 @@ export function useAddUserAuthProject(projectSlug: string | null, reFetchUsersAu
           },
           body: { project_slug: projectSlug, username: username, status: auth },
         });
-        if (!res.error) notify({ type: 'success', message: 'Auth added for user' });
+        if (!res.error) notify({ type: 'success', message: 'Authentication created for user.' });
         reFetchUsersAuth();
         return true;
       }
@@ -1162,7 +1162,7 @@ export function useTrainBertModel(projectSlug: string | null, scheme: string | n
             auto_max_length: dataForm.auto_max_length,
           },
         });
-        if (!res.error) notify({ type: 'warning', message: 'Bertmodel training' });
+        if (!res.error) notify({ type: 'warning', message: 'Bertmodel training.' });
         return true;
       }
       return null;
@@ -1190,7 +1190,7 @@ export function useRenameBertModel(projectSlug: string | null) {
             },
           },
         });
-        if (!res.error) notify({ type: 'success', message: 'Model renamed' });
+        if (!res.error) notify({ type: 'success', message: 'Model renamed.' });
         return true;
       }
       return null;
@@ -1218,7 +1218,7 @@ export function useRenameQuickModel(projectSlug: string | null) {
             },
           },
         });
-        if (!res.error) notify({ type: 'success', message: 'Model renamed' });
+        if (!res.error) notify({ type: 'success', message: 'Model renamed.' });
         return true;
       }
       return null;
@@ -1245,7 +1245,7 @@ export function useDeleteBertModel(projectSlug: string | null) {
             },
           },
         });
-        if (!res.error) notify({ type: 'success', message: 'Model deleted' });
+        if (!res.error) notify({ type: 'success', message: 'Model deleted.' });
         return true;
       }
       return null;
@@ -1308,9 +1308,9 @@ export function useComputeModelPrediction(projectSlug: string | null, batchSize:
           },
         });
         if (!res.error)
-          notify({ type: 'warning', message: 'Computing prediction. It can take some time.' });
+          notify({ type: 'warning', message: 'Computing prediction. Might take a while.' });
         return true;
-      } else notify({ type: 'error', message: 'Missing parameters' });
+      } else notify({ type: 'error', message: 'Parameters missing.' });
       return null;
     },
     [projectSlug, notify, batchSize],
@@ -1339,7 +1339,7 @@ export function useGetFeaturesFile(projectSlug: string | null) {
         });
 
         if (!res.error) {
-          notify({ type: 'success', message: 'Exporting the features of the model' });
+          notify({ type: 'success', message: 'Exporting set of features features from model.' });
           saveAs(res.data, `features_${features.join('-')}_${projectSlug}.${format}`);
         }
         return true;
@@ -1371,7 +1371,7 @@ export function useGetProjectionFile(projectSlug: string | null) {
         });
 
         if (!res.error) {
-          notify({ type: 'success', message: 'Exporting the vizualisation of the model' });
+          notify({ type: 'success', message: 'Exporting the vizualisation.' });
           saveAs(res.data, `projection_${projectSlug}.${format}`);
         }
         return true;
@@ -1405,7 +1405,7 @@ export function useGetAnnotationsFile(projectSlug: string | null) {
         });
 
         if (!res.error) {
-          notify({ type: 'success', message: 'Exporting the annotated data' });
+          notify({ type: 'success', message: 'Exporting annotated data.' });
           saveAs(res.data, `annotations_${projectSlug}_${scheme}_${dataset}.${format}`);
         }
         return true;
@@ -1439,7 +1439,7 @@ export function useGetPredictionsFile(projectSlug: string | null) {
         });
 
         if (!res.error) {
-          notify({ type: 'success', message: 'Exporting the predictions data' });
+          notify({ type: 'success', message: 'Exporting predicted data.' });
           saveAs(res.data, `predictions_${projectSlug}_${model}_${scheme}_${dataset}.${format}`);
         }
         return true;
@@ -1503,7 +1503,7 @@ export function useGetGenerationsFile(projectSlug: string | null, filters: strin
       });
 
       if (!res.error) {
-        notify({ type: 'success', message: 'Exporting the generations data' });
+        notify({ type: 'success', message: 'Exporting data from generation.' });
         saveAs(res.data, 'generations.csv');
       }
       return true;
@@ -1528,7 +1528,7 @@ export function useDropGeneratedElements(projectSlug: string | null, username: s
         query: { project_slug: projectSlug, username: username },
       },
     });
-    if (!res.error) notify({ type: 'success', message: 'Elements dropped' });
+    if (!res.error) notify({ type: 'success', message: 'Rows dropped.' });
   }, [notify, projectSlug, username]);
   return dropGeneratedElements;
 }
@@ -1555,15 +1555,15 @@ export function useGetModelFile(projectSlug: string | null | undefined) {
 
         const readableStream = res.data;
         if (!readableStream) {
-          notify({ type: 'error', message: 'Error when downloading the model' });
+          notify({ type: 'error', message: 'Error downloading the model.' });
           return null;
         }
         // more optimized
         if (window.WritableStream && readableStream.pipeTo) {
           await readableStream.pipeTo(fileStream);
-          notify({ type: 'success', message: 'Model downloaded' });
+          notify({ type: 'success', message: 'Model downloaded.' });
         } else {
-          notify({ type: 'error', message: 'Error when downloading the model' });
+          notify({ type: 'error', message: 'Error downloading the model.' });
         }
       }
       return true;
@@ -1594,15 +1594,15 @@ export function useGetRawDataFile(projectSlug: string | null | undefined) {
 
       const readableStream = res.data;
       if (!readableStream) {
-        notify({ type: 'error', message: 'Error when downloading the model' });
+        notify({ type: 'error', message: 'Error downloading the model.' });
         return null;
       }
       // more optimized
       if (window.WritableStream && readableStream.pipeTo) {
         await readableStream.pipeTo(fileStream);
-        notify({ type: 'success', message: 'Model downloaded' });
+        notify({ type: 'success', message: 'Model downloaded.' });
       } else {
-        notify({ type: 'error', message: 'Error when downloading the model' });
+        notify({ type: 'error', message: 'Error downloading the model.' });
       }
     }
     return true;
@@ -1720,7 +1720,7 @@ export function useUpdateProjection(
             normalize_features: formData.normalize_features,
           },
         });
-        if (!res.error) notify({ type: 'warning', message: 'Computing visualization' });
+        if (!res.error) notify({ type: 'warning', message: 'Computing visualization.' });
       }
       return true;
     },
@@ -1863,7 +1863,7 @@ export function useReconciliate(projectSlug: string, scheme: string | null, data
             dataset: dataset,
           },
         });
-        if (!res.error) notify({ type: 'success', message: 'Reconciliation done' });
+        if (!res.error) notify({ type: 'success', message: 'Reconciliation saved.' });
 
         return true;
       }
@@ -1880,7 +1880,7 @@ export function useGetGenModels() {
   const models = useCallback(async () => {
     const res = await api.GET('/generate/models/available');
     if (res.error) {
-      notify({ type: 'error', message: 'Could not fetch available models' });
+      notify({ type: 'error', message: 'Could not fetch available models.' });
       return [];
     } else return res.data;
   }, [notify]);
@@ -1958,7 +1958,7 @@ export function useGenerate(
           prompt_name: promptName,
         },
       });
-      if (!res.error) notify({ type: 'warning', message: 'Starting generation' });
+      if (!res.error) notify({ type: 'warning', message: 'Starting API calls.' });
       return true;
     }
     return null;
@@ -2040,7 +2040,7 @@ export function useChangePassword() {
           pwd2: pwd2,
         },
       });
-      if (!res.error) notify({ type: 'success', message: 'Password changed' });
+      if (!res.error) notify({ type: 'success', message: 'Password changed.' });
       return true;
     },
     [notify],
@@ -2113,7 +2113,7 @@ export function usePostSchemeCodebook(project_slug: string | null, scheme: strin
             time: lastmodified,
           },
         });
-        if (!res.error) notify({ type: 'success', message: 'Codebook updated' });
+        if (!res.error) notify({ type: 'success', message: 'Codebook updated.' });
         return true;
       }
       return null;
@@ -2178,7 +2178,7 @@ export function useStopProcesses(projectSlug: string | null) {
           },
         },
       });
-      if (!res.error) notify({ type: 'success', message: 'Processes ended' });
+      if (!res.error) notify({ type: 'success', message: 'Processes ended.' });
       return true;
     },
     [notify, projectSlug],
@@ -2201,7 +2201,7 @@ export function usePostAnnotationsFile(projectSlug: string | null) {
         },
         body: annotationsset,
       });
-      if (!res.error) notify({ type: 'success', message: 'Annotations set uploaded' });
+      if (!res.error) notify({ type: 'success', message: 'Annotations set uploaded.' });
       else
         throw new Error(
           res.error.detail ? res.error.detail?.map((d) => d.msg).join('; ') : res.error.toString(),
@@ -2226,7 +2226,7 @@ export function useUpdateProject(projectSlug: string | null) {
           },
           body: formData,
         });
-        if (!res.error) notify({ type: 'success', message: 'Project updated' });
+        if (!res.error) notify({ type: 'success', message: 'Project updated.' });
       }
     },
     [notify, projectSlug],
@@ -2299,7 +2299,7 @@ export function useSavePrompts(projectSlug: string | null) {
           },
           body: { text: prompt, name: name },
         });
-        if (!res.error) notify({ type: 'success', message: 'Prompt saved' });
+        if (!res.error) notify({ type: 'success', message: 'Prompt saved.' });
       }
     },
     [notify, projectSlug],
@@ -2320,7 +2320,7 @@ export function useDeletePrompts(projectSlug: string | null) {
             query: { project_slug: projectSlug, prompt_id: prompt_id },
           },
         });
-        if (!res.error) notify({ type: 'success', message: 'Prompt deleted' });
+        if (!res.error) notify({ type: 'success', message: 'Prompt deleted.' });
       }
     },
     [notify, projectSlug],
@@ -2401,7 +2401,7 @@ export function useAddProjectFile() {
             },
           },
         );
-        notify({ type: 'success', message: 'File uploaded' });
+        notify({ type: 'success', message: 'File uploaded.' });
       } catch (error) {
         notify({ type: 'error', message: `Upload failed: ${error}` });
       } finally {
@@ -2496,7 +2496,7 @@ export function useRestartQueue() {
   const { notify } = useNotifications();
   const restartQueue = useCallback(async () => {
     const res = await api.POST('/server/restart', {});
-    if (!res.error) notify({ type: 'success', message: 'Queue restarted' });
+    if (!res.error) notify({ type: 'success', message: 'Queue restarted.' });
     return true;
   }, [notify]);
   return { restartQueue };
@@ -2516,7 +2516,7 @@ export function useComputeBertopic(projectSlug: string | null) {
           },
           body: dataForm,
         });
-        if (!res.error) notify({ type: 'warning', message: 'Starting bertopic computing' });
+        if (!res.error) notify({ type: 'warning', message: 'Starting bertopic fitting.' });
         return res.data;
       }
       return null;
@@ -2540,7 +2540,7 @@ export function useDeleteBertopic(projectSlug: string | null) {
             query: { project_slug: projectSlug, name: name },
           },
         });
-        if (!res.error) notify({ type: 'success', message: 'Bertopic deleted' });
+        if (!res.error) notify({ type: 'success', message: 'Bertopic model deleted.' });
       }
     },
     [notify, projectSlug],
@@ -2619,7 +2619,7 @@ export function useDownloadBertopicTopics(projectSlug: string | null) {
         });
 
         if (!res.error) {
-          notify({ type: 'success', message: 'Exporting bertopic topics' });
+          notify({ type: 'success', message: 'Exporting bertopic topics.' });
           saveAs(res.data, `bertopic_topics_${projectSlug}_${name}`);
         }
         return true;
@@ -2651,7 +2651,7 @@ export function useDownloadBertopicClusters(projectSlug: string | null) {
         });
 
         if (!res.error) {
-          notify({ type: 'success', message: 'Exporting bertopic clusters' });
+          notify({ type: 'success', message: 'Exporting bertopic clusters.' });
           saveAs(res.data, `bertopic_clusters_${projectSlug}_${name}`);
         }
         return true;
@@ -2683,7 +2683,7 @@ export function useDownloadBertopicReport(projectSlug: string | null) {
         });
 
         if (!res.error) {
-          notify({ type: 'success', message: 'Exporting bertopic report' });
+          notify({ type: 'success', message: 'Exporting bertopic report.' });
           saveAs(res.data, `bertopic_report_${projectSlug}_${name}`);
         }
         return true;
@@ -2715,7 +2715,7 @@ export function useDownloadBertopicEmbeddings(projectSlug: string | null) {
         });
 
         if (!res.error) {
-          notify({ type: 'success', message: 'Exporting bertopic embeddings' });
+          notify({ type: 'success', message: 'Exporting bertopic embeddings.' });
           saveAs(res.data, `bertopic_embeddings_${projectSlug}_${name}.parquet`);
         }
         return true;
@@ -2743,7 +2743,7 @@ export function useSendResetMail() {
           },
         },
       });
-      if (!res.error) notify({ type: 'success', message: 'An email has been sent to you' });
+      if (!res.error) notify({ type: 'success', message: 'An email was sent.' });
     },
     [notify],
   );
@@ -2765,7 +2765,7 @@ export function useSendMessage() {
           kind: kind,
         },
       });
-      if (!res.error) notify({ type: 'success', message: 'Your message has been sent' });
+      if (!res.error) notify({ type: 'success', message: 'Message sent' });
     },
     [notify],
   );
@@ -2803,7 +2803,7 @@ export function useDeleteMessage() {
           query: { message_id: message_id },
         },
       });
-      if (!res.error) notify({ type: 'success', message: 'Your message has been deleted' });
+      if (!res.error) notify({ type: 'success', message: 'Message deleted' });
     },
     [notify],
   );
@@ -2841,7 +2841,7 @@ export function useExportTopicsToScheme(projectSlug: string | null) {
             query: { project_slug: projectSlug, topic_model_name: topicmodelname },
           },
         });
-        if (!res.error) notify({ type: 'success', message: 'Topics exported to a new scheme.' });
+        if (!res.error) notify({ type: 'success', message: 'Scheme created from found model.' });
       }
     },
     [notify, projectSlug],

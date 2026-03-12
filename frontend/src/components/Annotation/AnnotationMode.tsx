@@ -9,6 +9,7 @@ import Select from 'react-select';
 import { Tooltip } from 'react-tooltip';
 
 import { keys, sortBy } from 'lodash';
+import { useDebounceValue } from 'usehooks-ts';
 import { useGetQuickModel, useStatistics } from '../../core/api';
 import { useAppContext } from '../../core/context';
 import { isValidRegex } from '../../core/utils';
@@ -62,6 +63,14 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
 
   const [availableLabels, setAvailableLabels] = useState<string[]>([]);
 
+  const [filterDebounced, setFilter] = useDebounceValue(selectionConfig.filter, 500);
+  useEffect(() => {
+    setAppContext((prev) => ({
+      ...prev,
+      selectionConfig: { ...prev.selectionConfig, filter: filterDebounced },
+    }));
+  }, [filterDebounced, setAppContext]);
+
   const statisticsDataset = useMemo(() => {
     if (phase === 'train') return `${statistics?.train_annotated_n}/${statistics?.train_set_n}`;
     if (phase === 'valid') return `${statistics?.valid_annotated_n}/${statistics?.valid_set_n}`;
@@ -93,21 +102,27 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
   const isValid = project?.params.valid;
   const isTest = project?.params.test;
 
-  const selectionModeOptions: { mode: string; label_maxprob?: string; value: string }[] =
+  const selectionModeOptions: { mode: string; label_prob?: string; value: string }[] =
     useMemo(() => {
       const modes = (
         (phase === 'train' && activeModel
-          ? project?.next.methods.filter((m) => m !== 'maxprob')
+          ? project?.next.methods.filter((m) => m !== 'maxprob' && m !== 'minprob')
           : project?.next.methods_min) || []
-      ).map((mode) => ({ mode, label_maxprob: undefined }));
+      ).map((mode) => ({ mode, label_prob: undefined }));
       const probLabels =
         phase === 'train' && activeModel
           ? availableLabels
               .filter((l) => !activeModel.labels_excluded.includes(l))
-              .map((l) => ({
-                mode: 'maxprob',
-                label_maxprob: l,
-              }))
+              .flatMap((l) => [
+                {
+                  mode: 'maxprob',
+                  label_prob: l,
+                },
+                {
+                  mode: 'minprob',
+                  label_prob: l,
+                },
+              ])
           : [];
       return [...modes, ...probLabels].map((o) => ({ ...o, value: optionValue(o) }));
     }, [phase, activeModel, project?.next.methods, project?.next.methods_min, availableLabels]);
@@ -123,7 +138,7 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
           selectionConfig: {
             ...prev.selectionConfig,
             mode: 'fixed',
-            label_maxprob: undefined,
+            label_prob: undefined,
           },
         }));
       }
@@ -180,10 +195,16 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
                 o.value ===
                 optionValue({
                   mode: selectionConfig.mode,
-                  label_maxProb: selectionConfig.label_maxprob,
+                  label_maxProb: selectionConfig.label_prob,
                 }),
             )}
-            getOptionLabel={(o) => (o.mode === 'maxprob' ? `Max ${o.label_maxprob}` : o.mode)}
+            getOptionLabel={(o) =>
+              o.mode === 'maxprob' && o.label_prob
+                ? `Max ${o.label_prob}`
+                : o.mode === 'minprob' && o.label_prob
+                  ? `Min ${o.label_prob}`
+                  : o.mode
+            }
             onChange={(option) => {
               if (option !== null) {
                 setAppContext((prev) => ({
@@ -191,7 +212,7 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
                   selectionConfig: {
                     ...selectionConfig,
                     mode: option.mode,
-                    label_maxprob: option.label_maxprob,
+                    label_prob: option.label_prob,
                   },
                 }));
               }
@@ -217,17 +238,14 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
           <input
             className={classNames(
               'searchhelp',
-              selectionConfig.filter && !isValidRegex(selectionConfig.filter) ? 'is-invalid' : '',
+              filterDebounced && !isValidRegex(filterDebounced) ? 'is-invalid' : '',
             )}
             type="text"
             id="select_regex"
             placeholder="Enter a regex"
-            value={selectionConfig.filter}
+            defaultValue={selectionConfig.filter}
             onChange={(e) => {
-              setAppContext((prev) => ({
-                ...prev,
-                selectionConfig: { ...prev.selectionConfig, filter: e.target.value },
-              }));
+              setFilter(e.target.value);
             }}
           />
           <div className="invalid-feedback">Regex not valid</div>

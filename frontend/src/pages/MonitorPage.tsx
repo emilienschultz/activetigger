@@ -295,7 +295,7 @@ export const MonitorPage: FC = () => {
                 <h2 className="subtitle">Recent activity on all projects</h2>
                 {logs ? (
                   <DataGrid<Row>
-                    className="fill-grid mt-2"
+                    className="fill-grid rdg-light mt-2"
                     columns={columns}
                     rows={(logs as unknown as Row[]) || []}
                   />

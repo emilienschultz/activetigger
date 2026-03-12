@@ -101,7 +101,7 @@ export const ModelManagement: FC = () => {
       await renameQuickModel(currentQuickModelName, data.new_name);
       resetRenameQuickModel();
       setShowRename(false);
-    } else notify({ type: 'error', message: 'New name is void' });
+    } else notify({ type: 'error', message: 'Enter a name (currently empty)' });
   };
 
   const { renameBertModel } = useRenameBertModel(projectSlug || null);
@@ -116,7 +116,7 @@ export const ModelManagement: FC = () => {
       await renameBertModel(currentBertModel, data.new_name);
       resetRenameBertModel();
       setShowRename(false);
-    } else notify({ type: 'error', message: 'New name is void' });
+    } else notify({ type: 'error', message: 'Enter a name (currently empty)' });
   };
 
   // get information on the quickmodel
