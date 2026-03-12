@@ -79,7 +79,7 @@ export const EvalSetsManagement: FC<EvalSetsManagementModel> = ({
   const onSubmit: SubmitHandler<EvalSetModel & { files: FileList }> = async (formData) => {
     if (data) {
       if (!formData.col_id || !formData.cols_text || !formData.n_eval) {
-        notify({ type: 'error', message: 'Please fill all the fields' });
+        notify({ type: 'error', message: 'Please fill all the fields.' });
         return;
       }
       const csv = data ? unparse(data.data, { header: true, columns: data.headers }) : '';

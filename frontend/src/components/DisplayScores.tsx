@@ -153,7 +153,7 @@ export const DisplayScores: FC<DisplayScoresProps> = ({
         <Modal.Body>
           {' '}
           <DataGrid<Row>
-            className="fill-grid"
+            className="fill-grid rdg-light"
             columns={columns}
             rows={scores['false_predictions'] as Row[]}
           />

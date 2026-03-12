@@ -45,13 +45,13 @@ export const HomePage: FC = () => {
         <div className="row">
           <center>
             <div className="alert alert-warning mt-3">
-              ⚠️ This interface is in development for a stable version. Please save your data.{' '}
+              ⚠️ This interface is experimental. Please save your data regularly.{' '}
               <a
                 href="https://github.com/activetigger/activetigger/issues"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                For any problem, open a issue
+                If you encounter a problem, reach out or open an issue.
               </a>
             </div>
           </center>
@@ -158,7 +158,7 @@ export const HomePage: FC = () => {
               className="ml-2 d-flex justify-content-center align-items-center"
               style={{ fontSize: '0.8rem' }}
             >
-              {n_users} current users • API {version} • Client {__BUILD_DATE__}
+              {n_users} active users • API {version} • Client {__BUILD_DATE__}
               <a
                 href="https://www.css.cnrs.fr/active-tigger/"
                 target="_blank"

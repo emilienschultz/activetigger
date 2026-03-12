@@ -234,7 +234,7 @@ export const UsersPage: FC = () => {
                   } else
                     notify({
                       type: 'error',
-                      message: 'Please select a user, a project and a right',
+                      message: 'Please select a user, a project and a role.',
                     });
                   reFetchUsers();
                 }}

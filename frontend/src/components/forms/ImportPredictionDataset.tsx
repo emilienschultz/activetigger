@@ -63,13 +63,13 @@ export const ImportPredictionDataset: FC<ImportPredictionDatasetProps> = ({
       if (file.size > maxSize) {
         notify({
           type: 'error',
-          message: `File is too big (only file less than ${maxSizeMB} Mo are allowed)`,
+          message: `File is too large (maximum size: ${maxSizeMB} MB)`,
         });
         return;
       }
       loadFile(file).then((data) => {
         if (data === null) {
-          notify({ type: 'error', message: 'Error reading the file' });
+          notify({ type: 'error', message: 'Error reading the file.' });
           return;
         }
         setData(data);
@@ -80,7 +80,7 @@ export const ImportPredictionDataset: FC<ImportPredictionDatasetProps> = ({
   const onSubmit: SubmitHandler<TextDatasetModel & { files: FileList }> = async (formData) => {
     if (data) {
       if (!formData.id || !formData.text) {
-        notify({ type: 'error', message: 'Please fill all the fields' });
+        notify({ type: 'error', message: 'Please fill all the fields.' });
         return;
       }
       setImportingDataset(true);
