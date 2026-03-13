@@ -707,7 +707,6 @@ class Project:
         frame is the use of projection coordinates to limit the selection
         filter is a regex to use on the corpus
         """
-        print(next)
         if next.scheme not in self.schemes.available():
             raise ValueError("Scheme doesn't exist")
 
@@ -724,6 +723,13 @@ class Project:
             df = self.schemes.get_scheme(next.scheme, complete=True, datasets=["train"])
         else:
             raise ValueError("Dataset should be test, valid or train")
+
+        # check conditions for active learning and get proba
+        proba = None
+        predict = PredictedLabel(label=None, proba=None, entropy=None)
+        if next.model_active is not None:
+            prediction = self.get_model_prediction(next.model_active.type, next.model_active.value)
+            proba = prediction
 
         # filter based on the labels
         if next.sample == "untagged":
@@ -742,7 +748,6 @@ class Project:
         elif next.sample == "predicted":
             if next.model_active is None:
                 raise ValueError("An active model is required for predicted sample")
-            prediction = self.get_model_prediction(next.model_active.type, next.model_active.value)
             pred_reindexed = prediction.reindex(df.index)
             if next.on_labels is not None and len(next.on_labels) > 0:
                 f = pred_reindexed["prediction"].isin(next.on_labels)
@@ -830,13 +835,6 @@ class Project:
 
         if next.selection == "random":  # random row
             element_id = ss.sample(n=1).index[0]
-
-        # check conditions for active learning and get proba
-        proba = None
-        predict = PredictedLabel(label=None, proba=None, entropy=None)
-        if next.model_active is not None:
-            prediction = self.get_model_prediction(next.model_active.type, next.model_active.value)
-            proba = prediction.reindex(f.index)
 
         # be sure that the model has been trained
         if next.selection in ["maxprob", "active", "minprob"] and next.model_active is None:
