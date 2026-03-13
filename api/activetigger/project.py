@@ -707,6 +707,7 @@ class Project:
         frame is the use of projection coordinates to limit the selection
         filter is a regex to use on the corpus
         """
+        print(next)
         if next.scheme not in self.schemes.available():
             raise ValueError("Scheme doesn't exist")
 
@@ -738,6 +739,15 @@ class Project:
             if next.on_users is not None and len(next.on_users) > 0:
                 f_user = df["user"].isin(next.on_users)
                 f = f & f_user
+        elif next.sample == "predicted":
+            if next.model_active is None:
+                raise ValueError("An active model is required for predicted sample")
+            prediction = self.get_model_prediction(next.model_active.type, next.model_active.value)
+            pred_reindexed = prediction.reindex(df.index)
+            if next.on_labels is not None and len(next.on_labels) > 0:
+                f = pred_reindexed["prediction"].isin(next.on_labels)
+            else:
+                f = pred_reindexed["prediction"].notna()
         else:
             f = pd.Series(True, index=df.index)
 
@@ -832,17 +842,21 @@ class Project:
         if next.selection in ["maxprob", "active", "minprob"] and next.model_active is None:
             raise Exception("An active model is required for this selection method")
 
-        # higher prob for the label_prob, only possible if the model has been trained
-        if next.selection == "maxprob" and proba is not None:
+        # class on proba prob for the label_prob, only possible if the model has been trained
+        if next.selection in ["maxprob", "minprob"] and proba is not None:
             if next.label_prob is None:  # default label to first
                 raise Exception("Label maxprob is required")
             # use the history to not send already tagged data
-            ss_maxprob = (
+            if next.selection == "maxprob":
+                ascending = False
+            else:
+                ascending = True
+            ss = (
                 proba[f][next.label_prob]
                 .drop(next.history, errors="ignore")
-                .sort_values(ascending=False)
+                .sort_values(ascending=ascending)
             )  # get max proba id
-            element_id = ss_maxprob.index[0]
+            element_id = ss.index[0]
             n_sample = f.sum()
             indicator = f"probability: {round(proba.loc[element_id, next.label_prob], 2)}"
 
@@ -855,20 +869,6 @@ class Project:
             n_sample = f.sum()
             indicator = round(proba.loc[element_id, "entropy"], 2)
             indicator = f"entropy: {indicator}"
-
-        if next.selection == "minprob" and next.label_prob and proba is not None:
-            # min of the elemnt predicted for the label
-            f_only_predicted = proba["prediction"] == next.label_prob
-            ss_minprob = (
-                proba[f & f_only_predicted][next.label_prob]
-                .drop(next.history, errors="ignore")
-                .sort_values(ascending=True)
-            )  # get min proba id
-            if len(ss_minprob) == 0:
-                raise ValueError("No element available with this selection mode.")
-            element_id = ss_minprob.index[0]
-            n_sample = f.sum()
-            indicator = f"probability: {round(proba.loc[element_id, next.label_prob], 2)}"
 
         if (
             next.model_active is not None
@@ -1166,7 +1166,7 @@ class Project:
             next=NextProjectStateModel(
                 methods_min=["fixed", "random"],
                 methods=["fixed", "random", "maxprob", "active", "minprob"],
-                sample=["untagged", "all", "tagged"],
+                sample=["untagged", "all", "tagged", "predicted"],
             ),
             schemes=self.schemes.state(),
             features=self.features.state(),

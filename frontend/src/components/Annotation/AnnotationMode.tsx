@@ -200,9 +200,9 @@ export const AnnotationModeForm: FC<AnnotationModeFormProps> = ({
             )}
             getOptionLabel={(o) =>
               o.mode === 'maxprob' && o.label_prob
-                ? `Max ${o.label_prob}`
+                ? `max pred ${o.label_prob}`
                 : o.mode === 'minprob' && o.label_prob
-                  ? `Min ${o.label_prob}`
+                  ? `min pred ${o.label_prob}`
                   : o.mode
             }
             onChange={(option) => {
