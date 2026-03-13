@@ -237,7 +237,7 @@ export const ProjectCreationForm: FC = () => {
             if (status === 'existing') {
               clearInterval(intervalId);
               if (computeFeatures)
-                addFeature(slug, 'embeddings', 'embeddings', { model: 'generic' });
+                addFeature(slug, 'sentence-embeddings', 'sentence-embeddings', { model: 'generic' });
               resetContext();
               navigate(`/projects/${slug}?fromCreatePage=true`);
               return;
@@ -676,7 +676,7 @@ export const ProjectCreationForm: FC = () => {
                       setComputeFeatures(!computeFeatures);
                     }}
                   />
-                  Compute embeddings
+                  Compute sentence embeddings
                 </label>
                 <label htmlFor="n_valid" className="d-flex align-items-center">
                   Seed

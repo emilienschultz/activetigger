@@ -7,16 +7,23 @@ interface UploadProgressBarProps {
 }
 
 export const UploadProgressBar: FC<UploadProgressBarProps> = ({ progression, cancel }) => {
+  const formatProgression = (loaded: number, total: number) => {
+    if (!loaded || !total || total === 0) return '--';
+    return ((loaded / total) * 100).toFixed(0);
+  };
   return (
     <div id="progress-bar-window">
       <div id="progress-bar-container">
         <div className="horizontal center">
           <ClipLoader /> <span>Uploading dataset</span>{' '}
         </div>
-        {progression.loaded && progression.total
-          ? `${((progression.loaded / progression.total) * 100).toFixed(2)}%`
-          : null}
-        <progress id="upload-progress" value={progression.loaded} max={progression.total} />
+        <div id="progress-container">
+          {progression.loaded && progression.total ? (
+            <span>{formatProgression(progression.loaded, progression.total)}%</span>
+          ) : null}
+
+          <progress id="upload-progress" value={progression.loaded} max={progression.total} />
+        </div>
         {cancel && (
           <button
             className="btn-submit-danger"

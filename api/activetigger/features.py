@@ -98,7 +98,7 @@ class Features:
 
         # options
         self.options: dict = {
-            "embeddings": {"models": embeddings_models},
+            "sentence-embeddings": {"models": embeddings_models},
             "fasttext": {"models": fasttext_models},
             "dfm": {
                 "tfidf": False,
@@ -378,7 +378,7 @@ class Features:
         if len(self.current_user_processes(username)) > 0:
             raise ValueError("A process is already running")
 
-        if kind not in {"embeddings", "fasttext", "dfm", "regex", "dataset"}:
+        if kind not in {"sentence-embeddings", "fasttext", "dfm", "regex", "dataset"}:
             raise ValueError("Kind not recognized")
 
         name = f"{kind}_{name}"
@@ -390,7 +390,10 @@ class Features:
                 raise ValueError("No value for regex")
 
             pattern = re.compile(parameters["value"])
-            f = df.apply(lambda x: bool(pattern.search(x)))
+            if parameters.get("regex_count", False):
+                f = df.apply(lambda x: len(pattern.findall(x)))
+            else:
+                f = df.apply(lambda x: bool(pattern.search(x)))
             parameters = {
                 "name": name,
                 "kind": kind,
@@ -434,13 +437,13 @@ class Features:
         # features with queue
         unique_id = None
 
-        if kind == "embeddings":
+        if kind == "sentence-embeddings":
             if (
                 "model" not in parameters
                 or parameters["model"] is None
                 or parameters["model"] == "generic"
             ):
-                model = self.options["embeddings"]["models"][0]
+                model = self.options["sentence-embeddings"]["models"][0]
             else:
                 model = parameters["model"]
             if "max_length_tokens" not in parameters:
@@ -456,6 +459,9 @@ class Features:
                 ),
                 queue="gpu",
             )
+            # append short model name (without provider prefix)
+            short_model = model.split("/")[-1] if "/" in model else model
+            name = f"{name}_{short_model}"
             parameters = {
                 "model": model,
                 "name": name,
@@ -477,7 +483,12 @@ class Features:
                 ),
             )
             if parameters["model"] is not None and parameters["model"] != "":
-                name = f"{name}_{parameters['model']}"
+                short_model = (
+                    parameters["model"].split("/")[-1]
+                    if "/" in parameters["model"]
+                    else parameters["model"]
+                )
+                name = f"{name}_{short_model}"
             parameters = {
                 "model": parameters["model"],
                 "name": name,
