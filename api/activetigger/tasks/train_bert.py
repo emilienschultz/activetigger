@@ -79,8 +79,8 @@ def compute_class_weights(dataset, label_key="labels"):
     total = sum(label_counts.values())
     num_classes = len(label_counts)
 
-    # Inverse frequency weight
-    weights = [total / (num_classes * label_counts[i]) for i in range(num_classes)]
+    # Inverse frequency weight, ordered by label index
+    weights = [total / (num_classes * label_counts[k]) for k in sorted(label_counts.keys())]
     return torch.tensor(weights, dtype=torch.float)
 
 
