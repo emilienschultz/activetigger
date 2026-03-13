@@ -94,10 +94,6 @@ export const DisplayScores: FC<DisplayScoresProps> = ({
   return (
     <div>
       <div className="d-flex flex-column">
-        <span className="explanations">
-          Macro F1 score on {dataset.replace('_scores', '')} set : <b>{scores.f1_macro}</b>
-        </span>
-
         {(exclude_labels || []).length > 0 && (
           <span className="explanations">
             Labels{' '}
@@ -110,6 +106,9 @@ export const DisplayScores: FC<DisplayScoresProps> = ({
           </span>
         )}
       </div>
+      <span className="explanations">
+        Macro F1 score on {dataset.replace('_scores', '')} set : <b>{scores.f1_macro}</b>
+      </span>
       <DisplayTableStatistics scores={scores} title={title} />
       {scores['false_predictions'] && (
         <button className="btn-secondary-action" onClick={() => setShowFalsePredictions(true)}>
