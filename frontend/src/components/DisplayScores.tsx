@@ -108,6 +108,9 @@ export const DisplayScores: FC<DisplayScoresProps> = ({
           </span>
         )}
       </div>
+      <span className="fs-5">
+        Macro F1 score on {dataset.replace('_scores', '')} set : <b>{scores.f1_macro}</b>
+      </span>
       <button
         className="btn btn-link p-0"
         onClick={() => {
