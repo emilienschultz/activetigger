@@ -9,14 +9,12 @@ from typing import Any, cast
 from urllib.parse import quote
 
 import bcrypt
-import numpy as np
 import pandas as pd  # type: ignore[import]
 import spacy
 import torch
 from cryptography.fernet import Fernet
 from pandas import Series
 from sklearn.metrics import (  # type: ignore[import]
-    accuracy_score,
     confusion_matrix,
     f1_score,
     precision_score,
@@ -25,6 +23,7 @@ from sklearn.metrics import (  # type: ignore[import]
 from sklearn.preprocessing import OneHotEncoder  # type: ignore[import]
 from slugify import slugify as python_slugify  # type: ignore[import]
 
+from activetigger.config import config
 from activetigger.datamodels import GpuInformationModel, MLStatisticsModel
 
 
@@ -120,11 +119,27 @@ def tokenize(texts: Series, language: str = "fr", batch_size=100) -> Series:
     return pd.Series(textes_tk, index=texts.index)
 
 
+def get_device() -> torch.device:
+    """
+    Centralized device selection respecting CPU_ONLY config.
+    Priority: CPU_ONLY > CUDA > MPS > CPU
+    """
+
+    if config.cpu_only:
+        return torch.device("cpu")
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        return torch.device("cuda")
+    if torch.backends.mps.is_available():
+        return torch.device("mps")
+    return torch.device("cpu")
+
+
 def get_gpu_memory_info() -> GpuInformationModel:
     """
     Get info on GPU
     """
-    if not torch.cuda.is_available():
+    if config.cpu_only or not torch.cuda.is_available():
         return GpuInformationModel(
             gpu_available=False,
             total_memory=0.0,

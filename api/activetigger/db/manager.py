@@ -59,7 +59,7 @@ class DatabaseManager:
         # Create tables if not already present
         Base.metadata.create_all(self.engine)
 
-        # check if there is a root user, add it
+        # check if there is a system user, add it
         try:
             _ = self.users_service.get_user("system")
         except DBException:

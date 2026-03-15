@@ -27,7 +27,7 @@ from transformers import (  # type: ignore[import]  # type: ignore[import]
 
 from activetigger.config import config
 from activetigger.datamodels import EventsModel, LMParametersModel, MLStatisticsModel
-from activetigger.functions import get_metrics
+from activetigger.functions import get_device, get_metrics
 from activetigger.monitoring import TaskTimer
 from activetigger.tasks.base_task import BaseTask
 from activetigger.tasks.utils import length_after_tokenizing, retrieve_model_max_length
@@ -183,21 +183,6 @@ class TrainBert(BaseTask):
         logger.info(f"Start {self.base_model}")
         return logger
 
-    def __init_device(self) -> torch.device:
-        """Choose the device, first try to use cuda, then mps and finally cpu"""
-        # Pick up the type of memory to use
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-            device = torch.device("cuda")
-            print("Using CUDA for computation")
-        elif torch.backends.mps.is_available():
-            device = torch.device("mps")
-            print("Using MPS for computation")
-        else:
-            device = torch.device("cpu")
-            print("Using CPU for computation")
-        return device
-
     def __check_data(self, df: pd.DataFrame, col_label: str, col_text: str) -> pd.DataFrame:
         """Remove rows missing labels or text"""
         df = df.copy()
@@ -324,7 +309,7 @@ class TrainBert(BaseTask):
             do_eval=True,
             greater_is_better=False,
             load_best_model_at_end=params.best,
-            use_cpu=not bool(params.gpu),  # deactivate gpu
+            use_cpu=config.cpu_only or not bool(params.gpu),  # deactivate gpu
         )
 
         callback = CustomLoggingCallback(self.event, current_path=current_path, logger=self.logger)
@@ -422,7 +407,7 @@ class TrainBert(BaseTask):
 
         current_path, log_path = self.__init_paths()
         self.logger = self.__init_logger(log_path)
-        device = self.__init_device()
+        device = get_device()
 
         self.df = self.__check_data(self.df, self.col_label, self.col_text)
         labels, label2id, id2label = self.__retrieve_labels(self.df, self.col_label)
@@ -538,7 +523,7 @@ class TrainBert(BaseTask):
                     device,
                     self.event,
                 )
-                if torch.cuda.is_available():
+                if not config.cpu_only and torch.cuda.is_available():
                     torch.cuda.synchronize()
                     torch.cuda.empty_cache()
                     torch.cuda.ipc_collect()

@@ -310,6 +310,7 @@ class Orchestrator:
 
         return ServerStateModel(
             version=__version__,
+            cpu_only=config.cpu_only,
             active_projects=active_projects,
             queue=queue,
             gpu=stats["gpu"],

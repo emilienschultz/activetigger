@@ -16,11 +16,17 @@ echo " ~"
 echo
 # install python deps
 cd /api
-if [ "$GPU" = "true" ]; then
-  echo "Mode GPU activated: installing cuml-cu12"
-  uv pip install --extra-index-url https://pypi.nvidia.com cuml-cu12
+if [ "$CPU_ONLY" = "true" ]; then
+  echo "CPU-only mode: installing PyTorch without CUDA (~5GB savings)"
+  uv pip install --index-url https://download.pytorch.org/whl/cpu torch
+  uv sync
+else
+  uv sync
+  if [ "$GPU" = "true" ]; then
+    echo "Mode GPU activated: installing cuml-cu12"
+    uv pip install --extra-index-url https://pypi.nvidia.com cuml-cu12
+  fi
 fi
-uv sync
 
 
 # Check for a config.yaml file in the api directory
