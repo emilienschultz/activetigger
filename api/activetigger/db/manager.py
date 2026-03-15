@@ -1,7 +1,8 @@
 import uuid
 
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from activetigger.config import config
@@ -56,26 +57,35 @@ class DatabaseManager:
         self.messages_service = MessagesService(self.SessionMaker)
         self.monitoring_service = MonitoringService(self.SessionMaker)
 
-        # Create tables if not already present
-        Base.metadata.create_all(self.engine)
+        # Create tables under an advisory lock to prevent race conditions
+        # when multiple uvicorn workers start concurrently.
+        # pg_advisory_xact_lock is released when the transaction commits,
+        # ensuring the second process sees the committed tables.
+        if db_url.startswith("sqlite"):
+            Base.metadata.create_all(self.engine)
+        else:
+            with self.engine.begin() as conn:
+                conn.execute(text("SELECT pg_advisory_xact_lock(1)"))
+                Base.metadata.create_all(conn)
 
-        # check if there is a root user, add it
-        try:
-            _ = self.users_service.get_user("system")
-        except DBException:
-            self.create_system_session()
+        # Create default users after tables are committed,
+        # since users_service uses a separate connection.
+        self._create_default_users()
 
-        # check if there is a root user, add it
-        try:
-            _ = self.users_service.get_user("root")
-        except DBException:
-            self.create_root_session()
-
-        # check if there is a demo user, add it
-        try:
-            _ = self.users_service.get_user("demo")
-        except DBException:
-            self.create_demo_session()
+    def _create_default_users(self) -> None:
+        """Create default users if they don't exist yet."""
+        for user, create_fn in [
+            ("system", self.create_system_session),
+            ("root", self.create_root_session),
+            ("demo", self.create_demo_session),
+        ]:
+            try:
+                _ = self.users_service.get_user(user)
+            except DBException:
+                try:
+                    create_fn()
+                except IntegrityError:
+                    pass  # another worker created it first
 
     def create_root_session(self) -> None:
         """
