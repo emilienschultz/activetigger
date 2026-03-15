@@ -9,6 +9,11 @@ services:
       - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
       - ${DATA_PATH}/postgresql/:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
   api:
     build:
       context: ./api
@@ -21,7 +26,8 @@ services:
     restart: ${RESTART_POLICY}
     user: ${USER_ID}:${GROUP_ID}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     volumes:
       - ${PROJECT_PATH}/docker/api/entrypoint.sh:/entrypoint.sh
       - ${PROJECT_PATH}/api:/api
