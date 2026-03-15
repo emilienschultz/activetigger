@@ -1,7 +1,7 @@
 import { FC, useCallback, useMemo } from 'react';
 import DataTable, { TableColumn, TableStyles } from 'react-data-table-component';
 import { CSSObject } from 'styled-components';
-import { useAppContext } from '../core/context';
+import { useAppContext } from '../core/useAppContext';
 import { reorderLabels } from '../core/utils';
 import { MLStatisticsModel } from '../types';
 
