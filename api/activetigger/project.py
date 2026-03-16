@@ -1517,7 +1517,24 @@ class Project:
             exception = process.future.exception()
             if exception:
                 print(f"Error in {e.kind} : {exception}")
-                self.errors.add(f"Error for process {e.kind} : {exception}")
+                exception_str = str(exception)
+                if any(
+                    s in exception_str
+                    for s in [
+                        "CUDA",
+                        "CUDACachingAllocator",
+                        "out of memory",
+                        "NVML",
+                        "cuda",
+                    ]
+                ):
+                    message = (
+                        f"Error for process {e.kind} : GPU error — not enough GPU memory available. "
+                        "Try reducing the batch size, the max sequence length, or using a smaller model."
+                    )
+                else:
+                    message = f"Error for process {e.kind} : {exception}"
+                self.errors.add(message)
 
                 # specific case for project creation ; delete the project
                 if e.kind == "create_project":
