@@ -68,11 +68,7 @@ class DatabaseManager:
                 conn.execute(text("SELECT pg_advisory_xact_lock(1)"))
                 Base.metadata.create_all(conn)
 
-        # check if there is a system user, add it
-        try:
-            _ = self.users_service.get_user("system")
-        except DBException:
-            self.create_system_session()
+        self._create_default_users()
 
     def _create_default_users(self) -> None:
         """Create default users if they don't exist yet."""

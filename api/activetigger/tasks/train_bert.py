@@ -523,7 +523,7 @@ class TrainBert(BaseTask):
                     device,
                     self.event,
                 )
-                if not config.cpu_only and torch.cuda.is_available():
+                if torch.cuda.is_available():
                     torch.cuda.synchronize()
                     torch.cuda.empty_cache()
                     torch.cuda.ipc_collect()

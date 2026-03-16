@@ -242,8 +242,7 @@ class PredictBert(BaseTask):
                     return_tensors="pt",
                     max_length=max_length,
                 )
-                if gpu:
-                    chunk = chunk.to(device)
+                chunk = chunk.to(device)
                 with torch.no_grad():
                     outputs = model(**chunk)
                 res = outputs[0]
@@ -281,6 +280,4 @@ class PredictBert(BaseTask):
                 torch.cuda.empty_cache()
                 torch.cuda.ipc_collect()
 
-        return ReturnTaskPredictModel(
-            path=str(self.path.joinpath(self.file_name)), metrics=metrics
-        )
+        return ReturnTaskPredictModel(path=str(self.path.joinpath(self.file_name)), metrics=metrics)
