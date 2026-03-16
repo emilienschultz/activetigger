@@ -787,6 +787,8 @@ class AvailableProjectsModel(BaseModel):
     """
 
     projects: list[ProjectSummaryModel]
+    storage_used: float | None = None  # in GB
+    storage_limit: float | None = None  # in GB
 
 
 ## State definition of the project

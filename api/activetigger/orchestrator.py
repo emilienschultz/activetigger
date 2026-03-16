@@ -585,7 +585,7 @@ class Orchestrator:
         Check if the user storage is not exceeded
         """
         limit = self.users.get_storage_limit(username)
-        if self.users.get_storage(username) > limit * 1000:
+        if self.users.get_storage(username) > limit:
             return False
         return True
 

@@ -18,7 +18,7 @@ export const ProjectsPage: FC = () => {
   const currentProjectSlug = currentProject?.params.project_slug;
   const canEdit = displayConfig.interfaceType !== 'annotator';
   // api call
-  const { projects } = useUserProjects();
+  const { projects, storageUsed, storageLimit } = useUserProjects();
 
   // rows to display
   const [rows, setRows] = useState<AvailableProjectsModel[]>([]);
@@ -77,6 +77,35 @@ export const ProjectsPage: FC = () => {
                       New Project
                     </span>
                   </Link>
+                </div>
+              )}
+
+              {storageUsed !== null && storageLimit !== null && (
+                <div className="mt-3 p-3 border rounded bg-light">
+                  <div className="d-flex justify-content-between align-items-center mb-1">
+                    <small className="fw-bold">Storage usage (projects you created)</small>
+                    <small>
+                      {storageUsed.toFixed(2)} GB / {storageLimit.toFixed(0)} GB
+                    </small>
+                  </div>
+                  <div className="progress" style={{ height: '8px' }}>
+                    <div
+                      className={`progress-bar ${
+                        storageUsed / storageLimit > 0.9
+                          ? 'bg-danger'
+                          : storageUsed / storageLimit > 0.7
+                            ? 'bg-warning'
+                            : 'bg-success'
+                      }`}
+                      role="progressbar"
+                      style={{ width: `${Math.min((storageUsed / storageLimit) * 100, 100)}%` }}
+                    />
+                  </div>
+                  {storageUsed / storageLimit > 0.9 && (
+                    <small className="text-danger mt-1 d-block">
+                      You are approaching your storage limit.
+                    </small>
+                  )}
                 </div>
               )}
 

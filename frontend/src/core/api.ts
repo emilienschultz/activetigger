@@ -182,12 +182,16 @@ export function useUserProjects() {
   // useAsyncMemo generalizes the internal state management for us
   // useAsyncMemo internally has a generic useState and a useEffect
   // we use useAsyncMemo to lighten our API methods and our component code by providing a ready to consume state
-  const projects = useAsyncMemo(async () => {
+  const result = useAsyncMemo(async () => {
     // api calls uses openapi fetch that make sure that method GET, paths `/projects` and params respect API specs
     const res = await api.GET('/projects');
     if (res.data && !res.error)
       // TODO: type API response in Python code and remove the as unknown as AvailableProjectsModel[]
-      return values(res.data.projects) as unknown as AvailableProjectsModel[];
+      return {
+        projects: values(res.data.projects) as unknown as AvailableProjectsModel[],
+        storageUsed: res.data.storage_used as number | null,
+        storageLimit: res.data.storage_limit as number | null,
+      };
     else {
       notify({ type: 'error', message: JSON.stringify(res.error) });
       throw new HttpError(res.response.status, '');
@@ -196,7 +200,13 @@ export function useUserProjects() {
   const reFetch = useCallback(() => setFetchTrigger((f) => !f), []);
 
   // here we use the getAsyncMemoData to return only the data or undefined and not the internal status
-  return { projects: getAsyncMemoData(projects), reFetchProjects: reFetch };
+  const data = getAsyncMemoData(result);
+  return {
+    projects: data?.projects,
+    storageUsed: data?.storageUsed ?? null,
+    storageLimit: data?.storageLimit ?? null,
+    reFetchProjects: reFetch,
+  };
 }
 
 export async function fetchUserProjects(): Promise<AvailableProjectsModel[]> {

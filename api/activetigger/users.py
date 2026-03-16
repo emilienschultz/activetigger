@@ -236,10 +236,11 @@ class Users:
 
     def get_storage(self, username: str) -> float:
         """
-        Get total size for user projects in Gb
+        Get total size for user projects in GB
         """
         projects = self.db_manager.users_service.get_user_created_projects(username)
-        return sum([get_dir_size(f"{config.data_path}/projects/{project}") for project in projects])
+        size_mb = sum([get_dir_size(f"{config.data_path}/projects/{project}") for project in projects])
+        return size_mb / 1024
 
     def get_storage_limit(self, username: str) -> float:
         """

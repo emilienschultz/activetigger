@@ -232,7 +232,9 @@ def get_projects(
     """
     try:
         return AvailableProjectsModel(
-            projects=orchestrator.users.get_user_projects(current_user.username)
+            projects=orchestrator.users.get_user_projects(current_user.username),
+            storage_used=orchestrator.users.get_storage(current_user.username),
+            storage_limit=orchestrator.users.get_storage_limit(current_user.username),
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
