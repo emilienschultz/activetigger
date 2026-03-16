@@ -30,6 +30,12 @@ function filterOptionValue(option: Omit<TagFilterOption, 'value'>) {
 const OptionIcon: FC<{ option: TagFilterOption }> = ({ option }) => (
   <>
     {option.sample === 'untagged' && <NoAnnotationIcon className="me-1" />}
+    {option.sample === 'not_by_me' && (
+      <span>
+        <AnnotationIcon className="me-1" />
+        <NoAnnotationIcon className="me-1" />
+      </span>
+    )}
     {option.sample === 'tagged' && option.user === undefined && <AnnotationIcon className="me-1" />}
     {option.sample === 'tagged' && option.user !== undefined && <UserIcon className="me-1" />}
     {option.sample === 'predicted' && <PredictedIcon className="me-1" />}
@@ -149,7 +155,9 @@ export const AnnotationTagFilterSelect: FC<AnnotationTagFilterSelectProps> = ({
             ? o.label
             : o.sample === 'tagged' && o.user !== undefined
               ? `by ${o.user}`
-              : o.sample || '',
+              : o.sample === 'not_by_me'
+                ? 'not tagged by me'
+                : o.sample || '',
           20,
         )
       }
