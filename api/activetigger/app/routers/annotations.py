@@ -82,7 +82,7 @@ def compute_projection(
     """
     test_rights(ProjectAction.UPDATE, current_user.username, project.name)
     if len(projection.features) == 0:
-        raise HTTPException(status_code=400, detail="No feature available")
+        raise HTTPException(status_code=400, detail="No features available")
     try:
         features = project.features.get(projection.features, dataset=["train"])
         project.projections.compute(

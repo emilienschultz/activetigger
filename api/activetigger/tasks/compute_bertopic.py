@@ -33,8 +33,8 @@ try:
     import cuml  # type: ignore[import-not-found]
 
     CUMl_AVAILABLE = True
-except ImportError:
-    print("CuML not installed")
+except Exception:
+    print("CuML not available")
     CUMl_AVAILABLE = False
 
 """

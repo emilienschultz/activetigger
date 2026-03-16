@@ -16,11 +16,11 @@ echo " ~"
 echo
 # install python deps
 cd /api
+uv sync
 if [ "$GPU" = "true" ]; then
   echo "Mode GPU activated: installing cuml-cu12"
   uv pip install --extra-index-url https://pypi.nvidia.com cuml-cu12
 fi
-uv sync
 
 
 # Check for a config.yaml file in the api directory

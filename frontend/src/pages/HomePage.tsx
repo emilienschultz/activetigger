@@ -1,4 +1,5 @@
-import { FC } from 'react';
+import { marked } from 'marked';
+import { FC, useMemo } from 'react';
 import { FaGithub } from 'react-icons/fa';
 import { IoMdLogOut } from 'react-icons/io';
 import { Link, useNavigate } from 'react-router-dom';
@@ -9,6 +10,38 @@ import Notifications from '../components/layout/Notifications';
 import { useGetActiveUsers, useGetServer } from '../core/api';
 import { useAuth } from '../core/useAuth';
 import { LoginParams } from '../types';
+
+const MessageCard: FC<{ content: string; time?: string }> = ({ content, time }) => {
+  const html = useMemo(() => {
+    marked.setOptions({ breaks: true });
+    return marked.parse(content) as string;
+  }, [content]);
+
+  return (
+    <div
+      style={{
+        background: '#f8f9fa',
+        border: '1px solid #e9ecef',
+        borderLeft: '4px solid #ff9a3c',
+        borderRadius: '0.5rem',
+        padding: '0.75rem 1rem',
+        marginBottom: '0.75rem',
+        textAlign: 'left',
+      }}
+    >
+      <div
+        className="message-content"
+        style={{ fontSize: '0.9rem', color: '#333', lineHeight: '1.5' }}
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+      {time && (
+        <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.25rem' }}>
+          {new Date(time).toLocaleString()}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const HomePage: FC = () => {
   const { authenticatedUser, logout } = useAuth();
@@ -127,24 +160,13 @@ export const HomePage: FC = () => {
                         🐯 Go to your projects
                       </Link>
                     </div>
-                    <div style={{ maxWidth: '600px', margin: '1rem auto' }}>
-                      {(messages || []).map((msg) => (
-                        <div
-                          key={msg.id}
-                          style={{
-                            fontSize: '0.9rem',
-                            color: '#333',
-                          }}
-                        >
-                          <div style={{ color: '#777' }}>
-                            {msg.content} •{' '}
-                            <span style={{ fontSize: '0.5rem' }}>
-                              {new Date(msg.time || Date.now()).toLocaleString()}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    {(messages || []).length > 0 && (
+                      <div style={{ maxWidth: '600px', margin: '1.5rem auto' }}>
+                        {(messages || []).map((msg) => (
+                          <MessageCard key={msg.id} content={msg.content} time={msg.time} />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
