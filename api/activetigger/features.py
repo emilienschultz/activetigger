@@ -146,7 +146,7 @@ class Features:
         column_names = [i for i in parquet_file.schema.names if i != "dataset"]
 
         def find_strings_with_pattern(strings, pattern):
-            matching_strings = [s for s in strings if re.match(pattern, s)]
+            matching_strings = [s for s in strings if re.match(re.escape(pattern), s)]
             return matching_strings
 
         var = set(
