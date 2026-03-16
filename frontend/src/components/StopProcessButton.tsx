@@ -7,7 +7,7 @@ interface stopProcessButtonProps {
   kind?: string;
 }
 
-export const StopProcessButton: FC<stopProcessButtonProps> = ({ projectSlug, kind = 'bert' }) => {
+export const StopProcessButton: FC<stopProcessButtonProps> = ({ projectSlug, kind = 'all' }) => {
   const { stopProcesses } = useStopProcesses(projectSlug);
   return (
     <button key="stop" className="btn-stop-process my-2" onClick={() => stopProcesses(kind)}>
