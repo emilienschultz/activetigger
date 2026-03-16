@@ -227,7 +227,6 @@ class PredictBert(BaseTask):
         device = get_device()
         print(f"Using {device} for prediction")
         model.to(device)
-        gpu = device.type == "cuda"
 
         try:
             # prediction by batches
@@ -246,7 +245,7 @@ class PredictBert(BaseTask):
                 with torch.no_grad():
                     outputs = model(**chunk)
                 res = outputs[0]
-                if gpu:
+                if device.type == "cuda":
                     res = res.cpu()
                 res = res.softmax(1).detach().numpy()
                 predictions.append(res)
@@ -275,7 +274,7 @@ class PredictBert(BaseTask):
             # clean memory
             del tokenizer, model, chunk, self.df, res, predictions, outputs, self.event
             gc.collect()
-            if gpu:
+            if torch.cuda.is_available():
                 torch.cuda.synchronize()
                 torch.cuda.empty_cache()
                 torch.cuda.ipc_collect()

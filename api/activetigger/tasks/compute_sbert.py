@@ -76,9 +76,7 @@ class ComputeSbert(BaseTask):
 
         device = get_device()
         if device.type == "cuda":
-            if torch.cuda.get_device_properties(0).total_memory / (1024**3) > self.min_gpu:
-                device = torch.device("cuda")  # Use CUDA
-            else:
+            if torch.cuda.get_device_properties(0).total_memory / (1024**3) <= self.min_gpu:
                 print("Not enough GPU memory, fallback to CPU")
                 device = torch.device("cpu")
 
