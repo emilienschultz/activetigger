@@ -436,6 +436,7 @@ class TrainBert(BaseTask):
             label2id=label2id,
             trust_remote_code=True,
         )
+        bert_model.config.use_cache = False
         self.logger.info("Model loaded")
         print("Model loaded")
 
