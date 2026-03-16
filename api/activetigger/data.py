@@ -55,6 +55,7 @@ class Data:
         self.test = None
         self.load_dataset("all")
 
+    @staticmethod
     def _sanitize_dataset(df: DataFrame) -> DataFrame:
         """
         Strips any leading/trailing white spaces in columns
@@ -62,19 +63,20 @@ class Data:
         for col in df.select_dtypes(include = 'str'):
             df[col] = df[col].str.strip()
         return df
-    
-    def read_dataset(self, file_path: Path) -> DataFrame:
+
+    @staticmethod
+    def read_dataset(file_path: Path) -> DataFrame:
         """
         Read a data file and return a DataFrame
         """
         if not file_path.exists():
             raise FileNotFoundError(f"Data file not found: {file_path}")
         if file_path.suffix.lower() == ".csv":
-            return self._sanitize_dataset(pd.read_csv(file_path))
+            return Data._sanitize_dataset(pd.read_csv(file_path))
         elif file_path.suffix.lower() == ".parquet":
-            return self._sanitize_dataset(pd.read_parquet(file_path))
+            return Data._sanitize_dataset(pd.read_parquet(file_path))
         elif file_path.suffix.lower() == ".xlsx":
-            return self._sanitize_dataset(pd.read_excel(file_path))
+            return Data._sanitize_dataset(pd.read_excel(file_path))
         else:
             raise ValueError(f"Unsupported file format: {file_path}")
 
