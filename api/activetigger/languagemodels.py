@@ -440,8 +440,8 @@ class LanguageModels:
             )
             print("Testing finished")
         if element.status == "predicting":
-            # update flag if there is a prediction of the whole dataset
-            if element.dataset in ["all", "annotable"]:
+            # update flag only if prediction was on the annotable dataset
+            if element.dataset == "annotable":
                 self.language_models_service.set_model_params(
                     self.project_slug,
                     element.model_name,
