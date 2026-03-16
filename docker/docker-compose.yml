@@ -37,6 +37,7 @@ services:
     environment:
       - DATA_PATH=/data
       - GPU=false
+      - CPU_ONLY=true
   frontend:
     image: node:${NODE_VERSION}
     entrypoint: /entrypoint.sh

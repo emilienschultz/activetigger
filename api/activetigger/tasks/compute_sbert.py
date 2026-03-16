@@ -9,9 +9,9 @@ import torch
 from pandas import DataFrame, Series
 from sentence_transformers import SentenceTransformer
 
-from activetigger.config import config
-
 # from transformers import AutoConfig
+from activetigger.config import config
+from activetigger.functions import get_device
 from activetigger.tasks.base_task import BaseTask
 
 
@@ -74,16 +74,11 @@ class ComputeSbert(BaseTask):
         if self.texts.isnull().sum() > 0:
             raise ValueError("There are missing values in the input data, so we can't proceed")
 
-        if torch.cuda.is_available():
-            if torch.cuda.get_device_properties(0).total_memory / (1024**3) > self.min_gpu:
-                device = torch.device("cuda")  # Use CUDA
-            else:
+        device = get_device()
+        if device.type == "cuda":
+            if torch.cuda.get_device_properties(0).total_memory / (1024**3) <= self.min_gpu:
                 print("Not enough GPU memory, fallback to CPU")
                 device = torch.device("cpu")
-        elif torch.backends.mps.is_available():
-            device = torch.device("mps")
-        else:
-            device = torch.device("cpu")  # Fallback to CPU
 
         sbert = None
         try:

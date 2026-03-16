@@ -86,6 +86,7 @@ class Config(metaclass=_Singleton):
 
     def __init__(self):
         # for variables which needs cast or other treatment we do that work in the constructor
+        self.cpu_only = os.environ.get("CPU_ONLY", "false").lower() in ("true", "1", "yes")
         self.mode = (
             os.environ.get("MODE")
             if os.environ.get("MODE") is not None and MODE.has_member_key(os.environ.get("MODE"))

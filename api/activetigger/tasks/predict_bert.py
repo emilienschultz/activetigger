@@ -17,7 +17,7 @@ from transformers import (  # type: ignore[import]
 
 from activetigger.data import Data
 from activetigger.datamodels import MLStatisticsModel, ReturnTaskPredictModel, TextDatasetModel
-from activetigger.functions import get_metrics
+from activetigger.functions import get_device, get_metrics
 from activetigger.tasks.base_task import BaseTask
 
 
@@ -223,13 +223,10 @@ class PredictBert(BaseTask):
         # load the model
         tokenizer, model, max_length = self.__load_model()
 
-        # check if GPU available
-        gpu = False
-        if torch.cuda.is_available():
-            print("GPU is available")
-            torch.cuda.empty_cache()
-            gpu = True
-            model.cuda()
+        # select device
+        device = get_device()
+        print(f"Using {device} for prediction")
+        model.to(device)
 
         try:
             # prediction by batches
@@ -244,12 +241,11 @@ class PredictBert(BaseTask):
                     return_tensors="pt",
                     max_length=max_length,
                 )
-                if gpu:
-                    chunk = chunk.to("cuda")
+                chunk = chunk.to(device)
                 with torch.no_grad():
                     outputs = model(**chunk)
                 res = outputs[0]
-                if gpu:
+                if device.type == "cuda":
                     res = res.cpu()
                 res = res.softmax(1).detach().numpy()
                 predictions.append(res)
@@ -283,6 +279,4 @@ class PredictBert(BaseTask):
                 torch.cuda.empty_cache()
                 torch.cuda.ipc_collect()
 
-        return ReturnTaskPredictModel(
-            path=str(self.path.joinpath(self.file_name)), metrics=metrics
-        )
+        return ReturnTaskPredictModel(path=str(self.path.joinpath(self.file_name)), metrics=metrics)

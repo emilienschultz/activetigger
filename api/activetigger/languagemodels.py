@@ -216,6 +216,10 @@ class LanguageModels:
         if self.language_models_service.model_exists(project, model_name):
             raise Exception("A model with this name already exists")
 
+        # force CPU when cpu_only mode
+        if config.cpu_only:
+            params.gpu = False
+
         # if GPU requested, test if enough memory is available (to avoid CUDA out of memory)
         if params.gpu:
             mem = functions.get_gpu_memory_info()

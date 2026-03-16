@@ -68,8 +68,6 @@ class DatabaseManager:
                 conn.execute(text("SELECT pg_advisory_xact_lock(1)"))
                 Base.metadata.create_all(conn)
 
-        # Create default users after tables are committed,
-        # since users_service uses a separate connection.
         self._create_default_users()
 
     def _create_default_users(self) -> None:
