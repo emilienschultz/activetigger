@@ -78,7 +78,7 @@ export const AnnotationTagFilterSelect: FC<AnnotationTagFilterSelectProps> = ({
       // predicted = only show when an active model is set
       project?.next.sample
         .filter((s) => s !== 'all')
-        .filter((s) => s !== 'predicted' || activeModel !== null)
+        .filter((s) => s !== 'predicted')
         .map((s) => ({ sample: s, label: undefined, user: undefined })) || [];
     const labels = availableLabels.map((l) => ({
       sample: 'tagged',
