@@ -26,7 +26,7 @@ else
     echo "Mode GPU activated: installing cuml-cu12"
     uv pip install --extra-index-url https://pypi.nvidia.com cuml-cu12
   fi
-fi
+
 
 
 # Check for a config.yaml file in the api directory

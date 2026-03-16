@@ -221,7 +221,7 @@ class Project:
             self.queue,
             self.computing,
             self.db_manager,
-            config.file_models,
+            config.file_bert_models,
         )
         self.quickmodels = QuickModels(
             project_slug, self.params.dir, self.queue, self.computing, self.db_manager
@@ -575,7 +575,7 @@ class Project:
         if quickmodel.model == "multi_naivebayes":
             dfm_features = [f for f in self.features.map if f.startswith("dfm")]
             if not dfm_features:
-                raise Exception("No dfm feature available")
+                raise Exception("No dfm features available")
             quickmodel.features = dfm_features
             quickmodel.standardize = False
 
@@ -1189,7 +1189,7 @@ class Project:
         Export features data in different formats
         """
         if len(features) == 0:
-            raise ValueError("No feature selected")
+            raise ValueError("No features selected")
 
         path = self.params.dir  # path of the data
         if path is None:

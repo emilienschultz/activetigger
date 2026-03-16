@@ -77,7 +77,7 @@ export const DisplayTrainingProcesses: FC<DisplayTrainingProcessesProps> = ({
     <div className="overflow-x-auto my-4">
       {displayStopButton && (
         <div className="mb-3">
-          <StopProcessButton projectSlug={projectSlug} />
+          <StopProcessButton projectSlug={projectSlug} kind="bert" />
         </div>
       )}
 

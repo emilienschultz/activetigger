@@ -7,8 +7,9 @@ try:
     import cuml  # type: ignore[import-not-found]
 
     CUMl_AVAILABLE = True
-except ImportError:
-    print("CuML not installed")
+except Exception:
+    print("CuML not available")
+    cuml = None  # type: ignore[assignment]
     CUMl_AVAILABLE = False
 import pandas as pd
 import umap  # type: ignore[import]

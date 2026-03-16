@@ -9,6 +9,8 @@ import torch
 from pandas import DataFrame, Series
 from sentence_transformers import SentenceTransformer
 
+from activetigger.config import config
+
 # from transformers import AutoConfig
 from activetigger.config import config
 from activetigger.functions import get_device
@@ -26,7 +28,7 @@ class ComputeSbert(BaseTask):
         self,
         texts: Series,
         path_process: Path,
-        model: str = "all-mpnet-base-v2",
+        model: str,
         batch_size: int = 32,
         min_gpu: int = 6,
         max_tokens: int = 1024,
@@ -36,6 +38,9 @@ class ComputeSbert(BaseTask):
         super().__init__()
         self.texts = texts
         self.model = model
+        self.model_args = {}
+        if self.model in config.models_embeddings:
+            self.model_args = config.models_embeddings[self.model]
         self.batch_size = batch_size
         self.min_gpu = min_gpu
         self.path_process = path_process
@@ -73,6 +78,7 @@ class ComputeSbert(BaseTask):
 
         device = get_device()
 
+        sbert = None
         try:
             sbert = SentenceTransformer(self.model, device=str(device), trust_remote_code=True)
             max_seq_length = sbert.max_seq_length
@@ -85,11 +91,17 @@ class ComputeSbert(BaseTask):
                 # check if the user want to stop the process
                 if self.event is not None:
                     if self.event.is_set():
+                        print("Process interrupted by user")
                         raise Exception("Process interrupted by user")
                 # create the batch
                 batch_texts = list(self.texts.iloc[start : start + self.batch_size])
                 embeddings.append(
-                    sbert.encode(batch_texts, device=str(device), normalize_embeddings=True)
+                    sbert.encode(
+                        batch_texts,
+                        device=str(device),
+                        normalize_embeddings=True,
+                        **self.model_args,
+                    )
                 )
 
                 # manage progress
@@ -110,7 +122,9 @@ class ComputeSbert(BaseTask):
         except Exception as e:
             raise e
         finally:
-            del sbert, self.texts
+            if sbert is not None:
+                del sbert
+            del self.texts
             gc.collect()
             if not config.cpu_only and torch.cuda.is_available():
                 torch.cuda.synchronize()
