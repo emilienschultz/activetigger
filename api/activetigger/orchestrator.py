@@ -73,10 +73,18 @@ class Orchestrator:
         self.path_toy_datasets: Path = Path(self.path) / "toy-datasets"
 
         # create directories parent/static/models
-        self.path.mkdir(parents=True, exist_ok=True)
-        (self.path.joinpath("static")).mkdir(parents=True, exist_ok=True)
-        self.path_models.mkdir(exist_ok=True)
-        self.path_toy_datasets.mkdir(exist_ok=True)
+        try:
+            self.path.mkdir(parents=True, exist_ok=True)
+            (self.path.joinpath("static")).mkdir(parents=True, exist_ok=True)
+            self.path_models.mkdir(exist_ok=True)
+            self.path_toy_datasets.mkdir(exist_ok=True)
+        except PermissionError as e:
+            raise PermissionError(
+                f"Cannot create directory: {e}. "
+                f"Please ensure the data directory '{config.data_path}' is writable "
+                f"by the current user (uid={os.getuid()}, gid={os.getgid()}). "
+                f"Fix with: chown -R {os.getuid()}:{os.getgid()} {config.data_path}"
+            ) from e
 
         # attributes of the server
         self.db_manager = DatabaseManager()
