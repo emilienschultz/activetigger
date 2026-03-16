@@ -85,24 +85,28 @@ export async function loadExcelFile(file: File): Promise<DataType> {
   const arrayBuffer = await file.arrayBuffer();
 
   // Use XLSX to read the file as a workbook
-  const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+  // raw: false ensures values are formatted as strings (preserves large IDs)
+  const workbook = XLSX.read(arrayBuffer, { type: 'array', raw: false });
 
   // Assuming we want the first sheet
   const sheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[sheetName];
 
   // Convert the sheet to JSON format with headers
-  const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null });
+  const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '', raw: false });
 
-  // Extract headers (first row)
-  const headers = jsonData[0] as string[];
+  // Extract headers (first row), filtering out empty headers
+  const rawHeaders = jsonData[0] as (string | null)[];
+  const headers = rawHeaders.map((h, i) => (h ? String(h) : `__empty_${i}`)).filter(Boolean);
 
   // Extract data (subsequent rows) removing empty rows
   const data = jsonData
     .slice(1)
-    .filter((row) => (row as string[]).some((cell) => cell !== null && cell !== '')) // keeps at least one non-empty cell
-    .map((row) => fromPairs(zip(headers, row as string[])));
-  console.log('Excel data loaded:', data);
+    .filter((row) => (row as string[]).some((cell) => cell !== null && cell !== ''))
+    .map((row) => {
+      const cells = row as (string | number | null)[];
+      return fromPairs(headers.map((h, i) => [h, cells[i] != null ? String(cells[i]) : '']));
+    });
 
   // Return a DataType object with the data, headers, and filename
   return { data, headers, filename: file.name };

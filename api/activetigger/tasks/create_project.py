@@ -119,15 +119,21 @@ class CreateProject(BaseTask):
             )
 
         # create the internal/external index
-        # CAREFUL : external id has no constraint of uniqueness
         # case where the index is the row number
         if self.params.col_id == "dataset_row_number":
             content["id_internal"] = [str(i) for i in range(len(content))]
             content["id_external"] = content["id_internal"]
 
-        # case the index is a column, use slugify for internal if unique after slugify
+        # case the index is a column: check uniqueness then use slugify for internal if unique after slugify
         else:
             content["id_external"] = content[self.params.col_id].astype(str)
+            if content["id_external"].nunique() != len(content):
+                n_duplicates = len(content) - content["id_external"].nunique()
+                raise Exception(
+                    f"The selected ID column '{self.params.col_id.removeprefix('dataset_')}' "
+                    f"contains {n_duplicates} duplicate values. "
+                    f"Please choose a column with unique values or use 'Row number'."
+                )
             col_slugified = content["id_external"].apply(slugify)
             if col_slugified.nunique() == len(content):
                 content["id_internal"] = col_slugified

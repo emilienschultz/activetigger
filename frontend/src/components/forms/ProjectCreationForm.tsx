@@ -92,9 +92,7 @@ export const ProjectCreationForm: FC = () => {
   useEffect(() => {
     // case of loading external file
     if (dataset === 'load' && data) {
-      setAvailableFields(
-        data?.headers.filter((h) => h !== '').map((e) => ({ value: e, label: e })),
-      );
+      setAvailableFields(data?.headers.filter((h) => !!h).map((e) => ({ value: e, label: e })));
       setColumns(data.headers);
       setLengthData(data.data.length - 1);
       // case of existing project
@@ -104,9 +102,7 @@ export const ProjectCreationForm: FC = () => {
           ? datasets.toy_datasets.find((e) => `-toy-dataset-${e.project_slug}` === dataset)
           : datasets.projects.find((e) => e.project_slug === dataset);
 
-      setAvailableFields(
-        element?.columns.filter((h) => h !== '').map((e) => ({ value: e, label: e })),
-      );
+      setAvailableFields(element?.columns.filter((h) => !!h).map((e) => ({ value: e, label: e })));
       setColumns(element?.columns || []);
       setLengthData(element?.n_rows ?? 0);
     } else {
@@ -155,6 +151,19 @@ export const ProjectCreationForm: FC = () => {
       if (formData.col_id == '') {
         notify({ type: 'error', message: 'Select a column for ID.' });
         return;
+      }
+      // check that the selected ID column contains unique values
+      if (formData.col_id !== 'row_number' && data) {
+        const idValues = data.data.map((row) => row[formData.col_id]);
+        const uniqueValues = new Set(idValues);
+        if (uniqueValues.size !== idValues.length) {
+          const nDuplicates = idValues.length - uniqueValues.size;
+          notify({
+            type: 'error',
+            message: `The selected ID column contains ${nDuplicates} duplicate values. Please choose a column with unique values or use 'Row number'.`,
+          });
+          return;
+        }
       }
       if (!formData.cols_text) {
         notify({ type: 'error', message: 'Select a column for text.' });
@@ -237,7 +246,9 @@ export const ProjectCreationForm: FC = () => {
             if (status === 'existing') {
               clearInterval(intervalId);
               if (computeFeatures)
-                addFeature(slug, 'sentence-embeddings', 'sentence-embeddings', { model: 'generic' });
+                addFeature(slug, 'sentence-embeddings', 'sentence-embeddings', {
+                  model: 'generic',
+                });
               resetContext();
               navigate(`/projects/${slug}?fromCreatePage=true`);
               return;
@@ -404,18 +415,18 @@ export const ProjectCreationForm: FC = () => {
           // only display if data
           availableFields && (
             <>
-              <label htmlFor="col_id">
-                Id column (must contain unique values; otherwise the row number will be used)
-              </label>
+              <label htmlFor="col_id">Id column (must contain unique values)</label>
               <select id="col_id" disabled={creatingProject} {...register('col_id')}>
                 <option key="row_number" value="row_number">
                   Row number
                 </option>
-                {columns.map((h) => (
-                  <option key={h} value={h}>
-                    {h}
-                  </option>
-                ))}
+                {columns
+                  .filter((h) => !!h)
+                  .map((h) => (
+                    <option key={h} value={h}>
+                      {h}
+                    </option>
+                  ))}
               </select>
 
               <label htmlFor="cols_text">Text columns (selected fields will be concatenated)</label>
