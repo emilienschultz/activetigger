@@ -7,7 +7,7 @@
 
 Hi❗
 
-ActiveTigger[^1] is a collaborative text annotation web tool dedicated to computational social sciences. It is designed to assist exploration and model (BERT) fine-tuning to classify text dataset relying on active learning.
+ActiveTigger[^1] is a collaborative text annotation web tool dedicated to computational social sciences. It is designed to assist exploration and model (BERT) fine-tuning to classify text datasets relying on active learning.
 
 Designed primarily by researchers in social sciences, its use can extend to all users that need to annotate textual data.
 
@@ -49,7 +49,7 @@ Docker will start:
 - frontend
 - a reverse proxy with Nginx
 
-_By default the docker stack is in mode DEV._ This means that both API and FRONTEND are started using the local code in watch mode. You can update the code the service will be restarted. You can therefor use docker for development.
+_By default the docker stack is in mode DEV._ This means that both API and FRONTEND are started using the local code in watch mode. You can update the code and the service will be restarted. You can therefore use docker for development.
 
 > [!IMPORTANT]
 > If you want to use a GPU inside docker locally you need to first follow the `NVIDIA GPU` section from the [deploy documentation](./DEPLOY.md#nvidia-gpu).
@@ -134,7 +134,7 @@ Check that the API is running by going to `http://localhost:5000` in your browse
 
 #### Optional: Install GPU Support for UMAP
 
-To enable GPU support, [install Rapids Cuml](https://docs.rapids.ai/install/). For instance, for CUDA 12
+To enable GPU support, [install RAPIDS cuML](https://docs.rapids.ai/install/). For instance, for CUDA 12
 
 ```bash
 pip install --extra-index-url https://pypi.nvidia.com cuml-cu12
@@ -142,7 +142,7 @@ pip install --extra-index-url https://pypi.nvidia.com cuml-cu12
 
 #### Troubleshooting
 
-On Ubuntu, you need to install some drivers for the postgresql database and the python package psycopg2.
+On Ubuntu, you need to install some drivers for the Postgresql database and the python package psycopg2.
 
 ```bash
 sudo apt-get install libpq-dev
@@ -150,7 +150,8 @@ sudo apt-get install libpq-dev
 
 #### Temporary: some models (ModernBERT) need unpublished versions of Huggingface Transformers
 
-The requirements contain the clone of the repository.
+The requirements contain the clone of the repository. 
+
 
 ### Install the React frontend
 
