@@ -41,7 +41,7 @@ class GenerationsService:
             answer=answer,
             batch=batch,
         )
-        session.add(generation)
+        session.add(generation) 
         session.commit()
         session.close()
 
