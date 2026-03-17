@@ -228,7 +228,7 @@ class ComputeBertopic(BaseTask):
         self.col_id = col_id
         self.col_text = col_text
         if name is None:
-            name = f"bertopic_{path_data.stem}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            name = f"bertopic_{path_data.stem}_{datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%d_%H%M%S')}"
         self.name = slugify(name)
         self.input_datasets = (
             parameters.input_datasets

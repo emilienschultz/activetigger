@@ -506,7 +506,7 @@ class Features:
                     type=kind,
                     user=username,
                     name=name,
-                    time=datetime.now(),
+                    time=datetime.now(datetime.timezone.utc),
                 )
             )
             return None

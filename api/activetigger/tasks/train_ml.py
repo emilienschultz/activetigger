@@ -170,7 +170,7 @@ class TrainML(BaseTask):
 
         # Dump it in the folder
         element = QuickModelComputed(
-            time=datetime.datetime.now(),
+            time=datetime.datetime.now(datetime.timezone.utc),
             model=self.model,
             user=self.user,
             name=self.name,

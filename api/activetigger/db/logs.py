@@ -25,7 +25,7 @@ class LogsService:
             project_slug=project_slug,
             action=action,
             connect=connect,
-            time=datetime.datetime.now(),
+            time=datetime.datetime.now(datetime.timezone.utc),
         )
         session.add(log)
         session.commit()

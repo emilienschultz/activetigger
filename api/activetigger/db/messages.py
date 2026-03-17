@@ -31,7 +31,7 @@ class MessagesService:
             property = {}
         message = Messages(
             created_by=user_name,
-            time=datetime.now(),
+            time=datetime.now(datetime.timezone.utc),
             content=content,
             kind=kind,
             property=property,

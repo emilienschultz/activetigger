@@ -102,7 +102,7 @@ class Bertopic:
                 col_id=col_id,
                 col_text=col_text,
                 parameters=parameters,
-                time=datetime.now(),
+                time=datetime.now(datetime.timezone.utc),
                 kind="bertopic",
                 force_compute_embeddings=force_compute_embeddings,
                 get_progress=self.get_progress(name),
