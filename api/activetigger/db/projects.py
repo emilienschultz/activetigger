@@ -32,7 +32,7 @@ class ProjectsService:
 
     def add_project(self, project_slug: str, parameters: dict[str, Any], user_name: str) -> str:
         with self.Session.begin() as session:
-            now = datetime.datetime.now()
+            now = datetime.datetime.now(datetime.timezone.utc)
             project = Projects(
                 project_slug=project_slug,
                 parameters=parameters,
@@ -49,7 +49,7 @@ class ProjectsService:
             if project is None:
                 raise DBException("Project not found")
 
-            project.time_modified = datetime.datetime.now()
+            project.time_modified = datetime.datetime.now(datetime.timezone.utc)
             project.parameters = parameters
 
     def existing_projects(self) -> list[str]:
@@ -60,7 +60,7 @@ class ProjectsService:
 
     def add_token(self, token: str, status: str):
         with self.Session.begin() as session:
-            new_token = Tokens(token=token, status=status, time_created=datetime.datetime.now())
+            new_token = Tokens(token=token, status=status, time_created=datetime.datetime.now(datetime.timezone.utc))
             session.add(new_token)
 
     def get_token_status(self, token: str):
@@ -75,7 +75,7 @@ class ProjectsService:
             _ = session.execute(
                 update(Tokens)
                 .filter_by(token=token)
-                .values(time_revoked=datetime.datetime.now(), status="revoked")
+                .values(time_revoked=datetime.datetime.now(datetime.timezone.utc), status="revoked")
             )
 
     def add_scheme(
@@ -96,8 +96,8 @@ class ProjectsService:
                 name=name,
                 params=params,
                 user_name=user_name,
-                time_created=datetime.datetime.now(),
-                time_modified=datetime.datetime.now(),
+                time_created=datetime.datetime.now(datetime.timezone.utc),
+                time_modified=datetime.datetime.now(datetime.timezone.utc),
             )
             session.add(scheme)
 
@@ -114,7 +114,7 @@ class ProjectsService:
             params = scheme.params.copy()
             params["labels"] = labels
             scheme.params = params
-            scheme.time_modified = datetime.datetime.now()
+            scheme.time_modified = datetime.datetime.now(datetime.timezone.utc)
 
     def update_scheme_codebook(self, project_slug: str, scheme: str, codebook: str) -> None:
         """
@@ -129,7 +129,7 @@ class ProjectsService:
             params = result_scheme.params.copy()
             params["codebook"] = codebook
             result_scheme.params = params
-            result_scheme.time_modified = datetime.datetime.now()
+            result_scheme.time_modified = datetime.datetime.now(datetime.timezone.utc)
 
     def get_scheme_codebook(self, project_slug: str, name: str) -> Codebook:
         with self.Session() as session:
@@ -380,7 +380,7 @@ class ProjectsService:
         session = self.Session()
         for e in elements:
             annotation = Annotations(
-                time=datetime.datetime.now(),
+                time=datetime.datetime.now(datetime.timezone.utc),
                 dataset=dataset,
                 user_name=e.get(
                     "user_name", user_name
@@ -409,7 +409,7 @@ class ProjectsService:
     ):
         with self.Session.begin() as session:
             new_annotation = Annotations(
-                time=datetime.datetime.now(),
+                time=datetime.datetime.now(datetime.timezone.utc),
                 dataset=dataset,
                 user_name=user_name,
                 project_slug=project_slug,
@@ -473,7 +473,7 @@ class ProjectsService:
                     if c.name not in ("name", "time_modified", "user_name")
                 },
                 name=new_name,
-                time_modified=datetime.datetime.now(),
+                time_modified=datetime.datetime.now(datetime.timezone.utc),
                 user_name=user_name,
             )
 
@@ -534,7 +534,7 @@ class ProjectsService:
                     if c.name not in ("name", "time_modified")
                 },
                 name=new_name,
-                time_modified=datetime.datetime.now(),
+                time_modified=datetime.datetime.now(datetime.timezone.utc),
             )
 
             # add it
@@ -604,7 +604,7 @@ class ProjectsService:
         with self.Session.begin() as session:
             feature = Features(
                 project_slug=project_slug,
-                time=datetime.datetime.now(),
+                time=datetime.datetime.now(datetime.timezone.utc),
                 kind=kind,
                 name=name,
                 parameters=parameters,

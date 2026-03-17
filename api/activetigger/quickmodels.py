@@ -207,7 +207,7 @@ class QuickModels:
             status="training",
             user=user,
             unique_id=unique_id,
-            time=datetime.now(),
+            time=datetime.now(datetime.timezone.utc),
             kind="train_quickmodel",
             scheme=scheme,
             model_type=model_type,
@@ -447,7 +447,7 @@ class QuickModels:
             QuickModelComputing(
                 user=username,
                 unique_id=unique_id,
-                time=datetime.now(),
+                time=datetime.now(datetime.timezone.utc),
                 kind="predict_quickmodel",
                 status="predicting",
                 name=name,

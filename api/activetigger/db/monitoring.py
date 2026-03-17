@@ -30,7 +30,7 @@ class MonitoringService:
         process = Monitoring(
             process_name=process_name,
             kind=kind,
-            time=datetime.now(),
+            time=datetime.now(datetime.timezone.utc),
             parameters=parameters,
             events=events,
             project_slug=project_slug,

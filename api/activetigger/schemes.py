@@ -46,7 +46,7 @@ class SchemeCache:
         """
         Clean old entries in the cache after a delay (no mater what)
         """
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(datetime.timezone.utc)
         to_delete = []
         for k, v in self.content.items():
             if (now - v[0]).total_seconds() > self.expiration_delay:
@@ -69,7 +69,7 @@ class SchemeCache:
         Put scheme in cache
         """
         self.clean()
-        self.content[scheme] = (datetime.datetime.now(), df)
+        self.content[scheme] = (datetime.datetime.now(datetime.timezone.utc), df)
 
     def update(self, scheme: str, id: str, label: str | None, user: str) -> None:
         """
@@ -80,7 +80,7 @@ class SchemeCache:
             ts, df = self.content[scheme]
             df.loc[id, "labels"] = label
             df.loc[id, "user"] = user
-            df.loc[id, "timestamp"] = datetime.datetime.now()
+            df.loc[id, "timestamp"] = datetime.datetime.now(datetime.timezone.utc)
 
 
 class Schemes:
@@ -827,7 +827,7 @@ class Schemes:
             percentage = len(df[df["schemeA"] == df["schemeB"]]) / n_overlapping_annotations  # type: ignore
 
         return CompareSchemesModel(
-            datetime=datetime.datetime.now(),
+            datetime=datetime.datetime.now(datetime.timezone.utc),
             project_slug=self.project_slug,
             schemeA=schemeA,
             schemeB=schemeB,

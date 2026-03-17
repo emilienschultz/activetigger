@@ -111,7 +111,7 @@ class Projections:
                 unique_id=unique_id,
                 name=f"Projection by {username}",
                 user=username,
-                time=datetime.now(),
+                time=datetime.now(datetime.timezone.utc),
                 kind="projection",
                 method=projection.method,
                 params=projection,

@@ -57,7 +57,7 @@ class Users:
         """
         if username not in self.failed_attemps:
             self.failed_attemps[username] = []
-        self.failed_attemps[username].append(datetime.now())
+        self.failed_attemps[username].append(datetime.now(datetime.timezone.utc))
 
     def check_failed_login_attempts(
         self, username: str, timewindow: int = 10, max_attempts: int = 3
@@ -69,7 +69,7 @@ class Users:
         if username not in self.failed_attemps:
             return
         # filter attempts in the timewindow
-        now = datetime.now()
+        now = datetime.now(datetime.timezone.utc)
         self.failed_attemps[username] = [
             t for t in self.failed_attemps[username] if (now - t).total_seconds() < timewindow
         ]

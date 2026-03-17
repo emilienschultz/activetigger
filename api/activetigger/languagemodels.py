@@ -209,7 +209,7 @@ class LanguageModels:
             raise Exception(f"Less than {num_min_annotations_per_label} elements per label")
 
         # name integrating the scheme & user + date
-        current_date = datetime.now()
+        current_date = datetime.now(datetime.timezone.utc)
         model_name = name
 
         # check if a project not already exist
@@ -333,7 +333,7 @@ class LanguageModels:
                 user=user,
                 model_name=name,
                 unique_id=unique_id,
-                time=datetime.now(),
+                time=datetime.now(datetime.timezone.utc),
                 kind="predict_bert",
                 dataset=dataset,
                 status=status,
@@ -616,7 +616,7 @@ class LanguageModels:
         # update cache
         for key in list(self.cache_predictions.keys()):
             timestamp, _ = self.cache_predictions[key]
-            if (datetime.now() - timestamp).total_seconds() > cache_time:
+            if (datetime.now(datetime.timezone.utc) - timestamp).total_seconds() > cache_time:
                 del self.cache_predictions[key]
 
         # return from cache
@@ -629,5 +629,5 @@ class LanguageModels:
         if not path.exists():
             raise FileNotFoundError("Prediction file does not exist")
         df = pd.read_parquet(path)
-        self.cache_predictions[model_name] = (datetime.now(), df)
+        self.cache_predictions[model_name] = (datetime.now(datetime.timezone.utc), df)
         return df

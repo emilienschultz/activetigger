@@ -33,7 +33,7 @@ class GenerationsService:
         session = self.Session()
         generation = Generations(
             user_name=user_name,
-            time=datetime.datetime.now(),
+            time=datetime.datetime.now(datetime.timezone.utc),
             project_slug=project_slug,
             element_id=element_id,
             model_id=model_id,
@@ -41,7 +41,7 @@ class GenerationsService:
             answer=answer,
             batch=batch,
         )
-        session.add(generation)
+        session.add(generation) 
         session.commit()
         session.close()
 
