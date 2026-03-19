@@ -1,4 +1,5 @@
 import datetime
+from datetime import timezone
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
@@ -25,7 +26,7 @@ class LogsService:
             project_slug=project_slug,
             action=action,
             connect=connect,
-            time=datetime.datetime.now(datetime.timezone.utc),
+            time=datetime.datetime.now(timezone.utc),
         )
         session.add(log)
         session.commit()

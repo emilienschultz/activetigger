@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session as SessionType
 from sqlalchemy.orm import sessionmaker
@@ -30,7 +30,7 @@ class MonitoringService:
         process = Monitoring(
             process_name=process_name,
             kind=kind,
-            time=datetime.now(datetime.timezone.utc),
+            time=datetime.now(timezone.utc),
             parameters=parameters,
             events=events,
             project_slug=project_slug,

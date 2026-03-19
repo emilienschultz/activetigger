@@ -5,7 +5,7 @@ import os
 import shutil
 import time
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, cast
 
@@ -278,7 +278,7 @@ class Project:
                 username=username,
                 project_slug=self.project_slug,
                 unique_id=unique_id,
-                time=datetime.now(datetime.timezone.utc),
+                time=datetime.now(timezone.utc),
                 kind="create_project",
                 status="training",
             )
@@ -1379,7 +1379,7 @@ class Project:
             UpdateComputing(
                 unique_id=unique_id,
                 user=username,
-                time=datetime.now(datetime.timezone.utc),
+                time=datetime.now(timezone.utc),
                 kind="update_datasets",
                 update=update,
             )
@@ -1477,7 +1477,7 @@ class Project:
                 project=self.name,
                 model_id=request.model_id,
                 number=request.n_batch,
-                time=datetime.now(datetime.timezone.utc),
+                time=datetime.now(timezone.utc),
                 kind="generation",
                 get_progress=GenerateCall.get_progress_callback(
                     self.params.dir.joinpath(unique_id) if self.params.dir is not None else None

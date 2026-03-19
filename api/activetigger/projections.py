@@ -1,5 +1,5 @@
 import pickle
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -111,7 +111,7 @@ class Projections:
                 unique_id=unique_id,
                 name=f"Projection by {username}",
                 user=username,
-                time=datetime.now(datetime.timezone.utc),
+                time=datetime.now(timezone.utc),
                 kind="projection",
                 method=projection.method,
                 params=projection,

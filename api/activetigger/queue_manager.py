@@ -6,6 +6,7 @@
 
 import asyncio
 import datetime
+from datetime import timezone
 import multiprocessing
 import uuid
 
@@ -154,7 +155,7 @@ class Queue:
                 state="pending",
                 future=None,
                 event=event,
-                starting_time=datetime.datetime.now(datetime.timezone.utc),
+                starting_time=datetime.datetime.now(timezone.utc),
                 queue=queue,
                 task=task,
             )
@@ -235,7 +236,7 @@ class Queue:
         self.current = [
             i
             for i in self.current
-            if (datetime.datetime.now(datetime.timezone.utc) - i.starting_time).total_seconds() / 3600 < timeout
+            if (datetime.datetime.now(timezone.utc) - i.starting_time).total_seconds() / 3600 < timeout
         ]
         if n != len(self.current):
             print(f"Cleaned {n - len(self.current)} processes")

@@ -1,4 +1,5 @@
 import datetime
+from datetime import timezone
 import json
 import math
 import os
@@ -170,7 +171,7 @@ class TrainML(BaseTask):
 
         # Dump it in the folder
         element = QuickModelComputed(
-            time=datetime.datetime.now(datetime.timezone.utc),
+            time=datetime.datetime.now(timezone.utc),
             model=self.model,
             user=self.user,
             name=self.name,

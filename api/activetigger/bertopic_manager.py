@@ -1,6 +1,6 @@
 import json
 import shutil
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -102,7 +102,7 @@ class Bertopic:
                 col_id=col_id,
                 col_text=col_text,
                 parameters=parameters,
-                time=datetime.now(datetime.timezone.utc),
+                time=datetime.now(timezone.utc),
                 kind="bertopic",
                 force_compute_embeddings=force_compute_embeddings,
                 get_progress=self.get_progress(name),

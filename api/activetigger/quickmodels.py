@@ -2,7 +2,7 @@ import os
 import pickle
 import shutil
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
 from typing import Any
@@ -207,7 +207,7 @@ class QuickModels:
             status="training",
             user=user,
             unique_id=unique_id,
-            time=datetime.now(datetime.timezone.utc),
+            time=datetime.now(timezone.utc),
             kind="train_quickmodel",
             scheme=scheme,
             model_type=model_type,
@@ -447,7 +447,7 @@ class QuickModels:
             QuickModelComputing(
                 user=username,
                 unique_id=unique_id,
-                time=datetime.now(datetime.timezone.utc),
+                time=datetime.now(timezone.utc),
                 kind="predict_quickmodel",
                 status="predicting",
                 name=name,

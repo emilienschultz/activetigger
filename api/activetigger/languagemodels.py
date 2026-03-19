@@ -2,7 +2,7 @@ import json
 import os
 import shutil
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Optional, Tuple, cast
 
@@ -209,7 +209,7 @@ class LanguageModels:
             raise Exception(f"Less than {num_min_annotations_per_label} elements per label")
 
         # name integrating the scheme & user + date
-        current_date = datetime.now(datetime.timezone.utc)
+        current_date = datetime.now(timezone.utc)
         model_name = name
 
         # check if a project not already exist
@@ -333,7 +333,7 @@ class LanguageModels:
                 user=user,
                 model_name=name,
                 unique_id=unique_id,
-                time=datetime.now(datetime.timezone.utc),
+                time=datetime.now(timezone.utc),
                 kind="predict_bert",
                 dataset=dataset,
                 status=status,
@@ -616,7 +616,7 @@ class LanguageModels:
         # update cache
         for key in list(self.cache_predictions.keys()):
             timestamp, _ = self.cache_predictions[key]
-            if (datetime.now(datetime.timezone.utc) - timestamp).total_seconds() > cache_time:
+            if (datetime.now(timezone.utc) - timestamp).total_seconds() > cache_time:
                 del self.cache_predictions[key]
 
         # return from cache
@@ -629,5 +629,5 @@ class LanguageModels:
         if not path.exists():
             raise FileNotFoundError("Prediction file does not exist")
         df = pd.read_parquet(path)
-        self.cache_predictions[model_name] = (datetime.now(datetime.timezone.utc), df)
+        self.cache_predictions[model_name] = (datetime.now(timezone.utc), df)
         return df

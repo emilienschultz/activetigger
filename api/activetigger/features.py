@@ -1,7 +1,7 @@
 import json
 import os
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -506,7 +506,7 @@ class Features:
                     type=kind,
                     user=username,
                     name=name,
-                    time=datetime.now(datetime.timezone.utc),
+                    time=datetime.now(timezone.utc),
                 )
             )
             return None

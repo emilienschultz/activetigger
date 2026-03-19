@@ -42,7 +42,7 @@ class TaskTimer:
             )
         if step in self.__starts:
             raise Exception((f"TaskTimer.start(step): {step} timer has already been started."))
-        self.__starts[step] = datetime.now(datetime.timezone.utc)
+        self.__starts[step] = datetime.now(timezone.utc)
 
     def stop(self, step: str) -> None:
         """
@@ -61,7 +61,7 @@ class TaskTimer:
                 (f"TaskTimer.stop(step): the step {step} timer has already been stopped.")
             )
 
-        end = datetime.now(datetime.timezone.utc)
+        end = datetime.now(timezone.utc)
         self.__stops += [str(step)]
         self.__additional_events[step] = {
             "start": self.__starts[step].isoformat(),
@@ -94,7 +94,7 @@ class Monitoring:
         """
         Start a new monitored process
         """
-        events = {"global":{"start": datetime.now(datetime.timezone.utc).isoformat()}}
+        events = {"global":{"start": datetime.now(timezone.utc).isoformat()}}
         self.db_manager.monitoring_service.add_process(
             process_name=process_name,
             kind=kind,

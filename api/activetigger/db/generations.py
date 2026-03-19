@@ -1,4 +1,5 @@
 import datetime
+from datetime import timezone
 from typing import Sequence
 
 from sqlalchemy import delete, select
@@ -33,7 +34,7 @@ class GenerationsService:
         session = self.Session()
         generation = Generations(
             user_name=user_name,
-            time=datetime.datetime.now(datetime.timezone.utc),
+            time=datetime.datetime.now(timezone.utc),
             project_slug=project_slug,
             element_id=element_id,
             model_id=model_id,

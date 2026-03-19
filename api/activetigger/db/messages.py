@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session as SessionType
 from sqlalchemy.orm import sessionmaker
@@ -31,7 +31,7 @@ class MessagesService:
             property = {}
         message = Messages(
             created_by=user_name,
-            time=datetime.now(datetime.timezone.utc),
+            time=datetime.now(timezone.utc),
             content=content,
             kind=kind,
             property=property,
